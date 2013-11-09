@@ -9,7 +9,7 @@ def load_modules():
 
     plugins = dict()
 
-    # Walk recursively throug hall modules and packages.
+    # Walk recursively through all modules and packages.
     for loader, module_name, ispkg in pkgutil.walk_packages(modules.__path__, modules.__name__ + '.'):
         # If current item is a package, skip.
         if ispkg:
