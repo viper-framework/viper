@@ -140,7 +140,13 @@ class PE(Module):
         print table(headers, resources)
 
     def help(self):
-        print_error("Choose an option!")
+        print("")
+        print("Options:")
+        print("\thelp\t\tShow this help message")
+        print("\timports\t\tList PE imports")
+        print("\texports\t\tList PE exports")
+        print("\tresources\tList PE resources")
+        print("")
 
     def run(self):
         if not __session__.is_set():
@@ -158,10 +164,13 @@ class PE(Module):
             return
 
         if len(self.args) == 0:
+            print_error("Choose an option!")
             self.help()
             return
 
-        if self.args[0] == 'imports':
+        if self.args[0] == 'help':
+            self.help()
+        elif self.args[0] == 'imports':
             self.imports()
         elif self.args[0] == 'exports':
             self.exports()
