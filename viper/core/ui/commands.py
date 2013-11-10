@@ -168,12 +168,44 @@ class Commands(object):
     # This command stores the opened file in the local repository and tries
     # to store details in the database.
     def cmd_store(self, *args):
+        def usage():
+            print("usage: store [-d]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--delete (-d)\tDelete the original file")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(args, 'd', ['delete',])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        do_delete = False
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-d', '--delete'):
+                do_delete = True
+
         # TODO: Add tags argument.
         if __session__.is_set():
             # Store file to the local repository.
             new_path = store_sample(__session__.file)
             # Add file to the database.
             status = self.db.add(__session__.file)
+            # Delete the file if requested to do so.
+            if do_delete:
+                try:
+                    os.unlink(__session__.file.path)
+                except Exception as e:
+                    print_warning("Failed deleting file: {0}".format(e))
 
             print_success("Stored to: {0}".format(new_path))
 
