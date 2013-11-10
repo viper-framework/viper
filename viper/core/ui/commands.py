@@ -3,6 +3,7 @@ import getopt
 import tempfile
 
 from viper.common.out import *
+from viper.common.objects import File
 from viper.common.colors import bold, cyan, white
 from viper.common.network import download
 from viper.core.session import __session__
@@ -168,7 +169,7 @@ class Commands(object):
     # to store details in the database.
     def cmd_store(self, *args):
         def usage():
-            print("usage: store [-d]")
+            print("usage: store [-h] [-d] [-f <path>]")
 
         def help():
             usage()
@@ -176,40 +177,62 @@ class Commands(object):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--delete (-d)\tDelete the original file")
+            print("\t--folder (-f)\tSpecify a folder to import")
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hd', ['help', 'delete'])
+            opts, argv = getopt.getopt(args, 'hdf:', ['help', 'delete', 'folder='])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
         do_delete = False
+        folder = False
+
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-d', '--delete'):
                 do_delete = True
+            elif opt in ('-f', '--folder'):
+                folder = value
 
-        # TODO: Add tags argument.
-        if __session__.is_set():
-            # Store file to the local repository.
-            new_path = store_sample(__session__.file)
-            # Add file to the database.
-            status = self.db.add(__session__.file)
-            # Delete the file if requested to do so.
-            if do_delete:
-                try:
-                    os.unlink(__session__.file.path)
-                except Exception as e:
-                    print_warning("Failed deleting file: {0}".format(e))
+        # TODO: Clean this shit up.
+        if folder and os.path.isdir(folder):
+            for dir_name, dir_names, file_names in os.walk(folder):
+                for file_name in file_names:
+                    file_path = os.path.join(dir_name, file_name)
 
-            print_success("Stored to: {0}".format(new_path))
+                    print_info("File path: {0}".format(file_path))
 
-            # Open session to the new file.
-            self.cmd_open(*[__session__.file.sha256])
+                    file_obj = File(file_path)
+
+                    new_path = store_sample(file_obj)
+                    if new_path:
+                        status = self.db.add(file_obj)
+                        print_success("Stored to: {0}".format(new_path))
+        else:
+            # TODO: Add tags argument.
+            if __session__.is_set():
+                # Store file to the local repository.
+                new_path = store_sample(__session__.file)
+                # Add file to the database.
+                status = self.db.add(__session__.file)
+                # Delete the file if requested to do so.
+                if do_delete:
+                    try:
+                        os.unlink(__session__.file.path)
+                    except Exception as e:
+                        print_warning("Failed deleting file: {0}".format(e))
+
+                print_success("Stored to: {0}".format(new_path))
+
+                # Open session to the new file.
+                self.cmd_open(*[__session__.file.sha256])
+            else:
+                print_error("No session opened")
 
     ##
     # DELETE
@@ -257,6 +280,6 @@ class Commands(object):
 
         rows = []
         for item in items:
-            rows.append([item.name, item.type, item.size, item.sha256])
+            rows.append([item.name, item.type, item.sha256])
 
-        print(table(['Name', 'Type', 'Size', 'SHA256'], rows))
+        print(table(['Name', 'Type',  'SHA256'], rows))

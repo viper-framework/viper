@@ -2,6 +2,9 @@ import os
 
 def store_sample(file_object):
     sha256 = file_object.sha256
+
+    if not sha256:
+        return None
     
     folder = os.path.join('binaries', sha256[0], sha256[1], sha256[2], sha256[3])
     if not os.path.exists(folder):
@@ -13,7 +16,9 @@ def store_sample(file_object):
         with open(file_path, 'wb') as stored:
             for chunk in file_object.get_chunks():
                 stored.write(chunk)
-    
+    else:
+        return None
+
     return file_path
 
 def get_sample_path(sha256):
