@@ -149,7 +149,6 @@ class Commands(object):
             print(table(
                 ['Key', 'Value'],
                 [
-                    ('Name', __session__.file.name),
                     ('Path', __session__.file.path),
                     ('Size', __session__.file.size),
                     ('Type', __session__.file.type),
