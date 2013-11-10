@@ -39,4 +39,5 @@ class Fuzzy(Module):
                 continue
 
             score = pydeep.compare(__session__.file.ssdeep, sample.ssdeep)
-            print("Match {0}%: {1}".format(score, sample.sha256))
+            if score > 40:
+                print("Match {0}%: {1}".format(score, sample.sha256))
