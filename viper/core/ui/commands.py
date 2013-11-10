@@ -180,7 +180,7 @@ class Commands(object):
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'd', ['delete',])
+            opts, argv = getopt.getopt(args, 'hd', ['help', 'delete'])
         except getopt.GetoptError as e:
             print(e)
             usage()
