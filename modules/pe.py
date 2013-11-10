@@ -139,7 +139,11 @@ class PE(Module):
 
         print table(headers, resources)
 
+    def usage(self):
+        print("usage: pe <command>")
+
     def help(self):
+        self.usage()
         print("")
         print("Options:")
         print("\thelp\t\tShow this help message")
@@ -164,7 +168,6 @@ class PE(Module):
             return
 
         if len(self.args) == 0:
-            print_error("Choose an option!")
             self.help()
             return
 

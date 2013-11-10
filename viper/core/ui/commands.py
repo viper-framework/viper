@@ -67,7 +67,7 @@ class Commands(object):
     # run against the file specified.
     def cmd_open(self, *args):
         def usage():
-            print("usage: open [-h] [-f] target")
+            print("usage: open [-h] [-f] <target>")
 
         def help():
             usage()
