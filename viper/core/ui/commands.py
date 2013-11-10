@@ -1,8 +1,10 @@
 import os
 import getopt
+import tempfile
 
 from viper.common.out import *
 from viper.common.colors import bold, cyan, white
+from viper.common.network import download
 from viper.core.session import __session__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
@@ -73,16 +75,20 @@ class Commands(object):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--file (-f)\tThe target is a file")
+            print("\t--url (-u)\tThe target is a URL")
+            print("\t--tor (-t)\tDownload the file through Tor")
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hf', ['help', 'file'])
+            opts, argv = getopt.getopt(args, 'hfut', ['help', 'file', 'url', 'tor'])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
         is_file = False
+        is_url = False
+        use_tor = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
@@ -90,6 +96,10 @@ class Commands(object):
                 return
             elif opt in ('-f', '--file'):
                 is_file = True
+            elif opt in ('-u', '--url'):
+                is_url = True
+            elif opt in ('-t', '--tor'):
+                use_tor = True
 
         if len(argv) == 0:
             usage()
@@ -105,6 +115,14 @@ class Commands(object):
                 return
 
             __session__.set(target)
+        elif is_url:
+            data = download(url=target, tor=use_tor)
+
+            tmp = tempfile.NamedTemporaryFile(delete=False)
+            tmp.write(data)
+            tmp.close()
+
+            __session__.set(tmp.name)
         else:
             target = argv[0].strip().lower()
             path = get_sample_path(target)
