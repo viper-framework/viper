@@ -2,6 +2,7 @@ Viper
 =====
 
 This is the repository for an experimental project temporarily code-named Viper.
+It's released under BSD 3-Clause license.
 
 Concept
 -------
