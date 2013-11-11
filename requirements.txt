@@ -2,3 +2,4 @@ magic
 pefile
 prettytable
 pydeep
+socksipy
