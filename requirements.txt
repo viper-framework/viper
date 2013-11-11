@@ -1,4 +1,4 @@
 magic
 pefile
 prettytable
-requests
+pydeep
