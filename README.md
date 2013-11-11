@@ -10,7 +10,7 @@ Concept
 The main idea behind this project is to build a framework to store,
 classify and investigate binary files of any sort.
 
-In order to binary analysis of different nature (being a PE32, a PDF document
+In order to analyze binaries of different nature (being a PE32, a PDF document
 or an Office document) we have a large number of very diversified and scattered
 scripts and tools available on the Internet and developed by numerous parties.
 
