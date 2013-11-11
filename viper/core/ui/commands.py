@@ -178,10 +178,11 @@ class Commands(object):
             print("\t--help (-h)\tShow this help message")
             print("\t--delete (-d)\tDelete the original file")
             print("\t--folder (-f)\tSpecify a folder to import")
+            print("\t--tags (-t)\tSpecify a list of comma-separated tags")
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hdf:', ['help', 'delete', 'folder='])
+            opts, argv = getopt.getopt(args, 'hdf:t:', ['help', 'delete', 'folder=', 'tags='])
         except getopt.GetoptError as e:
             print(e)
             usage()
@@ -189,6 +190,7 @@ class Commands(object):
 
         do_delete = False
         folder = False
+        tags = None
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
@@ -198,36 +200,47 @@ class Commands(object):
                 do_delete = True
             elif opt in ('-f', '--folder'):
                 folder = value
+            elif opt in ('-t', '--tags'):
+                tags = value
 
-        # TODO: Clean this shit up.
-        if folder and os.path.isdir(folder):
-            for dir_name, dir_names, file_names in os.walk(folder):
-                for file_name in file_names:
-                    file_path = os.path.join(dir_name, file_name)
-
-                    print_info("File path: {0}".format(file_path))
-
-                    file_obj = File(file_path)
-
-                    new_path = store_sample(file_obj)
-                    if new_path:
-                        status = self.db.add(file_obj)
-                        print_success("Stored to: {0}".format(new_path))
-        else:
-            # TODO: Add tags argument.
-            if __session__.is_set():
-                # Store file to the local repository.
-                new_path = store_sample(__session__.file)
+        def add_file(obj, tags=None):
+            # Store file to the local repository.
+            new_path = store_sample(obj)
+            if new_path:
                 # Add file to the database.
-                status = self.db.add(__session__.file)
-                # Delete the file if requested to do so.
-                if do_delete:
-                    try:
-                        os.unlink(__session__.file.path)
-                    except Exception as e:
-                        print_warning("Failed deleting file: {0}".format(e))
-
+                status = self.db.add(obj=obj, tags=tags)
                 print_success("Stored to: {0}".format(new_path))
+
+            # Delete the file if requested to do so.
+            if do_delete:
+                try:
+                    os.unlink(obj.path)
+                except Exception as e:
+                    print_warning("Failed deleting file: {0}".format(e))
+
+        # If the user specified the --folder flag, we walk recursively and try
+        # to add all contained files to the local repository.
+        # This is note going to open a new session.
+        # TODO: perhaps disable or make recursion optional?
+        if folder:
+            # Check if the specified folder is valid.
+            if os.path.isdir(folder):
+                # Walk through the folder and subfolders.
+                for dir_name, dir_names, file_names in os.walk(folder):
+                    # Add each collected file.
+                    for file_name in file_names:
+                        file_path = os.path.join(dir_name, file_name)
+                        file_obj = File(file_path)
+
+                        # Add file.
+                        add_file(file_obj, tags)
+            else:
+                print_error("You specified an invalid folder: {0}".format(folder))
+        # Otherwise we try to store the currently opened file, if there is any.
+        else:
+            if __session__.is_set():
+                # Add file.
+                add_file(__session__.file, tags)
 
                 # Open session to the new file.
                 self.cmd_open(*[__session__.file.sha256])
