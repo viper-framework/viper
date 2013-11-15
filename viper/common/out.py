@@ -5,6 +5,9 @@ from viper.common.colors import *
 def print_info(message):
     print(bold(cyan("[*]")) + " {0}".format(message))
 
+def print_item(message, tabs=0):
+    print("{0}".format("\t" * tabs) + cyan("*") + " {0}".format(message))
+
 def print_warning(message):
     print(bold(yellow("[!]")) + " WARNING: {0}".format(message))
 

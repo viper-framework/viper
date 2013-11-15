@@ -30,7 +30,7 @@ class Image(Module):
                 print(bold("Signatures:"))
 
                 for signature in report['signatures']:
-                    print_info(signature['description'])
+                    print_item(signature['description'])
         else:
             print_error("The analysis failed")
 
