@@ -3,3 +3,5 @@ pefile
 prettytable
 pydeep
 socksipy
+requests
+
