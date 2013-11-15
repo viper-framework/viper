@@ -119,11 +119,12 @@ class Commands(object):
         elif is_url:
             data = download(url=target, tor=use_tor)
 
-            tmp = tempfile.NamedTemporaryFile(delete=False)
-            tmp.write(data)
-            tmp.close()
+            if data:
+                tmp = tempfile.NamedTemporaryFile(delete=False)
+                tmp.write(data)
+                tmp.close()
 
-            __session__.set(tmp.name)
+                __session__.set(tmp.name)
         else:
             target = argv[0].strip().lower()
             path = get_sample_path(target)
