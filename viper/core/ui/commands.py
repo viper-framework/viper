@@ -68,7 +68,7 @@ class Commands(object):
     # run against the file specified.
     def cmd_open(self, *args):
         def usage():
-            print("usage: open [-h] [-f] <target>")
+            print("usage: open [-h] [-f] [-u] [-t] <target>")
 
         def help():
             usage()
@@ -78,6 +78,9 @@ class Commands(object):
             print("\t--file (-f)\tThe target is a file")
             print("\t--url (-u)\tThe target is a URL")
             print("\t--tor (-t)\tDownload the file through Tor")
+            print("")
+            print("You can also specify a SHA256 hash to a previously stored")
+            print("file in order to open a session on it.")
             print("")
 
         try:
@@ -108,6 +111,7 @@ class Commands(object):
         else:
             target = argv[0]
 
+        # If it's a file path, open a session on it.
         if is_file:
             target = os.path.expanduser(target)
 
@@ -116,6 +120,8 @@ class Commands(object):
                 return
 
             __session__.set(target)
+        # If it's a URL, download it and open a session on the temporary
+        # file.
         elif is_url:
             data = download(url=target, tor=use_tor)
 
@@ -125,6 +131,7 @@ class Commands(object):
                 tmp.close()
 
                 __session__.set(tmp.name)
+        # Otherwise we assume it's an hash of an previously stored sample.
         else:
             target = argv[0].strip().lower()
             path = get_sample_path(target)
@@ -170,7 +177,7 @@ class Commands(object):
     # to store details in the database.
     def cmd_store(self, *args):
         def usage():
-            print("usage: store [-h] [-d] [-f <path>]")
+            print("usage: store [-h] [-d] [-f <path>] [-t]")
 
         def help():
             usage()
