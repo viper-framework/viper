@@ -1,8 +1,3 @@
-import os
-import json
-import urllib
-import urllib2
-
 try:
     import requests
     HAVE_REQUESTS = True

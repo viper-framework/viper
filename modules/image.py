@@ -1,8 +1,3 @@
-import os
-import json
-import urllib
-import urllib2
-
 try:
     import requests
     HAVE_REQUESTS = True
@@ -18,6 +13,10 @@ class Image(Module):
     description = 'Perform analysis on images'
 
     def ghiro(self):
+        if not HAVE_REQUESTS:
+            print_error("Missing dependency, install requests (`pip install requests`)")
+            return
+
         payload = dict(private='true', json='true')
         files = dict(image=open(__session__.file.path, 'rb'))
 
@@ -48,10 +47,6 @@ class Image(Module):
     def run(self):
         if not __session__.is_set():
             print_error("No session opened")
-            return
-
-        if not HAVE_REQUESTS:
-            print_error("Missing dependency, install requests (`pip install requests`)")
             return
 
         if len(self.args) == 0:
