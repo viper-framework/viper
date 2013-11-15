@@ -7,6 +7,7 @@ from viper.common.colors import bold, cyan, white
 from viper.core.session import __session__
 from viper.core.plugins import __modules__
 from viper.core.ui.commands import Commands
+from viper.core.storage import get_sample_path
 
 class Console(object):
 
@@ -75,8 +76,21 @@ class Console(object):
         while self.active:
             # If there is an open session, we include the path to the opened
             # file in the shell prompt.
+            # TODO: perhaps this block should be moved into the session so that
+            # the generation of the prompt is done only when the session's
+            # status changes.
             if __session__.is_set():
-                prompt = cyan('shell ') + white(__session__.file.path) + cyan(' > ')
+                file_name = os.path.basename(__session__.file.path)
+                # Check if the file name is an hash available in the
+                # repository.
+                # TODO: this is kind of a dirty trick, perhaps should find
+                # a cleaner solution.
+                if get_sample_path(file_name):
+                    # If the file name is a valid hash, let's reduce it and
+                    # display only the first and last digits.
+                    file_name = '{0}...{1}'.format(file_name[0:4], file_name[len(file_name)-4:])
+
+                prompt = cyan('shell ') + white(file_name) + cyan(' > ')
             # Otherwise display the basic prompt.
             else:
                 prompt = cyan('shell > ')
