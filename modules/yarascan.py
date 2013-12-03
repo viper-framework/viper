@@ -17,34 +17,57 @@ class YaraScan(Module):
     cmd = 'yara'
     description = 'Run Yara scan'
 
-    def run(self):
-        if not HAVE_YARA:
-            print_error("Missing dependency, install yara")
-            return
+    def scan(self):
+        def usage():
+            print("usage: yara scan [-a]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
+            print("\t--all (-a)\tScan all stored files (default if no session is open)")
+            print("")
+
+        rule_path = ''
+        scan_all = False
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'r:', ['rule='])
+            opts, argv = getopt.getopt(self.args[1:], 'r:a', ['rule=', 'all'])
         except getopt.GetoptError as e:
             print(e)
             return
 
-        rule_path = ''
         for opt, value in opts:
-            if opt in ('-r', '--rule'):
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-r', '--rule'):
                 rule_path = value
+            elif opt in ('-a', '--all'):
+                scan_all = True
 
-        if not rule_path or not os.path.exists(rule_path):
+        # If no custom ruleset is specified, we use the default one.
+        if not rule_path:
             rule_path = 'data/yara/index.yara'
 
+        # Check if the selected ruleset actually exists.
         if not os.path.exists(rule_path):
             print_error("No valid Yara ruleset at {0}".format(rule_path))
             return
 
+        # Compile all rules from given ruleset.
         rules = yara.compile(rule_path)
         files = []
 
-        if __session__.is_set():
+        # If there is a session open and the user didn't specifically
+        # request to scan the full repository, we just add the currently
+        # opened file's path.
+        if __session__.is_set() and not scan_all:
             files.append(__session__.file)
+        # Otherwise we loop through all files in the repository and queue
+        # them up for scan.
         else:
             print_info("Scanning all stored files...")
 
@@ -71,3 +94,28 @@ class YaraScan(Module):
                 ]
 
                 print(table(header=header, rows=rows))
+
+    def usage(self):
+        print("usage: yara <command>")
+
+    def help(self):
+        self.usage()
+        print("")
+        print("Options:")
+        print("\thelp\t\tShow this help message")
+        print("\tscan\t\tScan files with Yara signatures")
+        print("")
+
+    def run(self):
+        if not HAVE_YARA:
+            print_error("Missing dependency, install yara")
+            return
+
+        if len(self.args) == 0:
+            self.help()
+            return
+
+        if self.args[0] == 'help':
+            self.help()
+        elif self.args[0] == 'scan':
+            self.scan()
