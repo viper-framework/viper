@@ -80,17 +80,7 @@ class Console(object):
             # the generation of the prompt is done only when the session's
             # status changes.
             if __session__.is_set():
-                file_name = os.path.basename(__session__.file.path)
-                # Check if the file name is an hash available in the
-                # repository.
-                # TODO: this is kind of a dirty trick, perhaps should find
-                # a cleaner solution.
-                if get_sample_path(file_name):
-                    # If the file name is a valid hash, let's reduce it and
-                    # display only the first and last digits.
-                    file_name = '{0}...{1}'.format(file_name[0:4], file_name[len(file_name)-4:])
-
-                prompt = cyan('shell ') + white(file_name) + cyan(' > ')
+                prompt = cyan('shell ') + white(__session__.file.name) + cyan(' > ')
             # Otherwise display the basic prompt.
             else:
                 prompt = cyan('shell > ')

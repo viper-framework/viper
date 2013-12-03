@@ -1,5 +1,6 @@
 from viper.common.out import *
 from viper.common.objects import File
+from viper.core.database import Database
 
 class Session(object):
     def __init__(self):
@@ -24,6 +25,14 @@ class Session(object):
     def set(self, path):
         # Open a section on the given file.
         self.file = File(path)
+
+        # Try to lookup the file in the database. If it is already present
+        # we get file name and 
+        row = Database().find(key='sha256', value=__session__.file.sha256)
+        if row:
+            self.file.name = row[0].name
+            self.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
+
         print_info("Session opened on {0}".format(path))
 
 __session__ = Session()

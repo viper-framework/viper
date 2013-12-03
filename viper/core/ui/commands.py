@@ -158,6 +158,8 @@ class Commands(object):
             print(table(
                 ['Key', 'Value'],
                 [
+                    ('Name', __session__.file.name),
+                    ('Tags', __session__.file.tags),
                     ('Path', __session__.file.path),
                     ('Size', __session__.file.size),
                     ('Type', __session__.file.type),
