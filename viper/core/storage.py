@@ -4,6 +4,7 @@ def store_sample(file_object):
     sha256 = file_object.sha256
 
     if not sha256:
+        print "no hash" # DEBUG
         return None
     
     folder = os.path.join('binaries', sha256[0], sha256[1], sha256[2], sha256[3])
@@ -17,6 +18,7 @@ def store_sample(file_object):
             for chunk in file_object.get_chunks():
                 stored.write(chunk)
     else:
+        print "file exists already"
         return None
 
     return file_path

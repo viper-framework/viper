@@ -2,11 +2,13 @@
 import os
 import json
 import argparse
+import tempfile
 
 from bottle import route, request, response, run
 from bottle import HTTPError
 
 from viper.common.objects import File
+from viper.core.storage import store_sample
 from viper.core.database import Database
 
 db = Database()
@@ -21,12 +23,24 @@ def test():
 @route('/file/add', method='POST')
 def add_file():
     tags = request.forms.get('tags')
-    data = request.files.file
-    info = File(file_path=store_sample(data.file.read()))
+    upload = request.files.get('file')
 
-    db.add(obj=info, file_name=data.filename, tags=tags)
+    tf = tempfile.NamedTemporaryFile()
+    tf.write(upload.file.read())
+    tf_obj = File(tf.name)
+    tf_obj.name = upload.filename
 
-    return jsonize({'message' : 'added'})
+    new_path = store_sample(tf_obj)
+
+    success = False
+    if new_path:
+        # Add file to the database.
+        success = db.add(obj=tf_obj, tags=tags)
+
+    if success:
+        return jsonize({'message' : 'added'})
+    else:
+        return HTTPError(500, 'Unable to store file')
 
 @route('/file/get/<sha256>', method='GET')
 def get_file(sha256):
