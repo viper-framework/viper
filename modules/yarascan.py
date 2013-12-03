@@ -38,20 +38,36 @@ class YaraScan(Module):
 
         if not os.path.exists(rule_path):
             print_error("No valid Yara ruleset at {0}".format(rule_path))
-            return        
+            return
 
         rules = yara.compile(rule_path)
-        paths = []
+        files = []
 
         if __session__.is_set():
-            paths.append(__session__.file.path)
+            files.append(__session__.file)
         else:
+            print_info("Scanning all stored files...")
+
             db = Database()
             samples = db.find(key='all')
 
             for sample in samples:
-                paths.append(get_sample_path(sample.sha256))
+                files.append(sample)
 
-        for path in paths:
-            for match in rules.match(path):
-                print match.rule, path
+        for entry in files:
+            print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
+
+            rows = []
+            for match in rules.match(get_sample_path(entry.sha256)):
+                for string in match.strings:
+                    rows.append([match.rule, string[1], string[0], string[2]])
+
+            if rows:
+                header = [
+                    'Rule',
+                    'String',
+                    'Offset',
+                    'Content'
+                ]
+
+                print(table(header=header, rows=rows))
