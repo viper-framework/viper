@@ -47,9 +47,9 @@ class PE(Module):
         if hasattr(self.pe, 'DIRECTORY_ENTRY_IMPORT'):
             for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
                 try:
-                    print("[*] DLL: {0}".format(entry.dll))
+                    print_info("DLL: {0}".format(entry.dll))
                     for symbol in entry.imports:
-                        print("\t{0}: {1}".format(hex(symbol.address), symbol.name))
+                        print_item("{0}: {1}".format(hex(symbol.address), symbol.name), tabs=1)
                 except:
                     continue
     
@@ -57,10 +57,10 @@ class PE(Module):
         if not self.pe:
             return
         
-        print("[*] Exports:")
+        print_info("Exports:")
         if hasattr(self.pe, 'DIRECTORY_ENTRY_EXPORT'):
             for symbol in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
-                print("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal))
+                print_item("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
 
     def resources(self):
         if not self.pe:
