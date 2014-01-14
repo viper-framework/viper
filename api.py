@@ -8,7 +8,7 @@ from bottle import route, request, response, run
 from bottle import HTTPError
 
 from viper.common.objects import File
-from viper.core.storage import store_sample
+from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
 
 db = Database()
@@ -50,7 +50,9 @@ def get_file(sha256):
 
     response.content_length = os.path.getsize(path)
     response.content_type = 'application/octet-stream; charset=UTF-8'
-    data = open(path, 'rb').read()
+    data = ''
+    for chunk in File(path).get_chunks():
+        data += chunk
 
     return data
 
@@ -61,20 +63,20 @@ def find_file():
         for tag in row.tag:
             tags.append(tag.tag)
 
-        entry = {
-            'id' : row.id,
-            'file_name' : row.name,
-            'file_type' : row.type,
-            'file_size' : row.size,
-            'md5' : row.md5,
-            'sha1' : row.sha1,
-            'sha256' : row.sha256,
-            'sha512' : row.sha512,
-            'crc32' : row.crc32,
-            'ssdeep': row.ssdeep,
-            'created_at': row.created_at.__str__(),
-            'tags' : tags
-        }
+        entry = dict(
+            id=row.id,
+            name=row.name,
+            type=row.type,
+            size=row.size,
+            md5=row.md5,
+            sha1=row.sha1,
+            sha256=row.sha256,
+            sha512=row.sha512,
+            crc32=row.crc32,
+            ssdeep=row.ssdeep,
+            created_at=row.created_at.__str__(),
+            tags=tags
+        )
 
         return entry
 
