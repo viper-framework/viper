@@ -33,6 +33,7 @@ class File(object):
         self.sha512 = ''
         self.crc32 = ''
         self.ssdeep = ''
+        self.tags = ''
 
         if self.is_valid():
             self.name = os.path.basename(self.path)
