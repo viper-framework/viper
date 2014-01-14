@@ -1,6 +1,7 @@
 import os
 import getopt
 
+from viper.common.colors import bold
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.database import Database
@@ -58,6 +59,7 @@ class Fuzzy(Module):
         db = Database()
         samples = db.find(key='all')
 
+        matches = []
         for sample in samples:
             if sample.sha256 == __session__.file.sha256:
                 continue
@@ -66,5 +68,12 @@ class Fuzzy(Module):
                 continue
 
             score = pydeep.compare(__session__.file.ssdeep, sample.ssdeep)
-            if score > 40 or verbose:
+            if score > 40:
+                matches.append([sample, score])
+
+            if verbose:
                 print("Match {0}%: {1}".format(score, sample.sha256))
+
+        print_info("{0} relevant matches found".format(bold(len(matches))))
+        for match in matches:
+            print_item("{0}% {1}".format(match[1], match[0].sha256))
