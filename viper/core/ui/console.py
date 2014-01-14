@@ -2,7 +2,9 @@ import os
 import glob
 import atexit
 import readline
+import traceback
 
+from viper.common.out import *
 from viper.common.colors import bold, cyan, white
 from viper.core.session import __session__
 from viper.core.plugins import __modules__
@@ -130,4 +132,9 @@ class Console(object):
                 elif root in __modules__:
                     module = __modules__[root]['obj']()
                     module.set_args(args)
-                    module.run()
+
+                    try:
+                        module.run()
+                    except Exception as e:
+                        print_error("The command {0} raised an exception:".format(bold(root)))
+                        traceback.print_exc()
