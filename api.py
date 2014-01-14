@@ -63,9 +63,9 @@ def find_file():
 
         entry = {
             'id' : row.id,
-            'file_name' : row.file_name,
-            'file_type' : row.file_type,
-            'file_size' : row.file_size,
+            'file_name' : row.name,
+            'file_type' : row.type,
+            'file_size' : row.size,
             'md5' : row.md5,
             'sha1' : row.sha1,
             'sha256' : row.sha256,
@@ -78,43 +78,23 @@ def find_file():
 
         return entry
 
-    md5 = request.forms.get('md5')
-    sha256 = request.forms.get('sha256')
-    ssdeep = request.forms.get('ssdeep')
-    tag = request.forms.get('tag')
-    date = request.forms.get('date')
+    for entry in ['md5', 'sha256', 'ssdeep', 'tag']:
+        value = request.forms.get(entry)
+        if value:
+            key = entry
+            break
 
-    if md5:
-        row = db.find_md5(md5)
-        if row:
-            return jsonize(details(row))
-        else:
-            raise HTTPError(404, 'File not found')
-    elif sha256:
-        row = db.find_sha256(sha256)
-        if row:
-            return jsonize(details(row))
-        else:
-            raise HTTPError(404, 'File not found')
-    else:
-        if ssdeep:
-            rows = db.find_ssdeep(ssdeep)
-        elif tag:
-            rows = db.find_tag(tag)
-        elif date:
-            rows = db.find_date(date)
-        else:
-            return HTTPError(400, 'Invalid search term')
+    if not value:
+        raise HTTPError(400, "Invalid search term")
 
-        if not rows:
-            return HTTPError(404, 'File not found')
+    rows = db.find(key=key, value=value)
 
-        results = []
-        for row in rows:
-            entry = details(row)
-            results.append(entry)
+    results = []
+    for row in rows:
+        entry = details(row)
+        results.append(entry)
 
-        return jsonize(results)
+    return jsonize(results)
 
 @route('/tags/list', method='GET')
 def list_tags():
