@@ -95,6 +95,11 @@ class YaraScan(Module):
 
                 print(table(header=header, rows=rows))
 
+    def rules(self):
+        for folder, folders, files in os.walk('data/yara/'):
+            for file_name in files:
+                print_item(os.path.join(folder, file_name))
+
     def usage(self):
         print("usage: yara <command>")
 
@@ -104,6 +109,7 @@ class YaraScan(Module):
         print("Options:")
         print("\thelp\t\tShow this help message")
         print("\tscan\t\tScan files with Yara signatures")
+        print("\trules\t\tOperate on Yara rules")
         print("")
 
     def run(self):
@@ -119,3 +125,5 @@ class YaraScan(Module):
             self.help()
         elif self.args[0] == 'scan':
             self.scan()
+        elif self.args[0] == 'rules':
+            self.rules()
