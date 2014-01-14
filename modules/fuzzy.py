@@ -1,4 +1,5 @@
 import os
+import getopt
 
 from viper.common.out import *
 from viper.common.abstracts import Module
@@ -28,6 +29,32 @@ class Fuzzy(Module):
             print_error("No ssdeep hash available for opened file")
             return
 
+        def usage():
+            print("usage: fuzzy [-v]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--verbose (-v)\tPrints verbose logging")
+            print("")
+
+        verbose = False
+
+        try:
+            opts, argv = getopt.getopt(self.args[0:], 'v', ['verbose'])
+        except getopt.GetoptError as e:
+            print(e)
+            return
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-v', '--verbose'):
+                verbose = True
+
         db = Database()
         samples = db.find(key='all')
 
@@ -39,5 +66,5 @@ class Fuzzy(Module):
                 continue
 
             score = pydeep.compare(__session__.file.ssdeep, sample.ssdeep)
-            if score > 40:
+            if score > 40 or verbose:
                 print("Match {0}%: {1}".format(score, sample.sha256))
