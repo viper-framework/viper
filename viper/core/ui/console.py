@@ -123,18 +123,19 @@ class Console(object):
                     self.stop()
                     continue
 
-                # If the root command is part of the embedded commands list we
-                # execute it.
-                if root in self.cmd.commands:
-                    self.cmd.commands[root]['obj'](*args)
-                # If the root command is part of loaded modules, we initialize
-                # the module and execute it.
-                elif root in __modules__:
-                    module = __modules__[root]['obj']()
-                    module.set_args(args)
-
-                    try:
+                try:
+                    # If the root command is part of the embedded commands list we
+                    # execute it.
+                    if root in self.cmd.commands:
+                        self.cmd.commands[root]['obj'](*args)
+                    # If the root command is part of loaded modules, we initialize
+                    # the module and execute it.
+                    elif root in __modules__:
+                        module = __modules__[root]['obj']()
+                        module.set_args(args)
                         module.run()
-                    except Exception as e:
-                        print_error("The command {0} raised an exception:".format(bold(root)))
-                        traceback.print_exc()
+                except KeyboardInterrupt:
+                    pass
+                except Exception as e:
+                    print_error("The command {0} raised an exception:".format(bold(root)))
+                    traceback.print_exc()
