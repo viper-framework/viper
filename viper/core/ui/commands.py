@@ -279,7 +279,7 @@ class Commands(object):
                 else:
                     print_error("Unable to delete file")
 
-            os.remove(get_sample_path(__session__.file.sha256))
+            os.remove(__session__.file.path)
             __session__.clear()
 
     ##
