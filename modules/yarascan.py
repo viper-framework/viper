@@ -80,8 +80,18 @@ class YaraScan(Module):
         for entry in files:
             print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
 
+            # Check if the entry has a path attribute. This happens when
+            # there is a session open. We need to distinguish this just for
+            # the cases where we're scanning an opened file which has not been
+            # stored yet.
+            if hasattr(entry, 'path'):
+                entry_path = entry.path
+            # This should be triggered only when scanning the full repository.
+            else:
+                entry_path = get_sample_path(entry.sha256)
+
             rows = []
-            for match in rules.match(get_sample_path(entry.sha256)):
+            for match in rules.match(entry_path):
                 for string in match.strings:
                     rows.append([match.rule, string[1], string[0], string[2]])
 
