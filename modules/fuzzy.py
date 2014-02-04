@@ -69,11 +69,10 @@ class Fuzzy(Module):
 
             score = pydeep.compare(__session__.file.ssdeep, sample.ssdeep)
             if score > 40:
-                matches.append([sample, score])
+                matches.append(['{0}%'.format(score), sample.sha256])
 
             if verbose:
                 print("Match {0}%: {1}".format(score, sample.sha256))
 
         print_info("{0} relevant matches found".format(bold(len(matches))))
-        for match in matches:
-            print_item("{0}% {1}".format(match[1], match[0].sha256))
+        print(table(header=['Score', 'SHA256'], rows=matches))

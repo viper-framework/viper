@@ -187,6 +187,7 @@ class PE(Module):
             db = Database()
             samples = db.find(key='all')
 
+            matches = []
             for sample in samples:
                 sample_path = get_sample_path(sample.sha256)
                 if not os.path.exists(sample_path):
@@ -198,7 +199,10 @@ class PE(Module):
                     continue
 
                 if imphash == cur_imphash:
-                    print_item("{0} {1}".format(sample.sha256, sample.name))
+                    matches.append([sample.name, sample.sha256])
+
+            print_info("{0} relevant matches found".format(bold(len(matches))))
+            print(table(header=['Name', 'SHA256'], rows=matches))
 
     def usage(self):
         print("usage: pe <command>")
