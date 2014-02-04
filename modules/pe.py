@@ -15,6 +15,8 @@ except ImportError:
 from viper.common.out import *
 from viper.common.objects import File
 from viper.common.abstracts import Module
+from viper.core.database import Database
+from viper.core.storage import get_sample_path
 from viper.core.session import __session__
 
 class PE(Module):
@@ -139,6 +141,65 @@ class PE(Module):
 
         print table(headers, resources)
 
+    def imphash(self):
+        if not self.pe:
+            return
+
+        def usage():
+            print("usage: pe resources [-d=folder]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\t\tShow this help message")
+            print("\t--scan (-s)\t\tScan for all samples with same imphash")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        do_scan = False
+        verbose = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-s', '--scan'):
+                do_scan = True
+
+        try:
+            imphash = self.pe.get_imphash()
+        except AttributeError:
+            print_error("No imphash support, upgrade pefile to a version >= 1.2.10-139")
+            return
+
+        print_info("Imphash: {0}".format(imphash))
+
+        if do_scan:
+            print_info("Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_imphash = pefile.PE(sample_path).get_imphash()
+                except:
+                    continue
+
+                if imphash == cur_imphash:
+                    print_item("{0} {1}".format(sample.sha256, sample.name))
+
     def usage(self):
         print("usage: pe <command>")
 
@@ -150,6 +211,7 @@ class PE(Module):
         print("\timports\t\tList PE imports")
         print("\texports\t\tList PE exports")
         print("\tresources\tList PE resources")
+        print("\timphash\t\tGet and scan for imphash")
         print("")
 
     def run(self):
@@ -179,3 +241,5 @@ class PE(Module):
             self.exports()
         elif self.args[0] == 'resources':
             self.resources()
+        elif self.args[0] == 'imphash':
+            self.imphash()
