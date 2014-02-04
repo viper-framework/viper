@@ -6,7 +6,7 @@ def print_info(message):
     print(bold(cyan("[*]")) + " {0}".format(message))
 
 def print_item(message, tabs=0):
-    print("{0}".format("  " * tabs) + cyan("*") + " {0}".format(message))
+    print(" {0}".format("  " * tabs) + cyan("*") + " {0}".format(message))
 
 def print_warning(message):
     print(bold(yellow("[!]")) + " {0}".format(message))

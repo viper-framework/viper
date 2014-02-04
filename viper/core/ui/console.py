@@ -134,6 +134,8 @@ class Console(object):
                         module = __modules__[root]['obj']()
                         module.set_args(args)
                         module.run()
+                    else:
+                        print("Command not recognized.")
                 except KeyboardInterrupt:
                     pass
                 except Exception as e:
