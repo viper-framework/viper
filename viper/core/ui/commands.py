@@ -188,11 +188,12 @@ class Commands(object):
             print("\t--help (-h)\tShow this help message")
             print("\t--delete (-d)\tDelete the original file")
             print("\t--folder (-f)\tSpecify a folder to import")
+            print("\t--max-size (-s)\tSpecify a maximum file size")
             print("\t--tags (-t)\tSpecify a list of comma-separated tags")
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hdf:t:', ['help', 'delete', 'folder=', 'tags='])
+            opts, argv = getopt.getopt(args, 'hdf:s:t:', ['help', 'delete', 'folder=', 'max-size=', 'tags='])
         except getopt.GetoptError as e:
             print(e)
             usage()
@@ -201,6 +202,7 @@ class Commands(object):
         do_delete = False
         folder = False
         tags = None
+        max_size = None
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
@@ -210,6 +212,8 @@ class Commands(object):
                 do_delete = True
             elif opt in ('-f', '--folder'):
                 folder = value
+            elif opt in ('-s', '--max-size'):
+                max_size = value
             elif opt in ('-t', '--tags'):
                 tags = value
 
@@ -240,6 +244,17 @@ class Commands(object):
                     # Add each collected file.
                     for file_name in file_names:
                         file_path = os.path.join(dir_name, file_name)
+
+                        if not os.path.exists(file_path):
+                            continue
+
+                        # Check if file exceeds maximum size limit.
+                        if max_size:
+                            # Obtain file size.
+                            if os.path.getsize(file_path) > max_size:
+                                print_warning("File {0} skipped, too big".format(file_path))
+                                continue
+
                         file_obj = File(file_path)
 
                         # Add file.
