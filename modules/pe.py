@@ -165,6 +165,9 @@ class PE(Module):
 
             matches = []
             for sample in samples:
+                if sample.sha256 == __session__.file.sha256:
+                    continue
+
                 sample_path = get_sample_path(sample.sha256)
                 if not os.path.exists(sample_path):
                     continue
@@ -234,6 +237,9 @@ class PE(Module):
 
             matches = []
             for sample in samples:
+                if sample.sha256 == __session__.file.sha256:
+                    continue
+
                 sample_path = get_sample_path(sample.sha256)
                 if not os.path.exists(sample_path):
                     continue
