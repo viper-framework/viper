@@ -246,7 +246,7 @@ class PE(Module):
         try:
             imphash = self.pe.get_imphash()
         except AttributeError:
-            print_error("No imphash support, upgrade pefile to a version >= 1.2.10-139")
+            print_error("No imphash support, upgrade pefile to a version >= 1.2.10-139 (`pip install --upgrade pefile`)")
             return
 
         print_info("Imphash: {0}".format(imphash))
