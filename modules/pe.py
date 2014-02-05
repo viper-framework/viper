@@ -286,6 +286,10 @@ class PE(Module):
                 cluster[cur_imphash].append([sample.sha256, sample.name])
 
             for key, value in cluster.items():
+                # Skipping clusters with only one entry.
+                if len(value) == 1:
+                    continue
+
                 print_info("Imphash cluster {0}".format(bold(key)))
 
                 for entry in value:
