@@ -27,6 +27,20 @@ class PE(Module):
     def __init__(self):
         self.pe = None
 
+    def __check_session(self):
+        if not __session__.is_set():
+            print_error("No session opened")
+            return False
+
+        if not self.pe:
+            try:
+                self.pe = pefile.PE(__session__.file.path)
+            except pefile.PEFormatError as e:
+                print_error("Unable to parse PE file: {0}".format(e))
+                return False
+
+        return True
+
     def __get_filetype(self, data):
         if not HAVE_MAGIC:
             return None
@@ -49,7 +63,7 @@ class PE(Module):
         return md5.hexdigest()
 
     def imports(self):
-        if not self.pe:
+        if not self.__check_session():
             return
 
         if hasattr(self.pe, 'DIRECTORY_ENTRY_IMPORT'):
@@ -62,7 +76,7 @@ class PE(Module):
                     continue
     
     def exports(self):
-        if not self.pe:
+        if not self.__check_session():
             return
         
         print_info("Exports:")
@@ -71,8 +85,6 @@ class PE(Module):
                 print_item("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
 
     def resources(self):
-        if not self.pe:
-            return
 
         def usage():
             print("usage: pe resources [-d=folder] [-s]")
@@ -85,25 +97,6 @@ class PE(Module):
             print("\t--dump (-d)\tDestination directory to store resource files in")
             print("\t--scan (-s)\tScan the repository for common resources")
             print("")
-
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hd:s', ['help', 'dump=', 'scan'])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
-            return
-
-        dump_to = None
-        do_scan = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-d', '--dump'):
-                dump_to = value
-            elif opt in ('-s', '--scan'):
-                do_scan = True
 
         # Use this function to retrieve resources for the given PE instance.
         # Returns all the identified resources with indicators and attributes.
@@ -153,6 +146,28 @@ class PE(Module):
                         continue
             
             return resources
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hd:s', ['help', 'dump=', 'scan'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        dump_to = None
+        do_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-d', '--dump'):
+                dump_to = value
+            elif opt in ('-s', '--scan'):
+                do_scan = True
+
+        if not self.__check_session():
+            return
 
         # Obtain resources for the currently opened file.
         resources = get_resources(self.pe)
@@ -212,8 +227,6 @@ class PE(Module):
                 print(table(header=['Name', 'SHA256', 'Resource MD5'], rows=matches))
 
     def imphash(self):
-        if not self.pe:
-            return
 
         def usage():
             print("usage: pe imphash [-s]")
@@ -224,17 +237,18 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\t\tShow this help message")
             print("\t--scan (-s)\t\tScan for all samples with same imphash")
+            print("\t--cluster (-c)\tCluster repository by imphash (careful, could be massive)")
             print("")
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
+            opts, argv = getopt.getopt(self.args[1:], 'hsc', ['help', 'scan', 'cluster'])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
         do_scan = False
-        verbose = False
+        do_cluster = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
@@ -242,26 +256,21 @@ class PE(Module):
                 return
             elif opt in ('-s', '--scan'):
                 do_scan = True
+            elif opt in ('-c', '--cluster'):
+                do_cluster = True
 
-        try:
-            imphash = self.pe.get_imphash()
-        except AttributeError:
-            print_error("No imphash support, upgrade pefile to a version >= 1.2.10-139 (`pip install --upgrade pefile`)")
+        if do_scan and do_cluster:
+            print_error("You selected two exclusive options, pick one")
             return
 
-        print_info("Imphash: {0}".format(imphash))
-
-        if do_scan:
-            print_info("Scanning the repository for matching samples...")
+        if do_cluster:
+            print_info("Clustering all samples by imphash...")
 
             db = Database()
             samples = db.find(key='all')
 
-            matches = []
+            cluster = {}
             for sample in samples:
-                if sample.sha256 == __session__.file.sha256:
-                    continue
-
                 sample_path = get_sample_path(sample.sha256)
                 if not os.path.exists(sample_path):
                     continue
@@ -271,13 +280,57 @@ class PE(Module):
                 except:
                     continue
 
-                if imphash == cur_imphash:
-                    matches.append([sample.name, sample.sha256])
+                if cur_imphash not in cluster:
+                    cluster[cur_imphash] = []
 
-            print_info("{0} relevant matches found".format(bold(len(matches))))
+                cluster[cur_imphash].append([sample.sha256, sample.name])
 
-            if len(matches) > 0:
-                print(table(header=['Name', 'SHA256'], rows=matches))
+            for key, value in cluster.items():
+                print_info("Imphash cluster {0}".format(bold(key)))
+
+                for entry in value:
+                    print_item("{0} [{1}]".format(entry[0], entry[1]))
+
+                print("")
+
+            return
+
+        if self.__check_session():
+            try:
+                imphash = self.pe.get_imphash()
+            except AttributeError:
+                print_error("No imphash support, upgrade pefile to a version >= 1.2.10-139 (`pip install --upgrade pefile`)")
+                return
+
+            print_info("Imphash: {0}".format(imphash))
+
+            if do_scan:
+                print_info("Scanning the repository for matching samples...")
+
+                db = Database()
+                samples = db.find(key='all')
+
+                matches = []
+                for sample in samples:
+                    if sample.sha256 == __session__.file.sha256:
+                        continue
+
+                    sample_path = get_sample_path(sample.sha256)
+                    if not os.path.exists(sample_path):
+                        continue
+
+                    try:
+                        cur_imphash = pefile.PE(sample_path).get_imphash()
+                    except:
+                        continue
+
+                    if imphash == cur_imphash:
+                        matches.append([sample.name, sample.sha256])
+
+                print_info("{0} relevant matches found".format(bold(len(matches))))
+
+                if len(matches) > 0:
+                    print(table(header=['Name', 'SHA256'], rows=matches))
 
     def usage(self):
         print("usage: pe <command>")
@@ -294,18 +347,8 @@ class PE(Module):
         print("")
 
     def run(self):
-        if not __session__.is_set():
-            print_error("No session opened")
-            return
-
         if not HAVE_PEFILE:
             print_error("Missing dependency, install pefile (`pip install pefile`)")
-            return
-
-        try:
-            self.pe = pefile.PE(__session__.file.path)
-        except pefile.PEFormatError as e:
-            print_error("Unable to parse PE file: {0}".format(e))
             return
 
         if len(self.args) == 0:
