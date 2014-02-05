@@ -75,7 +75,7 @@ class PE(Module):
             return
 
         def usage():
-            print("usage: pe resources [-d=folder]")
+            print("usage: pe resources [-d=folder] [-s]")
 
         def help():
             usage()
@@ -83,6 +83,7 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--dump (-d)\tDestination directory to store resource files in")
+            print("\t--scan (-s)\tScan the repository for common resources")
             print("")
 
         try:
@@ -104,6 +105,8 @@ class PE(Module):
             elif opt in ('-s', '--scan'):
                 do_scan = True
 
+        # Use this function to retrieve resources for the given PE instance.
+        # Returns all the identified resources with indicators and attributes.
         def get_resources(pe):
             resources = []
             if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
@@ -135,6 +138,8 @@ class PE(Module):
 
                                         # Dump resources if requested to and if the file currently being
                                         # processed is the opened session file.
+                                        # This is to avoid that during a --scan all the resources being
+                                        # scanned are dumped as well.
                                         if dump_to and pe == self.pe:
                                             resource_path = os.path.join(dump_to, '{0}_{1}_{2}'.format(__session__.file.md5, offset, name))
                                             resource.append(resource_path)
@@ -149,6 +154,7 @@ class PE(Module):
             
             return resources
 
+        # Obtain resources for the currently opened file.
         resources = get_resources(self.pe)
 
         headers = ['Name', 'Offset', 'MD5', 'Size', 'File Type', 'Language', 'Sublanguage']
@@ -157,33 +163,46 @@ class PE(Module):
 
         print table(headers, resources)
 
+        # If instructed to perform a scan across the repository, start looping
+        # through all available files.
         if do_scan:
             print_info("Scanning the repository for matching samples...")
 
+            # Retrieve list of samples stored locally and available in the
+            # database.
             db = Database()
             samples = db.find(key='all')
 
             matches = []
             for sample in samples:
+                # Skip if it's the same file.
                 if sample.sha256 == __session__.file.sha256:
                     continue
 
+                # Obtain path to the binary.
                 sample_path = get_sample_path(sample.sha256)
                 if not os.path.exists(sample_path):
                     continue
 
+                # Open PE instance.
                 try:
                     cur_pe = pefile.PE(sample_path)
                 except:
                     continue
 
+                # Obtain the list of resources for the current iteration.
                 cur_resources = get_resources(cur_pe)
                 matched_resources = []
+                # Loop through entry's resources.
                 for cur_resource in cur_resources:
+                    # Loop through opened file's resources.
                     for resource in resources:
+                        # If there is a common resource, add it to the list.
                         if cur_resource[2] == resource[2]:
                             matched_resources.append(resource[2])
 
+                # If there are any common resources, add the entry to the list
+                # of matched samples.
                 if len(matched_resources) > 0:
                     matches.append([sample.name, sample.sha256, '\n'.join(r for r in matched_resources)])
 
@@ -197,7 +216,7 @@ class PE(Module):
             return
 
         def usage():
-            print("usage: pe resources [-d=folder]")
+            print("usage: pe imphash [-s]")
 
         def help():
             usage()
