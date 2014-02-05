@@ -75,4 +75,6 @@ class Fuzzy(Module):
                 print("Match {0}%: {1}".format(score, sample.sha256))
 
         print_info("{0} relevant matches found".format(bold(len(matches))))
-        print(table(header=['Score', 'SHA256'], rows=matches))
+
+        if len(matches) > 0:
+            print(table(header=['Score', 'SHA256'], rows=matches))
