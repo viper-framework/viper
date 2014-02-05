@@ -178,11 +178,14 @@ class PE(Module):
                     continue
 
                 cur_resources = get_resources(cur_pe)
-
+                matched_resources = []
                 for cur_resource in cur_resources:
                     for resource in resources:
                         if cur_resource[2] == resource[2]:
-                            matches.append([sample.name, sample.sha256, resource[2]])
+                            matched_resources.append(resource[2])
+
+                if len(matched_resources) > 0:
+                    matches.append([sample.name, sample.sha256, '\n'.join(r for r in matched_resources)])
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
