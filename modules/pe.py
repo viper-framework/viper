@@ -306,7 +306,7 @@ class PE(Module):
                 print_error("No imphash support, upgrade pefile to a version >= 1.2.10-139 (`pip install --upgrade pefile`)")
                 return
 
-            print_info("Imphash: {0}".format(imphash))
+            print_info("Imphash: {0}".format(bold(imphash)))
 
             if do_scan:
                 print_info("Scanning the repository for matching samples...")
