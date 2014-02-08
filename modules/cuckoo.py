@@ -67,7 +67,7 @@ class Cuckoo(Module):
         try:
             response = requests.post(url, files=files)
         except requests.ConnectionError:
-            print_error("Unable to connect to Cuckoo API at {0}".format(url))
+            print_error("Unable to connect to Cuckoo API at {0}:{1}".format(host, port))
             return
 
         print response.text
