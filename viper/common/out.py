@@ -1,3 +1,7 @@
+# Copyright (C) 2013-2014 Claudio "nex" Guarnieri.
+# This file is part of Viper - https://github.com/botherder/viper
+# See the file 'LICENSE' for copying permission.
+
 from prettytable import PrettyTable
 
 from viper.common.colors import *

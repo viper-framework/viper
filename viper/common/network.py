@@ -1,8 +1,15 @@
+# Copyright (C) 2013-2014 Claudio "nex" Guarnieri.
+# This file is part of Viper - https://github.com/botherder/viper
+# See the file 'LICENSE' for copying permission.
+
 import socket
 import urllib2
 
-import socks
-#import lib.socks as socks
+try:
+    import socks
+    HAVE_SOCKS = True
+except ImportError:
+    HAVE_SOCKS = False
 
 from viper.common.out import print_error
 
@@ -15,6 +22,10 @@ def download(url, tor=False):
     import socket
 
     if tor:
+        if not HAVE_SOCKS:
+            print_error("Missing dependency, install socks (`pip install SocksiPy`)")
+            return None
+
         socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, '127.0.0.1', 9050)
         socket.socket = socks.socksocket
         socket.create_connection = create_connection
