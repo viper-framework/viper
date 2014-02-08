@@ -218,6 +218,10 @@ class Commands(object):
                 tags = value
 
         def add_file(obj, tags=None):
+            if get_sample_path(obj.sha256):
+                print_warning("The file appear to be already stored")
+                return False
+
             # Store file to the local repository.
             new_path = store_sample(obj)
             if new_path:
@@ -231,6 +235,8 @@ class Commands(object):
                     os.unlink(obj.path)
                 except Exception as e:
                     print_warning("Failed deleting file: {0}".format(e))
+
+            return True
 
         # If the user specified the --folder flag, we walk recursively and try
         # to add all contained files to the local repository.
@@ -265,10 +271,9 @@ class Commands(object):
         else:
             if __session__.is_set():
                 # Add file.
-                add_file(__session__.file, tags)
-
-                # Open session to the new file.
-                self.cmd_open(*[__session__.file.sha256])
+                if add_file(__session__.file, tags):
+                    # Open session to the new file.
+                    self.cmd_open(*[__session__.file.sha256])
             else:
                 print_error("No session opened")
 
