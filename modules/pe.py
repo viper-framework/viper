@@ -89,14 +89,12 @@ class PE(Module):
             for symbol in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
                 print_item("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
 
-
     def compiletime(self):
         if not self.__check_session():
             return
 
-        print_info("CompileTime:")
-        print_item("{0}".format(datetime.datetime.fromtimestamp(self.pe.FILE_HEADER.TimeDateStamp)))
-
+        compile_time = datetime.datetime.fromtimestamp(self.pe.FILE_HEADER.TimeDateStamp)
+        print_info("Compile Time: {0}".format(bold(compile_time)))
 
     def resources(self):
 
