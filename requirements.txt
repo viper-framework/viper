@@ -1,7 +1,5 @@
-magic
+python-magic
 pefile
-prettytable
+PrettyTable
 pydeep
-socksipy
 requests
-
