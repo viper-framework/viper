@@ -3,3 +3,4 @@ pefile
 PrettyTable
 pydeep
 requests
+SQLAlchemy
