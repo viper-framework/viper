@@ -4,6 +4,8 @@ Viper
 This is the repository for an experimental project temporarily code-named Viper.
 It's released under BSD 3-Clause license.
 
+[![Build Status](https://travis-ci.org/botherder/viper.png?branch=master)](https://travis-ci.org/botherder/viper)
+
 Concept
 -------
 
