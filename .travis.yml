@@ -10,6 +10,7 @@ before_install:
     - cd ssdeep-2.10
     - ./configure && make
     - sudo make install
+    - cd ..
 install:
     - pip install -r requirements.txt
 script:
