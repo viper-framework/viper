@@ -4,6 +4,7 @@
 
 import getopt
 import hashlib
+import datetime
 
 try:
     import pefile
@@ -87,6 +88,15 @@ class PE(Module):
         if hasattr(self.pe, 'DIRECTORY_ENTRY_EXPORT'):
             for symbol in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
                 print_item("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
+
+
+    def compiletime(self):
+        if not self.__check_session():
+            return
+
+        print_info("CompileTime:")
+        print_item("{0}".format(datetime.datetime.fromtimestamp(self.pe.FILE_HEADER.TimeDateStamp)))
+
 
     def resources(self):
 
@@ -352,6 +362,7 @@ class PE(Module):
         print("\texports\t\tList PE exports")
         print("\tresources\tList PE resources")
         print("\timphash\t\tGet and scan for imphash")
+        print("\tcompiletime\tShow the compiletime")
         print("")
 
     def run(self):
@@ -373,3 +384,5 @@ class PE(Module):
             self.resources()
         elif self.args[0] == 'imphash':
             self.imphash()
+        elif self.args[0] == 'compiletime':
+            self.compiletime()
