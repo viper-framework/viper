@@ -90,11 +90,71 @@ class PE(Module):
                 print_item("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
 
     def compiletime(self):
+
+        def usage():
+            print("usage: pe compiletime [-s]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--scan (-s)\tScan the repository for common compile time")
+            print("")
+
+        def get_compiletime(pe):
+            return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        do_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-s', '--scan'):
+                do_scan = True
+
         if not self.__check_session():
             return
 
-        compile_time = datetime.datetime.fromtimestamp(self.pe.FILE_HEADER.TimeDateStamp)
+        compile_time = get_compiletime(self.pe)
         print_info("Compile Time: {0}".format(bold(compile_time)))
+
+        if do_scan:
+            print_info("Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                if sample.sha256 == __session__.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_compile_time = get_compiletime(cur_pe)
+                except:
+                    continue
+
+                if compile_time == cur_compile_time:
+                    matches.append([sample.name, sample.sha256])
+
+            print_info("{0} relevant matches found".format(bold(len(matches))))
+
+            if len(matches) > 0:
+                print(table(header=['Name', 'SHA256'], rows=matches))
 
     def resources(self):
 
