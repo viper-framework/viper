@@ -14,5 +14,4 @@ before_install:
 install:
     - pip install -r requirements.txt
 script:
-    - python viper.py
-    - exit
+    - echo "exit" | python viper.py
