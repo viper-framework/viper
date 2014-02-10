@@ -8,6 +8,7 @@ import datetime
 
 try:
     import pefile
+    import peutils
     HAVE_PEFILE = True
 except ImportError:
     HAVE_PEFILE = False
@@ -17,6 +18,7 @@ try:
     HAVE_MAGIC = True
 except ImportError:
     HAVE_MAGIC = False
+
 
 from viper.common.out import *
 from viper.common.objects import File
@@ -91,11 +93,167 @@ class PE(Module):
 
 
     def compiletime(self):
+
+        def usage():
+            print("usage: pe compiletime [-s]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--scan (-s)\tScan the repository for common compile time")
+            print("")
+
+        def get_compiletime(pe):
+            return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        do_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-s', '--scan'):
+                do_scan = True
+
         if not self.__check_session():
             return
 
-        print_info("CompileTime:")
-        print_item("{0}".format(datetime.datetime.fromtimestamp(self.pe.FILE_HEADER.TimeDateStamp)))
+        compile_time = get_compiletime(self.pe)
+        print_info("Compile Time: {0}".format(bold(compile_time)))
+
+        if do_scan:
+            print_info("Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                if sample.sha256 == __session__.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_compile_time = get_compiletime(cur_pe)
+                except:
+                    continue
+
+                if compile_time == cur_compile_time:
+                    matches.append([sample.name, sample.sha256])
+
+            print_info("{0} relevant matches found".format(bold(len(matches))))
+
+            if len(matches) > 0:
+                print(table(header=['Name', 'SHA256'], rows=matches))
+
+    
+    def peid(self):
+
+        def usage():
+            print("usage: pe peid [-s]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--scan (-s)\tScan the repository for PEiD signatures")
+            print("\t--file (-f)\tFile containing the PEiD signatures")
+            print("")
+
+        def get_signatures(peid_file):
+            with file(peid_file, 'rt') as f: 
+                sig_data = f.read()
+
+            signatures = peutils.SignatureDatabase(data=sig_data)
+
+            return signatures
+
+        def get_matches(pe, signatures):
+            matches = signatures.match_all(pe, ep_only = True)
+            return matches
+
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hsf', ['help', 'scan', 'file'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        do_scan = False
+        signature_file = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-s', '--scan'):
+                do_scan = True
+            elif opt in ('-f', '--file'):
+                signature_file = True
+                # Not sure this is the right way to do it.
+                # Generally I use optparse. 
+                peid_file = argv[0]
+       
+        # Signature file is mandatory.
+        if signature_file == False:
+            help()
+            return
+                
+        # Feel free to remove this print.
+        print_info("File: {0}".format(peid_file))
+        
+        if not self.__check_session():
+            return
+
+        signatures = get_signatures(peid_file)
+        peid_matches = get_matches(self.pe, signatures)
+        
+        print_info("PEiD Signatures: {0}".format(bold(peid_matches)))
+
+        if do_scan:
+            print_info("Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                if sample.sha256 == __session__.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_peid_matches = get_matches(cur_pe, signatures)
+                except:
+                    continue
+
+                if peid_matches == cur_peid_matches:
+                    matches.append([sample.name, sample.sha256])
+
+            print_info("{0} relevant matches found".format(bold(len(matches))))
+
+            if len(matches) > 0:
+                print(table(header=['Name', 'SHA256'], rows=matches))
+
 
 
     def resources(self):
@@ -240,6 +398,7 @@ class PE(Module):
             if len(matches) > 0:
                 print(table(header=['Name', 'SHA256', 'Resource MD5'], rows=matches))
 
+
     def imphash(self):
 
         def usage():
@@ -363,6 +522,7 @@ class PE(Module):
         print("\tresources\tList PE resources")
         print("\timphash\t\tGet and scan for imphash")
         print("\tcompiletime\tShow the compiletime")
+        print("\tpeid\t\tShow the PEiD signatures")
         print("")
 
     def run(self):
@@ -386,3 +546,5 @@ class PE(Module):
             self.imphash()
         elif self.args[0] == 'compiletime':
             self.compiletime()
+        elif self.args[0] == 'peid':
+            self.peid()
