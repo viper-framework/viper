@@ -168,11 +168,10 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--scan (-s)\tScan the repository for PEiD signatures")
-            print("\t--file (-f)\tFile containing the PEiD signatures")
             print("")
 
-        def get_signatures(peid_file):
-            with file(peid_file, 'rt') as f:
+        def get_signatures():
+            with file('data/peid/UserDB.TXT', 'rt') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
@@ -180,19 +179,17 @@ class PE(Module):
             return signatures
 
         def get_matches(pe, signatures):
-            matches = signatures.match_all(pe, ep_only = True)
+            matches = signatures.match_all(pe, ep_only=True)
             return matches
 
-
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hsf', ['help', 'scan', 'file'])
+            opts, argv = getopt.getopt(self.args[1:], 'hsf', ['help', 'scan'])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
         do_scan = False
-        signature_file = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
@@ -200,30 +197,25 @@ class PE(Module):
                 return
             elif opt in ('-s', '--scan'):
                 do_scan = True
-            elif opt in ('-f', '--file'):
-                signature_file = True
-                # Not sure this is the right way to do it.
-                # Generally I use optparse. 
-                peid_file = argv[0]
-
-        # Signature file is mandatory.
-        if signature_file == False:
-            help()
-            return
-
-        # Feel free to remove this print.
-        print_info("File: {0}".format(peid_file))
 
         if not self.__check_session():
             return
 
-        signatures = get_signatures(peid_file)
+        signatures = get_signatures()
         peid_matches = get_matches(self.pe, signatures)
 
-        print_info("PEiD Signatures: {0}".format(bold(peid_matches)))
+        if peid_matches:
+            print_info("PEiD Signatures:")
+            for sig in peid_matches:
+                if type(sig) is list:
+                    print_item(sig[0])
+                else:
+                    print_item(sig)
+        else:
+            print_info("No PEiD signatures matched.")
 
-        if do_scan:
-            print_info("Scanning the repository for PEiD signatures...")
+        if do_scan and peid_matches:
+            print_info("Scanning the repository for matching samples...")
 
             db = Database()
             samples = db.find(key='all')
@@ -243,7 +235,6 @@ class PE(Module):
                 except:
                     continue
 
-                print_info("\t- {0}: {1}".format(sample.sha256, bold(cur_peid_matches[0][0])))
                 if peid_matches == cur_peid_matches:
                     matches.append([sample.name, sample.sha256])
 
