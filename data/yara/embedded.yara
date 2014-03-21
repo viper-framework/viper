@@ -25,7 +25,7 @@ rule embedded_pe
         $b = "This program"
         $mz = { 4d 5a }
     condition:
-        ($a or $b) and not ($mz at 0)
+        ($a and $b) and not ($mz at 0)
 }
 
 rule embedded_win_api
