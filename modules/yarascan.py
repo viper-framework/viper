@@ -38,7 +38,7 @@ class YaraScan(Module):
         scan_all = False
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'r:a', ['rule=', 'all'])
+            opts, argv = getopt.getopt(self.args[1:], 'hr:a', ['help', 'rule=', 'all'])
         except getopt.GetoptError as e:
             print(e)
             return
