@@ -48,7 +48,7 @@ class Fuzzy(Module):
         verbose = False
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'v', ['verbose'])
+            opts, argv = getopt.getopt(self.args[0:], 'hv', ['help', 'verbose'])
         except getopt.GetoptError as e:
             print(e)
             return
