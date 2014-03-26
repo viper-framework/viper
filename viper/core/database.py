@@ -201,6 +201,13 @@ class Database:
                 rows = session.query(Malware).filter(Malware.sha256 == value).all()
             elif key == 'tag':
                 rows = session.query(Malware).filter(Malware.tag.any(Tag.tag == value.lower())).all()
+            elif key == 'name':
+                if '*' in value:
+                    value = value.replace('*', '%')
+                else:
+                    value = '%{0}%'.format(value)
+
+                rows = session.query(Malware).filter(Malware.name.like(value)).all()
             else:
                 print_error("No valid term specified")
 
