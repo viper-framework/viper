@@ -4,6 +4,7 @@
 
 import os
 import getopt
+import fnmatch
 import tempfile
 
 from viper.common.out import *
@@ -183,7 +184,7 @@ class Commands(object):
     # to store details in the database.
     def cmd_store(self, *args):
         def usage():
-            print("usage: store [-h] [-d] [-f <path>] [-t]")
+            print("usage: store [-h] [-d] [-f <path>] [-s <size>] [-y <type>] [-n <name>] [-t]")
 
         def help():
             usage()
@@ -192,38 +193,46 @@ class Commands(object):
             print("\t--help (-h)\tShow this help message")
             print("\t--delete (-d)\tDelete the original file")
             print("\t--folder (-f)\tSpecify a folder to import")
-            print("\t--max-size (-s)\tSpecify a maximum file size")
+            print("\t--file-size (-s)\tSpecify a maximum file size")
+            print("\t--file-type (-y)\tSpecify a file type pattern")
+            print("\t--file-name (-n)\tSpecify a file name pattern")
             print("\t--tags (-t)\tSpecify a list of comma-separated tags")
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hdf:s:t:', ['help', 'delete', 'folder=', 'max-size=', 'tags='])
+            opts, argv = getopt.getopt(args, 'hdf:s:y:n:t:', ['help', 'delete', 'folder=', 'file-size=', 'file-type=', 'file-name=', 'tags='])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
-        do_delete = False
-        folder = False
-        tags = None
-        max_size = None
+        arg_delete = False
+        arg_folder = False
+        arg_file_size = None
+        arg_file_type = None
+        arg_file_name = None
+        arg_tags = None
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-d', '--delete'):
-                do_delete = True
+                arg_delete = True
             elif opt in ('-f', '--folder'):
-                folder = value
-            elif opt in ('-s', '--max-size'):
-                max_size = value
+                arg_folder = value
+            elif opt in ('-s', '--file-size'):
+                arg_file_size = value
+            elif opt in ('-y', '--file-type'):
+                arg_file_type = value
+            elif opt in ('-n', '--file-name'):
+                arg_file_name = value
             elif opt in ('-t', '--tags'):
-                tags = value
+                arg_tags = value
 
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
-                print_warning("The file appear to be already stored")
+                print_warning("Skip, file \"{0}\" appears to be already stored".format(obj.name))
                 return False
 
             # Store file to the local repository.
@@ -231,10 +240,10 @@ class Commands(object):
             if new_path:
                 # Add file to the database.
                 status = self.db.add(obj=obj, tags=tags)
-                print_success("Stored to: {0}".format(new_path))
+                print_success("Stored file \"{0}\" to {1}".format(obj.name, new_path))
 
             # Delete the file if requested to do so.
-            if do_delete:
+            if arg_delete:
                 try:
                     os.unlink(obj.path)
                 except Exception as e:
@@ -246,11 +255,11 @@ class Commands(object):
         # to add all contained files to the local repository.
         # This is note going to open a new session.
         # TODO: perhaps disable or make recursion optional?
-        if folder:
+        if arg_folder:
             # Check if the specified folder is valid.
-            if os.path.isdir(folder):
+            if os.path.isdir(arg_folder):
                 # Walk through the folder and subfolders.
-                for dir_name, dir_names, file_names in os.walk(folder):
+                for dir_name, dir_names, file_names in os.walk(arg_folder):
                     # Add each collected file.
                     for file_name in file_names:
                         file_path = os.path.join(dir_name, file_name)
@@ -258,24 +267,36 @@ class Commands(object):
                         if not os.path.exists(file_path):
                             continue
 
+                        # Check if the file name matches the provided pattern.
+                        if arg_file_name:
+                            if not fnmatch.fnmatch(file_name, arg_file_name):
+                                #print_warning("Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
+                                continue
+
+                        # Check if the file type matches the provided pattern.
+                        if arg_file_type:
+                            if arg_file_type not in File(file_path).type:
+                                #print_warning("Skip, file \"{0}\" doesn't match the file type".format(file_path))
+                                continue
+
                         # Check if file exceeds maximum size limit.
-                        if max_size:
+                        if arg_file_size:
                             # Obtain file size.
-                            if os.path.getsize(file_path) > max_size:
-                                print_warning("File {0} skipped, too big".format(file_path))
+                            if os.path.getsize(file_path) > arg_file_size:
+                                print_warning("Skip, file \"{0}\" is too big".format(file_path))
                                 continue
 
                         file_obj = File(file_path)
 
                         # Add file.
-                        add_file(file_obj, tags)
+                        add_file(file_obj, arg_tags)
             else:
-                print_error("You specified an invalid folder: {0}".format(folder))
+                print_error("You specified an invalid folder: {0}".format(arg_folder))
         # Otherwise we try to store the currently opened file, if there is any.
         else:
             if __session__.is_set():
                 # Add file.
-                if add_file(__session__.file, tags):
+                if add_file(__session__.file, arg_tags):
                     # Open session to the new file.
                     self.cmd_open(*[__session__.file.sha256])
             else:
