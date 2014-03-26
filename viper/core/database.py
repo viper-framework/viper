@@ -199,8 +199,6 @@ class Database:
                 rows = session.query(Malware).filter(Malware.md5 == value).all()
             elif key == 'sha256':
                 rows = session.query(Malware).filter(Malware.sha256 == value).all()
-            elif key == 'ssdeep':
-                rows = session.query(Malware).filter(Malware.ssdeep.like('%{0}%'.format(value))).all()
             elif key == 'tag':
                 rows = session.query(Malware).filter(Malware.tag.any(Tag.tag == value.lower())).all()
             else:

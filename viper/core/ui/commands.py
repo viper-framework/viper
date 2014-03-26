@@ -305,14 +305,55 @@ class Commands(object):
 
             os.remove(__session__.file.path)
             __session__.clear()
+        else:
+            print_error("No session opened")
 
     ##
     # FIND
     #
     # This command is used to search for files in the database.
     def cmd_find(self, *args):
+        def usage():
+            print("usage: find [-h] [-t] <md5|sha256|tag> <value>")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--tags (-t)\tList tags")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(args, 'ht', ['help', 'tags'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        list_tags = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-t', '--tags'):
+                list_tags = True
+
+        if list_tags:
+            tags = self.db.list_tags()
+            rows = []
+            for tag in tags:
+                count = len(self.db.find('tag', tag.tag))
+                rows.append([tag.tag, count])
+
+            header = ['Tag', '# Entries']
+            print(table(header=header, rows=rows))
+
+            return
+
         if len(args) == 0:
-            print_error("Invalid search term")
+            usage()
             return
 
         key = args[0]
