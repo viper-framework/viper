@@ -342,13 +342,17 @@ class Commands(object):
 
         if list_tags:
             tags = self.db.list_tags()
-            rows = []
-            for tag in tags:
-                count = len(self.db.find('tag', tag.tag))
-                rows.append([tag.tag, count])
 
-            header = ['Tag', '# Entries']
-            print(table(header=header, rows=rows))
+            if tags:
+                rows = []
+                for tag in tags:
+                    count = len(self.db.find('tag', tag.tag))
+                    rows.append([tag.tag, count])
+
+                header = ['Tag', '# Entries']
+                print(table(header=header, rows=rows))
+            else:
+                print("No tags available")
 
             return
 
