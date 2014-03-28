@@ -93,7 +93,7 @@ class PE(Module):
     def compiletime(self):
 
         def usage():
-            print("usage: pe compiletime [-s]")
+            print("usage: pe compiletime [-s] [-w=minutes]")
 
         def help():
             usage()
@@ -101,26 +101,30 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--scan (-s)\tScan the repository for common compile time")
+            print("\t--window (-w)\tSpecify an optional time window in minutes")
             print("")
 
         def get_compiletime(pe):
             return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
+            opts, argv = getopt.getopt(self.args[1:], 'hsw:', ['help', 'scan', 'window='])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
-        do_scan = False
+        arg_scan = False
+        arg_window = None
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-s', '--scan'):
-                do_scan = True
+                arg_scan = True
+            elif opt in ('-w', '--window'):
+                arg_window = int(value)
 
         if not self.__check_session():
             return
@@ -128,7 +132,7 @@ class PE(Module):
         compile_time = get_compiletime(self.pe)
         print_info("Compile Time: {0}".format(bold(compile_time)))
 
-        if do_scan:
+        if arg_scan:
             print_info("Scanning the repository for matching samples...")
 
             db = Database()
@@ -150,12 +154,22 @@ class PE(Module):
                     continue
 
                 if compile_time == cur_compile_time:
-                    matches.append([sample.name, sample.sha256])
+                    matches.append([sample.name, sample.sha256, cur_compile_time])
+                else:
+                    if arg_window:
+                        if cur_compile_time > compile_time:
+                            delta = (cur_compile_time - compile_time)
+                        elif cur_compile_time < compile_time:
+                            delta = (compile_time - cur_compile_time)
+
+                        delta_minutes = int(delta.total_seconds()) / 60
+                        if delta_minutes <= arg_window:
+                            matches.append([sample.name, sample.sha256, cur_compile_time])
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'SHA256'], rows=matches))
+                print(table(header=['Name', 'SHA256', 'Compile Time'], rows=matches))
 
     def peid(self):
 
