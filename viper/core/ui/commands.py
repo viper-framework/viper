@@ -362,15 +362,21 @@ class Commands(object):
             elif opt in ('-t', '--tags'):
                 arg_list_tags = True
 
+        # One of the most useful search terms is by tag. With the --tags
+        # argument we first retrieve a list of existing tags and the count
+        # of files associated with each of them.
         if arg_list_tags:
+            # Retrieve list of tags.
             tags = self.db.list_tags()
 
             if tags:
                 rows = []
+                # For each tag, retrieve the count of files associated with it.
                 for tag in tags:
                     count = len(self.db.find('tag', tag.tag))
                     rows.append([tag.tag, count])
 
+                # Generate the table with the results.
                 header = ['Tag', '# Entries']
                 print(table(header=header, rows=rows))
             else:
@@ -378,24 +384,33 @@ class Commands(object):
 
             return
 
+        # At this point, if there are no search terms specified, return.
         if len(args) == 0:
             usage()
             return
 
+        # The first argument is the search term (or "key").
         key = args[0]
         try:
+            # The second argument is the search value.
             value = args[1]
         except IndexError:
+            # If the user didn't specify any value, just set it to None.
+            # Mostly pointless for now, but might have some useful cases
+            # in the future.
             value = None
 
+        # Search all the files matching the given parameters.
         items = self.db.find(key, value)
         if not items:
             return
 
+        # Populate the list of search results.
         rows = []
         for item in items:
             rows.append([item.name, item.type, item.sha256])
 
+        # Generate a table with the results.
         print(table(['Name', 'Type',  'SHA256'], rows))
 
     ##
@@ -434,21 +449,30 @@ class Commands(object):
             elif opt in ('-d', '--delete'):
                 arg_delete = value
 
+        # This command requires a session to be opened.
         if not __session__.is_set():
             print_error("No session opened")
             return
 
+        # If no arguments are specified, there's not much to do.
+        # However, it could make sense to also retrieve a list of existing
+        # tags from this command, and not just from the "find" command alone.
         if not arg_add and not arg_delete:
             print_error("You need to specify an option, either add or delete")
             return
 
         if arg_add:
+            # Add specified tags to the database's entry belonging to
+            # the opened file.
             db = Database()
             db.add_tags(__session__.file.sha256, arg_add)
-
             print_info("Tags added to the currently opened file")
-            print_info("Refreshing session to update attributes...")
 
+            # We refresh the opened session to update the attributes.
+            # Namely, the list of tags returned by the "info" command
+            # needs to be re-generated, or it wouldn't show the new tags
+            # until the existing session is closed a new one is opened.
+            print_info("Refreshing session to update attributes...")
             __session__.set(__session__.file.path)
 
         if arg_delete:
