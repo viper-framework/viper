@@ -118,6 +118,35 @@ class Database:
     def __del__(self):
         self.engine.dispose()
 
+    def add_tags(self, sha256, tags):
+        session = self.Session()
+
+        malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
+        if not malware_entry:
+            return
+
+        tags = tags.strip()
+        if ',' in tags:
+            tags = tags.split(',')
+        else:
+            tags = tags.split()
+
+        for tag in tags:
+            tag = tag.strip().lower()
+            if tag == '':
+                continue
+
+            try:
+                malware_entry.tag.append(Tag(tag))
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()
+                try:
+                    malware_entry.tag.append(session.query(Tag).filter(Tag.tag==tag).first())
+                    session.commit()
+                except SQLAlchemyError:
+                    session.rollback()
+
     def add(self, obj, name=None, tags=None):
         session = self.Session()
 
@@ -145,27 +174,7 @@ class Database:
                 return False
 
         if tags:
-            tags = tags.strip()
-            if ',' in tags:
-                tags = tags.split(',')
-            else:
-                tags = tags.split()
-
-            for tag in tags:
-                tag = tag.strip().lower()
-                if tag == '':
-                    continue
-
-                try:
-                    malware_entry.tag.append(Tag(tag))
-                    session.commit()
-                except IntegrityError as e:
-                    session.rollback()
-                    try:
-                        malware_entry.tag.append(session.query(Tag).filter(Tag.tag==tag).first())
-                        session.commit()
-                    except SQLAlchemyError:
-                        session.rollback()
+            self.add_tags(sha256=obj.sha256, tags=tags)
 
         return True
 

@@ -32,6 +32,7 @@ class Commands(object):
             store=dict(obj=self.cmd_store, description="Store the opened file to the local repository"),
             delete=dict(obj=self.cmd_delete, description="Delete the opened file"),
             find=dict(obj=self.cmd_find, description="Find a file"),
+            tags=dict(obj=self.cmd_tags, description="Modify tags of the opened file"),
         )
 
     ##
@@ -396,3 +397,60 @@ class Commands(object):
             rows.append([item.name, item.type, item.sha256])
 
         print(table(['Name', 'Type',  'SHA256'], rows))
+
+    ##
+    # TAGS
+    #
+    # This command is used to modify the tags of the opened file.
+    def cmd_tags(self, *args):
+        def usage():
+            print("usage: tags [-h] [-a=tags] [-d=tag]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--add (-a)\tAdd tags to the opened file (comma separated)")
+            print("\t--delete (-d)\tDelete a tag from the opened file")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(args, 'ha:d:', ['help', 'add=', 'delete='])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_add = None
+        arg_delete = None
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-a', '--add'):
+                arg_add = value
+            elif opt in ('-d', '--delete'):
+                arg_delete = value
+
+        if not __session__.is_set():
+            print_error("No session opened")
+            return
+
+        if not arg_add and not arg_delete:
+            print_error("You need to specify an option, either add or delete")
+            return
+
+        if arg_add:
+            db = Database()
+            db.add_tags(__session__.file.sha256, arg_add)
+
+            print_info("Tags added to the currently opened file")
+            print_info("Refreshing session to update attributes...")
+
+            __session__.set(__session__.file.path)
+
+        if arg_delete:
+            # TODO
+            pass
