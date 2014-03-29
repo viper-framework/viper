@@ -509,6 +509,110 @@ class PE(Module):
                 if len(matches) > 0:
                     print(table(header=['Name', 'SHA256'], rows=matches))
 
+    def security(self):
+
+        def usage():
+            print("usage: pe security [-d=folder] [-s]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--dump (-d)\tDestination directory to store digital signature in")
+            print("\t--scan (-s)\tScan the repository for common certificates")
+            print("")
+
+        def get_certificate(pe):
+            # TODO: this only extract the raw list of certificate data.
+            # I need to parse them, extract single certificates and perhaps return
+            # the PEM data of the first certificate only.
+            pe_security_dir = pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_SECURITY']
+            address = pe.OPTIONAL_HEADER.DATA_DIRECTORY[pe_security_dir].VirtualAddress
+            size = pe.OPTIONAL_HEADER.DATA_DIRECTORY[pe_security_dir].Size
+
+            if address:
+                return pe.write()[address+8:]
+            else:
+                return None
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hd:s', ['help', 'dump=', 'scan'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_folder = None
+        arg_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-d', '--dump'):
+                arg_folder = value
+            elif opt in ('-s', '--scan'):
+                arg_scan = True
+
+        if not self.__check_session():
+            return
+
+        cert_data = get_certificate(self.pe)
+
+        if not cert_data:
+            print_warning("No certificate found")
+            return
+
+        cert_md5 = self.__get_md5(cert_data)
+
+        print_info("Found certificate with MD5 {0}".format(bold(cert_md5)))
+
+        if arg_folder:
+            cert_path = os.path.join(arg_folder, '{0}.crt'.format(__session__.file.sha256))
+            with open(cert_path, 'wb+') as cert_handle:
+                cert_handle.write(cert_data)
+
+            print_info("Dumped certificate to {0}".format(cert_path))
+
+        # TODO: do scan for certificate's serial number.
+        if arg_scan:
+            print_info("Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                # Skip if it's the same file.
+                if sample.sha256 == __session__.file.sha256:
+                    continue
+
+                # Obtain path to the binary.
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                # Open PE instance.
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                except:
+                    continue
+
+                cur_cert_data = get_certificate(cur_pe)
+
+                if not cur_cert_data:
+                    continue
+
+                cur_cert_md5 = self.__get_md5(cur_cert_data)
+                if cur_cert_md5 == cert_md5:
+                    matches.append([sample.name, sample.sha256])
+
+            print_info("{0} relevant matches found".format(bold(len(matches))))
+
+            if len(matches) > 0:
+                print(table(header=['Name', 'SHA256'], rows=matches))                
+
     def usage(self):
         print("usage: pe <command>")
 
@@ -523,6 +627,7 @@ class PE(Module):
         print("\timphash\t\tGet and scan for imphash")
         print("\tcompiletime\tShow the compiletime")
         print("\tpeid\t\tShow the PEiD signatures")
+        print("\tsecurity\tShow digital signature")
         print("")
 
     def run(self):
@@ -548,3 +653,5 @@ class PE(Module):
             self.compiletime()
         elif self.args[0] == 'peid':
             self.peid()
+        elif self.args[0] == 'security':
+            self.security()
