@@ -34,8 +34,8 @@ class YaraScan(Module):
             print("\t--all (-a)\tScan all stored files (default if no session is open)")
             print("")
 
-        rule_path = ''
-        scan_all = False
+        arg_rule = ''
+        arg_scan_all = False
 
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hr:a', ['help', 'rule=', 'all'])
@@ -48,27 +48,27 @@ class YaraScan(Module):
                 help()
                 return
             elif opt in ('-r', '--rule'):
-                rule_path = value
+                arg_rule = value
             elif opt in ('-a', '--all'):
-                scan_all = True
+                arg_scan_all = True
 
         # If no custom ruleset is specified, we use the default one.
-        if not rule_path:
-            rule_path = 'data/yara/index.yara'
+        if not arg_rule:
+            arg_rule = 'data/yara/index.yara'
 
         # Check if the selected ruleset actually exists.
-        if not os.path.exists(rule_path):
-            print_error("No valid Yara ruleset at {0}".format(rule_path))
+        if not os.path.exists(arg_rule):
+            print_error("No valid Yara ruleset at {0}".format(arg_rule))
             return
 
         # Compile all rules from given ruleset.
-        rules = yara.compile(rule_path)
+        rules = yara.compile(arg_rule)
         files = []
 
         # If there is a session open and the user didn't specifically
         # request to scan the full repository, we just add the currently
         # opened file's path.
-        if __session__.is_set() and not scan_all:
+        if __session__.is_set() and not arg_scan_all:
             files.append(__session__.file)
         # Otherwise we loop through all files in the repository and queue
         # them up for scan.

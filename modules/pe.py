@@ -203,14 +203,14 @@ class PE(Module):
             usage()
             return
 
-        do_scan = False
+        arg_scan = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-s', '--scan'):
-                do_scan = True
+                arg_scan = True
 
         if not self.__check_session():
             return
@@ -228,7 +228,7 @@ class PE(Module):
         else:
             print_info("No PEiD signatures matched.")
 
-        if do_scan and peid_matches:
+        if arg_scan and peid_matches:
             print_info("Scanning the repository for matching samples...")
 
             db = Database()
@@ -306,8 +306,8 @@ class PE(Module):
                                         # processed is the opened session file.
                                         # This is to avoid that during a --scan all the resources being
                                         # scanned are dumped as well.
-                                        if dump_to and pe == self.pe:
-                                            resource_path = os.path.join(dump_to, '{0}_{1}_{2}'.format(__session__.file.md5, offset, name))
+                                        if arg_dump and pe == self.pe:
+                                            resource_path = os.path.join(arg_dump, '{0}_{1}_{2}'.format(__session__.file.md5, offset, name))
                                             resource.append(resource_path)
 
                                             with open(resource_path, 'wb') as resource_handle:
@@ -327,17 +327,17 @@ class PE(Module):
             usage()
             return
 
-        dump_to = None
-        do_scan = False
+        arg_dump = None
+        arg_scan = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-d', '--dump'):
-                dump_to = value
+                arg_dump = value
             elif opt in ('-s', '--scan'):
-                do_scan = True
+                arg_scan = True
 
         if not self.__check_session():
             return
@@ -346,14 +346,14 @@ class PE(Module):
         resources = get_resources(self.pe)
 
         headers = ['Name', 'Offset', 'MD5', 'Size', 'File Type', 'Language', 'Sublanguage']
-        if dump_to:
+        if arg_dump:
             headers.append('Dumped To')
 
         print table(headers, resources)
 
         # If instructed to perform a scan across the repository, start looping
         # through all available files.
-        if do_scan:
+        if arg_scan:
             print_info("Scanning the repository for matching samples...")
 
             # Retrieve list of samples stored locally and available in the
@@ -408,8 +408,8 @@ class PE(Module):
             usage()
             print("")
             print("Options:")
-            print("\t--help (-h)\t\tShow this help message")
-            print("\t--scan (-s)\t\tScan for all samples with same imphash")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--scan (-s)\tScan for all samples with same imphash")
             print("\t--cluster (-c)\tCluster repository by imphash (careful, could be massive)")
             print("")
 
@@ -420,23 +420,23 @@ class PE(Module):
             usage()
             return
 
-        do_scan = False
-        do_cluster = False
+        arg_scan = False
+        arg_cluster = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-s', '--scan'):
-                do_scan = True
+                arg_scan = True
             elif opt in ('-c', '--cluster'):
-                do_cluster = True
+                arg_cluster = True
 
-        if do_scan and do_cluster:
+        if arg_scan and arg_cluster:
             print_error("You selected two exclusive options, pick one")
             return
 
-        if do_cluster:
+        if arg_cluster:
             print_info("Clustering all samples by imphash...")
 
             db = Database()
@@ -481,7 +481,7 @@ class PE(Module):
 
             print_info("Imphash: {0}".format(bold(imphash)))
 
-            if do_scan:
+            if arg_scan:
                 print_info("Scanning the repository for matching samples...")
 
                 db = Database()

@@ -96,20 +96,20 @@ class Commands(object):
             usage()
             return
 
-        is_file = False
-        is_url = False
-        use_tor = False
+        arg_is_file = False
+        arg_is_url = False
+        arg_use_tor = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-f', '--file'):
-                is_file = True
+                arg_is_file = True
             elif opt in ('-u', '--url'):
-                is_url = True
+                arg_is_url = True
             elif opt in ('-t', '--tor'):
-                use_tor = True
+                arg_use_tor = True
 
         if len(argv) == 0:
             usage()
@@ -118,7 +118,7 @@ class Commands(object):
             target = argv[0]
 
         # If it's a file path, open a session on it.
-        if is_file:
+        if arg_is_file:
             target = os.path.expanduser(target)
 
             if not os.path.exists(target) or not os.path.isfile(target):
@@ -128,8 +128,8 @@ class Commands(object):
             __session__.set(target)
         # If it's a URL, download it and open a session on the temporary
         # file.
-        elif is_url:
-            data = download(url=target, tor=use_tor)
+        elif arg_is_url:
+            data = download(url=target, tor=arg_use_tor)
 
             if data:
                 tmp = tempfile.NamedTemporaryFile(delete=False)
@@ -353,16 +353,16 @@ class Commands(object):
             usage()
             return
 
-        list_tags = False
+        arg_list_tags = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-t', '--tags'):
-                list_tags = True
+                arg_list_tags = True
 
-        if list_tags:
+        if arg_list_tags:
             tags = self.db.list_tags()
 
             if tags:

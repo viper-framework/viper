@@ -45,7 +45,7 @@ class Fuzzy(Module):
             print("\t--verbose (-v)\tPrints verbose logging")
             print("")
 
-        verbose = False
+        arg_verbose = False
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'hv', ['help', 'verbose'])
@@ -58,7 +58,7 @@ class Fuzzy(Module):
                 help()
                 return
             elif opt in ('-v', '--verbose'):
-                verbose = True
+                arg_verbose = True
 
         db = Database()
         samples = db.find(key='all')
@@ -75,7 +75,7 @@ class Fuzzy(Module):
             if score > 40:
                 matches.append(['{0}%'.format(score), sample.name, sample.sha256])
 
-            if verbose:
+            if arg_verbose:
                 print("Match {0}%: {2} [{1}]".format(score, sample.name, sample.sha256))
 
         print_info("{0} relevant matches found".format(bold(len(matches))))
