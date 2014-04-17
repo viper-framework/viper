@@ -20,7 +20,12 @@ class RAT(Module):
             print_error("No session opened")
             return
 
-        module = importlib.import_module('modules.rats.{0}'.format(family))
+        try:
+            module = importlib.import_module('modules.rats.{0}'.format(family))
+        except ImportError:
+            print_error("There is no module for family {0}".format(bold(family)))
+            return
+
         config = module.config(__session__.file.data)
 
         rows = []
