@@ -4,3 +4,4 @@ PrettyTable
 pydeep
 requests
 SQLAlchemy
+pycrypto

@@ -27,6 +27,9 @@ class RAT(Module):
             return
 
         config = module.config(__session__.file.data)
+        if config == None:
+            print_info("No Configuration Detected")
+            return
 
         rows = []
         for key, value in config.items():
