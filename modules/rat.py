@@ -54,6 +54,7 @@ class RAT(Module):
             print(e)
             return
 
+        auto = False
         family = None
 
         for opt, value in opts:
@@ -65,6 +66,10 @@ class RAT(Module):
                 return
             elif opt in ('-f', '--family'):
                 family = value
+
+        if not auto and not family:
+            help()
+            return
 
         if family:
             self.get_config(family)
