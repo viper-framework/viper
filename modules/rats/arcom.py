@@ -5,50 +5,45 @@ import base64
 import string
 from Crypto.Cipher import Blowfish
 
-from viper.common.out import *
-
-def decryptBlowfish(rawData):
-	key = "CVu3388fnek3W(3ij3fkp0930di"
-	cipher = Blowfish.new(key)
-	return cipher.decrypt(rawData)
+def decrypt_blowfish(raw_data):
+    key = 'CVu3388fnek3W(3ij3fkp0930di'
+    cipher = Blowfish.new(key)
+    return cipher.decrypt(raw_data)
 
 def config(data):
-	try:
-		conf = {}
-		config = data.split("\x18\x12\x00\x00")[1].replace('\xA3\x24\x25\x21\x64\x01\x00\x00','')
-		configdecode = base64.b64decode(config)
-		configDecrypt = decryptBlowfish(configdecode)
-		parts = configDecrypt.split('|')
-		if len(parts) > 3:
-			conf["Domain"] = parts[0]
-			conf["Port"] = parts[1]
-			conf["Install Path"] = parts[2]
-			conf["Install Name"] = parts[3]
-			conf["Startup Key"] = parts[4]
-			conf["Campaign ID"] = parts[5]
-			conf["Mutex Main"] = parts[6]
-			conf["Mutex Per"] = parts[7]
-			conf["YPER"] = parts[8]
-			conf["YGRB"] = parts[9]
-			conf["Mutex Grabber"] = parts[10]
-			conf["Screen Rec Link"] = parts[11]
-			conf["Mutex 4"] = parts[12]
-			conf["YVID"] = parts[13]
-			conf["YIM"] = parts[14]
-			conf["NO"] = parts[15]
-			conf["Smart Broadcast"] = parts[16]
-			conf["YES"] = parts[17]
-			conf["Plugins"] = parts[18]
-			conf["Flag1"] = parts[19]
-			conf["Flag2"] = parts[20]
-			conf["Flag3"] = parts[21]
-			conf["Flag4"] = parts[22]
-			conf["WebPanel"] = parts[23]
-			conf["Remote Delay"] = parts[24]
-		return conf
-	except:
-		return None
+    try:
+        config = {}
+        config_raw = data.split('\x18\x12\x00\x00')[1].replace('\xA3\x24\x25\x21\x64\x01\x00\x00', '')
+        config_decoded = base64.b64decode(config_raw)
+        config_decrypted = decrypt_blowfish(config_decoded)
+        parts = config_decrypted.split('|')
 
-
-
-
+        if len(parts) > 3:
+            config['Domain'] = parts[0]
+            config['Port'] = parts[1]
+            config['Install Path'] = parts[2]
+            config['Install Name'] = parts[3]
+            config['Startup Key'] = parts[4]
+            config['Campaign ID'] = parts[5]
+            config['Mutex Main'] = parts[6]
+            config['Mutex Per'] = parts[7]
+            config['YPER'] = parts[8]
+            config['YGRB'] = parts[9]
+            config['Mutex Grabber'] = parts[10]
+            config['Screen Rec Link'] = parts[11]
+            config['Mutex 4'] = parts[12]
+            config['YVID'] = parts[13]
+            config['YIM'] = parts[14]
+            config['NO'] = parts[15]
+            config['Smart Broadcast'] = parts[16]
+            config['YES'] = parts[17]
+            config['Plugins'] = parts[18]
+            config['Flag1'] = parts[19]
+            config['Flag2'] = parts[20]
+            config['Flag3'] = parts[21]
+            config['Flag4'] = parts[22]
+            config['WebPanel'] = parts[23]
+            config['Remote Delay'] = parts[24]
+        return config
+    except:
+        return None

@@ -6,73 +6,67 @@ import sys
 from zipfile import ZipFile
 from cStringIO import StringIO
 
-from viper.common.out import *
+def extract_config(raw_data):
+    try:
+        pe = pefile.PE(data=raw_data)
 
-def configExtract(rawData):
-	try:
-		pe = pefile.PE(data=rawData)
+        try:
+        	rt_string_idx = [
+          		entry.id for entry in 
+        		pe.DIRECTORY_ENTRY_RESOURCE.entries
+        	].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+        except:
+        	return None
 
-		try:
-		  rt_string_idx = [
-		  entry.id for entry in 
-		  pe.DIRECTORY_ENTRY_RESOURCE.entries].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
-		except ValueError, e:
-			sys.exit()
-		except AttributeError, e:
-			sys.exit()
+        rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
 
-		rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
-
-		for entry in rt_string_directory.directory.entries:
-			if str(entry.name) == "SETTINGS":
-				data_rva = entry.directory.entries[0].data.struct.OffsetToData
-				size = entry.directory.entries[0].data.struct.Size
-				data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
-				config = data.split('}')
-				return config
-	except:
-		return None		
+        for entry in rt_string_directory.directory.entries:
+            if str(entry.name) == 'SETTINGS':
+                data_rva = entry.directory.entries[0].data.struct.OffsetToData
+                size = entry.directory.entries[0].data.struct.Size
+                data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
+                config = data.split('}')
+                return config
+    except:
+        return None        
 
 def decode(line):
-	result = ""
-	for i in range(0,len(line)):
-		a = ord(line[i])
-		result += chr(a-1)
-	return result
+    result = ''
+    for i in range(0,len(line)):
+        a = ord(line[i])
+        result += chr(a-1)
+    return result
 
 def config(data):
-	try:
-		conf = {}
-		config = configExtract(data)
-		if config != None:
-			for i in range(0,len(config)):
-				print i, decode(config[i])[::-1]
-			conf["Mutex"] = decode(config[1])[::-1]
-			conf["Anti Sandboxie"] = decode(config[2])[::-1]
-			conf["Max Folder Size"] = decode(config[3])[::-1]
-			conf["Delay Time"] = decode(config[4])[::-1]
-			conf["Password"] = decode(config[5])[::-1]
-			conf["Kernel Mode Unhooking"] = decode(config[6])[::-1]
-			conf["User More Unhooking"] = decode(config[7])[::-1]
-			conf["Melt Server"] = decode(config[8])[::-1]
-			conf["Offline Screen Capture"] = decode(config[9])[::-1]
-			conf["Offline Keylogger"] = decode(config[10])[::-1]
-			conf["Copy To ADS"] = decode(config[11])[::-1]
-			conf["Domain"] = decode(config[12])[::-1]
-			conf["Persistence Thread"] = decode(config[13])[::-1]
-			conf["Active X Key"] = decode(config[14])[::-1]
-			conf["Registry Key"] = decode(config[15])[::-1]
-			conf["Active X Run"] = decode(config[16])[::-1]
-			conf["Registry Run"] = decode(config[17])[::-1]
-			conf["Safe Mode Startup"] = decode(config[18])[::-1]
-			conf["Inject winlogon.exe"] = decode(config[19])[::-1]
-			conf["Install Name"] = decode(config[20])[::-1]
-			conf["Install Path"] = decode(config[21])[::-1]
-			conf["Campaign Name"] = decode(config[22])[::-1]
-			conf["Campaign Group"] = decode(config[23])[::-1]
-			return conf
-		else:
-			return None
-	except:
-		return None
-
+    try:
+        config = {}
+        config_raw = extract_config(data)
+        if config_raw:
+            config['Mutex'] = decode(config_raw[1])[::-1]
+            config['Anti Sandboxie'] = decode(config_raw[2])[::-1]
+            config['Max Folder Size'] = decode(config_raw[3])[::-1]
+            config['Delay Time'] = decode(config_raw[4])[::-1]
+            config['Password'] = decode(config_raw[5])[::-1]
+            config['Kernel Mode Unhooking'] = decode(config_raw[6])[::-1]
+            config['User More Unhooking'] = decode(config_raw[7])[::-1]
+            config['Melt Server'] = decode(config_raw[8])[::-1]
+            config['Offline Screen Capture'] = decode(config_raw[9])[::-1]
+            config['Offline Keylogger'] = decode(config_raw[10])[::-1]
+            config['Copy To ADS'] = decode(config_raw[11])[::-1]
+            config['Domain'] = decode(config_raw[12])[::-1]
+            config['Persistence Thread'] = decode(config_raw[13])[::-1]
+            config['Active X Key'] = decode(config_raw[14])[::-1]
+            config['Registry Key'] = decode(config_raw[15])[::-1]
+            config['Active X Run'] = decode(config_raw[16])[::-1]
+            config['Registry Run'] = decode(config_raw[17])[::-1]
+            config['Safe Mode Startup'] = decode(config_raw[18])[::-1]
+            config['Inject winlogon.exe'] = decode(config_raw[19])[::-1]
+            config['Install Name'] = decode(config_raw[20])[::-1]
+            config['Install Path'] = decode(config_raw[21])[::-1]
+            config['Campaign Name'] = decode(config_raw[22])[::-1]
+            config['Campaign Group'] = decode(config_raw[23])[::-1]
+            return config
+        else:
+            return None
+    except:
+        return None
