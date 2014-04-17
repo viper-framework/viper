@@ -11,7 +11,7 @@ from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __session__
 
-class RATS(Module):
+class RAT(Module):
     cmd = 'rat'
     description = 'Extract information from known RAT families'
 
