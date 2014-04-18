@@ -7,6 +7,8 @@ import re
 import getopt
 import importlib
 
+import yara
+
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __session__
@@ -38,6 +40,20 @@ class RAT(Module):
         print_info("Configuration:")
         print(table(header=['Key', 'Value'], rows=rows))
 
+    def auto(self):
+        if not __session__.is_set():
+            print_error("No session opened")
+            return
+
+        rules = yara.compile('data/yara/rats.yara')
+        for match in rules.match(__session__.file.path):
+            if 'family' in match.meta:
+                print_info("Automatically detected supported RAT {0}".format(match.rule))
+                self.get_config(match.meta['family'])
+                return
+
+        print_info("No known RAT detected")
+
     def run(self):
         def usage():
             print("usage: xtreme [option]")
@@ -65,8 +81,7 @@ class RAT(Module):
                 help()
                 return
             elif opt in ('-a', '--auto'):
-                # TODO
-                return
+                auto = True
             elif opt in ('-f', '--family'):
                 family = value
 
@@ -74,5 +89,7 @@ class RAT(Module):
             help()
             return
 
-        if family:
+        if auto:
+            self.auto()
+        elif family:
             self.get_config(family)
