@@ -37,6 +37,8 @@ class RAT(Module):
         for key, value in config.items():
             rows.append([key, value])
 
+        rows = sorted(rows, key=lambda entry: entry[0])
+
         print_info("Configuration:")
         print(table(header=['Key', 'Value'], rows=rows))
 
