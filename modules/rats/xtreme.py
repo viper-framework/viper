@@ -160,15 +160,12 @@ def config(data):
         config = None
     # 2.9.x - Not a stable extract.
     elif len(config_raw) == 0x1390 or len(config_raw) == 0x1392:
-        print_info("Detected XtremeRAT 2.9.x")
         config = v29(config_raw)
     # 3.1 & 3.2
     elif len(config_raw) == 0x5Cc:
-        print_info("Detected XtremeRAT 3.1 or 3.2")
         config = v32(config_raw)
     # 3.5
     elif len(config_raw) == 0x7f0:
-        print_info("Detected XtremeRAT 3.5")
         config = v35(config_raw)
     else:
         print_error("No known XtremeRAT version detected")
