@@ -54,6 +54,8 @@ class Commands(object):
         for command_name, command_item in self.commands.items():
             rows.append([command_name, command_item['description']])
 
+        rows = sorted(rows, key=lambda entry: entry[0])
+
         print(table(['Command', 'Description'], rows))       
         print("")
         print(bold("Modules:"))
@@ -61,6 +63,8 @@ class Commands(object):
         rows = []
         for module_name, module_item in __modules__.items():
             rows.append([module_name, module_item['description']])
+
+        rows = sorted(rows, key=lambda entry: entry[0])
 
         print(table(['Command', 'Description'], rows))
 
