@@ -17,6 +17,16 @@ class RAT(Module):
     cmd = 'rat'
     description = 'Extract information from known RAT families'
 
+    def list(self):
+        print_info("List of available RAT modules:")
+
+        for folder, folders, files in os.walk('modules/rats/'):
+            for file_name in files:
+                if not file_name.endswith('.py') or file_name.startswith('__init__'):
+                    continue
+
+                print_item(os.path.join(folder, file_name))
+
     def get_config(self, family):
         if not __session__.is_set():
             print_error("No session opened")
@@ -67,31 +77,37 @@ class RAT(Module):
             print("\t--help (-h)\tShow this help message")
             print("\t--auto (-a)\tAutomatically detect RAT")
             print("\t--family (-f)\tSpecify which RAT family")
+            print("\t--list (-l)\tList available RAT modules")
             print("")
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'haf:', ['help', 'auto', 'family='])
+            opts, argv = getopt.getopt(self.args[0:], 'haf:l', ['help', 'auto', 'family=', 'list'])
         except getopt.GetoptError as e:
             print(e)
             return
 
-        auto = False
-        family = None
+        arg_auto = False
+        arg_family = None
+        arg_list = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-a', '--auto'):
-                auto = True
+                arg_auto = True
             elif opt in ('-f', '--family'):
-                family = value
+                arg_family = value
+            elif opt in ('-l', '--list'):
+                arg_list = True
 
-        if not auto and not family:
+        if not arg_auto and not arg_family and not arg_list:
             help()
             return
 
-        if auto:
+        if arg_auto:
             self.auto()
-        elif family:
-            self.get_config(family)
+        elif arg_family:
+            self.get_config(arg_family)
+        elif arg_list:
+            self.list()
