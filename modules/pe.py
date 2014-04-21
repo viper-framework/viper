@@ -574,6 +574,8 @@ class PE(Module):
                 cert_handle.write(cert_data)
 
             print_info("Dumped certificate to {0}".format(cert_path))
+            print_info("You can parse it using the following command:\n\t" + 
+                       bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
 
         # TODO: do scan for certificate's serial number.
         if arg_scan:
