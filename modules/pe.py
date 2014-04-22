@@ -345,6 +345,10 @@ class PE(Module):
         # Obtain resources for the currently opened file.
         resources = get_resources(self.pe)
 
+        if not resources:
+            print_warning("No resources found")
+            return
+
         headers = ['Name', 'Offset', 'MD5', 'Size', 'File Type', 'Language', 'Sublanguage']
         if arg_dump:
             headers.append('Dumped To')
