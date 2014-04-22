@@ -2,3 +2,4 @@
 
 include "embedded.yara"
 include "vmdetect.yara"
+include "rats.yara"
