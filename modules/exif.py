@@ -40,7 +40,6 @@ class Exif(Module):
             print("\t--help (-h)\tShow this help message")
             print("")
 
-
         try:
             opts, argv = getopt.getopt(self.args[0:], 'h', ['help'])
         except getopt.GetoptError as e:
@@ -51,8 +50,10 @@ class Exif(Module):
             if opt in ('-h', '--help'):
                 help()
                 return
+
         with exiftool.ExifTool() as et:
             metadata = et.get_metadata(__session__.file.path)
+
         rows = []
         for key, value in metadata.items():
             rows.append([key, value])
