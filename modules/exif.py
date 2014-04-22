@@ -51,8 +51,12 @@ class Exif(Module):
                 help()
                 return
 
-        with exiftool.ExifTool() as et:
-            metadata = et.get_metadata(__session__.file.path)
+        try:
+            with exiftool.ExifTool() as et:
+                metadata = et.get_metadata(__session__.file.path)
+        except OSError:
+            print_error("Exiftool is not installed")
+            return
 
         rows = []
         for key, value in metadata.items():
