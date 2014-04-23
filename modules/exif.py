@@ -5,10 +5,8 @@
 import os
 import getopt
 
-from viper.common.colors import bold
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.database import Database
 from viper.core.session import __session__
 
 try:
