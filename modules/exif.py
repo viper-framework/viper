@@ -28,27 +28,6 @@ class Exif(Module):
             print_error("Missing dependency, install pyexiftool")
             return
 
-        def usage():
-            print("usage: exif [-h]")
-
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("")
-
-        try:
-            opts, argv = getopt.getopt(self.args[0:], 'h', ['help'])
-        except getopt.GetoptError as e:
-            print(e)
-            return
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-
         try:
             with exiftool.ExifTool() as et:
                 metadata = et.get_metadata(__session__.file.path)
