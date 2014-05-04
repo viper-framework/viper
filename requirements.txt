@@ -5,3 +5,4 @@ pydeep
 requests
 SQLAlchemy
 pycrypto
+OleFileIO_PL
