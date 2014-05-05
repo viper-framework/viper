@@ -1,6 +1,6 @@
+# Copyright (C) 2014 Kevin Breen.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
-
 
 import os
 import getopt
@@ -25,10 +25,9 @@ class Debup(Module):
             return
 
         if not HAVE_OLE:
-            print_error("Missing dependency, pip install OleFileIO_PL")
+            print_error("Missing dependency, install OleFileIO (`pip install OleFileIO_PL`)")
             return
         
-        # Used for the xor search
         def xordata(data, key):
             encoded = bytearray(data)
             for i in range(len(encoded)):

@@ -1,134 +1,137 @@
+# Copyright (C) 2014 Kevin Breen.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-
 import os
-import getopt
-import email
-import mimetypes
 import re
+import email
+import getopt
 import hashlib
-
+import tempfile
+import mimetypes
 
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __session__
 
+# TODO: Should probably split the different parsing capabilities in
+# separate options and have a --all to run them all.
 
-class SMTPParse(Module):
-    cmd = 'smtp'
-    description = 'Parse SMTP Stream'
+class EmailParse(Module):
+    cmd = 'email'
+    description = 'Parse SMTP mail'
 
     def run(self):
         def usage():
-            print("usage: smtp parse [-hs]")
+            print("usage: email parse [-hs]")
 
         def help():
             usage()
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--session (-s)\tSwitch Session to [Att ID]")
+            print("\t--session (-s)\tSwitch session to the specified attachment")
 
         try:
             opts, argv = getopt.getopt(self.args, 'hs:', ['help', 'session='])
         except getopt.GetoptError as e:
             print(e)
             return
-        session = 0
+
+        arg_session = 0
+
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-s', '--session'):
-                session = int(value)
+                arg_session = int(value)
 
-        emailString = open(__session__.file.path)
-        msg= email.message_from_file(emailString)
-        emailString.close()
-        if session > 0:
-            attCount = 0
+        if not __session__.is_set():
+            print_error("No session opened")
+            return
+
+        email_handle = open(__session__.file.path)
+        msg = email.message_from_file(email_handle)
+        email_handle.close()
+
+        if arg_session > 0:
+            att_count = 0
             for part in msg.walk():
-                if part.get_content_maintype() == 'multipart':
+                if part.get_content_maintype() == 'multipart' or not part.get('Content-Disposition'):
                     continue
-                if part.get('Content-Disposition') is None:
-                    # These are not attachemnts
-                    continue
-                attCount += 1
-                if attCount == session:
-                    print_info("Switching Session to {0}".format(part.get_filename()))
+
+                att_count += 1
+                if att_count == arg_session:
+                    print_info("Switching session to {0}".format(part.get_filename()))
                     data = part.get_payload(decode=True)
+
                     if data:
-                        tempName = os.path.join('/tmp', part.get_filename())
-                        with open(tempName, 'w') as temp:
-                            temp.write(data)
-                        __session__.set(tempName)
+                        tmp_path = os.path.join(tempfile.gettempdir(), part.get_filename())
+                        with open(tmp_path, 'w') as tmp:
+                            tmp.write(data)
+
+                        __session__.set(tmp_path)
                         return
-                        
+
+        # Envelope
+        print_info("Email envelope:")
+        rows = [
+            ['Subject', msg.get("Subject")],
+            ['To', msg.get("To")],
+            ['From', msg.get("From")],
+            ['Cc', msg.get("Cc")],
+            ['Bcc', msg.get("Bcc")],
+            ['Date', msg.get("Date")]
+        ]
+        print(table(header=['Key', 'Value'], rows=rows))
+        
         # Headers
         rows = []
         for x in msg.keys():
             if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature']:
                 rows.append([x, msg.get(x)])
+
+        print_info("Email headers:")
         rows = sorted(rows, key=lambda entry: entry[0])
-        print_info("Email Header:")
-        print(table(header=['Key', 'Value'], rows=rows))
-        
-        # Envelope
-        rows = []
-        rows.append(['Subject', msg.get("Subject")])
-        rows.append(['To', msg.get("To")])
-        rows.append(['From', msg.get("From")])
-        rows.append(['Cc', msg.get("Cc")])
-        rows.append(['Bcc', msg.get("Bcc")])
-        rows.append(['Date', msg.get("Date")])
-        print_info("Email Envelope:")
+        # TODO: need to figure out how to fix the formatting of headers'
+        # values, there seems to be escape sequences or other crap that mess
+        # up the tables.
         print(table(header=['Key', 'Value'], rows=rows))
         
         # Attachments
-        attCount = 0
+        att_count = 0
         rows = []
-        textLinks = []
-        htmlLinks = []
+        links = []
+
+        # Walk through email parts to extract links and attachments.
         for part in msg.walk():
             if part.get_content_maintype() == 'multipart':
                 continue
-            if part.get_content_type() == 'text/plain':
-                contents = part.get_payload(decode=True)
-                # This is the email body
-                textLinks = re.findall(r'(https?://\S+)', contents)
-            if part.get_content_type() == 'text/html':
-                contents = part.get_payload(decode=True)
-                # HTML Formatted Body
-                # Might try BeautifulSoup to extract here
-                htmlLinks = re.findall(r'(https?://\S+)', contents)
-            if part.get('Content-Disposition') is None:
-                # These are not attachemnts
+
+            if part.get_content_type() in ('text/plain', 'text/html'):
+                part_content = part.get_payload(decode=True)
+                for link in re.findall(r'(https?://\S+)', part_content):
+                    if link not in links:
+                        links.append(link)
+
+            if not part.get('Content-Disposition'):
+                # These are not attachemnts.
                 continue
-            AttFileName = part.get_filename()
-            AttSize = len(contents)            
-            if AttFileName == None:
-                ext = mimetypes.guess_extension(part.get_content_type())
-                if not ext:
-                    ext = '.bin'
-                filename = 'part-{0}{1}'.format(attCount, ext)
-            attData = part.get_payload(decode=True)
-            attMd5 = hashlib.md5(attData).hexdigest()
-            attCount += 1
-            rows.append([attCount, AttFileName, part.get_content_type(), AttSize, attMd5])
 
-        print_info("Email Attachments - Count = {0}:".format(attCount))
-        print(table(header=['ID', 'FileName', 'ContentType', 'FileSize', 'MD5'], rows=rows))
+            att_file_name = part.get_filename()
+            att_size = len(part_content)            
+            if not att_file_name:
+                continue
+
+            att_data = part.get_payload(decode=True)
+            att_md5 = hashlib.md5(att_data).hexdigest()
+            att_count += 1
+            rows.append([att_count, att_file_name, part.get_content_type(), att_size, att_md5])
+
+        print_info("Email attachments (total: {0}):".format(att_count))
+        print(table(header=['ID', 'FileName', 'Content Type', 'File Size', 'MD5'], rows=rows))
         
-        # Links in the Email Body
-        emailLinks = []
-        for link in textLinks:
-            print link
-            emailLinks.append([link])
-        for link in htmlLinks:
-            emailLinks.append([link])
-        print_info("Email Links:")
-        print(table(header=['url'], rows=emailLinks))
-
-
-
+        print_info("Email links:")
+        for link in links:
+            print_item(link)
