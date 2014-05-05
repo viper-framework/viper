@@ -8,11 +8,27 @@ import readline
 import traceback
 
 from viper.common.out import *
-from viper.common.colors import bold, cyan, white
+from viper.common.colors import bold, cyan, white, magenta
 from viper.core.session import __session__
 from viper.core.plugins import __modules__
 from viper.core.ui.commands import Commands
 from viper.core.storage import get_sample_path
+from viper.core.database import Database
+
+def logo():
+    print("""         _                   
+        (_) 
+   _   _ _ ____  _____  ____ 
+  | | | | |  _ \| ___ |/ ___)
+   \ V /| | |_| | ____| |    
+    \_/ |_|  __/|_____)_| v0.1-dev
+          |_|
+    """)
+
+    db = Database()
+    count = len(db.find(key='all'))
+
+    print(magenta("You have " + bold(count)) + magenta(" files in your repository"))
 
 class Console(object):
 
@@ -55,6 +71,9 @@ class Console(object):
         self.active = False
 
     def start(self):
+        # Logo.
+        logo()
+
         # Setup shell auto-complete.
         def complete(text, state):
             return (glob.glob(text+'*')+[None])[state]
