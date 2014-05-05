@@ -34,27 +34,6 @@ class Debup(Module):
                 encoded[i] ^= key
             return encoded
 
-        def bupdetails():
-            # Check for valid OLE
-            if not OleFileIO_PL.isOleFile(__session__.file.path):
-                print_error("Not a valid BUP File")
-                return
-            ole = OleFileIO_PL.OleFileIO(__session__.file.path)
-            # We know that BUPS are xor'd with 6A which is dec 106 for the decoder
-            details = xordata(ole.openstream('Details').read(), 106)
-            # the rest of this is just formating
-            lines = details.split('\n')
-            rows = []
-            for line in lines:
-                try:
-                    k,v = line.split('=')
-                    rows.append([k,v[:-1]]) #Strip the \r from v
-                except:
-                    pass
-            print_info("BUP Details:")
-            print(table(header=['Description', 'Value'], rows=rows))
-            ole.close()
-
         def bupextract():
             # Check for valid OLE
             if not OleFileIO_PL.isOleFile(__session__.file.path):
@@ -97,6 +76,27 @@ class Debup(Module):
             if opt in ('-s','--session'):
                 bupextract()
                 return
-        bupdetails()
 
+        # Check for valid OLE
+        if not OleFileIO_PL.isOleFile(__session__.file.path):
+            print_error("Not a valid BUP File")
+            return
 
+        ole = OleFileIO_PL.OleFileIO(__session__.file.path)
+        # We know that BUPS are xor'd with 6A which is dec 106 for the decoder
+        details = xordata(ole.openstream('Details').read(), 106)
+        # the rest of this is just formating
+        lines = details.split('\n')
+        rows = []
+
+        for line in lines:
+            try:
+                k,v = line.split('=')
+                rows.append([k,v[:-1]]) #Strip the \r from v
+            except:
+                pass
+
+        print_info("BUP Details:")
+        print(table(header=['Description', 'Value'], rows=rows))
+
+        ole.close()
