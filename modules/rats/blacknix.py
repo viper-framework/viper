@@ -11,12 +11,12 @@ def extract_config(raw_data):
         pe = pefile.PE(data=raw_data)
 
         try:
-        	rt_string_idx = [
-          		entry.id for entry in 
-        		pe.DIRECTORY_ENTRY_RESOURCE.entries
-        	].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+            rt_string_idx = [
+                  entry.id for entry in 
+                pe.DIRECTORY_ENTRY_RESOURCE.entries
+            ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
         except:
-        	return None
+            return None
 
         rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
 

@@ -9,10 +9,10 @@ def extract_config(raw_data):
     pe = pefile.PE(data=raw_data)
 
     try:
-    	rt_string_idx = [
-    		entry.id for entry in 
-    		pe.DIRECTORY_ENTRY_RESOURCE.entries
-    	].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+        rt_string_idx = [
+            entry.id for entry in 
+            pe.DIRECTORY_ENTRY_RESOURCE.entries
+        ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
     except:
         return None
 
@@ -31,7 +31,7 @@ def config(data):
         config_raw = extract_config(data).replace('\x00', '')
 
         if not config_raw:
-        	return None
+            return None
 
         config_fields = config_raw.split('|')
 
