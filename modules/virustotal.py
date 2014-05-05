@@ -1,4 +1,3 @@
-# Copyright (C) 2013-2014 Claudio "nex" Guarnieri.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -17,6 +16,7 @@ KEY = 'a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088'
 class VirusTotal(Module):
     cmd = 'virustotal'
     description = 'Lookup the file on VirusTotal'
+    authors = ['nex']
 
     def run(self):
         if not __session__.is_set():

@@ -1,4 +1,3 @@
-# Copyright (C) 2014 Kevin Breen.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -11,6 +10,7 @@ from viper.core.session import __session__
 class Shellcode(Module):
     cmd = 'shellcode'
     description = 'Search for known shellcode patterns'
+    authors = ['nex']
 
     def run(self):
         if not __session__.is_set():

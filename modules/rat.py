@@ -1,5 +1,3 @@
-# Copyright (C) 2013-2014 Claudio "nex" Guarnieri.
-# Copyright (C) 2014 Kevin Breen.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -17,6 +15,7 @@ from viper.core.session import __session__
 class RAT(Module):
     cmd = 'rat'
     description = 'Extract information from known RAT families'
+    authors = ['Kevin Breen', 'nex']
 
     def list(self):
         print_info("List of available RAT modules:")

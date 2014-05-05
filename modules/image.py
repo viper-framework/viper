@@ -1,4 +1,3 @@
-# Copyright (C) 2013-2014 Claudio "nex" Guarnieri.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -15,6 +14,7 @@ from viper.core.session import __session__
 class Image(Module):
     cmd = 'image'
     description = 'Perform analysis on images'
+    authors = ['nex']
 
     def ghiro(self):
         if not HAVE_REQUESTS:

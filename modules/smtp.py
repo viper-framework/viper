@@ -1,4 +1,3 @@
-# Copyright (C) 2014 Kevin Breen.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -20,6 +19,7 @@ from viper.core.session import __session__
 class EmailParse(Module):
     cmd = 'email'
     description = 'Parse SMTP mail'
+    authors = ['Kevin Breen', 'nex']
 
     def run(self):
         def usage():

@@ -1,4 +1,3 @@
-# Copyright (C) 2014 Kevin Breen.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -27,6 +26,7 @@ except ImportError:
 class Office(Module):
     cmd = 'office'
     description = 'Office OLE Parser'
+    authors = ['Kevin Breen', 'nex']
 
     ##
     # HELPER FUNCTIONS

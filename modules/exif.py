@@ -1,4 +1,3 @@
-# Copyright (C) 2014 Kevin Breen.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -18,6 +17,7 @@ except ImportError:
 class Exif(Module):
     cmd = 'exif'
     description = 'Extract Exif MetaData'
+    authors = ['Kevin Breen']
 
     def run(self):
         if not __session__.is_set():

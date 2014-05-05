@@ -1,4 +1,3 @@
-# Copyright (C) 2013-2014 Claudio "nex" Guarnieri.
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -20,6 +19,7 @@ except ImportError:
 class Fuzzy(Module):
     cmd = 'fuzzy'
     description = 'Search for similar files through fuzzy hashing'
+    authors = ['nex']
 
     def run(self):
         if not __session__.is_set():
