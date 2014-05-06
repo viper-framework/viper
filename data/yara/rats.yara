@@ -119,3 +119,51 @@ rule DarkComet
     condition:
         all of ($a*) or all of ($b*)
 }
+
+rule CyberGate
+{
+
+    meta:
+        author = " Kevin Breen <kevin@techanarchy.net>"
+        date = "2014/04"
+        ref = "http://malwareconfig.com/stats/CyberGate"
+        maltype = "Remote Access Trojan"
+        filetype = "exe"
+        family = "CyberGate"
+
+    strings:
+        $string1 = {23 23 23 23 40 23 23 23 23 E8 EE E9 F9 23 23 23 23 40 23 23 23 23}
+        $string2 = {23 23 23 23 40 23 23 23 23 FA FD F0 EF F9 23 23 23 23 40 23 23 23 23}
+        $string3 = "EditSvr"
+        $string4 = "TLoader"
+        $string5 = "Stroks"
+        $string6 = "####@####"
+        $res1 = "XX-XX-XX-XX"
+        $res2 = "CG-CG-CG-CG"
+
+    condition:
+        all of ($string*) and any of ($res*)
+}
+
+rule BlueBanana
+{
+    meta:
+        author = " Kevin Breen <kevin@techanarchy.net>"
+        date = "2014/04"
+        ref = "http://malwareconfig.com/stats/BlueBanana"
+        maltype = "Remote Access Trojan"
+        filetype = "Java"
+        family = "bluebanana"
+
+    strings:
+        $meta = "META-INF"
+        $conf = "config.txt"
+        $a = "a/a/a/a/f.class"
+        $b = "a/a/a/a/l.class"
+        $c = "a/a/a/b/q.class"
+        $d = "a/a/a/b/v.class"
+
+        
+    condition:
+        all of them
+}
