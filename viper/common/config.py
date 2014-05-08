@@ -24,7 +24,7 @@ class Config:
                     except ValueError:
                         value = config.get(section, name)
 
-            setattr(getattr(self, section), name, value)
+                setattr(getattr(self, section), name, value)
 
     def get(self, section):
         try:

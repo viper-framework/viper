@@ -4,6 +4,7 @@
 import os
 
 from viper.common.out import *
+from viper.common.config import Config
 
 def store_sample(file_object):
     sha256 = file_object.sha256
@@ -12,7 +13,7 @@ def store_sample(file_object):
         print_error("No hash")
         return None
     
-    folder = os.path.join('binaries', sha256[0], sha256[1], sha256[2], sha256[3])
+    folder = os.path.join(Config().api.repository, sha256[0], sha256[1], sha256[2], sha256[3])
     if not os.path.exists(folder):
         os.makedirs(folder, 0750)
 
@@ -29,7 +30,8 @@ def store_sample(file_object):
     return file_path
 
 def get_sample_path(sha256):
-    path = os.path.join('binaries', sha256[0], sha256[1], sha256[2], sha256[3], sha256)
+    print Config().api.repository
+    path = os.path.join(Config().api.repository, sha256[0], sha256[1], sha256[2], sha256[3], sha256)
     if not os.path.exists(path):
         return None
     return path
