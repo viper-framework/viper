@@ -30,6 +30,7 @@ def add_file():
 
     tf = tempfile.NamedTemporaryFile()
     tf.write(upload.file.read())
+    tf.flush()
     tf_obj = File(tf.name)
     tf_obj.name = upload.filename
 
