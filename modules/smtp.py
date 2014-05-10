@@ -31,7 +31,10 @@ class EmailParse(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--session (-s)\tSwitch session to the specified attachment")
-
+        
+        def string_clean(value):
+            return re.sub('[\n\t\r]', '', value)
+        
         try:
             opts, argv = getopt.getopt(self.args, 'hs:', ['help', 'session='])
         except getopt.GetoptError as e:
@@ -90,7 +93,7 @@ class EmailParse(Module):
         rows = []
         for x in msg.keys():
             if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature']:
-                rows.append([x, msg.get(x)])
+                rows.append([x, string_clean(msg.get(x))])
 
         print_info("Email headers:")
         rows = sorted(rows, key=lambda entry: entry[0])
