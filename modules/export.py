@@ -12,8 +12,10 @@ from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __session__
 
-# TODO: Should probably split the different parsing capabilities in
-# separate options and have a --all to run them all.
+# TODO: add zip as an alternative password method
+#       Overwrite with option
+#       Append multi files to existing archive
+
 
 class Exporte(Module):
     cmd = 'export'
