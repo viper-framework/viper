@@ -619,6 +619,15 @@ class PE(Module):
             if len(matches) > 0:
                 print(table(header=['Name', 'SHA256'], rows=matches))                
 
+    def sections(self):
+        # Simple for each section get some details.
+        pe = pefile.PE(__session__.file.path)
+        rows = []
+        for section in pe.sections:
+            rows.append([section.Name, hex(section.VirtualAddress), hex(section.Misc_VirtualSize), section.SizeOfRawData, section.get_entropy()])
+        print_info("PE Sections")
+        print(table(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
+
     def usage(self):
         print("usage: pe <command>")
 
@@ -634,6 +643,7 @@ class PE(Module):
         print("\tcompiletime\tShow the compiletime")
         print("\tpeid\t\tShow the PEiD signatures")
         print("\tsecurity\tShow digital signature")
+        print("\tsections\tList PE Sections")
         print("")
 
     def run(self):
@@ -661,3 +671,5 @@ class PE(Module):
             self.peid()
         elif self.args[0] == 'security':
             self.security()
+        elif self.args[0] == 'sections':
+            self.sections()
