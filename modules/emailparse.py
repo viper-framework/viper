@@ -133,7 +133,8 @@ class EmailParse(Module):
             rows.append([att_count, att_file_name, part.get_content_type(), att_size, att_md5])
 
         print_info("Email attachments (total: {0}):".format(att_count))
-        print(table(header=['ID', 'FileName', 'Content Type', 'File Size', 'MD5'], rows=rows))
+        if att_count > 0:
+            print(table(header=['ID', 'FileName', 'Content Type', 'File Size', 'MD5'], rows=rows))
         
         print_info("Email links:")
         for link in links:
