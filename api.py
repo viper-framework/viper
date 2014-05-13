@@ -112,6 +112,39 @@ def list_tags():
 
     return jsonize(results)
 
+
+def details(row):
+    tags = []
+    for tag in row.tag:
+        tags.append(tag.tag)
+
+    entry = dict(
+        id=row.id,
+        name=row.name,
+        type=row.type,
+        size=row.size,
+        md5=row.md5,
+        sha1=row.sha1,
+        sha256=row.sha256,
+        sha512=row.sha512,
+        crc32=row.crc32,
+        ssdeep=row.ssdeep,
+        created_at=row.created_at.__str__(),
+        tags=tags
+    )
+
+    return entry
+
+@route('/file/latest_md5', method='GET')
+def list_latest_md5():
+     items = db.list_latest_malware(5)
+
+     results = []
+     for item in items:
+          results.append(item.md5)
+     return jsonize(results)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-H', '--host', help='Host to bind the API server on', default='localhost', action='store', required=False)

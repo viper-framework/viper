@@ -187,6 +187,10 @@ List existing tags:
 
     `$ curl http://yourdomain.tld:8080/tags/list`
 
+Display latest 5 md5 hashes
+
+    $curl http://yourdomain.tld:8080/file/latest_md5
+
 More docu is available at:
 https://nex.sx/blog/2014-03-26-introducing-viper.html
 

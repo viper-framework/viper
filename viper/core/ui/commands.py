@@ -496,7 +496,7 @@ class Commands(object):
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            #print("\t--tags (-t)\tList tags")
+            print("\t--number (-n)\tnumber of entries to be shown")
             print("")
 
         try:
