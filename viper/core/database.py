@@ -225,3 +225,10 @@ class Database:
         session = self.Session()
         rows = session.query(Tag).all()
         return rows
+ 
+    def list_latest_malware(self,value=None):
+	if not value:
+		value=5
+        session = self.Session()
+        rows = session.query(Malware).limit(value)
+        return rows

@@ -32,6 +32,7 @@ class Commands(object):
             delete=dict(obj=self.cmd_delete, description="Delete the opened file"),
             find=dict(obj=self.cmd_find, description="Find a file"),
             tags=dict(obj=self.cmd_tags, description="Modify tags of the opened file"),
+	    latest=dict(obj=self.cmd_latest, description="Show the latest files (default: 5)"),
         )
 
     ##
@@ -481,3 +482,59 @@ class Commands(object):
         if arg_delete:
             # TODO
             pass
+
+    ##
+    # LATEST
+    #
+    # This command is used to display the latest files in the database.
+    def cmd_latest(self, *args):
+        def usage():
+            print("usage: latest [-h] [-n] <number>")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            #print("\t--tags (-t)\tList tags")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(args, 'hn:', ['help', 'number'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_number = 7 
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-n', '--number'):
+                arg_number = value 
+		print(arg_number)
+        # One of the most useful search terms is by tag. With the --tags
+        # argument we first retrieve a list of existing tags and the count
+        # of files associated with each of them.
+        
+		# Retrieve list of latest.
+		items = self.db.list_latest_malware(arg_number)
+
+		if items:
+			rows = []
+			for item in items:
+				rows.append([item.name, item.type,item.created_at,item.sha256])
+
+        		# Generate a table with the results.
+        		print(table(['Name', 'Type','created', 'SHA256'], rows))
+		else:
+			print("No latest available")
+
+		return
+
+        # At this point, if there are no search terms specified, return.
+        if len(args) == 0:
+            usage()
+            return
