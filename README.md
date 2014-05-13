@@ -22,6 +22,28 @@ to.
 
 This is still a very primitive idea.
 
+Installation
+------------
+
+Prerequisites
+
+    apt-get install python python-dev sqlite3
+    behind a proxy you might use: git config --global http.proxy $http_proxy
+
+Clone the git repo
+
+    git clone https://github.com/botherder/viper.git
+
+Switch to the newly created folder
+
+    cd viper
+    
+Install Python dependencies
+
+    pip install -r requirements.txt
+    (this might cause some errors depending on your installed software (install the mentioned tools) TODO: list them more deailed
+    behind a proxy you might use: pip install -r requirements.txt -–proxy=user:pass@YOURPROXY:1234
+
 Shell
 -----
 
@@ -122,6 +144,56 @@ As well as normal bash commands if prefixed with an exclamation mark:
     00000020  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
     00000030  00 00 00 00 00 00 00 00  00 00 00 00 e8 00 00 00  |................|
     00000040  0e 1f ba 0e 00 b4 09 cd  21 b8 01 4c cd 21 54 68  |........!..L.!Th|
+   The $self placeholder will be replaced with the path to the file currently opened.
 
-The $self placeholder will be replaced with the path to the file currently opened.
+API
+-----
+You can interact with your repository with the provided REST API.
+
+
+To start the webapi
+
+    `./api.py
+    Bottle v0.12.7 server starting up (using WSGIRefServer())...
+    Listening on http://localhost:8080/
+    Hit Ctrl-C to quit.`
+
+All your requests to the API will be shown in the console:
+
+    `127.0.0.1 - - [13/May/2014 21:47:11] "GET /test HTTP/1.1" 200 25`
+
+
+Test the API
+
+    $ curl http://yourdomain.tld:8080/test
+    will return
+    {
+    "message": "test"
+    }
+
+Submit a sample:
+
+    `$ curl -F file=@/foo/bar/file -F tags=foo,bar http://yourdomain.tld:8080/file/add`
+
+Retrieve a sample:
+
+    `$ curl http://yourdomain.tld:8080/file/get/<sha256> > sample.exe`
+
+Find a sample by MD5:
+
+    `$ curl -F md5=<md5> http://yourdomain.tld:8080/file/find`
+
+List existing tags:
+
+    `$ curl http://yourdomain.tld:8080/tags/list`
+
+Display latest 5 md5 hashes
+
+    $curl http://yourdomain.tld:8080/file/latest_md5
+
+More docu is available at:
+https://nex.sx/blog/2014-03-26-introducing-viper.html
+
+
+
 
