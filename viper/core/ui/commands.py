@@ -462,7 +462,7 @@ class Commands(object):
         # However, it could make sense to also retrieve a list of existing
         # tags from this command, and not just from the "find" command alone.
         if not arg_add and not arg_delete:
-            print_error("You need to specify an option, either add or delete")
+            print_error("You need to specify an option, either add or delete [-a=tags] [-d=tag]")
             return
 
         if arg_add:
