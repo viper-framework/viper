@@ -44,6 +44,7 @@ class XorSearch(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--search (-s)\tSpecify a custom term to search")
+            print("")
 
         def xordata(data, key):
             encoded = bytearray(data)
