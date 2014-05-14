@@ -21,7 +21,7 @@ class EmailParse(Module):
 
     def run(self):
         def usage():
-            print("usage: email parse [-hefrs]")
+            print("usage: email [-hefrs]")
 
         def help():
             usage()
@@ -29,7 +29,7 @@ class EmailParse(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--envelope (-e)\tShow the email envelope")
-            print("\t--attach (-f)\tShow Attachment informtion")
+            print("\t--attach (-f)\tShow Attachment information")
             print("\t--header (-r)\tShow email Header information")
             print("\t--all (-a)\tRun all the options")
             print("\t--session (-s)\tSwitch session to the specified attachment")
@@ -263,18 +263,22 @@ class EmailParse(Module):
                 if ole_flag:
                     msg = ole
                 att_session(int(value), msg, ole_flag)
+                return
             elif opt in ('-e' '--envelope'):
                 if ole_flag:
                     msg = parse_ole_msg(ole)
                 email_envelope(msg)
+                return
             elif opt in ('-f', '--attach'):
                 if ole_flag:
                     msg = ole
                 email_attachments(msg, ole_flag)
+                return
             elif opt in ('-r','--header'):
                 if ole_flag:
                     msg = parse_ole_msg(ole)
                 email_header(msg)
+                return
             elif opt in ('-a', '--all'):
                 if ole_flag:
                     msg = parse_ole_msg(ole)
@@ -283,13 +287,6 @@ class EmailParse(Module):
                 if ole_flag:
                     msg = ole
                 email_attachments(msg, ole_flag)
-                
+                return
 
-
-
-
-        
-
-        
-
-
+        usage()
