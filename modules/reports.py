@@ -3,6 +3,7 @@
 
 import os
 import json
+import getpass
 
 try:
     import requests
@@ -37,6 +38,12 @@ class Reports(Module):
     description = 'Online Sandboxes Reports'
     authors = ['emdel', 'nex']
 
+    def authenticate(self):
+        username = raw_input('Username: ')
+        password = getpass.getpass('Password: ')
+
+        return (username, password)
+
     def malwr_parse(self, page):
         reports = []
         soup = BeautifulSoup(page)
@@ -56,20 +63,24 @@ class Reports(Module):
 
     def malwr(self):
         if not MALWR_USER or not MALWR_PASS:
-            print_error("You need to specify a user/pass")
-            return          
-
-        # TODO: Add prompt to specify user and pass manually.
+            choice = raw_input("You need to specify a valid username/password, login now? [y/N] ")
+            if choice == 'y':
+                username, password = self.authenticate()
+            else:
+                return
+        else:
+            username = MALWR_USER
+            password = MALWR_PASS
 
         sess = requests.Session()
-        sess.auth = (MALWR_USER, MALWR_PASS)
+        sess.auth = (username, password)
 
         sess.get(MALWR_LOGIN, verify=False)
         csrf = sess.cookies['csrftoken']
 
         res = sess.post(
             MALWR_LOGIN,
-            {'username': MALWR_USER, 'password': MALWR_PASS, 'csrfmiddlewaretoken': csrf},
+            {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
             headers=dict(Referer=MALWR_LOGIN),
             verify=False,
             timeout=3
@@ -109,17 +120,21 @@ class Reports(Module):
 
     def anubis(self):
         if not ANUBIS_USER or not ANUBIS_PASS:
-            print_error("You need to specify a user/pass")
-            return
-
-        # TODO: Add prompt to specify user and pass manually.
+            choice = raw_input("You need to specify a valid username/password, login now? [y/N] ")
+            if choice == 'y':
+                username, password = self.authenticate()
+            else:
+                return
+        else:
+            username = ANUBIS_USER
+            password = ANUBIS_PASS
 
         sess = requests.Session()
-        sess.auth = (ANUBIS_USER, ANUBIS_PASS)
+        sess.auth = (username, password)
 
         res = sess.post(
             ANUBIS_LOGIN,
-            {'username' : ANUBIS_USER, 'password' : ANUBIS_PASS},
+            {'username' : username, 'password' : password},
             verify=False
         )
         res = sess.post(
