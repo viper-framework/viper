@@ -230,5 +230,5 @@ class Database:
 	if not value:
 		value=5
         session = self.Session()
-        rows = session.query(Malware).limit(value)
+        rows = session.query(Malware).limit(value) # doesn't work as expected, needs to be fixed TODO
         return rows
