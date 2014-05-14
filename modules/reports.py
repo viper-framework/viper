@@ -151,7 +151,7 @@ class Reports(Module):
         print(table(header=['Time', 'URL'], rows=reports))
 
     def usage(self):
-        print("Usage: reports <sandbox>")
+        print("Usage: reports <malwr|anubis>")
 
     def help(self):
         self.usage()
