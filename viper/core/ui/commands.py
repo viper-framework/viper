@@ -187,6 +187,7 @@ class Commands(object):
                     ('Path', __session__.file.path),
                     ('Size', __session__.file.size),
                     ('Type', __session__.file.type),
+                    ('Mime', __session__.file.mime),
                     ('MD5', __session__.file.md5),
                     ('SHA1', __session__.file.sha1),
                     ('SHA256', __session__.file.sha256),
