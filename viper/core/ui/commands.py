@@ -143,7 +143,22 @@ class Commands(object):
         # Otherwise we assume it's an hash of an previously stored sample.
         else:
             target = argv[0].strip().lower()
-            path = get_sample_path(target)
+
+            if len(target) == 32:
+                key = 'md5'
+            elif len(target) == 64:
+                key = 'sha256'
+            else:
+                print_error("Please specify an MD5 or SHA256 hash")
+                return
+
+            rows = self.db.find(key=key, value=target)
+
+            if not rows:
+                print_warning("No file found with the given hash {0}".format(target))
+                return
+
+            path = get_sample_path(rows[0].sha256)
             if path:
                 __session__.set(path)
 
@@ -411,10 +426,10 @@ class Commands(object):
         # Populate the list of search results.
         rows = []
         for item in items:
-            rows.append([item.name, item.type, item.sha256])
+            rows.append([item.name, item.mime, item.md5])
 
         # Generate a table with the results.
-        print(table(['Name', 'Type',  'SHA256'], rows))
+        print(table(['Name', 'Mime', 'MD5'], rows))
 
     ##
     # TAGS

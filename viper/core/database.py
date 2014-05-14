@@ -28,6 +28,7 @@ class Malware(Base):
     name = Column(String(255), nullable=True)
     size = Column(Integer(), nullable=False)
     type = Column(Text(), nullable=True)
+    mime = Column(String(255), nullable=True)
     md5 = Column(String(32), nullable=False, index=True)
     crc32 = Column(String(8), nullable=False)
     sha1 = Column(String(40), nullable=False)
@@ -70,6 +71,7 @@ class Malware(Base):
                  sha512,
                  size,
                  type=None,
+                 mime=None,
                  ssdeep=None,
                  name=None):
         self.md5 = md5
@@ -79,6 +81,7 @@ class Malware(Base):
         self.sha512 = sha512
         self.size = size
         self.type = type
+        self.mime = mime
         self.ssdeep = ssdeep
         self.name = name
 
@@ -161,6 +164,7 @@ class Database:
                                         sha512=obj.sha512,
                                         size=obj.size,
                                         type=obj.type,
+                                        mime=obj.mime,
                                         ssdeep=obj.ssdeep,
                                         name=name)
                 session.add(malware_entry)

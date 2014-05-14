@@ -30,6 +30,7 @@ class File(object):
         self.name = ''
         self.size = 0
         self.type = ''
+        self.mime = ''
         self.md5 = ''
         self.sha1 = ''
         self.sha256 = ''
@@ -42,6 +43,7 @@ class File(object):
             self.name = os.path.basename(self.path)
             self.size = os.path.getsize(self.path)
             self.type = self.get_type()
+            self.mime = self.get_mime()
             self.get_hashes()
             self.ssdeep = self.get_ssdeep()
 
@@ -114,3 +116,12 @@ class File(object):
                 pass
 
         return file_type
+
+    def get_mime(self):
+        try:
+            mime = magic.Magic(mime=True)
+            mime_type = mime.from_file(self.path)
+        except:
+            return ''
+
+        return mime_type
