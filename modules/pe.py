@@ -278,6 +278,7 @@ class PE(Module):
         def get_resources(pe):
             resources = []
             if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
+                count = 1
                 for resource_type in pe.DIRECTORY_ENTRY_RESOURCE.entries:
                     try:
                         resource = {}
@@ -291,7 +292,6 @@ class PE(Module):
                             name = str(resource_type.struct.Id)
 
                         if hasattr(resource_type, 'directory'):
-                            count = 1
                             for resource_id in resource_type.directory.entries:
                                 if hasattr(resource_id, 'directory'):
                                     for resource_lang in resource_id.directory.entries:
