@@ -2,8 +2,10 @@
 # See the file 'LICENSE' for copying permission.
 
 import re
+import subprocess
 
 from viper.common.out import *
+from viper.common.colors import cyan
 from viper.common.abstracts import Module
 from viper.core.session import __session__
 
@@ -76,4 +78,8 @@ class Shellcode(Module):
             for pattern in entry['patterns']:
                 match = re.search(pattern, __session__.file.data)
                 if match:
-                    print_info("{0} pattern matched at offset {1}".format(entry['description'], match.start()))
+                    offset = match.start()
+                    print_info("{0} pattern matched at offset {1}".format(entry['description'], offset))
+
+                    command = 'hexdump -C {0} -s {1} | head -n 15'.format(__session__.file.path, offset)
+                    print(cyan(subprocess.check_output(command, shell=True)))
