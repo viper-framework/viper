@@ -21,7 +21,7 @@ class EmailParse(Module):
 
     def run(self):
         def usage():
-            print("usage: email [-hefrs]")
+            print("usage: email [-hefro]")
 
         def help():
             usage()
@@ -240,7 +240,7 @@ class EmailParse(Module):
             return
 
         try:
-            opts, argv = getopt.getopt(self.args, 'hefras:', ['help', 'envelope', 'attach', 'header', 'all', 'session='])
+            opts, argv = getopt.getopt(self.args, 'hefrao:', ['help', 'envelope', 'attach', 'header', 'all', 'open='])
         except getopt.GetoptError as e:
             print(e)
             return
@@ -259,7 +259,7 @@ class EmailParse(Module):
             if opt in ('-h', '--help'):
                 help()
                 return
-            elif opt in ('-s', '--session'):
+            elif opt in ('-o', '--open'):
                 if ole_flag:
                     msg = ole
                 att_session(int(value), msg, ole_flag)
