@@ -1,9 +1,9 @@
 .. Modules chapter frontpage
 
 
-============
+=======
 Modules
-============
+=======
 
 Modules constitute the most important part of the tool. Ideally Viper should grow as a collection of as many modules as possible implementing analysis capabilities for different file formats like PDF or Office documents and providing all kinds of lookups. I haven't spent much time as I should have on writing modules, mainly because I focused on implementing a solid skeleton for the framework, but at this moment it includes:
 
@@ -19,9 +19,7 @@ Creating a module is easy. Just create a new file in the modules/ directory and 
 
 
 .. toctree::
-
-    template
-    email
-    cuckoo
-    debup
-    
+   template
+   email
+   cuckoo
+   debup

@@ -1,5 +1,6 @@
 .. Usage chapter frontpage
 
+
 Usage
 =====
 
@@ -36,8 +37,7 @@ It's operated through a basic terminal interface:
 The shell is used to interact with both a number of built-in commands that
 are used to populate and query the local repository of binaries.
 
+
 .. toctree::
-
-    commands/index
-    modules/index
-
+   commands/index
+   modules/index
