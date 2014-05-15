@@ -244,4 +244,4 @@ class Office(Module):
                 self.oleid()
                 return
 
-        help()
+        usage()

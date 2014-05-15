@@ -68,7 +68,7 @@ class RAT(Module):
 
     def run(self):
         def usage():
-            print("usage: xtreme [option]")
+            print("usage: xtreme [-hafl]")
 
         def help():
             usage()
@@ -86,28 +86,18 @@ class RAT(Module):
             print(e)
             return
 
-        arg_auto = False
-        arg_family = None
-        arg_list = False
-
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
             elif opt in ('-a', '--auto'):
-                arg_auto = True
+                self.auto()
+                return
             elif opt in ('-f', '--family'):
-                arg_family = value
+                self.get_config(value)
+                return
             elif opt in ('-l', '--list'):
-                arg_list = True
+                self.list()
+                return
 
-        if not arg_auto and not arg_family and not arg_list:
-            help()
-            return
-
-        if arg_auto:
-            self.auto()
-        elif arg_family:
-            self.get_config(arg_family)
-        elif arg_list:
-            self.list()
+        usage()
