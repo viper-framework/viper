@@ -4,6 +4,7 @@
 import getopt
 import hashlib
 import datetime
+import tempfile
 
 try:
     import pefile
@@ -268,6 +269,7 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--dump (-d)\tDestination directory to store resource files in")
+            print("\t--open (-o)\tOpen a session on the specified resource")
             print("\t--scan (-s)\tScan the repository for common resources")
             print("")
 
@@ -289,6 +291,7 @@ class PE(Module):
                             name = str(resource_type.struct.Id)
 
                         if hasattr(resource_type, 'directory'):
+                            count = 1
                             for resource_id in resource_type.directory.entries:
                                 if hasattr(resource_id, 'directory'):
                                     for resource_lang in resource_id.directory.entries:
@@ -300,20 +303,27 @@ class PE(Module):
                                         offset = ('%-8s' % hex(resource_lang.data.struct.OffsetToData)).strip()
                                         size = ('%-8s' % hex(resource_lang.data.struct.Size)).strip()
 
-                                        resource = [name, offset, md5, size, filetype, language, sublanguage]
+                                        resource = [count, name, offset, md5, size, filetype, language, sublanguage]
 
                                         # Dump resources if requested to and if the file currently being
                                         # processed is the opened session file.
                                         # This is to avoid that during a --scan all the resources being
                                         # scanned are dumped as well.
-                                        if arg_dump and pe == self.pe:
-                                            resource_path = os.path.join(arg_dump, '{0}_{1}_{2}'.format(__session__.file.md5, offset, name))
+                                        if (arg_open or arg_dump) and pe == self.pe:
+                                            if arg_dump:
+                                                folder = arg_dump
+                                            else:
+                                                folder = tempfile.mkdtemp()
+
+                                            resource_path = os.path.join(folder, '{0}_{1}_{2}'.format(__session__.file.md5, offset, name))
                                             resource.append(resource_path)
 
                                             with open(resource_path, 'wb') as resource_handle:
                                                 resource_handle.write(data)
 
                                         resources.append(resource)
+
+                                        count += 1
                     except Exception as e:
                         print_error(e)
                         continue
@@ -321,12 +331,13 @@ class PE(Module):
             return resources
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hd:s', ['help', 'dump=', 'scan'])
+            opts, argv = getopt.getopt(self.args[1:], 'ho:d:s', ['help', 'open=', 'dump=', 'scan'])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
+        arg_open = None
         arg_dump = None
         arg_scan = False
 
@@ -334,6 +345,8 @@ class PE(Module):
             if opt in ('-h', '--help'):
                 help()
                 return
+            elif opt in ('-o', '--open'):
+                arg_open = int(value)
             elif opt in ('-d', '--dump'):
                 arg_dump = value
             elif opt in ('-s', '--scan'):
@@ -349,15 +362,21 @@ class PE(Module):
             print_warning("No resources found")
             return
 
-        headers = ['Name', 'Offset', 'MD5', 'Size', 'File Type', 'Language', 'Sublanguage']
-        if arg_dump:
+        headers = ['#', 'Name', 'Offset', 'MD5', 'Size', 'File Type', 'Language', 'Sublanguage']
+        if arg_dump or arg_open:
             headers.append('Dumped To')
 
         print table(headers, resources)
 
+        # If instructed, open a session on the given resource.
+        if arg_open:
+            for resource in resources:
+                if resource[0] == arg_open:
+                    __session__.set(resource[8])
+                    return
         # If instructed to perform a scan across the repository, start looping
         # through all available files.
-        if arg_scan:
+        elif arg_scan:
             print_info("Scanning the repository for matching samples...")
 
             # Retrieve list of samples stored locally and available in the
