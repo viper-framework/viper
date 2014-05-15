@@ -201,27 +201,28 @@ class Database:
 
         rows = None
 
-        if not value:
-            if key == 'all':
-                rows = session.query(Malware).all()
-            else:
-                print_error("No valid term specified")
-        else:
-            if key == 'md5':
-                rows = session.query(Malware).filter(Malware.md5 == value).all()
-            elif key == 'sha256':
-                rows = session.query(Malware).filter(Malware.sha256 == value).all()
-            elif key == 'tag':
-                rows = session.query(Malware).filter(Malware.tag.any(Tag.tag == value.lower())).all()
-            elif key == 'name':
-                if '*' in value:
-                    value = value.replace('*', '%')
-                else:
-                    value = '%{0}%'.format(value)
+        if key == 'all':
+            rows = session.query(Malware).all()
+        elif key == 'latest':
+            if not value:
+                value = 5
 
-                rows = session.query(Malware).filter(Malware.name.like(value)).all()
+            rows = session.query(Malware).order_by(Malware.created_at.desc()).limit(value)
+        elif key == 'md5':
+            rows = session.query(Malware).filter(Malware.md5 == value).all()
+        elif key == 'sha256':
+            rows = session.query(Malware).filter(Malware.sha256 == value).all()
+        elif key == 'tag':
+            rows = session.query(Malware).filter(Malware.tag.any(Tag.tag == value.lower())).all()
+        elif key == 'name':
+            if '*' in value:
+                value = value.replace('*', '%')
             else:
-                print_error("No valid term specified")
+                value = '%{0}%'.format(value)
+
+            rows = session.query(Malware).filter(Malware.name.like(value)).all()
+        else:
+            print_error("No valid term specified")
 
         return rows
 
