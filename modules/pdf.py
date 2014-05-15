@@ -53,10 +53,10 @@ class PDF(Module):
         for stream in pdf['pdfid']['keywords']['keyword']:
             streams.append([stream['name'], stream['count']])
         
-        print_info("General Info")
+        print_info("General Info:")
         print(table(header=['Desc','Value'], rows=info))
 
-        print_info("Streams & Count")
+        print_info("Streams & Count:")
         print(table(header=['Name','Count'], rows=streams))
 
     def usage(self):
