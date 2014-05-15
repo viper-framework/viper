@@ -58,8 +58,8 @@ class Shellcode(Module):
             {
                 'description' : 'CALL next/POP',
                 'patterns' : [
-                    b'\x00\xe8\x00\x00\x00\x00\x58|\x59|\x5a|\x5b|\x5e|\x5f|\x5d\x00\x00',
-                    '00e80000000058|59|5a|5b|5e|5f|5d0000'
+                    b'\x00\xe8\x00\x00\x00\x00(\x58|\x59|\x5a|\x5b|\x5e|\x5f|\x5d)\x00\x00',
+                    '00e800000000(58|59|5a|5b|5e|5f|5d)0000'
                 ]
             },
             {
