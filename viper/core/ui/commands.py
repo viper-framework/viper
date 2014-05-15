@@ -355,7 +355,7 @@ class Commands(object):
     # This command is used to search for files in the database.
     def cmd_find(self, *args):
         def usage():
-            print("usage: find [-h] [-t] <name|md5|sha256|tag> <value>")
+            print("usage: find [-h] [-t] <all|latest|name|md5|sha256|tag> <value>")
 
         def help():
             usage()
