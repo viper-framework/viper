@@ -9,7 +9,7 @@ import traceback
 
 from viper.common.out import *
 from viper.common.colors import bold, cyan, white, magenta
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.ui.commands import Commands
 from viper.core.storage import get_sample_path
@@ -56,10 +56,10 @@ class Console(object):
         # Check if $self is in the user input data.
         if '$self' in data:
             # Check if there is an open session.
-            if __session__.is_set():
+            if __sessions__.is_set():
                 # If a session is opened, replace $self with the path to
                 # the file which is currently being analyzed.
-                data = data.replace('$self', __session__.file.path)
+                data = data.replace('$self', __sessions__.current.file.path)
             else:
                 print("No session opened")
                 return None
@@ -103,8 +103,8 @@ class Console(object):
             # TODO: perhaps this block should be moved into the session so that
             # the generation of the prompt is done only when the session's
             # status changes.
-            if __session__.is_set():
-                prompt = cyan('shell ') + white(__session__.file.name) + cyan(' > ')
+            if __sessions__.is_set():
+                prompt = cyan('shell ') + white(__sessions__.current.file.name) + cyan(' > ')
             # Otherwise display the basic prompt.
             else:
                 prompt = cyan('shell > ')

@@ -24,7 +24,7 @@ from viper.common.objects import File
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 class PE(Module):
     cmd = 'pe'
@@ -35,13 +35,13 @@ class PE(Module):
         self.pe = None
 
     def __check_session(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return False
 
         if not self.pe:
             try:
-                self.pe = pefile.PE(__session__.file.path)
+                self.pe = pefile.PE(__sessions__.current.file.path)
             except pefile.PEFormatError as e:
                 print_error("Unable to parse PE file: {0}".format(e))
                 return False
@@ -141,7 +141,7 @@ class PE(Module):
 
             matches = []
             for sample in samples:
-                if sample.sha256 == __session__.file.sha256:
+                if sample.sha256 == __sessions__.current.file.sha256:
                     continue
 
                 sample_path = get_sample_path(sample.sha256)
@@ -237,7 +237,7 @@ class PE(Module):
 
             matches = []
             for sample in samples:
-                if sample.sha256 == __session__.file.sha256:
+                if sample.sha256 == __sessions__.current.file.sha256:
                     continue
 
                 sample_path = get_sample_path(sample.sha256)
@@ -315,7 +315,7 @@ class PE(Module):
                                             else:
                                                 folder = tempfile.mkdtemp()
 
-                                            resource_path = os.path.join(folder, '{0}_{1}_{2}'.format(__session__.file.md5, offset, name))
+                                            resource_path = os.path.join(folder, '{0}_{1}_{2}'.format(__sessions__.current.file.md5, offset, name))
                                             resource.append(resource_path)
 
                                             with open(resource_path, 'wb') as resource_handle:
@@ -372,7 +372,7 @@ class PE(Module):
         if arg_open:
             for resource in resources:
                 if resource[0] == arg_open:
-                    __session__.set(resource[8])
+                    __sessions__.current.set(resource[8])
                     return
         # If instructed to perform a scan across the repository, start looping
         # through all available files.
@@ -387,7 +387,7 @@ class PE(Module):
             matches = []
             for sample in samples:
                 # Skip if it's the same file.
-                if sample.sha256 == __session__.file.sha256:
+                if sample.sha256 == __sessions__.current.file.sha256:
                     continue
 
                 # Obtain path to the binary.
@@ -512,7 +512,7 @@ class PE(Module):
 
                 matches = []
                 for sample in samples:
-                    if sample.sha256 == __session__.file.sha256:
+                    if sample.sha256 == __sessions__.current.file.sha256:
                         continue
 
                     sample_path = get_sample_path(sample.sha256)
@@ -592,7 +592,7 @@ class PE(Module):
         print_info("Found certificate with MD5 {0}".format(bold(cert_md5)))
 
         if arg_folder:
-            cert_path = os.path.join(arg_folder, '{0}.crt'.format(__session__.file.sha256))
+            cert_path = os.path.join(arg_folder, '{0}.crt'.format(__sessions__.current.file.sha256))
             with open(cert_path, 'wb+') as cert_handle:
                 cert_handle.write(cert_data)
 
@@ -610,7 +610,7 @@ class PE(Module):
             matches = []
             for sample in samples:
                 # Skip if it's the same file.
-                if sample.sha256 == __session__.file.sha256:
+                if sample.sha256 == __sessions__.current.file.sha256:
                     continue
 
                 # Obtain path to the binary.

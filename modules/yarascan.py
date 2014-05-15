@@ -7,7 +7,7 @@ import getopt
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.database import Database
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 from viper.core.storage import get_sample_path
 
 try:
@@ -68,8 +68,8 @@ class YaraScan(Module):
         # If there is a session open and the user didn't specifically
         # request to scan the full repository, we just add the currently
         # opened file's path.
-        if __session__.is_set() and not arg_scan_all:
-            files.append(__session__.file)
+        if __sessions__.is_set() and not arg_scan_all:
+            files.append(__sessions__.current.file)
         # Otherwise we loop through all files in the repository and queue
         # them up for scan.
         else:

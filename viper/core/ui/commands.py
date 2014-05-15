@@ -10,7 +10,7 @@ from viper.common.out import *
 from viper.common.objects import File
 from viper.common.colors import bold, cyan, white
 from viper.common.network import download
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
@@ -32,6 +32,7 @@ class Commands(object):
             delete=dict(obj=self.cmd_delete, description="Delete the opened file"),
             find=dict(obj=self.cmd_find, description="Find a file"),
             tags=dict(obj=self.cmd_tags, description="Modify tags of the opened file"),
+            session=dict(obj=self.cmd_session, description="List or switch sessions"),
         )
 
     ##
@@ -132,7 +133,7 @@ class Commands(object):
                 print_error("File not found")
                 return
 
-            __session__.set(target)
+            __sessions__.new(target)
         # If it's a URL, download it and open a session on the temporary
         # file.
         elif arg_is_url:
@@ -143,15 +144,15 @@ class Commands(object):
                 tmp.write(data)
                 tmp.close()
 
-                __session__.set(tmp.name)
+                __sessions__.new(tmp.name)
         # Try to open the specified file from the list of results from
         # the last find command.
         elif arg_last:
-            if __session__.find:
+            if __sessions__.find:
                 count = 1
-                for item in __session__.find:
+                for item in __sessions__.find:
                     if count == int(target):
-                        __session__.set(get_sample_path(item.sha256))
+                        __sessions__.new(get_sample_path(item.sha256))
                         break
 
                     count += 1
@@ -177,7 +178,7 @@ class Commands(object):
 
             path = get_sample_path(rows[0].sha256)
             if path:
-                __session__.set(path)
+                __sessions__.new(path)
 
     ##
     # CLOSE
@@ -186,7 +187,7 @@ class Commands(object):
     # After that, all handles to the opened file should be closed and the
     # shell should be restored to the default prompt.
     def cmd_close(self, *args):
-        __session__.clear()
+        __sessions__.close()
 
     ##
     # INFO
@@ -195,22 +196,22 @@ class Commands(object):
     # on the file (e.g. hashes) and other information that might available from
     # the database.
     def cmd_info(self, *args):
-        if __session__.is_set():
+        if __sessions__.is_set():
             print(table(
                 ['Key', 'Value'],
                 [
-                    ('Name', __session__.file.name),
-                    ('Tags', __session__.file.tags),
-                    ('Path', __session__.file.path),
-                    ('Size', __session__.file.size),
-                    ('Type', __session__.file.type),
-                    ('Mime', __session__.file.mime),
-                    ('MD5', __session__.file.md5),
-                    ('SHA1', __session__.file.sha1),
-                    ('SHA256', __session__.file.sha256),
-                    ('SHA512', __session__.file.sha512),
-                    ('SSdeep', __session__.file.ssdeep),
-                    ('CRC32', __session__.file.crc32)
+                    ('Name', __sessions__.current.file.name),
+                    ('Tags', __sessions__.current.file.tags),
+                    ('Path', __sessions__.current.file.path),
+                    ('Size', __sessions__.current.file.size),
+                    ('Type', __sessions__.current.file.type),
+                    ('Mime', __sessions__.current.file.mime),
+                    ('MD5', __sessions__.current.file.md5),
+                    ('SHA1', __sessions__.current.file.sha1),
+                    ('SHA256', __sessions__.current.file.sha256),
+                    ('SHA512', __sessions__.current.file.sha512),
+                    ('SSdeep', __sessions__.current.file.ssdeep),
+                    ('CRC32', __sessions__.current.file.crc32)
                 ]
             ))
 
@@ -331,11 +332,11 @@ class Commands(object):
                 print_error("You specified an invalid folder: {0}".format(arg_folder))
         # Otherwise we try to store the currently opened file, if there is any.
         else:
-            if __session__.is_set():
+            if __sessions__.is_set():
                 # Add file.
-                if add_file(__session__.file, arg_tags):
+                if add_file(__sessions__.current.file, arg_tags):
                     # Open session to the new file.
-                    self.cmd_open(*[__session__.file.sha256])
+                    self.cmd_open(*[__sessions__.current.file.sha256])
             else:
                 print_error("No session opened")
 
@@ -345,7 +346,7 @@ class Commands(object):
     # This commands deletes the currenlty opened file (only if it's stored in
     # the local repository) and removes the details from the database
     def cmd_delete(self, *args):
-        if __session__.is_set():
+        if __sessions__.is_set():
             while True:
                 choice = raw_input("Are you sure you want to delete this binary? Can't be reverted! [y/n] ")
                 if choice == 'y':
@@ -353,7 +354,7 @@ class Commands(object):
                 elif choice == 'n':
                     return
 
-            rows = self.db.find('sha256', __session__.file.sha256)
+            rows = self.db.find('sha256', __sessions__.current.file.sha256)
             if rows:
                 malware_id = rows[0].id
                 if self.db.delete(malware_id):
@@ -361,8 +362,8 @@ class Commands(object):
                 else:
                     print_error("Unable to delete file")
 
-            os.remove(__session__.file.path)
-            __session__.clear()
+            os.remove(__sessions__.current.file.path)
+            __sessions__.current.clear()
         else:
             print_error("No session opened")
 
@@ -449,7 +450,7 @@ class Commands(object):
             count += 1
 
         # Update find results in current session.
-        __session__.find = items
+        __sessions__.find = items
 
         # Generate a table with the results.
         print(table(['#', 'Name', 'Mime', 'MD5'], rows))
@@ -491,7 +492,7 @@ class Commands(object):
                 arg_delete = value
 
         # This command requires a session to be opened.
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -506,7 +507,7 @@ class Commands(object):
             # Add specified tags to the database's entry belonging to
             # the opened file.
             db = Database()
-            db.add_tags(__session__.file.sha256, arg_add)
+            db.add_tags(__sessions__.current.file.sha256, arg_add)
             print_info("Tags added to the currently opened file")
 
             # We refresh the opened session to update the attributes.
@@ -514,8 +515,78 @@ class Commands(object):
             # needs to be re-generated, or it wouldn't show the new tags
             # until the existing session is closed a new one is opened.
             print_info("Refreshing session to update attributes...")
-            __session__.set(__session__.file.path)
+            __sessions__.new(__sessions__.current.file.path)
 
         if arg_delete:
             # TODO
             pass
+
+    ###
+    # SESSION
+    #
+    # This command is used to list and switch across all the opened sessions.
+    def cmd_session(self, *args):
+        def usage():
+            print("usage: session [-h] [-l] [-s=session]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--list (-l)\tList all existing sessions")
+            print("\t--switch (-s)\tSwitch to the specified session")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(args, 'hls:', ['help', 'list', 'switch='])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_list = False
+        arg_switch = None
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-l', '--list'):
+                arg_list = True
+            elif opt in ('-s', '--switch'):
+                arg_switch = int(value)
+
+        if arg_list:
+            if not __sessions__.sessions:
+                print_info("There are no opened sessions")
+                return
+
+            rows = []
+            for session in __sessions__.sessions:
+                current = ''
+                if session == __sessions__.current:
+                    current = 'Yes'
+
+                rows.append([
+                    session.id,
+                    session.file.name,
+                    session.file.md5,
+                    session.created_at,
+                    current
+                ])
+
+            print_info("Opened Sessions:")
+            print(table(header=['#', 'Name', 'MD5', 'Created At', 'Current'], rows=rows))
+            return
+
+        if arg_switch:
+            for session in __sessions__.sessions:
+                if arg_switch == session.id:
+                    __sessions__.switch(session)
+                    return
+
+            print_warning("The specified session ID doesn't seem to exist")
+            return
+
+        usage()

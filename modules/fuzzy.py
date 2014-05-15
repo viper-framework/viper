@@ -8,7 +8,7 @@ from viper.common.colors import bold
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.database import Database
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 try:
     import pydeep
@@ -22,7 +22,7 @@ class Fuzzy(Module):
     authors = ['nex']
 
     def run(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -30,7 +30,7 @@ class Fuzzy(Module):
             print_error("Missing dependency, install pydeep (`pip install pydeep`)")
             return
 
-        if not __session__.file.ssdeep:
+        if not __sessions__.current.file.ssdeep:
             print_error("No ssdeep hash available for opened file")
             return
 
@@ -65,13 +65,13 @@ class Fuzzy(Module):
 
         matches = []
         for sample in samples:
-            if sample.sha256 == __session__.file.sha256:
+            if sample.sha256 == __sessions__.current.file.sha256:
                 continue
 
             if not sample.ssdeep:
                 continue
 
-            score = pydeep.compare(__session__.file.ssdeep, sample.ssdeep)
+            score = pydeep.compare(__sessions__.current.file.ssdeep, sample.ssdeep)
             if score > 40:
                 matches.append(['{0}%'.format(score), sample.name, sample.sha256])
 

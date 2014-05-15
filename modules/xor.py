@@ -6,7 +6,7 @@ import getopt
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 class XorSearch(Module):
     cmd = 'xor'
@@ -66,7 +66,7 @@ class XorSearch(Module):
             elif opt in ('-s', '--search'):
                 terms = [value]
 
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -79,7 +79,7 @@ class XorSearch(Module):
             if key == 0 :
                 continue
 
-            xored = xordata(__session__.file.data, key)
+            xored = xordata(__sessions__.current.file.data, key)
             for term in terms:
                 if term in xored:
                     print_error("Matched: {0} with key: {1}".format(term, hex(key)))

@@ -12,7 +12,7 @@ import OleFileIO_PL
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 class EmailParse(Module):
     cmd = 'email'
@@ -113,7 +113,7 @@ class EmailParse(Module):
                         tmp_path = os.path.join(tempfile.gettempdir(), att_filename)
                         with open(tmp_path, 'w') as tmp:
                             tmp.write(att_data)
-                        __session__.set(tmp_path)
+                        __sessions__.current.set(tmp_path)
                         return
 
             else:
@@ -131,7 +131,7 @@ class EmailParse(Module):
                             with open(tmp_path, 'w') as tmp:
                                 tmp.write(data)
 
-                            __session__.set(tmp_path)
+                            __sessions__.current.set(tmp_path)
                             return
 
         def email_envelope(msg):
@@ -235,7 +235,7 @@ class EmailParse(Module):
             
         # Start Here
         
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -247,11 +247,11 @@ class EmailParse(Module):
 
         # Try to open as an ole msg, if not treat as email string
         try:
-            ole = OleFileIO_PL.OleFileIO(__session__.file.path)
+            ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
             ole_flag = True
         except:
             ole_flag = False
-            email_handle = open(__session__.file.path)
+            email_handle = open(__sessions__.current.file.path)
             msg = email.message_from_file(email_handle)
             email_handle.close()
         

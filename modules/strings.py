@@ -6,7 +6,7 @@ import re
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 class Strings(Module):
     cmd = 'strings'
@@ -14,13 +14,13 @@ class Strings(Module):
     authors = ['nex']
 
     def run(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
-        if os.path.exists(__session__.file.path):
+        if os.path.exists(__sessions__.current.file.path):
             try:
-                data = open(__session__.file.path, 'r').read()
+                data = open(__sessions__.current.file.path, 'r').read()
             except (IOError, OSError) as e:
                 print_error("Cannot open file: {0}".format(e))
 

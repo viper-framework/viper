@@ -10,7 +10,7 @@ import yara
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 class RAT(Module):
     cmd = 'rat'
@@ -28,7 +28,7 @@ class RAT(Module):
                 print_item(os.path.join(folder, file_name))
 
     def get_config(self, family):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -38,7 +38,7 @@ class RAT(Module):
             print_error("There is no module for family {0}".format(bold(family)))
             return
 
-        config = module.config(__session__.file.data)
+        config = module.config(__sessions__.current.file.data)
         if not config:
             print_error("No Configuration Detected")
             return
@@ -53,12 +53,12 @@ class RAT(Module):
         print(table(header=['Key', 'Value'], rows=rows))
 
     def auto(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
         rules = yara.compile('data/yara/rats.yara')
-        for match in rules.match(__session__.file.path):
+        for match in rules.match(__sessions__.current.file.path):
             if 'family' in match.meta:
                 print_info("Automatically detected supported RAT {0}".format(match.rule))
                 self.get_config(match.meta['family'])

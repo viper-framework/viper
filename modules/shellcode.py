@@ -7,7 +7,7 @@ import subprocess
 from viper.common.out import *
 from viper.common.colors import cyan
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 class Shellcode(Module):
     cmd = 'shellcode'
@@ -15,7 +15,7 @@ class Shellcode(Module):
     authors = ['Kevin Breen', 'nex']
 
     def run(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -76,10 +76,10 @@ class Shellcode(Module):
 
         for entry in collection:
             for pattern in entry['patterns']:
-                match = re.search(pattern, __session__.file.data)
+                match = re.search(pattern, __sessions__.current.file.data)
                 if match:
                     offset = match.start()
                     print_info("{0} pattern matched at offset {1}".format(entry['description'], offset))
 
-                    command = 'hexdump -C {0} -s {1} | head -n 15'.format(__session__.file.path, offset)
+                    command = 'hexdump -C {0} -s {1} | head -n 15'.format(__sessions__.current.file.path, offset)
                     print(cyan(subprocess.check_output(command, shell=True)))

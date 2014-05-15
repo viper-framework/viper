@@ -15,7 +15,7 @@ import getopt
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 try:
     import OleFileIO_PL
@@ -87,11 +87,11 @@ class Office(Module):
     #
 
     def metadata(self):
-        if not OleFileIO_PL.isOleFile(__session__.file.path):
+        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
             print_error("Not a valid OLE file")
             return
 
-        ole = OleFileIO_PL.OleFileIO(__session__.file.path)
+        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
         meta = ole.get_metadata()
 
         for attribs in ['SUMMARY_ATTRIBS', 'DOCSUM_ATTRIBS']:
@@ -105,12 +105,12 @@ class Office(Module):
         ole.close()
     
     def metatimes(self):
-        if not OleFileIO_PL.isOleFile(__session__.file.path):
+        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
             print_error("Not a valid OLE File")
             return
 
         rows = []
-        ole = OleFileIO_PL.OleFileIO(__session__.file.path)
+        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
 
         # Root document.
         rows.append(['Root', ole.root.getctime(), ole.root.getmtime()])
@@ -138,11 +138,11 @@ class Office(Module):
         has_macros = False
         has_flash = 0
         
-        if not OleFileIO_PL.isOleFile(__session__.file.path):
+        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
             print_error('Not a valid OLE File')
             return
 
-        ole = OleFileIO_PL.OleFileIO(__session__.file.path)
+        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
         
         # SummaryInfo.
         if ole.exists('\x05SummaryInformation'):
@@ -203,7 +203,7 @@ class Office(Module):
         ole.close()
 
     def run(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 

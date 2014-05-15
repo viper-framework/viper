@@ -8,7 +8,7 @@ import urllib2
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 VIRUSTOTAL_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
 KEY = 'a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088'
@@ -19,11 +19,11 @@ class VirusTotal(Module):
     authors = ['nex']
 
     def run(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
-        data = urllib.urlencode({'resource' : __session__.file.md5, 'apikey' : KEY})
+        data = urllib.urlencode({'resource' : __sessions__.current.file.md5, 'apikey' : KEY})
 
         try:
             request = urllib2.Request(VIRUSTOTAL_URL, data)

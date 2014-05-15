@@ -7,7 +7,7 @@ import json
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 from pdftools.pdfid import *
 
@@ -17,12 +17,12 @@ class PDF(Module):
     authors = ['Kevin Breen', 'nex']
 
     def pdf_id(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error('No session opened')
             return
 
         # Run the parser - Returns an XML DOM Instance.
-        pdf_data = PDFiD(__session__.file.path, False, True)
+        pdf_data = PDFiD(__sessions__.current.file.path, False, True)
 
         # This converts to string.
         #pdf_string = PDFiD2String(pdf_data, True)

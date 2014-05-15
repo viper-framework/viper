@@ -6,7 +6,7 @@ import getopt
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 try:
     import exiftool
@@ -20,7 +20,7 @@ class Exif(Module):
     authors = ['Kevin Breen']
 
     def run(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -30,7 +30,7 @@ class Exif(Module):
 
         try:
             with exiftool.ExifTool() as et:
-                metadata = et.get_metadata(__session__.file.path)
+                metadata = et.get_metadata(__sessions__.current.file.path)
         except OSError:
             print_error("Exiftool is not installed")
             return

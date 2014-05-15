@@ -6,7 +6,7 @@ import getopt
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 try:
     import OleFileIO_PL
@@ -20,7 +20,7 @@ class Debup(Module):
     authors = ['nex']
 
     def run(self):
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
@@ -36,10 +36,10 @@ class Debup(Module):
 
         def bupextract():
             # Check for valid OLE
-            if not OleFileIO_PL.isOleFile(__session__.file.path):
+            if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
                 print_error("Not a valid BUP File")
                 return
-            ole = OleFileIO_PL.OleFileIO(__session__.file.path)
+            ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
             # We know that BUPS are xor'd with 6A which is dec 106 for the decoder
             print_info("Switching Session to Embedded File")
             data = xordata(ole.openstream('File_0').read(), 106)
@@ -57,7 +57,7 @@ class Debup(Module):
                 tempName = os.path.join('/tmp', filename)
                 with open(tempName, 'w') as temp:
                     temp.write(data)
-                __session__.set(tempName)
+                __sessions__.current.set(tempName)
                 return
             else:
                 print_error("Unble to Switch Session")
@@ -78,11 +78,11 @@ class Debup(Module):
                 return
 
         # Check for valid OLE
-        if not OleFileIO_PL.isOleFile(__session__.file.path):
+        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
             print_error("Not a valid BUP File")
             return
 
-        ole = OleFileIO_PL.OleFileIO(__session__.file.path)
+        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
         # We know that BUPS are xor'd with 6A which is dec 106 for the decoder
         details = xordata(ole.openstream('Details').read(), 106)
         # the rest of this is just formating

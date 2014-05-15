@@ -19,7 +19,7 @@ except ImportError:
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.core.session import __session__
+from viper.core.session import __sessions__
 
 MALWR_LOGIN = 'https://malwr.com/account/login/'
 MALWR_USER = None
@@ -86,7 +86,7 @@ class Reports(Module):
             timeout=3
         )
 
-        payload = {'search': __session__.file.sha256, 'csrfmiddlewaretoken': csrf}
+        payload = {'search': __sessions__.current.file.sha256, 'csrfmiddlewaretoken': csrf}
         headers = {"Referer": MALWR_SEARCH}
 
         p = sess.post(
@@ -139,7 +139,7 @@ class Reports(Module):
         )
         res = sess.post(
             ANUBIS_SEARCH,
-            {'hashlist' : __session__.file.sha256},
+            {'hashlist' : __sessions__.current.file.sha256},
             verify=False
         )
         
@@ -167,7 +167,7 @@ class Reports(Module):
             print_error("Missing dependencies (`pip install requests beautifulsoup4`)")
             return
 
-        if not __session__.is_set():
+        if not __sessions__.is_set():
             print_error("No session opened")
             return
 
