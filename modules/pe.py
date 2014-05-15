@@ -372,7 +372,7 @@ class PE(Module):
         if arg_open:
             for resource in resources:
                 if resource[0] == arg_open:
-                    __sessions__.current.set(resource[8])
+                    __sessions__.new(resource[8])
                     return
         # If instructed to perform a scan across the repository, start looping
         # through all available files.

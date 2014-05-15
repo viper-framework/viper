@@ -57,7 +57,7 @@ class Debup(Module):
                 tempName = os.path.join('/tmp', filename)
                 with open(tempName, 'w') as temp:
                     temp.write(data)
-                __sessions__.current.set(tempName)
+                __sessions__.new(tempName)
                 return
             else:
                 print_error("Unble to Switch Session")

@@ -113,7 +113,7 @@ class EmailParse(Module):
                         tmp_path = os.path.join(tempfile.gettempdir(), att_filename)
                         with open(tmp_path, 'w') as tmp:
                             tmp.write(att_data)
-                        __sessions__.current.set(tmp_path)
+                        __sessions__.new(tmp_path)
                         return
 
             else:
@@ -131,7 +131,7 @@ class EmailParse(Module):
                             with open(tmp_path, 'w') as tmp:
                                 tmp.write(data)
 
-                            __sessions__.current.set(tmp_path)
+                            __sessions__.new(tmp_path)
                             return
 
         def email_envelope(msg):
