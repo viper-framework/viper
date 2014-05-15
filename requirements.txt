@@ -6,3 +6,4 @@ requests
 SQLAlchemy
 pycrypto
 OleFileIO_PL
+BeautifulSoup4
