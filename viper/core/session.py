@@ -12,6 +12,8 @@ class Session(object):
         self.file = None
         # This is not being used yet.
         self.plugin = None
+        # Store the results of the last "find" command.
+        self.find = None
 
     def clear(self):
         # Reset session attributes.

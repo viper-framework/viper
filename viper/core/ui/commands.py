@@ -77,7 +77,7 @@ class Commands(object):
     # run against the file specified.
     def cmd_open(self, *args):
         def usage():
-            print("usage: open [-h] [-f] [-u] [-t] <target>")
+            print("usage: open [-h] [-f] [-u] [-l] [-t] <target|md5|sha256>")
 
         def help():
             usage()
@@ -86,14 +86,15 @@ class Commands(object):
             print("\t--help (-h)\tShow this help message")
             print("\t--file (-f)\tThe target is a file")
             print("\t--url (-u)\tThe target is a URL")
+            print("\t--last (-l)\tOpen file from the results of the last find command")
             print("\t--tor (-t)\tDownload the file through Tor")
             print("")
-            print("You can also specify a SHA256 hash to a previously stored")
+            print("You can also specify a MD5 or SHA256 hash to a previously stored")
             print("file in order to open a session on it.")
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hfut', ['help', 'file', 'url', 'tor'])
+            opts, argv = getopt.getopt(args, 'hfult', ['help', 'file', 'url', 'last', 'tor'])
         except getopt.GetoptError as e:
             print(e)
             usage()
@@ -101,6 +102,7 @@ class Commands(object):
 
         arg_is_file = False
         arg_is_url = False
+        arg_last = False
         arg_use_tor = False
 
         for opt, value in opts:
@@ -111,6 +113,8 @@ class Commands(object):
                 arg_is_file = True
             elif opt in ('-u', '--url'):
                 arg_is_url = True
+            elif opt in ('-l', '--last'):
+                arg_last = True
             elif opt in ('-t', '--tor'):
                 arg_use_tor = True
 
@@ -140,6 +144,19 @@ class Commands(object):
                 tmp.close()
 
                 __session__.set(tmp.name)
+        # Try to open the specified file from the list of results from
+        # the last find command.
+        elif arg_last:
+            if __session__.find:
+                count = 1
+                for item in __session__.find:
+                    if count == int(target):
+                        __session__.set(get_sample_path(item.sha256))
+                        break
+
+                    count += 1
+            else:
+                print_warning("You haven't performed a find yet")
         # Otherwise we assume it's an hash of an previously stored sample.
         else:
             target = argv[0].strip().lower()
@@ -149,7 +166,7 @@ class Commands(object):
             elif len(target) == 64:
                 key = 'sha256'
             else:
-                print_error("Please specify an MD5 or SHA256 hash")
+                usage()
                 return
 
             rows = self.db.find(key=key, value=target)
@@ -426,11 +443,16 @@ class Commands(object):
 
         # Populate the list of search results.
         rows = []
+        count = 1
         for item in items:
-            rows.append([item.name, item.mime, item.md5])
+            rows.append([count, item.name, item.mime, item.md5])
+            count += 1
+
+        # Update find results in current session.
+        __session__.find = items
 
         # Generate a table with the results.
-        print(table(['Name', 'Mime', 'MD5'], rows))
+        print(table(['#', 'Name', 'Mime', 'MD5'], rows))
 
     ##
     # TAGS
