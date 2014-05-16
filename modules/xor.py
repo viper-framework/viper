@@ -75,10 +75,7 @@ class XorSearch(Module):
             print_item(term)
 
         print_info("Hold on, this might take a while...")
-        for key in range(256):
-            if key == 0 :
-                continue
-
+        for key in range(1, 256):
             xored = xordata(__sessions__.current.file.data, key)
             for term in terms:
                 if term in xored:
