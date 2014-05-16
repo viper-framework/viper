@@ -32,7 +32,7 @@ class EmailParse(Module):
             print("\t--attach (-f)\tShow Attachment information")
             print("\t--header (-r)\tShow email Header information")
             print("\t--all (-a)\tRun all the options")
-            print("\t--session (-s)\tSwitch session to the specified attachment")
+            print("\t--open (-o)\tSwitch session to the specified attachment")
         
         def string_clean(value):
             return re.sub('[\n\t\r]', '', value)
