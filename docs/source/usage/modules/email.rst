@@ -2,7 +2,9 @@ Email Module
 ============
 
 
-The email modules is invoked with the email command
+The email modules provides a method to extract information from SMTP Streams, EML and MSG Files.
+
+You can optionally open a session on any of the attachments
 
 ::
 

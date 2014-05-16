@@ -18,8 +18,14 @@ strings: extract strings from the opened file.
 Creating a module is easy. Just create a new file in the modules/ directory and start with a skeleton similar to the one found in templates:
 
 
+Current Modules
+
 .. toctree::
    template
    email
+   exif
+   fuzzy
    cuckoo
    debup
+   pe
+   office

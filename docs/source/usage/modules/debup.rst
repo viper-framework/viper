@@ -2,17 +2,13 @@ Debup Module
 ============
 
 
-The email modules is invoked with the email command
+The debup module provides a method to display and extarct details and files from McAffe Quarantine Files
 
 ::
 
-    shell sample.msg > email -h
-    usage: email [-hefrs]
+    shell sample.bup > debup -h
+    usage: debup [-e]
 
     Options:
         --help (-h)	Show this help message
-        --envelope (-e)	Show the email envelope
-        --attach (-f)	Show Attachment information
-        --header (-r)	Show email Header information
-        --all (-a)	Run all the options
-        --session (-s)	Switch session to the specified attachment
+        --extract (-e)	Extract the file and open a session on it.

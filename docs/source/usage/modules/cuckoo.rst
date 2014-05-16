@@ -2,17 +2,15 @@ Cuckoo Module
 =============
 
 
-The email modules is invoked with the email command
+The cuckoo module provides a method to submit files to a local cuckoo instance.
 
 ::
 
-    shell sample.msg > email -h
-    usage: email [-hefrs]
+shell sample.exe > cuckoo -h
+usage: cuckoo [-H=host] [-p=port]
 
-    Options:
-        --help (-h)	Show this help message
-        --envelope (-e)	Show the email envelope
-        --attach (-f)	Show Attachment information
-        --header (-r)	Show email Header information
-        --all (-a)	Run all the options
-        --session (-s)	Switch session to the specified attachment
+Options:
+	--help (-h)	Show this help message
+	--host (-H)	Specify an host (default: localhost)
+	--port (-p)	Specify a port (default: 8090
+
