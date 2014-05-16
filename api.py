@@ -109,6 +109,9 @@ def find_file():
 
     rows = db.find(key=key, value=value)
 
+    if (len(rows) == 0):
+        raise HTTPError(404, 'File not found')
+
     results = []
     for row in rows:
         entry = details(row)
