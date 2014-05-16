@@ -14,7 +14,6 @@ It is also contains functiosn that can interact with the Database such as taggin
     close
     delete
     find
-    help
     info
     session
     tags

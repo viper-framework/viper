@@ -1,5 +1,5 @@
 Office Module
-============
+=============
 
 The Office module has several functions that can extract information from Microsoft Compound Office Files
 
