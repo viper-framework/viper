@@ -84,7 +84,7 @@ def find_file():
 
         return entry
 
-    for entry in ['md5', 'sha256', 'ssdeep', 'tag']:
+    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all']:
         value = request.forms.get(entry)
         if value:
             key = entry
