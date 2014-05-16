@@ -363,7 +363,7 @@ class Commands(object):
                     print_error("Unable to delete file")
 
             os.remove(__sessions__.current.file.path)
-            __sessions__.current.clear()
+            __sessions__.close()
         else:
             print_error("No session opened")
 
