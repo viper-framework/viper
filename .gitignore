@@ -35,5 +35,5 @@ nosetests.xml
 .pydevproject
 
 binaries/
+projects/
 *.db
-
