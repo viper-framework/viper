@@ -11,6 +11,7 @@ from viper.common.out import *
 from viper.common.colors import bold, cyan, white, magenta
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
+from viper.core.project import __project__
 from viper.core.ui.commands import Commands
 from viper.core.storage import get_sample_path
 from viper.core.database import Database
@@ -29,6 +30,7 @@ def logo():
     count = len(db.find(key='all'))
 
     print(magenta("You have " + bold(count)) + magenta(" files in your repository"))
+    print("You are working on project " + bold(__project__.name))
 
 class Console(object):
 
