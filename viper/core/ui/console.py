@@ -29,8 +29,13 @@ def logo():
     count = len(db.find(key='all'))
 
     if __project__.name:
-        print(black("You are working on project " + bold(__project__.name)))
-    print(magenta("You have " + bold(count)) + magenta(" files in your repository"))
+        name = __project__.name
+    else:
+        name = 'default'
+
+    print(magenta("You have " + bold(count)) + 
+          magenta(" files in your " + bold(name) + 
+          magenta(" repository".format(bold(name)))))
 
 class Console(object):
 
@@ -112,11 +117,15 @@ class Console(object):
             # TODO: perhaps this block should be moved into the session so that
             # the generation of the prompt is done only when the session's
             # status changes.
+            prefix = ''
+            if __project__.name:
+                prefix = bold(cyan(__project__.name)) + ' '
+
             if __sessions__.is_set():
-                prompt = cyan('shell ') + white(__sessions__.current.file.name) + cyan(' > ')
+                prompt = prefix + cyan('shell ') + white(__sessions__.current.file.name) + cyan(' > ')
             # Otherwise display the basic prompt.
             else:
-                prompt = cyan('shell > ')
+                prompt = prefix + cyan('shell > ')
 
             # Wait for input from the user.
             try:
