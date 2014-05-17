@@ -8,7 +8,6 @@ import readline
 import traceback
 
 from viper.common.out import *
-from viper.common.colors import bold, cyan, white, magenta
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
@@ -29,7 +28,8 @@ def logo():
     db = Database()
     count = len(db.find(key='all'))
 
-    print("You are working on project " + bold(__project__.name))
+    if __project__.name:
+        print(black("You are working on project " + bold(__project__.name)))
     print(magenta("You have " + bold(count)) + magenta(" files in your repository"))
 
 class Console(object):

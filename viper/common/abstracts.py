@@ -1,8 +1,6 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-from viper.common.colors import *
-
 class Module(object):
     cmd = ''
     description = ''

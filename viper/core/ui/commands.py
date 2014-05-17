@@ -8,7 +8,6 @@ import tempfile
 
 from viper.common.out import *
 from viper.common.objects import File
-from viper.common.colors import bold, cyan, white
 from viper.common.network import download
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__

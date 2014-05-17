@@ -5,7 +5,6 @@ import re
 import subprocess
 
 from viper.common.out import *
-from viper.common.colors import cyan
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
