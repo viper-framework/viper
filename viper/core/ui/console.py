@@ -29,8 +29,8 @@ def logo():
     db = Database()
     count = len(db.find(key='all'))
 
-    print(magenta("You have " + bold(count)) + magenta(" files in your repository"))
     print("You are working on project " + bold(__project__.name))
+    print(magenta("You have " + bold(count)) + magenta(" files in your repository"))
 
 class Console(object):
 
@@ -91,7 +91,14 @@ class Console(object):
 
         # If there is an history file, read from it and load the history
         # so that they can be loaded in the shell.
-        history_path = os.path.expanduser('~/.viperhistory')
+        # Now we are storing the history file in the local project folder
+        # if there is an opened project. Otherwise just store it in the
+        # home directory.
+        if __project__.path:
+            history_path = os.path.join(__project__.path, 'history')
+        else:
+            history_path = os.path.expanduser('~/.viperhistory')
+
         if os.path.exists(history_path):
             readline.read_history_file(history_path)
 
