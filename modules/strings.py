@@ -87,7 +87,7 @@ class Strings(Module):
 
     def run(self):
         def usage():
-            print("usage: xtreme [-haH]")
+            print("usage: strings [-haH]")
 
         def help():
             usage()
