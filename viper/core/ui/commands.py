@@ -32,6 +32,7 @@ class Commands(object):
             find=dict(obj=self.cmd_find, description="Find a file"),
             tags=dict(obj=self.cmd_tags, description="Modify tags of the opened file"),
             session=dict(obj=self.cmd_session, description="List or switch sessions"),
+            projects=dict(obj=self.cmd_projects, description="List Current Projects"),
         )
 
     ##
@@ -589,3 +590,18 @@ class Commands(object):
             return
 
         usage()
+
+    ##
+    # Projects
+    #
+    # This command Gets a list of all current projects.
+    # ToDo:
+    # Get the first `created_at` from each project db file to include in the output. 
+    # Figure out if we can switch to a project
+    def cmd_projects(self, *args):
+        print_info("Current Projects:")
+        project_path = os.path.join(os.getcwd(), 'projects')
+        for project in os.listdir(project_path):
+            if os.path.isdir(os.path.join(project_path, project)):
+                print_item(project)
+        
