@@ -11,6 +11,7 @@ from viper.common.out import *
 from viper.common.objects import File
 from viper.common.network import download
 from viper.core.session import __sessions__
+from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
@@ -604,6 +605,9 @@ class Commands(object):
         for project in os.listdir(projects_path):
             project_path = os.path.join(projects_path, project)
             if os.path.isdir(project_path):
-                rows.append([project, time.ctime(os.path.getctime(project_path))])
+                current = ''
+                if __project__.name and project == __project__.name:
+                    current = 'Yes'
+                rows.append([project, time.ctime(os.path.getctime(project_path)), current])
 
-        print(table(header=['Project Name', 'Creation Time'], rows=rows))
+        print(table(header=['Project Name', 'Creation Time', 'Current'], rows=rows))
