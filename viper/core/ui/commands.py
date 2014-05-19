@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import time
 import getopt
 import fnmatch
 import tempfile
@@ -32,7 +33,7 @@ class Commands(object):
             find=dict(obj=self.cmd_find, description="Find a file"),
             tags=dict(obj=self.cmd_tags, description="Modify tags of the opened file"),
             session=dict(obj=self.cmd_session, description="List or switch sessions"),
-            projects=dict(obj=self.cmd_projects, description="List Current Projects"),
+            projects=dict(obj=self.cmd_projects, description="List existing projects"),
         )
 
     ##
@@ -592,16 +593,17 @@ class Commands(object):
         usage()
 
     ##
-    # Projects
+    # PROJECTS
     #
-    # This command Gets a list of all current projects.
-    # ToDo:
-    # Get the first `created_at` from each project db file to include in the output. 
-    # Figure out if we can switch to a project
+    # This command retrieves a list of all projects.
     def cmd_projects(self, *args):
         print_info("Current Projects:")
-        project_path = os.path.join(os.getcwd(), 'projects')
-        for project in os.listdir(project_path):
-            if os.path.isdir(os.path.join(project_path, project)):
-                print_item(project)
-        
+        projects_path = os.path.join(os.getcwd(), 'projects')
+
+        rows = []
+        for project in os.listdir(projects_path):
+            project_path = os.path.join(projects_path, project)
+            if os.path.isdir(project_path):
+                rows.append([project, time.ctime(os.path.getctime(project_path))])
+
+        print(table(header=['Project Name', 'Creation Time'], rows=rows))
