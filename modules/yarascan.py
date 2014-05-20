@@ -37,10 +37,14 @@ class YaraScan(Module):
 
         def string_printable(line):
             line = str(line)
-            if all(c in printstring.printable for c in line):
-                return line
-            else:
-                return "\\x"+'\\x'.join(c.encode('hex') for c in line)
+            new_line = ''
+            for c in line:
+                if c in printstring.printable:
+                    new_line += c
+                else:
+                    new_line += '\\x'+c.encode('hex')
+            return new_line
+                    
 
         arg_rule = ''
         arg_scan_all = False
