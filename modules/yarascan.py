@@ -3,6 +3,7 @@
 
 import os
 import getopt
+import string as printstring # string is being used as a var - easier to replace here
 
 from viper.common.out import *
 from viper.common.abstracts import Module
@@ -33,6 +34,17 @@ class YaraScan(Module):
             print("\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
             print("\t--all (-a)\tScan all stored files (default if no session is open)")
             print("")
+
+        def string_printable(line):
+            line = str(line)
+            new_line = ''
+            for c in line:
+                if c in printstring.printable:
+                    new_line += c
+                else:
+                    new_line += '\\x'+c.encode('hex')
+            return new_line
+                    
 
         arg_rule = ''
         arg_scan_all = False
@@ -97,7 +109,7 @@ class YaraScan(Module):
             rows = []
             for match in rules.match(entry_path):
                 for string in match.strings:
-                    rows.append([match.rule, string[1], string[0], string[2]])
+                    rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
 
             if rows:
                 header = [
