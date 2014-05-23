@@ -25,6 +25,8 @@ from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
+import modules.strings as strings
+
 
 class PE(Module):
     cmd = 'pe'
@@ -638,6 +640,139 @@ class PE(Module):
             if len(matches) > 0:
                 print(table(header=['Name', 'SHA256'], rows=matches))                
 
+    
+    def language(self):
+
+        def usage():
+            print("usage: pe language [-s]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--scan (-s)\tScan the repository")
+            print("")
+
+        def get_iat(pe):
+            iat = []
+            for peimport in pe.DIRECTORY_ENTRY_IMPORT:
+                iat.append(peimport.dll)
+            return iat
+        
+        # DLLs checks
+        def check_module(iat, match):
+            for imp in iat:
+                if imp.find(match) != -1:
+                    return True
+            return False
+
+
+        def is_cpp(data, flag):
+            for d in data:
+                if (d.find("type_info") or d.find("RTTI")) != -1:
+                    flag += 1
+                    break
+            if flag == 2:
+                return True
+            return False
+
+
+        def is_delphi(data):
+            for d in data:
+                if "Borland" in d:
+                    path = d.split('\\')
+                    for p in path:
+                        if 'Delphi' in p:
+                            return True
+            return False
+                    
+        
+        def is_vbdotnet(data):
+            for d in data:
+                if "Compiler" in d:
+                    stuff = d.split('.')
+                    if "VisualBasic" in stuff:
+                        return True
+            return False
+
+
+        def is_autoit(data):
+            for d in data:
+                if "AU3!" in d:
+                    return True
+            return False
+
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hsw:', ['help', 'scan', 'window='])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-s', '--scan'):
+                arg_scan = True
+
+        if not self.__check_session():
+            return
+        
+        for s in self.pe.sections:
+            if s.get_entropy() > 7:
+                print "Probably packed - PE Language Guessing failed"
+                return
+
+        # DLL checks 
+        iat = get_iat(self.pe) 
+        modules = ["VB", "mscoree.dll", "msvcr", "MSCVR"]
+        dotnet = False
+        c = False
+        # VB check
+        if check_module(iat, "VB"):
+            print ">> Visual Basic"
+        # .NET check
+        if check_module(iat, "mscoree.dll"):
+            dotnet = True
+            print ">> .NET"
+        # C check
+        if check_module(iat, "msvcr"):
+            c = True
+            print ">> C"
+        if not c and check_module(iat, "MSCVR"):
+            c = True
+            print  ">> C"
+
+        # strings check - fun with viper modules <3
+        s = strings.Strings()
+        s.set_args(['-qa'])
+        s.run()
+        data = s.content
+        if is_cpp(data, c):
+            print ">> CPP"
+        if not dotnet and is_delphi(data):
+            print ">> Delphi"
+        if dotnet and is_vbdotnet(data):
+            print ">> Visual Basic .Net"
+        if is_autoit(data):
+            print ">> Autoit"
+
+        # if you appreciate the 'command' I will add the scan support.
+        if arg_scan:
+            print_info("Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                pass 
+    
     def sections(self):
         if not self.__check_session():
             return
@@ -670,6 +805,7 @@ class PE(Module):
         print("\tcompiletime\tShow the compiletime")
         print("\tpeid\t\tShow the PEiD signatures")
         print("\tsecurity\tShow digital signature")
+        print("\tlanguage\tGuess PE language")
         print("\tsections\tList PE Sections")
         print("")
 
@@ -700,3 +836,5 @@ class PE(Module):
             self.security()
         elif self.args[0] == 'sections':
             self.sections()
+        elif self.args[0] == 'language':
+            self.language()

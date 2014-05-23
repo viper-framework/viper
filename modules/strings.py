@@ -69,6 +69,7 @@ class Strings(Module):
     cmd = 'strings'
     description = 'Extract strings from file'
     authors = ['nex', 'Brian Wallace']
+    content = None
 
     def extract_hosts(self, strings):
         for entry in strings:
@@ -96,16 +97,19 @@ class Strings(Module):
             print("\t--help (-h)\tShow this help message")
             print("\t--all (-a)\tPrint all strings")
             print("\t--hosts (-H)\tExtract IP addresses and domains from strings")
+            print("\t--quiet (-q)\tQuiet/Silent mode")
             print("")
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'haH', ['help', 'all', 'hosts'])
+            opts, argv = getopt.getopt(self.args[0:], 'haHq', ['help', 'all',
+            'hosts', 'quiet'])
         except getopt.GetoptError as e:
             print(e)
             return
 
         arg_all = False
         arg_hosts = False
+        quiet = False
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
@@ -115,6 +119,8 @@ class Strings(Module):
                 arg_all = True
             elif opt in ('-H', '--hosts'):
                 arg_hosts = True
+            elif opt in ('-q', '--quiet'):
+                quiet = True
 
         if not arg_all and not arg_hosts:
             usage()
@@ -127,9 +133,13 @@ class Strings(Module):
         if os.path.exists(__sessions__.current.file.path):
             regexp = '[\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
             strings = re.findall(regexp, __sessions__.current.file.data)
+            if quiet:
+                self.content = strings
 
         if arg_all:
             for entry in strings:
-                print(entry)
+                if not quiet:
+                    print(entry)
         elif arg_hosts:
-            self.extract_hosts(strings)
+            if not quiet:
+                self.extract_hosts(strings)
