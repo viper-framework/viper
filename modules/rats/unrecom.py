@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from viper.common.out import *
 
 def extract_embedded(zip_data):
-    enckey = None
+    raw_embedded = None
     archive = StringIO(zip_data)
     with ZipFile(archive) as zip:
         for name in zip.namelist(): # get all the file names
@@ -20,7 +20,7 @@ def extract_embedded(zip_data):
                 print_info("Encryption Key {0}".format(zip.read(name)))
             if name == "load/MANIFEST.MF": # this is the embedded jar                
                 raw_embedded = zip.read(name)
-    if enckey != None:
+    if raw_embedded != None:
         # Decrypt The raw file
         dec_embedded = decrypt_arc4(enckey, raw_embedded)
         return dec_embedded
