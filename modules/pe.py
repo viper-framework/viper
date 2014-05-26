@@ -668,12 +668,13 @@ class PE(Module):
             return False
 
 
-        def is_cpp(data, flag):
+        def is_cpp(data, cnt):
+            print data
             for d in data:
-                if (d.find("type_info") or d.find("RTTI")) != -1:
-                    flag += 1
+                if  "type_info" in d or "RTTI" in d:
+                    cnt += 1
                     break
-            if flag == 2:
+            if cnt == 2:
                 return True
             return False
 
@@ -704,6 +705,59 @@ class PE(Module):
             return False
 
 
+        def is_packed(pe):
+            for s in pe.sections:
+                if s.get_entropy() > 7:
+                    return True
+            return False
+
+
+        def find_language(iat, sample):
+            dotnet = False
+            c = 0
+            found = False
+
+            # VB check
+            if check_module(iat, "VB"):
+                print_info("%s - Possible language: Visual Basic" % sample.name)
+                return True
+
+            # .NET check
+            if check_module(iat, "mscoree.dll") and not found:
+                dotnet = True
+                found = True
+                print_info("%s - Possible language: .NET" % sample.name)
+            
+            # C DLL check
+            if not found and (check_module(iat, "msvcr") or check_module(iat,
+            "MSVCR") or check_module(iat, "c++")):
+                c += 1
+               
+
+            # strings check - fun with viper modules <3
+            if not found:
+                s = strings.Strings()
+                s.set_args(['-qa'])
+                s.run()
+                data = s.content
+                if is_cpp(data, c) and not found:
+                    print_info("%s - Possible language: CPP" % sample.name)
+                    found = True
+                if not found and c == 1:
+                    print_info("%s - Possible language: C" % sample.name)
+                    found = True
+                if not dotnet and is_delphi(data) and not found:
+                    print_info("%s - Possible language: Delphi" % sample.name)
+                    found = True
+                if dotnet and is_vbdotnet(data):
+                    print_info("%s - Possible language: Visual Basic .Net" % sample.name)
+                    found = True
+                if is_autoit(data) and not found:
+                    print_info("%s - Possible language: Autoit" % sample.name)
+                    found = True
+            return found
+
+
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hsw:', ['help', 'scan', 'window='])
         except getopt.GetoptError as e:
@@ -723,44 +777,15 @@ class PE(Module):
         if not self.__check_session():
             return
         
-        for s in self.pe.sections:
-            if s.get_entropy() > 7:
-                print "Probably packed - PE Language Guessing failed"
-                return
+        if is_packed(self.pe):
+            print_error("Probably packed - PE Language Guessing failed")
+            return 
 
         # DLL checks 
         iat = get_iat(self.pe) 
-        modules = ["VB", "mscoree.dll", "msvcr", "MSCVR"]
-        dotnet = False
-        c = False
-        # VB check
-        if check_module(iat, "VB"):
-            print ">> Visual Basic"
-        # .NET check
-        if check_module(iat, "mscoree.dll"):
-            dotnet = True
-            print ">> .NET"
-        # C check
-        if check_module(iat, "msvcr"):
-            c = True
-            print ">> C"
-        if not c and check_module(iat, "MSCVR"):
-            c = True
-            print  ">> C"
-
-        # strings check - fun with viper modules <3
-        s = strings.Strings()
-        s.set_args(['-qa'])
-        s.run()
-        data = s.content
-        if is_cpp(data, c):
-            print ">> CPP"
-        if not dotnet and is_delphi(data):
-            print ">> Delphi"
-        if dotnet and is_vbdotnet(data):
-            print ">> Visual Basic .Net"
-        if is_autoit(data):
-            print ">> Autoit"
+        
+        if not find_language(iat, __sessions__.current.file):
+            print_error("Programming language not identified.")
 
         # if you appreciate the 'command' I will add the scan support.
         if arg_scan:
@@ -771,8 +796,27 @@ class PE(Module):
 
             matches = []
             for sample in samples:
-                pass 
-    
+                sample_path = get_sample_path(sample.sha256)
+                
+                if not os.path.exists(sample_path):
+                    continue
+                
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                except pefile.PEFormatError as e:
+                    print_error("Unable to parse PE file: {0}".format(e))
+                    continue
+
+                if is_packed(cur_pe):
+                    print_error("%s - Probably packed - PE Language Guessing failed" % sample.name)
+                    continue
+
+                cur_iat = get_iat(cur_pe)
+                if not find_language(cur_iat, sample):
+                    print_error("%s - Programming language not identified." %
+                    sample.name)
+
+
     def sections(self):
         if not self.__check_session():
             return
