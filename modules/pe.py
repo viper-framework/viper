@@ -5,6 +5,7 @@ import getopt
 import hashlib
 import datetime
 import tempfile
+import re
 
 try:
     import pefile
@@ -25,7 +26,6 @@ from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
-import modules.strings as strings
 
 
 class PE(Module):
@@ -669,7 +669,6 @@ class PE(Module):
 
 
         def is_cpp(data, cnt):
-            print data
             for d in data:
                 if  "type_info" in d or "RTTI" in d:
                     cnt += 1
@@ -711,8 +710,13 @@ class PE(Module):
                     return True
             return False
 
+        
+        def get_strings(content):
+            regexp = '[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
+            return re.findall(regexp, content)
+             
 
-        def find_language(iat, sample):
+        def find_language(iat, sample, content):
             dotnet = False
             c = 0
             found = False
@@ -734,12 +738,9 @@ class PE(Module):
                 c += 1
                
 
-            # strings check - fun with viper modules <3
             if not found:
-                s = strings.Strings()
-                s.set_args(['-qa'])
-                s.run()
-                data = s.content
+                data = get_strings(content)
+                
                 if is_cpp(data, c) and not found:
                     print_info("%s - Possible language: CPP" % sample.name)
                     found = True
@@ -784,7 +785,7 @@ class PE(Module):
         # DLL checks 
         iat = get_iat(self.pe) 
         
-        if not find_language(iat, __sessions__.current.file):
+        if not find_language(iat, __sessions__.current.file, __sessions__.current.file.data):
             print_error("Programming language not identified.")
 
         # if you appreciate the 'command' I will add the scan support.
@@ -812,7 +813,7 @@ class PE(Module):
                     continue
 
                 cur_iat = get_iat(cur_pe)
-                if not find_language(cur_iat, sample):
+                if not find_language(cur_iat, sample, open(sample_path, 'rb').read()):
                     print_error("%s - Programming language not identified." %
                     sample.name)
 
