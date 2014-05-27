@@ -184,3 +184,25 @@ rule BlackShades
     condition:
         all of them
 }
+
+rule unrecom
+{
+    meta:
+        author = " Kevin Breen <kevin@techanarchy.net>"
+        date = "2014/04"
+        ref = "http://malwareconfig.com/stats/unrecom"
+        maltype = "Remote Access Trojan"
+        filetype = "jar"
+        family = "unrecom"
+
+    strings:
+        $meta = "META-INF"
+        $sub = "load"
+        $id = "ID"
+        $a = "JarMain.class"
+        $b = "MANIFEST.MF"
+        $c = "UnrecomServer.class"
+
+    condition:
+        all of them
+}
