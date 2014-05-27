@@ -119,9 +119,14 @@ class File(object):
 
     def get_mime(self):
         try:
-            mime = magic.Magic(mime=True)
-            mime_type = mime.from_file(self.path)
+            ms = magic.open(magic.MIME)
+            ms.load()
+            mime_type = ms.file(self.path)
         except:
-            return ''
+            try:
+                mime = magic.Magic(mime=True)
+                mime_type = mime.from_file(self.path)
+            except:
+                return ''
 
         return mime_type
