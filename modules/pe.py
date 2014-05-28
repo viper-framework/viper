@@ -5,6 +5,7 @@ import getopt
 import hashlib
 import datetime
 import tempfile
+import re
 
 try:
     import pefile
@@ -25,6 +26,7 @@ from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
+
 
 class PE(Module):
     cmd = 'pe'
@@ -638,6 +640,184 @@ class PE(Module):
             if len(matches) > 0:
                 print(table(header=['Name', 'SHA256'], rows=matches))                
 
+    
+    def language(self):
+
+        def usage():
+            print("usage: pe language [-s]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--scan (-s)\tScan the repository")
+            print("")
+
+        def get_iat(pe):
+            iat = []
+            for peimport in pe.DIRECTORY_ENTRY_IMPORT:
+                iat.append(peimport.dll)
+            return iat
+        
+        # DLLs checks
+        def check_module(iat, match):
+            for imp in iat:
+                if imp.find(match) != -1:
+                    return True
+            return False
+
+
+        def is_cpp(data, cnt):
+            for d in data:
+                if  "type_info" in d or "RTTI" in d:
+                    cnt += 1
+                    break
+            if cnt == 2:
+                return True
+            return False
+
+
+        def is_delphi(data):
+            for d in data:
+                if "Borland" in d:
+                    path = d.split('\\')
+                    for p in path:
+                        if 'Delphi' in p:
+                            return True
+            return False
+                    
+        
+        def is_vbdotnet(data):
+            for d in data:
+                if "Compiler" in d:
+                    stuff = d.split('.')
+                    if "VisualBasic" in stuff:
+                        return True
+            return False
+
+
+        def is_autoit(data):
+            for d in data:
+                if "AU3!" in d:
+                    return True
+            return False
+
+
+        def is_packed(pe):
+            for s in pe.sections:
+                if s.get_entropy() > 7:
+                    return True
+            return False
+
+        
+        def get_strings(content):
+            regexp = '[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
+            return re.findall(regexp, content)
+             
+
+        def find_language(iat, sample, content):
+            dotnet = False
+            c = 0
+            found = False
+
+            # VB check
+            if check_module(iat, "VB"):
+                print_info("%s - Possible language: Visual Basic" % sample.name)
+                return True
+
+            # .NET check
+            if check_module(iat, "mscoree.dll") and not found:
+                dotnet = True
+                found = True
+                print_info("%s - Possible language: .NET" % sample.name)
+            
+            # C DLL check
+            if not found and (check_module(iat, "msvcr") or check_module(iat,
+            "MSVCR") or check_module(iat, "c++")):
+                c += 1
+               
+
+            if not found:
+                data = get_strings(content)
+                
+                if is_cpp(data, c) and not found:
+                    print_info("%s - Possible language: CPP" % sample.name)
+                    found = True
+                if not found and c == 1:
+                    print_info("%s - Possible language: C" % sample.name)
+                    found = True
+                if not dotnet and is_delphi(data) and not found:
+                    print_info("%s - Possible language: Delphi" % sample.name)
+                    found = True
+                if dotnet and is_vbdotnet(data):
+                    print_info("%s - Possible language: Visual Basic .Net" % sample.name)
+                    found = True
+                if is_autoit(data) and not found:
+                    print_info("%s - Possible language: Autoit" % sample.name)
+                    found = True
+            return found
+
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hsw:', ['help', 'scan', 'window='])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-s', '--scan'):
+                arg_scan = True
+
+        if not self.__check_session():
+            return
+        
+        if is_packed(self.pe):
+            print_error("Probably packed - PE Language Guessing failed")
+            return 
+
+        # DLL checks 
+        iat = get_iat(self.pe) 
+        
+        if not find_language(iat, __sessions__.current.file, __sessions__.current.file.data):
+            print_error("Programming language not identified.")
+
+        # if you appreciate the 'command' I will add the scan support.
+        if arg_scan:
+            print_info("Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                
+                if not os.path.exists(sample_path):
+                    continue
+                
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                except pefile.PEFormatError as e:
+                    print_error("Unable to parse PE file: {0}".format(e))
+                    continue
+
+                if is_packed(cur_pe):
+                    print_error("%s - Probably packed - PE Language Guessing failed" % sample.name)
+                    continue
+
+                cur_iat = get_iat(cur_pe)
+                if not find_language(cur_iat, sample, open(sample_path, 'rb').read()):
+                    print_error("%s - Programming language not identified." %
+                    sample.name)
+
+
     def sections(self):
         if not self.__check_session():
             return
@@ -670,6 +850,7 @@ class PE(Module):
         print("\tcompiletime\tShow the compiletime")
         print("\tpeid\t\tShow the PEiD signatures")
         print("\tsecurity\tShow digital signature")
+        print("\tlanguage\tGuess PE language")
         print("\tsections\tList PE Sections")
         print("")
 
@@ -700,3 +881,5 @@ class PE(Module):
             self.security()
         elif self.args[0] == 'sections':
             self.sections()
+        elif self.args[0] == 'language':
+            self.language()
