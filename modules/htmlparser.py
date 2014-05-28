@@ -3,127 +3,138 @@
 
 import os
 import re
+import math
 import getopt
-from bs4 import BeautifulSoup
 import string
 import hashlib
-
-# imports for entropy
-import math
 from collections import Counter
 
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
+try:
+    from bs4 import BeautifulSoup
+    HAVE_BS4 = True
+except ImportError:
+    HAVE_BS4 = False
+
 class HTMLParse(Module):
     cmd = 'html'
     description = 'Parse html files and extract content'
     authors = ['Kevin Breen', 'nex']
 
+    def __init__(self):
+        self.soup = None
+
+    def string_clean(self, value):
+        try:
+            value = filter(lambda x: x in string.printable, value)
+            return re.sub('[\n\t\r]', '', value)
+        except:
+            return value
+
+    def shannon_entropy(self, s):
+        s = str(s)
+        p, lns = Counter(s), float(len(s))
+        return -sum(count/lns * math.log(count/lns, 2) for count in p.values())
+
+    def dump_output(self, stream, out_dir, out_type):
+        stream = str(stream)
+        # TODO: Change this to a folder per type.
+        md5 = hashlib.md5(stream).hexdigest()
+
+        out_name = "HTML_{1}_{2}".format(md5, out_type)
+        out_path = os.path.join(out_dir, out_name)
+
+        with open(out_path, 'w') as out:
+            out.write(stream)
+
+    def parse_scripts(self):
+        scripts = []
+        script_content = []
+        for script in self.soup.find_all('script'):
+            script_type = script.get('type')
+            script_src = script.get('src')
+            content = script.string
+            script_content.append(content)
+            script_entropy = self.shannon_entropy(script_content)
+            scripts.append([
+                script_type,
+                script_src,
+                script_entropy
+            ])
+
+        return scripts, script_content
+
+    def parse_hrefs(self):
+        links = []
+        for link in self.soup.find_all('a'):
+            url = link.get('href')
+            text = link.string
+            links.append([url, text])
+
+        return links
+        
+    def parse_iframes(self):
+        # TODO: soup the iframe contents and look for hrefs.
+        iframes = []
+        frame_content = []
+        for frame in self.soup.find_all('iframe'):
+            src = frame.get('src')
+            content = frame
+            entropy = self.shannon_entropy(content)
+            size = "{0}x{1}".format(frame.get('width'), frame.get('height'))
+            # Because None can be misleading when no width or height is specified for the ifame
+            size = size.replace('NonexNone','Not Specified')
+            iframes.append([src, size, entropy])
+            frame_content.append(content)
+        return iframes, frame_content
+            
+    def parse_embedded(self):
+        # Java Applets
+        java = []
+        flash = []
+        for applet in self.soup.find_all('applet'):
+            archive = applet.get('archive')
+            code = applet.get('code')
+            java.append([archive, code])
+        # flash
+        for embed in self.soup.find_all('embed'):
+            src = embed.get('src')
+            flash.append([src])
+        for obj in self.soup.find_all('object'):
+            data = obj.get('data')
+            flash.append([data])
+        return java, flash
+            
+
+    def parse_images(self):
+        images = []
+        for image in self.soup.find_all('img'):
+            img_src = image.get('src')
+            img_alt = image.get('alt')
+            images.append([img_src, img_alt])
+        return images
+
     def run(self):
         def usage():
-            print("usage: email [-hslfeid]")
-            print("The Dump Option is availiable for iframes scripts and images")
-            print("If you use dump with images a standard http request will be used to fetch each image")
+            print("usage: html [-hslfeid]")
+            print("The --dump option is availiable for iframes scripts and images")
+            print("If you use --dump with images an http request will be executed to fetch each image")
 
         def help():
             usage()
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--script (-s)\tExtract All script tags")
-            print("\t--links (-l)\tShow All Links")
-            print("\t--iframe (-f)\tShow all Iframes")
+            print("\t--script (-s)\tExtract all script tags")
+            print("\t--links (-l)\tShow all links")
+            print("\t--iframe (-f)\tShow all iframes")
             print("\t--embed (-e)\tShow all embedded files")
             print("\t--images (-i)\tExtract all images")
-            print("\t--dump (-d)\tDump all Outputs to files")
-
-        def string_clean(value):
-            try:
-                value = filter(lambda x: x in string.printable, value)
-                return re.sub('[\n\t\r]', '', value)
-            except:
-                return value
-
-        def shannon_entropy(s):
-            s = str(s)
-            p, lns = Counter(s), float(len(s))
-            return -sum(count/lns * math.log(count/lns, 2) for count in p.values())
-
-        def dump_output(stream, out_dir, out_type):
-            stream = str(stream)
-            # ToDo - Change this to a folder per type
-            md5 = hashlib.md5(stream).hexdigest()
-            out_name = "{0}_{1}_{2}".format('HTML', md5, out_type)
-            out_path = os.path.join(out_dir, out_name)
-            with open(out_path, 'w') as out:
-                out.write(stream)
-            return
-
-        def parse_scripts(soup):
-            scripts = []
-            script_content = []
-            for script in soup.find_all('script'):
-                script_type = script.get('type')
-                script_src = script.get('src')
-                content = script.string
-                script_content.append(content)
-                script_entropy = shannon_entropy(script_content)
-                scripts.append([script_type, script_src, script_entropy])
-            return scripts, script_content
-
-        def parse_hrefs(soup):
-            links = []
-            for link in soup.find_all('a'):
-                url = link.get('href')
-                text = link.string
-                links.append([url, text])
-            print links
-            return links
-            
-        def parse_iframes(soup):
-            # ToDo - soup the iframe contents and look for hrefs
-            iframes = []
-            frame_content = []
-            for frame in soup.find_all('iframe'):
-                src = frame.get('src')
-                content = frame
-                entropy = shannon_entropy(content)
-                size = "{0}x{1}".format(frame.get('width'), frame.get('height'))
-                # Because None can be misleading when no width or height is specified for the ifame
-                size = size.replace('NonexNone','Not Specified')
-                iframes.append([src, size, entropy])
-                frame_content.append(content)
-            return iframes, frame_content
+            print("\t--dump (-d)\tDump all outputs to files")
                 
-        def parse_embedded(soup):
-            # Java Applets
-            java = []
-            flash = []
-            for applet in soup.find_all('applet'):
-                archive = applet.get('archive')
-                code = applet.get('code')
-                java.append([archive, code])
-            # flash
-            for embed in soup.find_all('embed'):
-                src = embed.get('src')
-                flash.append([src])
-            for obj in soup.find_all('object'):
-                data = obj.get('data')
-                flash.append([data])
-            return java, flash
-                
-
-        def parse_images(soup):
-            images = []
-            for image in soup.find_all('img'):
-                img_src = image.get('src')
-                img_alt = image.get('alt')
-                images.append([img_src, img_alt])
-            return images
-                
-        # Start Here
         if not __sessions__.is_set():
             print_error("No session opened")
             return
@@ -134,59 +145,49 @@ class HTMLParse(Module):
             print(e)
             return
 
-        # Create a Soup
         try:
             html_data = open(__sessions__.current.file.path).read()
-            soup = BeautifulSoup(html_data)
-        except:
-            print_error("Something went wrong")
+            self.soup = BeautifulSoup(html_data)
+        except Exception as e:
+            print_error("Something went wrong: {0}".format(e))
             return
-            
-        # Get Dump Values
+
+        # Check first if the --dump option has been enabled.
+        arg_dump = None
         for opt, value in opts:
             if opt in ('-d', '--dump'):
-                dump_flag = True
-                dump_path = value
-            else:
-                dump_flag = False
+                arg_dump = value
         
-        # run the option
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
-                
-            # Script Tags
             elif opt in ('-s', '--script'):
-                scripts, script_content = parse_scripts(soup)
-                if dump_flag:
-                    print_info("Dumping Output to {0}".format(dump_path))
+                scripts, script_content = self.parse_scripts()
+                if arg_dump:
+                    print_info("Dumping Output to {0}".format(arg_dump))
                     for s in script_content:
-                        dump_output(s, dump_path, 'Scripts')
+                        self.dump_output(s, arg_dump, 'Scripts')
                     return
                 else:
-                    print_info("Scripts")
+                    print_info("Scripts:")
                     print(table(header=['Type', 'Source', 'Entropy'], rows=scripts))
                 return
-                
-            # Links & Hrefs
             elif opt in ('-l' '--links'):
-                links = parse_hrefs(soup)
-                # table print here with more than a handful of links throws a maximum recursion depth exceeded
-                #print(table(header=['URL', 'Text'], rows=links))
+                links = self.parse_hrefs()
                 print_info("Links")
                 print_info("Target \t Text")
                 for link in links:
-                    print_item("{0}\t {1}".format(link[0], string_clean(link[1])))
+                    print_item("{0}\t {1}".format(link[0], self.string_clean(link[1])))
                 return
                 
             # iFrames
             elif opt in ('-f', '--frame'):
-                frames, frame_content = parse_iframes(soup)
-                if dump_flag:
-                    print_info("Dumping Output to {0}".format(dump_path))
+                frames, frame_content = self.parse_iframes()
+                if arg_dump:
+                    print_info("Dumping Output to {0}".format(arg_dump))
                     for f in frame_content:
-                        dump_output(f, dump_path, 'iframe')
+                        self.dump_output(f, arg_dump, 'iframe')
                     return
                 else:
                     print_info("IFrames")
@@ -195,9 +196,9 @@ class HTMLParse(Module):
                 
             # Images
             elif opt in ('-i','--images'):
-                images = parse_images(soup)
-                if dump_flag:
-                    print_info("Dumping Images to {0}".format(dump_path))
+                images = self.parse_images()
+                if arg_dump:
+                    print_info("Dumping Images to {0}".format(arg_dump))
                     print_error("Not Implemented Yet")
                     # this will need an extra http request to download the images
                     return
@@ -208,9 +209,9 @@ class HTMLParse(Module):
 
             # Embedded
             elif opt in ('-e','--embed'):
-                java, flash = parse_embedded(soup)
-                if dump_flag:
-                    print_info("Dumping Embedded Items to {0}".format(dump_path))
+                java, flash = self.parse_embedded()
+                if arg_dump:
+                    print_info("Dumping Embedded Items to {0}".format(arg_dump))
                     print_error("Not Implemented Yet")
                     # this will need an extra http request to download the images
                     return
