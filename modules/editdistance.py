@@ -35,11 +35,6 @@ class Editdistance(Module):
             if sample.sha256 == __sessions__.current.file.sha256:
                 continue
 
-            sample_path = get_sample_path(sample.sha256)
-
-            if not os.path.exists(sample_path):
-                continue
-            
             filenames.append(sample.name)
 
         
