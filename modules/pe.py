@@ -640,8 +640,6 @@ class PE(Module):
             if len(matches) > 0:
                 print(table(header=['Name', 'SHA256'], rows=matches))                
 
-    # TODO: need to improve overall logic of this function, optimize the code
-    # and improve the presented output.
     def language(self):
 
         def usage():
@@ -670,45 +668,45 @@ class PE(Module):
 
             return False
 
-        def is_cpp(data, cnt):
-            for d in data:
-                if 'type_info' in d or 'RTTI' in d:
-                    cnt += 1
+        def is_cpp(data, cpp_count):
+            for line in data:
+                if 'type_info' in line or 'RTTI' in line:
+                    cpp_count += 1
                     break
 
-            if cnt == 2:
+            if cpp_count == 2:
                 return True
 
             return False
 
         def is_delphi(data):
-            for d in data:
-                if 'Borland' in d:
-                    path = d.split('\\')
+            for line in data:
+                if 'Borland' in line:
+                    path = line.split('\\')
                     for p in path:
                         if 'Delphi' in p:
                             return True
             return False
                     
         def is_vbdotnet(data):
-            for d in data:
-                if 'Compiler' in d:
-                    stuff = d.split('.')
+            for line in data:
+                if 'Compiler' in line:
+                    stuff = line.split('.')
                     if 'VisualBasic' in stuff:
                         return True
 
             return False
 
         def is_autoit(data):
-            for d in data:
-                if 'AU3!' in d:
+            for line in data:
+                if 'AU3!' in line:
                     return True
 
             return False
 
         def is_packed(pe):
-            for s in pe.sections:
-                if s.get_entropy() > 7:
+            for section in pe.sections:
+                if section.get_entropy() > 7:
                     return True
 
             return False
@@ -719,8 +717,8 @@ class PE(Module):
 
         def find_language(iat, sample, content):
             dotnet = False
-            c = 0
-            found = False
+            cpp_count = 0
+            found = None
 
             # VB check
             if check_module(iat, 'VB'):
@@ -730,36 +728,30 @@ class PE(Module):
             # .NET check
             if check_module(iat, 'mscoree.dll') and not found:
                 dotnet = True
-                found = True
-                print_info("%s - Possible language: .NET" % sample.name)
+                found = '.NET'
             
             # C DLL check
             if not found and (check_module(iat, 'msvcr') or check_module(iat, 'MSVCR') or check_module(iat, 'c++')):
-                c += 1
+                cpp_count += 1
 
             if not found:
                 data = get_strings(content)
                 
-                if is_cpp(data, c) and not found:
-                    print_info("{0} - Possible language: CPP".format(sample.name))
-                    found = True
-                if not found and c == 1:
-                    print_info("{0} - Possible language: C".format(sample.name))
-                    found = True
+                if is_cpp(data, cpp_count) and not found:
+                    found = 'CPP'
+                if not found and cpp_count == 1:
+                    found = 'C'
                 if not dotnet and is_delphi(data) and not found:
-                    print_info("{0} - Possible language: Delphi".format(sample.name))
-                    found = True
+                    found = 'Delphi'
                 if dotnet and is_vbdotnet(data):
-                    print_info("{0} - Possible language: Visual Basic .Net".format(sample.name))
-                    found = True
+                    found = 'Visual Basic .NET'
                 if is_autoit(data) and not found:
-                    print_info("{0} - Possible language: Autoit".format(sample.name))
-                    found = True
+                    found = 'AutoIt'
 
             return found
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hsw:', ['help', 'scan', 'window='])
+            opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
         except getopt.GetoptError as e:
             print(e)
             usage()
@@ -780,8 +772,17 @@ class PE(Module):
         if is_packed(self.pe):
             print_warning("Probably packed, the language guess might be unreliable")
 
-        if not find_language(get_iat(self.pe), __sessions__.current.file, __sessions__.current.file.data):
+        language = find_language(
+            get_iat(self.pe),
+            __sessions__.current.file,
+            __sessions__.current.file.data
+        )
+
+        if language:
+            print_info("Probable language: {0}".format(bold(language)))
+        else:
             print_error("Programming language not identified.")
+            return
 
         if arg_scan:
             print_info("Scanning the repository for matching samples...")
@@ -791,8 +792,11 @@ class PE(Module):
 
             matches = []
             for sample in samples:
+                if sample.sha256 == __sessions__.current.file.sha256:
+                    continue
+
                 sample_path = get_sample_path(sample.sha256)
-                
+
                 if not os.path.exists(sample_path):
                     continue
                 
@@ -801,12 +805,24 @@ class PE(Module):
                 except pefile.PEFormatError as e:
                     continue
 
+                cur_packed = ''
                 if is_packed(cur_pe):
-                    print_warning("Probably packed, the language guess might be unreliable")
+                    cur_packed = 'Yes'
 
                 cur_iat = get_iat(cur_pe)
-                if not find_language(cur_iat, sample, open(sample_path, 'rb').read()):
-                    print_error("{0} - Programming language not identified.".format(sample.name))
+                cur_language = find_language(
+                    cur_iat,
+                    sample,
+                    open(sample_path, 'rb').read()
+                )
+
+                if cur_language and cur_language == language:
+                    matches.append([sample.name, sample.md5, cur_packed])
+
+            if matches:
+                print(table(header=['Name', 'MD5', 'Is Packed'], rows=matches))
+            else:
+                print_info("No matches found")
 
     def sections(self):
         if not self.__check_session():
