@@ -781,7 +781,7 @@ class PE(Module):
         if language:
             print_info("Probable language: {0}".format(bold(language)))
         else:
-            print_error("Programming language not identified.")
+            print_error("Programming language not identified")
             return
 
         if arg_scan:
@@ -809,14 +809,16 @@ class PE(Module):
                 if is_packed(cur_pe):
                     cur_packed = 'Yes'
 
-                cur_iat = get_iat(cur_pe)
                 cur_language = find_language(
-                    cur_iat,
+                    get_iat(cur_pe),
                     sample,
                     open(sample_path, 'rb').read()
                 )
 
-                if cur_language and cur_language == language:
+                if not cur_language:
+                    continue
+
+                if cur_language == language:
                     matches.append([sample.name, sample.md5, cur_packed])
 
             if matches:
