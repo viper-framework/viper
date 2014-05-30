@@ -6,8 +6,7 @@ import sys
 import string
 import re
 
-prng_seed = 0
-
+PRNG_SEED = 0
 
 def is_valid_config(config):
     if config[:3] != "\x0c\x0c\x0c":
@@ -16,14 +15,13 @@ def is_valid_config(config):
         return False
     return True
 
-
 def get_next_rng_value():
-    global prng_seed
-    prng_seed = ((prng_seed * 1140671485 + 12820163) & 0xffffff)
-    return prng_seed / 65536
+    global PRNG_SEED
+    PRNG_SEED = ((PRNG_SEED * 1140671485 + 12820163) & 0xffffff)
+    return PRNG_SEED / 65536
 
 def decrypt_configuration(hex):
-    global prng_seed
+    global PRNG_SEED
     ascii = hex.decode('hex')
     tail = ascii[0x20:]
 
@@ -32,15 +30,13 @@ def decrypt_configuration(hex):
         pre_check.append(ord(tail[x]) ^ 0x0c)
 
     for x in xrange(0xffffff):
-        prng_seed = x
+        PRNG_SEED = x
         if get_next_rng_value() != pre_check[0] or get_next_rng_value() != pre_check[1] or get_next_rng_value() != pre_check[2]:
             continue
-        prng_seed = x
+        PRNG_SEED = x
         config = "".join((chr(ord(c) ^ int(get_next_rng_value())) for c in tail))
         if is_valid_config(config):
             return config.split("\x0c\x0c\x0c")
-    return None
- 
 
 def config_extract(raw_data):
     config_pattern = re.findall('[0-9a-fA-F]{154,}', raw_data)
@@ -48,7 +44,6 @@ def config_extract(raw_data):
         if (len(s) % 2) == 1:
             s = s[:-1]
         return s
-    return None
 
 def config_parser(config):
     config_dict = {}
@@ -74,10 +69,8 @@ def config_parser(config):
         
 def config(data):
     raw_config = config_extract(data)
-    if raw_config is not None:
+    if raw_config:
         config = decrypt_configuration(raw_config)
-        if config is not None and len(config) > 15:
+        if config and len(config) > 15:
             sorted_config = config_parser(config)
             return sorted_config
-    return None
-
