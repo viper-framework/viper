@@ -1,5 +1,5 @@
 # Originally written by Kevin Breen (@KevTheHermit):
-# https://github.com/kevthehermit/RATDecoders/blob/master/BlueBanana.py
+# https://github.com/kevthehermit/RATDecoders/blob/master/unrecom.py
 
 import string
 from zipfile import ZipFile
