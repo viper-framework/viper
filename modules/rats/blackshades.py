@@ -47,7 +47,8 @@ def config_extract(raw_data):
     for s in config_pattern:
         if (len(s) % 2) == 1:
             s = s[:-1]
-    return s
+        return s
+    return None
 
 def config_parser(config):
     config_dict = {}
@@ -73,9 +74,10 @@ def config_parser(config):
         
 def config(data):
     raw_config = config_extract(data)
-    config = decrypt_configuration(raw_config)
-    if config is not None and len(config) > 15:
-        sorted_config = config_parser(config)
-        return sorted_config
+    if raw_config is not None:
+        config = decrypt_configuration(raw_config)
+        if config is not None and len(config) > 15:
+            sorted_config = config_parser(config)
+            return sorted_config
     return None
 
