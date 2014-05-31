@@ -598,8 +598,13 @@ class Commands(object):
     #
     # This command retrieves a list of all projects.
     def cmd_projects(self, *args):
-        print_info("Current Projects:")
         projects_path = os.path.join(os.getcwd(), 'projects')
+
+        if not os.path.exists(projects_path):
+            print_info("The projects directory does not exist yet")
+            return
+
+        print_info("Current Projects:")            
 
         rows = []
         for project in os.listdir(projects_path):
