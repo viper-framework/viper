@@ -118,6 +118,14 @@ class Office(Module):
         
     def export(self, ole, export_path):
         # basic sanity check on export path
+        if not os.path.exists(export_path):
+            try:
+                os.makedirs(export_path)
+            except:
+                print_error("unable to create dir at {0}".format(export_path))
+        elif os.path.isfile(export_path):
+            print_error("Can not write to file please specify a folder")
+            return
 
         for stream in ole.listdir(streams=True, storages=True):
             try:
@@ -199,7 +207,6 @@ class Office(Module):
         
         # Flash Check.
         for stream in ole.listdir():
-            print stream
             has_flash += len(self.detect_flash(ole.openstream(stream).read()))
             
         # put it all together
