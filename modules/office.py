@@ -61,6 +61,7 @@ class Office(Module):
             # Read SWF into buffer. If compressed read uncompressed size.
             swf = data[start:start+size]
             is_compressed = False
+            swf_deflate = None
             if 'CWS' in header:
                 is_compressed = True
                 # Data after header (8 bytes) until the end is compressed
