@@ -123,7 +123,7 @@ class Office(Module):
                 ole.getctime(obj)
             ])
 
-        print_info("Timestamps:")
+        print_info("OLE Structure:")
         print(table(header=['Object', 'Creation', 'Modified'], rows=rows))
 
         ole.close()
@@ -220,12 +220,12 @@ class Office(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--meta (-m)\tGet The Metadata")
-            print("\t--time (-t)\tGet The TimeStamp Data")
+            print("\t--struct (-s)\tShow The OLE Structure")
             print("\t--oleid (-o)\tGet The OLE Information")
             print("")
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'hmto', ['help', 'meta', 'time', 'oleid'])
+            opts, argv = getopt.getopt(self.args[0:], 'hmso', ['help', 'meta', 'struct', 'oleid'])
         except getopt.GetoptError as e:
             print(e)
             return
@@ -237,7 +237,7 @@ class Office(Module):
             if opt in ('-m','--meta'):
                 self.metadata()
                 return
-            if opt in ('-t','--time'):
+            if opt in ('-s','--struct'):
                 self.metatimes()
                 return
             if opt in ('-o','--oleid'):
