@@ -170,6 +170,10 @@ class Office(Module):
         # Macro Check.
         if ole.exists('Macros'):
             has_macros = True
+            
+        for obj in ole.listdir(streams=True, storages=True):
+            if 'VBA' in obj:
+                has_macros = True
         
         # PPT Check.
         if ole.exists('PowerPoint Document'):
