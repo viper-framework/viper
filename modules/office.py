@@ -68,13 +68,13 @@ class Office(Module):
                 compressed_data = swf[8:]
 
                 try:
-                    zlib.decompress(compressed_data)
+                    swf_deflate = zlib.decompress(compressed_data)
                 except:
                     continue
 
             # Else we don't check anything at this stage, we only assume it is a
             # valid SWF. So there might be false positives for uncompressed SWF.
-            matches.append((start, size, is_compressed))
+            matches.append((start, size, is_compressed, swf, swf_deflate))
 
         return matches
 
@@ -86,14 +86,8 @@ class Office(Module):
     # MAIN FUNCTIONS
     #
 
-    def metadata(self):
-        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
-            print_error("Not a valid OLE file")
-            return
-
-        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
+    def metadata(self, ole):
         meta = ole.get_metadata()
-
         for attribs in ['SUMMARY_ATTRIBS', 'DOCSUM_ATTRIBS']:
             print_info("{0} Metadata".format(attribs))
             rows = []
@@ -104,14 +98,8 @@ class Office(Module):
 
         ole.close()
     
-    def metatimes(self):
-        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
-            print_error("Not a valid OLE File")
-            return
-
+    def metatimes(self, ole):
         rows = []
-        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
-
         # Root document.
         rows.append(['Root', ole.root.getctime(), ole.root.getmtime()])
 
@@ -128,7 +116,39 @@ class Office(Module):
 
         ole.close()
         
-    def oleid(self):
+    def export(self, ole, export_path):
+        # basic sanity check on export path
+
+        for stream in ole.listdir(streams=True, storages=True):
+            try:
+                stream_content = ole.openstream(stream).read()
+                store_path = os.path.join(export_path, self.string_clean('-'.join(stream)))
+                # this is just for flash objects
+                flash_test = self.detect_flash(ole.openstream(stream).read())
+                if len(flash_test) > 0:
+                    print_info("Saving Flash Objects")
+                    count = 1
+                    for flash in flash_test:
+                        # If SWF Is compressed save the swf and the decompressed data seperatly
+                        if flash[2] == True:
+                            save_path = '{0}-FLASH-Decompressed{1}'.format(store_path, count)
+                            with open(save_path, 'wb') as flash_out:
+                                flash_out.write(flash[4])
+                            print_item("Saved Decompressed Flash File to {0}".format(save_path))
+                        save_path = '{0}-FLASH-{1}'.format(store_path, count)
+                        with open(save_path, 'wb') as flash_out:
+                            flash_out.write(flash[3])
+                        print_item("Saved Flash File to {0}".format(save_path))
+                        count += 1
+                # this is for all objects
+                with open(store_path, 'wb') as out:
+                    out.write(stream_content)
+                print_info("Saved Stream to {0}".format(store_path))
+            except IOError as e:
+                print_error("{1} - {0}".format(self.string_clean('-'.join(stream)),e))
+        ole.close()
+        
+    def oleid(self, ole):
         has_summary = False
         is_encrypted = False
         is_word = False
@@ -137,12 +157,6 @@ class Office(Module):
         is_visio = False
         has_macros = False
         has_flash = 0
-        
-        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
-            print_error('Not a valid OLE File')
-            return
-
-        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
         
         # SummaryInfo.
         if ole.exists('\x05SummaryInformation'):
@@ -185,6 +199,7 @@ class Office(Module):
         
         # Flash Check.
         for stream in ole.listdir():
+            print stream
             has_flash += len(self.detect_flash(ole.openstream(stream).read()))
             
         # put it all together
@@ -216,7 +231,7 @@ class Office(Module):
             return
 
         def usage():
-            print("usage: office [-hmto]")
+            print("usage: office [-hmsoe:]")
 
         def help():
             usage()
@@ -226,26 +241,37 @@ class Office(Module):
             print("\t--meta (-m)\tGet The Metadata")
             print("\t--struct (-s)\tShow The OLE Structure")
             print("\t--oleid (-o)\tGet The OLE Information")
+            print("\t--export (-e)\tExport OLE Objects")
             print("")
 
+        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
+            print_error('Not a valid OLE File')
+            return
+
+        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
+
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'hmso', ['help', 'meta', 'struct', 'oleid'])
+            opts, argv = getopt.getopt(self.args[0:], 'hmsoe:', ['help', 'meta', 'struct', 'oleid', 'export:'])
         except getopt.GetoptError as e:
             print(e)
             return
 
         for opt, value in opts:
+            if opt in ('-e', '--export'):
+                export_path = value
+                self.export(ole, export_path)
+                return
             if opt in ('-h', '--help'):
                 help()
                 return
             if opt in ('-m','--meta'):
-                self.metadata()
+                self.metadata(ole)
                 return
             if opt in ('-s','--struct'):
-                self.metatimes()
+                self.metatimes(ole)
                 return
             if opt in ('-o','--oleid'):
-                self.oleid()
+                self.oleid(ole)
                 return
 
         usage()
