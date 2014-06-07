@@ -118,43 +118,52 @@ class Office(Module):
         ole.close()
         
     def export(self, ole, export_path):
-        # basic sanity check on export path
         if not os.path.exists(export_path):
             try:
                 os.makedirs(export_path)
-            except:
-                print_error("unable to create dir at {0}".format(export_path))
-        elif os.path.isfile(export_path):
-            print_error("Can not write to file please specify a folder")
-            return
+            except Exception as e:
+                print_error("Unable to create directory at {0}: {1}".format(export_path, e))
+                return
+        else:
+            if not os.path.isdir(export_path):
+                print_error("You need to specify a folder, not a file")
+                return
 
         for stream in ole.listdir(streams=True, storages=True):
             try:
                 stream_content = ole.openstream(stream).read()
-                store_path = os.path.join(export_path, self.string_clean('-'.join(stream)))
-                # this is just for flash objects
-                flash_test = self.detect_flash(ole.openstream(stream).read())
-                if len(flash_test) > 0:
-                    print_info("Saving Flash Objects")
-                    count = 1
-                    for flash in flash_test:
-                        # If SWF Is compressed save the swf and the decompressed data seperatly
-                        if flash[2] == True:
-                            save_path = '{0}-FLASH-Decompressed{1}'.format(store_path, count)
-                            with open(save_path, 'wb') as flash_out:
-                                flash_out.write(flash[4])
-                            print_item("Saved Decompressed Flash File to {0}".format(save_path))
-                        save_path = '{0}-FLASH-{1}'.format(store_path, count)
+            except Exception as e:
+                print_warning("Unable to open stream {0}: {1}".format(self.string_clean('/'.join(stream)), e))
+                continue
+
+            store_path = os.path.join(export_path, self.string_clean('-'.join(stream)))
+
+            flash_objects = self.detect_flash(ole.openstream(stream).read())
+            if len(flash_objects) > 0:
+                print_info("Saving Flash objects...")
+                count = 1
+
+                for flash in flash_objects:
+                    # If SWF Is compressed save the swf and the decompressed data seperatly.
+                    if flash[2]:
+                        save_path = '{0}-FLASH-Decompressed{1}'.format(store_path, count)
                         with open(save_path, 'wb') as flash_out:
-                            flash_out.write(flash[3])
-                        print_item("Saved Flash File to {0}".format(save_path))
-                        count += 1
-                # this is for all objects
-                with open(store_path, 'wb') as out:
-                    out.write(stream_content)
-                print_info("Saved Stream to {0}".format(store_path))
-            except IOError as e:
-                print_error("{1} - {0}".format(self.string_clean('-'.join(stream)),e))
+                            flash_out.write(flash[4])
+
+                        print_item("Saved Decompressed Flash File to {0}".format(save_path))
+        
+                    save_path = '{0}-FLASH-{1}'.format(store_path, count)
+                    with open(save_path, 'wb') as flash_out:
+                        flash_out.write(flash[3])
+                   
+                    print_item("Saved Flash File to {0}".format(save_path))
+                    count += 1
+
+            with open(store_path, 'wb') as out:
+                out.write(stream_content)
+
+            print_info("Saved stream to {0}".format(store_path))
+        
         ole.close()
         
     def oleid(self, ole):
@@ -210,7 +219,7 @@ class Office(Module):
         for stream in ole.listdir():
             has_flash += len(self.detect_flash(ole.openstream(stream).read()))
             
-        # put it all together
+        # Put it all together.
         rows = [
             ['Summery Information', has_summary],
             ['Word', is_word],
@@ -222,9 +231,9 @@ class Office(Module):
             ['Flash Objects', has_flash]
         ]
 
-        # Print the results
+        # Print the results.
         print_info("OLE Info:")
-        #there are some non ascii chars that need stripping
+        # TODO: There are some non ascii chars that need stripping.
         print(table(header=['Test', 'Result'], rows=rows))
 
         ole.close()
@@ -253,7 +262,7 @@ class Office(Module):
             print("")
 
         if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
-            print_error('Not a valid OLE File')
+            print_error('This is not a valid OLE File, abort')
             return
 
         ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
@@ -266,8 +275,7 @@ class Office(Module):
 
         for opt, value in opts:
             if opt in ('-e', '--export'):
-                export_path = value
-                self.export(ole, export_path)
+                self.export(ole, value)
                 return
             if opt in ('-h', '--help'):
                 help()
