@@ -306,7 +306,10 @@ class Commands(object):
 
                         if not os.path.exists(file_path):
                             continue
-
+                        # Check if file is not zero
+                        if not os.path.getsize(file_path) > 0:
+                            continue
+                        
                         # Check if the file name matches the provided pattern.
                         if arg_file_name:
                             if not fnmatch.fnmatch(file_name, arg_file_name):
