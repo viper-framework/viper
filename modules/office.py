@@ -258,7 +258,7 @@ class Office(Module):
             print("\t--meta (-m)\tGet The Metadata")
             print("\t--struct (-s)\tShow The OLE Structure")
             print("\t--oleid (-o)\tGet The OLE Information")
-            print("\t--export (-e)\tExport OLE Objects")
+            print("\t--export (-e)\tExport OLE Objects (specify destination folder)")
             print("")
 
         if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
