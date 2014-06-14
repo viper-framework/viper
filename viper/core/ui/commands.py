@@ -273,7 +273,14 @@ class Commands(object):
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
                 print_warning("Skip, file \"{0}\" appears to be already stored".format(obj.name))
-                return False
+                # TODO: Make it modular as the delete code is now duplicated, this is a workaround
+                # Delete the file if requested to do so.
+                if arg_delete:
+                    try:
+                        os.unlink(obj.path)
+                    except Exception as e:
+                        print_warning("Failed deleting file: {0}".format(e))
+                    return False
 
             # Store file to the local repository.
             new_path = store_sample(obj)
