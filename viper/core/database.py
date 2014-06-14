@@ -108,7 +108,7 @@ class Tag(Base):
 
 class Database:
 
-    __metaclass__ = Singleton
+    #__metaclass__ = Singleton
 
     def __init__(self):
         db_path = os.path.join(__project__.get_path(), 'viper.db')

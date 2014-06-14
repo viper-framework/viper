@@ -33,8 +33,8 @@ class Commands(object):
             delete=dict(obj=self.cmd_delete, description="Delete the opened file"),
             find=dict(obj=self.cmd_find, description="Find a file"),
             tags=dict(obj=self.cmd_tags, description="Modify tags of the opened file"),
-            session=dict(obj=self.cmd_session, description="List or switch sessions"),
-            projects=dict(obj=self.cmd_projects, description="List existing projects"),
+            sessions=dict(obj=self.cmd_sessions, description="List or switch sessions"),
+            projects=dict(obj=self.cmd_projects, description="List or switch existing projects"),
         )
 
     ##
@@ -530,9 +530,9 @@ class Commands(object):
     # SESSION
     #
     # This command is used to list and switch across all the opened sessions.
-    def cmd_session(self, *args):
+    def cmd_sessions(self, *args):
         def usage():
-            print("usage: session [-h] [-l] [-s=session]")
+            print("usage: sessions [-h] [-l] [-s=session]")
 
         def help():
             usage()
@@ -584,8 +584,7 @@ class Commands(object):
             print_info("Opened Sessions:")
             print(table(header=['#', 'Name', 'MD5', 'Created At', 'Current'], rows=rows))
             return
-
-        if arg_switch:
+        elif arg_switch:
             for session in __sessions__.sessions:
                 if arg_switch == session.id:
                     __sessions__.switch(session)
@@ -600,22 +599,69 @@ class Commands(object):
     # PROJECTS
     #
     # This command retrieves a list of all projects.
+    # You can also switch to a different project.
     def cmd_projects(self, *args):
+        def usage():
+            print("usage: project [-h] [-l] [-s=project]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--list (-l)\tList all existing projects")
+            print("\t--switch (-s)\tSwitch to the specified project")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(args, 'hls:', ['help', 'list', 'switch='])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_list = False
+        arg_switch = None
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-l', '--list'):
+                arg_list = True
+            elif opt in ('-s', '--switch'):
+                arg_switch = value
+
         projects_path = os.path.join(os.getcwd(), 'projects')
 
         if not os.path.exists(projects_path):
             print_info("The projects directory does not exist yet")
             return
 
-        print_info("Current Projects:")            
+        if arg_list:
+            print_info("Current Projects:")            
 
-        rows = []
-        for project in os.listdir(projects_path):
-            project_path = os.path.join(projects_path, project)
-            if os.path.isdir(project_path):
-                current = ''
-                if __project__.name and project == __project__.name:
-                    current = 'Yes'
-                rows.append([project, time.ctime(os.path.getctime(project_path)), current])
+            rows = []
+            for project in os.listdir(projects_path):
+                project_path = os.path.join(projects_path, project)
+                if os.path.isdir(project_path):
+                    current = ''
+                    if __project__.name and project == __project__.name:
+                        current = 'Yes'
+                    rows.append([project, time.ctime(os.path.getctime(project_path)), current])
 
-        print(table(header=['Project Name', 'Creation Time', 'Current'], rows=rows))
+            print(table(header=['Project Name', 'Creation Time', 'Current'], rows=rows))
+            return
+        elif arg_switch:
+            if __sessions__.is_set():
+                __sessions__.close()
+                print_info("Closed opened session")
+
+            __project__.open(arg_switch)
+            print_info("Switched to project {0}".format(bold(arg_switch)))
+
+            # Need to re-initialize the Database to open the new SQLite file.
+            self.db = Database()
+            return
+
+        usage()
