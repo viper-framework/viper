@@ -233,3 +233,8 @@ class Database:
         session = self.Session()
         rows = session.query(Tag).all()
         return rows
+        
+    def get_sample_count(self):
+        session = self.Session()
+        rows = session.query(Malware).count()
+        return rows
