@@ -236,5 +236,4 @@ class Database:
         
     def get_sample_count(self):
         session = self.Session()
-        rows = session.query(Malware).count()
-        return rows
+        return session.query(Malware).count()
