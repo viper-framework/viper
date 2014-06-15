@@ -26,7 +26,7 @@ def logo():
     """)
 
     db = Database()
-    count = len(db.find(key='all'))
+    count = (db.get_sample_count())
 
     if __project__.name:
         name = __project__.name
