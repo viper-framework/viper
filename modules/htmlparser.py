@@ -44,7 +44,7 @@ class HTMLParse(Module):
         # TODO: Change this to a folder per type.
         md5 = hashlib.md5(stream).hexdigest()
 
-        out_name = "HTML_{1}_{2}".format(md5, out_type)
+        out_name = "HTML_{0}_{1}".format(md5, out_type)
         out_path = os.path.join(out_dir, out_name)
 
         with open(out_path, 'w') as out:
