@@ -19,6 +19,7 @@ association_table = Table(
     'association',
     Base.metadata,
     Column('tag_id', Integer, ForeignKey('tag.id')),
+    Column('note_id', Integer, ForeignKey('note.id')),
     Column('malware_id', Integer, ForeignKey('malware.id'))
 )
 
@@ -40,8 +41,12 @@ class Malware(Base):
     tag = relationship(
         'Tag',
         secondary=association_table,
-        cascade='all, delete',
-        backref=backref('malware', cascade='all')
+        backref=backref('malware')
+    )
+    note = relationship(
+        'Note',
+        secondary=association_table,
+        backref=backref('malware')
     )
     __table_args__ = (Index(
         'hash_index',
@@ -62,7 +67,7 @@ class Malware(Base):
         return row_dict
 
     def __repr__(self):
-        return "<Malware('%s','%s')>" % (self.id, self.md5)
+        return "<Malware('{0}','{1}')>".format(self.id, self.md5)
 
     def __init__(self,
                  md5,
@@ -101,13 +106,34 @@ class Tag(Base):
         return row_dict
 
     def __repr__(self):
-        return "<Tag ('%s','%s'>" % (self.id, self.tag)
+        return "<Tag ('{0}','{1}'>".format(self.id, self.tag)
 
     def __init__(self, tag):
         self.tag = tag
 
-class Database:
+class Note(Base):
+    __tablename__ = 'note'
 
+    id = Column(Integer(), primary_key=True)
+    title = Column(String(255), nullable=True)
+    body = Column(Text(), nullable=False)
+
+    def to_dict(self):
+        row_dict = {}
+        for column in self.__table__.columns:
+            value = getattr(self, column.name)
+            row_dict[column.name] = value
+
+        return row_dict
+
+    def __repr__(self):
+        return "<Note ('{0}','{1}'>".format(self.id, self.title)
+
+    def __init__(self, title, body):
+        self.title = title
+        self.body = body
+
+class Database:
     #__metaclass__ = Singleton
 
     def __init__(self):
@@ -151,6 +177,57 @@ class Database:
                     session.commit()
                 except SQLAlchemyError:
                     session.rollback()
+
+    def list_tags(self):
+        session = self.Session()
+        rows = session.query(Tag).all()
+        return rows
+
+    def add_note(self, sha256, title, body):
+        session = self.Session()
+
+        malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
+        if not malware_entry:
+            return
+
+        try:
+            malware_entry.note.append(Note(title, body))
+            session.commit()
+        except SQLAlchemyError as e:
+            print_error("Unable to add note: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
+
+    def get_note(self, note_id):
+        session = self.Session()
+        note = session.query(Note).get(note_id)
+        return note
+
+    def edit_note(self, note_id, body):
+        session = self.Session()
+
+        try:
+            session.query(Note).get(note_id).body = body
+            session.commit()
+        except SQLAlchemyError as e:
+            print_error("Unable to update note: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
+
+    def delete_note(self, note_id):
+        session = self.Session()
+
+        try:
+            note = session.query(Note).get(note_id)
+            session.delete(note)
+            session.commit()
+        except SQLAlchemyError as e:
+            print_error("Unable to delete note: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
 
     def add(self, obj, name=None, tags=None):
         session = self.Session()
@@ -227,11 +304,6 @@ class Database:
         else:
             print_error("No valid term specified")
 
-        return rows
-
-    def list_tags(self):
-        session = self.Session()
-        rows = session.query(Tag).all()
         return rows
         
     def get_sample_count(self):
