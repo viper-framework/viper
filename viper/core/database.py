@@ -301,6 +301,8 @@ class Database:
                 value = '%{0}%'.format(value)
 
             rows = session.query(Malware).filter(Malware.name.like(value)).all()
+        elif key == 'note':
+            rows = session.query(Malware).filter(Malware.note.any(Note.body.like(value))).all()
         else:
             print_error("No valid term specified")
 
