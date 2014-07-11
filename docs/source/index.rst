@@ -7,7 +7,7 @@ Official Documentation
 ======================
 
 .. image:: /images/viper.png
-	:align: center
+    :align: center
 
 What is Viper?
 --------------

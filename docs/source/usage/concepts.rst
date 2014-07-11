@@ -14,13 +14,13 @@ In this way you can for example create different workbenches for each malware ca
 
 As you can see from Viper's help message, you can specify a project name at startup::
 
-	nex@nex:~/viper$ ./viper.py -h
-	usage: viper.py [-h] [-p PROJECT]
+    nex@nex:~/viper$ ./viper.py -h
+    usage: viper.py [-h] [-p PROJECT]
 
-	optional arguments:
-	  -h, --help            show this help message and exit
-	  -p PROJECT, --project PROJECT
-	                        Specify a new or existing project name
+    optional arguments:
+      -h, --help            show this help message and exit
+      -p PROJECT, --project PROJECT
+                            Specify a new or existing project name
 
 
 When doing so, Viper will try to open an existing project with the given name and if it doesn't exist it will initialize it under the ``projects/`` folder.
