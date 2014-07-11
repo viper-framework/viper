@@ -450,15 +450,23 @@ class Commands(object):
         # Populate the list of search results.
         rows = []
         count = 1
+        tag = ""
         for item in items:
-            rows.append([count, item.name, item.mime, item.md5])
+            for t in item.tag:
+                if t.tag:
+                    if not tag:
+                        tag = tag + t.tag
+                    else:
+                        tag = tag + ", " + t.tag
+            rows.append([count, item.name, item.mime, item.md5, tag])
             count += 1
+            tag = ""
 
         # Update find results in current session.
         __sessions__.find = items
 
         # Generate a table with the results.
-        print(table(['#', 'Name', 'Mime', 'MD5'], rows))
+        print(table(['#', 'Name', 'Mime', 'MD5', 'Tags'], rows))
 
     ##
     # TAGS
