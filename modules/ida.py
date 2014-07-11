@@ -64,7 +64,7 @@ class Ida(Module):
                     print "64 bit EXE"
                     ext = ".exe"
                 try:
-                    self.OpenIDA(filename, ext, 0)
+                    self.OpenIDA(filename, ext, 1)
                 except:
                     print_error("Unable to start IDA Pro")
             else:
