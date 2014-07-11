@@ -647,7 +647,7 @@ class Commands(object):
             return
 
         if arg_list:
-            print_info("Current Projects:")            
+            print_info("Projects Available:")            
 
             rows = []
             for project in os.listdir(projects_path):

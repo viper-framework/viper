@@ -1,61 +1,58 @@
-.. Installation chapter frontpage
-
 Installation
 ============
 
-Viper is written in Python so should be compatible across most platforms that can meet the requirements. 
+Viper is written in Python and **it requires Python 2.7** to function properly. In this documentation we will use Debian GNU/Linux based distributions, such as Ubuntu, as a reference platform. The following installation instructions should apply similarly to other distributions and possibly to Mac OS X as well, although it has not been properly tested.
 
-Viper has been tested on the following platforms
+Before proceeding, you should make sure you have the basic tools installed to be able to compile additional Python extensions::
 
-* Ubuntu 12.10 x64
-* Ubuntu 14.04 x64
+    $ sudo apt-get install gcc python-dev python-pip
 
-To begin checkout the latest version of viper from GitHub
+Core dependencies
+-----------------
 
-``$ git clone https://github.com/botherder/viper.git``
+Viper makes use of a number of Python library for its core functioning, which can be installed with the command::
 
-Pre-Reqs
----------
-There are a few requirements that need installing before starting with viper. 
+    $ sudo pip install SQLAlchemy PrettyTable python-magic
 
-* gcc
-* python-dev
-* python-socksipy
-* pyhton-pip
+In addition you should install ssdeep with pydeep. After you downloaded the source code for ssdeep from the `official website`_, proceed with the following::
 
-These can be installed with the following command
+    $ tar -zxvf ssdeep-X.XX.tar.gz
+    $ cd ssdeep-X.XX
+    $ ./configure && make
+    $ sudo make install
+    $ sudo pip install pydeep
 
-``# apt-get install gcc pyhton-dev python-socksipy python-pip``
+Viper can retrieve files remotely through `Tor`_, if you're interested in such feature you should install SocksiPy::
 
-At this point, I recommend installing `ssdeep <http://ssdeep.sourceforge.net/>`_ and `Yara <http://plusvic.github.io/yara/>`_ following the respective instructions. 
+    $ sudo apt-get python-socksipy
 
-Once completed you can install the remaining Python dependencies with pip.
+You will also clearly need a running Tor daemon, refer to the official website for setup instructions.
 
-``# cd viper/``
-``# pip install -r requirements.txt``
+Extra dependencies
+------------------
 
-First Launch
+Please be aware that all the modules that are available in Viper might have their own dependencies that are unrelated to Viper's core. We will try to make such dependencies available in our ``requirements.txt`` file that you can provide to ``pip``::
+
+    $ sudo pip install -r requirements.txt
+
+In case a dependency is missing or it is not available on PyPi, you should be instructed by the module itself on how to retrieve and install it.
+
+First launch
 ------------
 
-Once you are finished run the viper application and ensure it starts with no errors you should see the following
+If everything worked out fine, you should be able to launch Viper's shell without raising any exceptions, like following::
 
-``$ ./viper.py``
-
-::
-
-    thehermit@TechAnarchy:~/GitHub/viper$ ./viper.py
+    nex@nex:~/viper$ ./viper.py 
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v0.1-dev
+        \_/ |_|  __/|_____)_| v1.0
               |_|
         
-    You have 122 files in your repository
-    shell >    
+    You have 0 files in your default repository
+    shell > 
 
-
-
-
-
+.. _official website: http://ssdeep.sourceforge.net
+.. _Tor: https://www.torproject.org
