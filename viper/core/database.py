@@ -183,6 +183,19 @@ class Database:
         rows = session.query(Tag).all()
         return rows
 
+    def delete_tag(self, tag_name):
+        session = self.Session()
+
+        try:
+            tag = session.query(Tag).filter(Tag.tag==tag_name).first()
+            session.delete(tag)
+            session.commit()
+        except SQLAlchemyError as e:
+            print_error("Unable to delete tag: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
+
     def add_note(self, sha256, title, body):
         session = self.Session()
 

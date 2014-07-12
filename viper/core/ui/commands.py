@@ -630,6 +630,8 @@ class Commands(object):
             usage()
             return
 
+        # TODO: handle situation where addition or deletion of a tag fail.
+
         if arg_add:
             # Add specified tags to the database's entry belonging to
             # the opened file.
@@ -645,8 +647,12 @@ class Commands(object):
             __sessions__.new(__sessions__.current.file.path)
 
         if arg_delete:
-            # TODO
-            pass
+            # Delete the tag from the database.
+            Database().delete_tag(arg_delete)
+            # Refresh the session so that the attributes of the file are
+            # updated.
+            print_info("Refreshing session to update attributes...")
+            __sessions__.new(__sessions__.current.file.path)
 
     ###
     # SESSION
