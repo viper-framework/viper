@@ -500,7 +500,7 @@ class Commands(object):
     # This command is used to search for files in the database.
     def cmd_find(self, *args):
         def usage():
-            print("usage: find [-h] [-t] <all|latest|name|md5|sha256|tag> <value>")
+            print("usage: find [-h] [-t] <all|latest|name|md5|sha256|tag|note> <value>")
 
         def help():
             usage()
@@ -724,7 +724,7 @@ class Commands(object):
     # You can also switch to a different project.
     def cmd_projects(self, *args):
         def usage():
-            print("usage: project [-h] [-l] [-s=project]")
+            print("usage: projects [-h] [-l] [-s=project]")
 
         def help():
             usage()
