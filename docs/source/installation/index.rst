@@ -24,7 +24,7 @@ In addition you should install ssdeep with pydeep. After you downloaded the sour
 
 Viper can retrieve files remotely through `Tor`_, if you're interested in such feature you should install SocksiPy::
 
-    $ sudo apt-get python-socksipy
+    $ sudo apt-get install python-socksipy
 
 You will also clearly need a running Tor daemon, refer to the official website for setup instructions.
 
