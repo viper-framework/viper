@@ -315,7 +315,7 @@ class Database:
 
             rows = session.query(Malware).filter(Malware.name.like(value)).all()
         elif key == 'note':
-            rows = session.query(Malware).filter(Malware.note.any(Note.body.like(value))).all()
+            rows = session.query(Malware).filter(Malware.note.any(Note.body.like(u'%' + unicode(value) + u'%'))).all()
         else:
             print_error("No valid term specified")
 
