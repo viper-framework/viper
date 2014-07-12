@@ -291,7 +291,7 @@ class Commands(object):
 
             # Create a new temporary file.
             tmp = tempfile.NamedTemporaryFile(delete=False)
-            # Open the temporary file with the default editor, or with vi.
+            # Open the temporary file with the default editor, or with nano.
             os.system('"${EDITOR:-nano}" ' + tmp.name)
             # Once the user is done editing, we need to read the content and
             # store it in the database.
