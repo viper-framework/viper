@@ -23,6 +23,7 @@ Table of Content
    introduction/index
    installation/index
    usage/index
+   customize/index
 
 .. _Viper: https://www.viper.li
 .. _BSD 3-Clause: http://opensource.org/licenses/BSD-3-Clause
