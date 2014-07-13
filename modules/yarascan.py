@@ -33,6 +33,7 @@ class YaraScan(Module):
             print("\t--help (-h)\tShow this help message")
             print("\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
             print("\t--all (-a)\tScan all stored files (default if no session is open)")
+            print("\t--tag (-t)\tTag Files with Rule Name (default is not to)")
             print("")
 
         def string_printable(line):
@@ -44,13 +45,14 @@ class YaraScan(Module):
                 else:
                     new_line += '\\x'+c.encode('hex')
             return new_line
-                    
+
 
         arg_rule = ''
         arg_scan_all = False
+        arg_tag = False
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hr:a', ['help', 'rule=', 'all'])
+            opts, argv = getopt.getopt(self.args[1:], 'hr:at', ['help', 'rule=', 'all', 'tag'])
         except getopt.GetoptError as e:
             print(e)
             return
@@ -59,10 +61,13 @@ class YaraScan(Module):
             if opt in ('-h', '--help'):
                 help()
                 return
+            if opt in ('-t', '--tag'):
+                arg_tag = True
             elif opt in ('-r', '--rule'):
                 arg_rule = value
             elif opt in ('-a', '--all'):
                 arg_scan_all = True
+
 
         # If no custom ruleset is specified, we use the default one.
         if not arg_rule:
@@ -94,6 +99,8 @@ class YaraScan(Module):
                 files.append(sample)
 
         for entry in files:
+            # create a list of tags we can store if wanted
+            tag_list = []
             print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
 
             # Check if the entry has a path attribute. This happens when
@@ -110,6 +117,8 @@ class YaraScan(Module):
             for match in rules.match(entry_path):
                 for string in match.strings:
                     rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
+                # Add Matching Rules to our list of tags
+                tag_list.append([entry.sha256, match.rule])
 
             if rows:
                 header = [
@@ -118,8 +127,17 @@ class YaraScan(Module):
                     'Offset',
                     'Content'
                 ]
-
                 print(table(header=header, rows=rows))
+
+            # If we selected to add tags do that now
+            if rows and arg_tag:
+                db = Database()
+                for tag in tag_list:
+                    db.add_tags(tag[0], tag[1])
+                # If in a session reset the session to see tags
+                if __sessions__.is_set() and not arg_scan_all:
+                    print_info("Refreshing session to update attributes...")
+                    __sessions__.new(__sessions__.current.file.path)
 
     def rules(self):
         for folder, folders, files in os.walk('data/yara/'):
