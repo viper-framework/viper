@@ -33,7 +33,7 @@ class YaraScan(Module):
             print("\t--help (-h)\tShow this help message")
             print("\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
             print("\t--all (-a)\tScan all stored files (default if no session is open)")
-            print("\t--tag (-t)\tTag Files with Rule Name (default is Not To)")
+            print("\t--tag (-t)\tTag Files with Rule Name (default is not to)")
             print("")
 
         def string_printable(line):
@@ -49,6 +49,7 @@ class YaraScan(Module):
 
         arg_rule = ''
         arg_scan_all = False
+        arg_tag = False
 
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hr:at', ['help', 'rule=', 'all', 'tag'])
@@ -61,7 +62,7 @@ class YaraScan(Module):
                 help()
                 return
             if opt in ('-t', '--tag'):
-                tag_store = True
+                arg_tag = True
             elif opt in ('-r', '--rule'):
                 arg_rule = value
             elif opt in ('-a', '--all'):
@@ -120,7 +121,7 @@ class YaraScan(Module):
                 tag_list.append([entry.sha256, match.rule])
 
             # If we selected to add tags do that now
-            if rows and tag_store:
+            if rows and arg_tag:
                 db = Database()
                 for tag in tag_list:
                     db.add_tags(tag[0], tag[1])
