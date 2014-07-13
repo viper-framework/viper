@@ -39,6 +39,9 @@ class Sessions(object):
         print_info("Switched to session #{0} on {1}".format(self.current.id, self.current.file.path))
 
     def new(self, path):
+        # TODO: sould replace an existing session if the file is the same
+        # otherwise we will have multiple entries for the same file.
+
         session = Session()
 
         total = len(self.sessions)
