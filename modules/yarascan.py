@@ -120,12 +120,6 @@ class YaraScan(Module):
                 # Add Matching Rules to our list of tags
                 tag_list.append([entry.sha256, match.rule])
 
-            # If we selected to add tags do that now
-            if rows and arg_tag:
-                db = Database()
-                for tag in tag_list:
-                    db.add_tags(tag[0], tag[1])
-
             if rows:
                 header = [
                     'Rule',
@@ -133,8 +127,17 @@ class YaraScan(Module):
                     'Offset',
                     'Content'
                 ]
-
                 print(table(header=header, rows=rows))
+
+            # If we selected to add tags do that now
+            if rows and arg_tag:
+                db = Database()
+                for tag in tag_list:
+                    db.add_tags(tag[0], tag[1])
+                # If in a session reset the session to see tags
+                if __sessions__.is_set() and not arg_scan_all:
+                    print_info("Refreshing session to update attributes...")
+                    __sessions__.new(__sessions__.current.file.path)
 
     def rules(self):
         for folder, folders, files in os.walk('data/yara/'):
