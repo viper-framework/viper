@@ -99,8 +99,6 @@ class YaraScan(Module):
                 files.append(sample)
 
         for entry in files:
-            # create a list of tags we can store if wanted
-            tag_list = []
             print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
 
             # Check if the entry has a path attribute. This happens when
@@ -114,11 +112,22 @@ class YaraScan(Module):
                 entry_path = get_sample_path(entry.sha256)
 
             rows = []
+            tag_list = []
             for match in rules.match(entry_path):
+                # Add a row for each string matched by the rule.
                 for string in match.strings:
                     rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
-                # Add Matching Rules to our list of tags
-                tag_list.append([entry.sha256, match.rule])
+                
+                # Add matching rules to our list of tags.
+                # First it checks if there are tags specified in the metadata
+                # of the Yara rule.
+                match_tags = match.meta.get('tags')
+                # If not, use the rule name.
+                if not match_tags:
+                    match_tags = match.rule
+
+                # Add the tags to the list.
+                tag_list.append([entry.sha256, match_tags])
 
             if rows:
                 header = [
@@ -129,12 +138,13 @@ class YaraScan(Module):
                 ]
                 print(table(header=header, rows=rows))
 
-            # If we selected to add tags do that now
+            # If we selected to add tags do that now.
             if rows and arg_tag:
                 db = Database()
                 for tag in tag_list:
                     db.add_tags(tag[0], tag[1])
-                # If in a session reset the session to see tags
+
+                # If in a session reset the session to see tags.
                 if __sessions__.is_set() and not arg_scan_all:
                     print_info("Refreshing session to update attributes...")
                     __sessions__.new(__sessions__.current.file.path)
