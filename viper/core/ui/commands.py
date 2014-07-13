@@ -232,7 +232,7 @@ class Commands(object):
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--list (-h)\tList all notes available for the current file")
+            print("\t--list (-l)\tList all notes available for the current file")
             print("\t--add (-a)\tAdd a new note to the current file")
             print("\t--view (-v)\tView the specified note")
             print("\t--edit (-e)\tEdit an existing note")
