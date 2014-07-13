@@ -433,7 +433,7 @@ class Commands(object):
 
                         if not os.path.exists(file_path):
                             continue
-                        # Check if file is not zero
+                        # Check if file is not zero.
                         if not os.path.getsize(file_path) > 0:
                             continue
                         
@@ -465,6 +465,10 @@ class Commands(object):
         # Otherwise we try to store the currently opened file, if there is any.
         else:
             if __sessions__.is_set():
+                if __sessions__.current.file.size == 0:
+                    print_warning("Skip, file \"{0}\" appears to be empty".format(__sessions__.current.file.name))
+                    return False
+
                 # Add file.
                 if add_file(__sessions__.current.file, arg_tags):
                     # Open session to the new file.
