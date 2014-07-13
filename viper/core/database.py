@@ -318,6 +318,8 @@ class Database:
             rows = session.query(Malware).filter(Malware.note.any(Note.body.like(u'%' + unicode(value) + u'%'))).all()
         elif key == 'type':
             rows = session.query(Malware).filter(Malware.type.like('%{0}%'.format(value))).all()
+        elif key == 'mime':
+            rows = session.query(Malware).filter(Malware.mime.like('%{0}%'.format(value))).all()
         else:
             print_error("No valid term specified")
 
