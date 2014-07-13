@@ -273,7 +273,12 @@ class Commands(object):
 
         if arg_list:
             # Retrieve all notes for the currently opened file.
-            notes = Database().find(key='sha256', value=__sessions__.current.file.sha256)[0].note
+            malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
+            if not malware:
+                print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
+                return
+
+            notes = malware[0].note
             if not notes:
                 print_info("No notes available for this file yet")
                 return
