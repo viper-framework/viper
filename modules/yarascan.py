@@ -150,34 +150,78 @@ class YaraScan(Module):
                     __sessions__.new(__sessions__.current.file.path)
 
     def rules(self):
+        def usage():
+            print("usage: yara rules [-h] [-e <rule #>]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--edit (-e)\tOpen an editor to edit the specified rule")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'he:', ['help', 'edit='])
+        except getopt.GetoptError as e:
+            print(e)
+            return
+
+        arg_edit = None
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-e', '--edit'):
+                arg_edit = value
+
+        # Retrieve the list of rules and populatea list.
+        rules = []
+        count = 1
         for folder, folders, files in os.walk('data/yara/'):
             for file_name in files:
-                print_item(os.path.join(folder, file_name))
-
-    def usage(self):
-        print("usage: yara <command>")
-
-    def help(self):
-        self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\t\tShow this help message")
-        print("\tscan\t\tScan files with Yara signatures")
-        print("\trules\t\tOperate on Yara rules")
-        print("")
+                rules.append([count, os.path.join(folder, file_name)])
+                count += 1
+        
+        # If the user wnats to edit a specific rule, loop through all of them
+        # identify which one to open, and launch the default editor.
+        if arg_edit:
+            for rule in rules:
+                if int(arg_edit) == rule[0]:
+                    os.system('"${EDITOR:-nano}" ' + rule[1])
+        # Otherwise, just print the list.
+        else:
+            print(table(header=['#', 'Path'], rows=rules))
+            print("")
+            print("You can edit these rules by specifying --edit and the #")
 
     def run(self):
         if not HAVE_YARA:
             print_error("Missing dependency, install yara")
             return
 
+        def usage():
+            print("usage: yara <help|scan|rules>")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\thelp\t\tShow this help message")
+            print("\tscan\t\tScan files with Yara signatures")
+            print("\trules\t\tOperate on Yara rules")
+            print("")
+
         if len(self.args) == 0:
-            self.help()
+            usage()
             return
 
         if self.args[0] == 'help':
-            self.help()
+            help()
         elif self.args[0] == 'scan':
             self.scan()
         elif self.args[0] == 'rules':
             self.rules()
+        else:
+            usage()
