@@ -297,7 +297,13 @@ class Database:
         if key == 'all':
             rows = session.query(Malware).all()
         elif key == 'latest':
-            if not value:
+            if value:
+                try:
+                    value = int(value)
+                except ValueError:
+                    print_error("You need to specify a valid number as a limit for your query")
+                    return None
+            else:
                 value = 5
 
             rows = session.query(Malware).order_by(Malware.created_at.desc()).limit(value)
