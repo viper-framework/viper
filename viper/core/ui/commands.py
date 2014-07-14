@@ -90,7 +90,7 @@ class Commands(object):
             print("\t--help (-h)\tShow this help message")
             print("\t--file (-f)\tThe target is a file")
             print("\t--url (-u)\tThe target is a URL")
-            print("\t--last (-l)\tOpen file from the results of the last find command")
+            print("\t--last (-l)\tThe target is the entry number from the last find command's results")
             print("\t--tor (-t)\tDownload the file through Tor")
             print("")
             print("You can also specify a MD5 or SHA256 hash to a previously stored")
