@@ -3,6 +3,7 @@
 
 import os
 import json
+import getopt
 import urllib
 import urllib2
 
@@ -19,6 +20,32 @@ class VirusTotal(Module):
     authors = ['nex']
 
     def run(self):
+        def usage():
+            print("usage: virustotal [-h] [-s]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--submit (-s)\tSubmit file to VirusTotal (by default it only looks up the hash)")
+            print("")
+
+        arg_submit = False
+
+        try:
+            opts, argv = getopt.getopt(self.args[0:], 'hv', ['help', 'submit'])
+        except getopt.GetoptError as e:
+            print(e)
+            return
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-s', '--submit'):
+                arg_submit = True
+
         if not __sessions__.is_set():
             print_error("No session opened")
             return
@@ -47,4 +74,14 @@ class VirusTotal(Module):
                     signature = ''
                 rows.append([engine, signature])
 
-        print(table(['Antivirus', 'Signature'], rows))
+        if rows:
+            print_info("VirusTotal Report:")
+            print(table(['Antivirus', 'Signature'], rows))
+
+            if arg_submit:
+                print("")
+                print_info("The file is already available on VirusTotal, no need to submit")
+        else:
+            print_info("The file does not appear to be on VirusTotal yet")
+            # TODO: Add routine to upload files.
+            pass
