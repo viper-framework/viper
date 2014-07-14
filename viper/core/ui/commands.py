@@ -582,14 +582,22 @@ class Commands(object):
         rows = []
         count = 1
         for item in items:
-            rows.append([count, item.name, item.mime, item.md5])
+            row = [count, item.name, item.mime, item.md5]
+            if key == 'latest':
+                row.append(item.created_at)
+
+            rows.append(row)
             count += 1
 
         # Update find results in current session.
         __sessions__.find = items
 
         # Generate a table with the results.
-        print(table(['#', 'Name', 'Mime', 'MD5'], rows))
+        header = ['#', 'Name', 'Mime', 'MD5']
+        if key == 'latest':
+            header.append('Created At')
+
+        print(table(header=header, rows=rows))
 
     ##
     # TAGS
