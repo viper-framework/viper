@@ -83,7 +83,7 @@ class Reports(Module):
             {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
             headers=dict(Referer=MALWR_LOGIN),
             verify=False,
-            timeout=3
+            timeout=60
         )
 
         payload = {'search': __sessions__.current.file.sha256, 'csrfmiddlewaretoken': csrf}
@@ -93,7 +93,7 @@ class Reports(Module):
             MALWR_SEARCH,
             payload,
             headers=headers,
-            timeout=20,
+            timeout=60,
             verify=False
         )
         
