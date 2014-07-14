@@ -12,6 +12,8 @@ import string
 import zlib
 import struct
 import getopt
+import zipfile
+import xml.etree.ElementTree as ET
 
 from viper.common.out import *
 from viper.common.abstracts import Module
@@ -82,9 +84,9 @@ class Office(Module):
     # Used to clean some of the section names returned in metatimes
     def string_clean(self, line):
         return filter(lambda x: x in string.printable, line)
-       
-    ##         
-    # MAIN FUNCTIONS
+
+    ##
+    # OLE FUNCTIONS
     #
 
     def metadata(self, ole):
@@ -98,7 +100,7 @@ class Office(Module):
             print(table(header=['Name', 'Value'], rows=rows))
 
         ole.close()
-    
+
     def metatimes(self, ole):
         rows = []
         # Root document.
@@ -116,7 +118,7 @@ class Office(Module):
         print(table(header=['Object', 'Creation', 'Modified'], rows=rows))
 
         ole.close()
-        
+
     def export(self, ole, export_path):
         if not os.path.exists(export_path):
             try:
@@ -151,11 +153,11 @@ class Office(Module):
                             flash_out.write(flash[4])
 
                         print_item("Saved Decompressed Flash File to {0}".format(save_path))
-        
+
                     save_path = '{0}-FLASH-{1}'.format(store_path, count)
                     with open(save_path, 'wb') as flash_out:
                         flash_out.write(flash[3])
-                   
+
                     print_item("Saved Flash File to {0}".format(save_path))
                     count += 1
 
@@ -163,9 +165,9 @@ class Office(Module):
                 out.write(stream_content)
 
             print_info("Saved stream to {0}".format(store_path))
-        
+
         ole.close()
-        
+
     def oleid(self, ole):
         has_summary = False
         is_encrypted = False
@@ -175,7 +177,7 @@ class Office(Module):
         is_visio = False
         has_macros = False
         has_flash = 0
-        
+
         # SummaryInfo.
         if ole.exists('\x05SummaryInformation'):
             suminfo = ole.getproperties('\x05SummaryInformation')
@@ -184,7 +186,7 @@ class Office(Module):
             if 0x13 in suminfo:
                 if suminfo[0x13] & 1:
                     is_encrypted = True
-        
+
         # Word Check.
         if ole.exists('WordDocument'):
             is_word = True
@@ -194,31 +196,31 @@ class Office(Module):
 
             if (temp16 & 0x0100) >> 8:
                 is_encrypted = True
-        
+
         # Excel Check.
         if ole.exists('Workbook') or ole.exists('Book'):
             is_excel = True
-        
+
         # Macro Check.
         if ole.exists('Macros'):
             has_macros = True
-            
+
         for obj in ole.listdir(streams=True, storages=True):
             if 'VBA' in obj:
                 has_macros = True
-        
+
         # PPT Check.
         if ole.exists('PowerPoint Document'):
             is_ppt = True
-        
+
         # Visio check.
         if ole.exists('VisioDocument'):
             is_visio = True
-        
+
         # Flash Check.
         for stream in ole.listdir():
             has_flash += len(self.detect_flash(ole.openstream(stream).read()))
-            
+
         # Put it all together.
         rows = [
             ['Summery Information', has_summary],
@@ -238,6 +240,78 @@ class Office(Module):
 
         ole.close()
 
+    ##
+    # XML FUNCTIONS
+    #
+
+    def meta_data(self, xml_string):
+        doc_meta = []
+        xml_root = ET.fromstring(xml_string)
+        for child in xml_root:
+            doc_meta.append([child.tag.split('}')[1], child.text])
+        return doc_meta
+
+    def xmlmeta(self, zip_xml):
+        media_list = []
+        meta_list = []
+        embedded_list = []
+        vba_list = []
+        for name in zip_xml.namelist():
+            if name == 'docProps/app.xml':
+                meta1 = self.meta_data(zip_xml.read(name))
+            if name == 'docProps/core.xml':
+                meta2 = self.meta_data(zip_xml.read(name))
+            if name.startswith('word/media/'):
+                media_list.append(name.split('/')[-1])
+            # if name is vba, need to add multiple macros
+            if name.startswith('word/embeddings'):
+                embedded_list.append(name.split('/')[-1])
+            if name == 'word/vbaProject.bin':
+                vba_list.append(name.split('/')[-1])
+
+        # Print the results.
+        print_info("App MetaData:")
+        print(table(header=['Field', 'Value'], rows=meta1))
+        print_info("Core MetaData:")
+        print(table(header=['Field', 'Value'], rows=meta2))
+        if len(embedded_list) > 0:
+            print_info("Embedded Objects")
+            for item in embedded_list:
+                print_item(item)
+        if len(vba_list) > 0:
+            print_info("Macro Objects")
+            for item in vba_list:
+                print_item(item)
+        if len(media_list) > 0:
+            print_info("Media Objects")
+            for item in media_list:
+                print_item(item)
+
+    def xmlstruct(self, zip_xml):
+        print_info("Document Structure")
+        for name in zip_xml.namelist():
+            print_item(name)
+
+    def xml_export(self, zip_xml, export_path):
+        if not os.path.exists(export_path):
+            try:
+                os.makedirs(export_path)
+            except Exception as e:
+                print_error("Unable to create directory at {0}: {1}".format(export_path, e))
+                return
+        else:
+            if not os.path.isdir(export_path):
+                print_error("You need to specify a folder, not a file")
+                return
+        try:
+            zip_xml.extractall(export_path)
+            print_info("Saved all objects to {0}".format(export_path))
+        except Exception as e:
+            print_error("Unable to export objects: {0}".format(e))
+            return
+        return
+
+    # Main starts here
     def run(self):
         if not __sessions__.is_set():
             print_error("No session opened")
@@ -261,11 +335,17 @@ class Office(Module):
             print("\t--export (-e)\tExport OLE Objects (specify destination folder)")
             print("")
 
-        if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
-            print_error('This is not a valid OLE File, abort')
-            return
 
-        ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
+        # Tests to check for valid Office structures
+        OLE_FILE = OleFileIO_PL.isOleFile(__sessions__.current.file.path)
+        XML_FILE = zipfile.is_zipfile(__sessions__.current.file.path)
+        if OLE_FILE:
+            ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
+        elif XML_FILE:
+            zip_xml = zipfile.ZipFile(__sessions__.current.file.path, 'r')
+        else:
+            print_error("Not A Valid Office Document")
+            return
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'hmsoe:', ['help', 'meta', 'struct', 'oleid', 'export:'])
@@ -275,19 +355,34 @@ class Office(Module):
 
         for opt, value in opts:
             if opt in ('-e', '--export'):
-                self.export(ole, value)
-                return
+                if OLE_FILE:
+                    self.export(ole, value)
+                    return
+                elif XML_FILE:
+                    self.xml_export(zip_xml, value)
+                    return
             if opt in ('-h', '--help'):
                 help()
                 return
             if opt in ('-m','--meta'):
-                self.metadata(ole)
-                return
+                if OLE_FILE:
+                    self.metadata(ole)
+                    return
+                elif XML_FILE:
+                    self.xmlmeta(zip_xml)
+                    return
             if opt in ('-s','--struct'):
-                self.metatimes(ole)
-                return
+                if OLE_FILE:
+                    self.metatimes(ole)
+                    return
+                elif XML_FILE:
+                    self.xmlstruct(zip_xml)
+                    return
             if opt in ('-o','--oleid'):
-                self.oleid(ole)
-                return
+                if OLE_FILE:
+                    self.oleid(ole)
+                    return
+                else:
+                    return
 
         usage()
