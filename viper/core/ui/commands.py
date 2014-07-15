@@ -818,7 +818,6 @@ class Commands(object):
     # EXPORT
     #
     # This command will export the current session to file or zip.
-    #
     def cmd_export(self, *args):
         def usage():
             print("usage: export [-h] [-z] <path or archive name>")
@@ -847,27 +846,38 @@ class Commands(object):
             elif opt in ('-z', '--zip'):
                 arg_zip = True
 
-        # check for valid export path
+        # Check for valid export path.
         if len(args) ==0:
-            help()
-            return
-        # File error handling, overwrite
-        if os.path.isfile(argv[0]):
-            print_error("{0} alreadyExists, can't Overwrite".format(argv[0]))
+            usage()
             return
 
-        # Not zipping
-        if arg_zip == False:
-            store_path = os.path.join(argv[0], __sessions__.current.file.name)
-            shutil.copyfile(__sessions__.current.file.path, store_path)
-            print_info("File exported to {0}".format(store_path))
+        # TODO: having for one a folder and for the other a full
+        # target path can be confusing. We should perhaps standardize this.
+
+        # Abort if the specified path already exists.
+        if os.path.isfile(argv[0]):
+            print_error("File at path \"{0}\" already exists, abort".format(argv[0]))
             return
-        elif arg_zip == True:
+
+        # If the argument chosed so, archive the file when exporting it.
+        # TODO: perhaps add an option to use a password for the archive
+        # and default it to "infected".
+        if arg_zip:
             try:
                 with ZipFile(argv[0], 'w') as export_zip:
                     export_zip.write(__sessions__.current.file.path, arcname=__sessions__.current.file.name)
-                    print_info("File exported to {0}".format(argv[0]))
-                    return
             except IOError as e:
-                print_error(e)
-                return
+                print_error("Unable to export file: {0}".format(e))
+            else:
+                print_info("File archived and exported to {0}".format(argv[0]))
+        # Otherwise just dump it to the given directory.
+        else:
+            # XXX: Export file with the original file name.
+            store_path = os.path.join(argv[0], __sessions__.current.file.name)
+
+            try:
+                shutil.copyfile(__sessions__.current.file.path, store_path)
+            except IOError as e:
+                print_error("Unable to export file: {0}".format(e))
+            else:
+                print_info("File exported to {0}".format(store_path))
