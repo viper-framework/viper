@@ -46,6 +46,16 @@ class YaraScan(Module):
                     new_line += '\\x'+c.encode('hex')
             return new_line
 
+        # This means users can just drop or remove rule files without
+        # having to worry about maintaining the index
+        def rule_index():
+            with open('data/yara/index.yara', 'w') as rules_index:
+                for rule_file in os.listdir('data/yara'):
+                    if rule_file == 'index.yara':
+                        continue
+                    line = 'include "{0}"\n'.format(rule_file)
+                    rules_index.write(line)
+            return 'data/yara/index.yara'
 
         arg_rule = ''
         arg_scan_all = False
@@ -71,7 +81,7 @@ class YaraScan(Module):
 
         # If no custom ruleset is specified, we use the default one.
         if not arg_rule:
-            arg_rule = 'data/yara/index.yara'
+            arg_rule = rule_index()
 
         # Check if the selected ruleset actually exists.
         if not os.path.exists(arg_rule):
@@ -117,7 +127,7 @@ class YaraScan(Module):
                 # Add a row for each string matched by the rule.
                 for string in match.strings:
                     rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
-                
+
                 # Add matching rules to our list of tags.
                 # First it checks if there are tags specified in the metadata
                 # of the Yara rule.
@@ -183,7 +193,7 @@ class YaraScan(Module):
             for file_name in files:
                 rules.append([count, os.path.join(folder, file_name)])
                 count += 1
-        
+
         # If the user wnats to edit a specific rule, loop through all of them
         # identify which one to open, and launch the default editor.
         if arg_edit:
