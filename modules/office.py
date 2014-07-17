@@ -223,7 +223,7 @@ class Office(Module):
 
         # Put it all together.
         rows = [
-            ['Summery Information', has_summary],
+            ['Summary Information', has_summary],
             ['Word', is_word],
             ['Excel', is_excel],
             ['PowerPoint', is_ppt],
