@@ -37,3 +37,5 @@ nosetests.xml
 binaries/
 projects/
 *.db
+
+data/yara/index.yara
