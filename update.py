@@ -19,6 +19,12 @@ url = 'https://github.com/botherder/viper/archive/master.zip'
 # - Add error handling.
 # - Ignore all git related files and directories.
 def main():
+    print_warning("WARNING: If you proceed you will lose any changes you might have made to Viper.")
+    choice = raw_input("Are you sure you want to proceed? [y/N] ")
+
+    if choice.lower() != 'y':
+        return
+
     # Download the latest Zip archive from GitHub's master branch.
     master = download(url)
     # Instantiate a StringIO, we will store the master.zip data in here.
