@@ -47,14 +47,24 @@ class YaraScan(Module):
             return new_line
 
         # This means users can just drop or remove rule files without
-        # having to worry about maintaining the index
+        # having to worry about maintaining the index.
+        # TODO: make paths absolute.
+        # TODO: this regenerates the file at every run, perhaps we
+        # could find a way to optimize this.
         def rule_index():
             with open('data/yara/index.yara', 'w') as rules_index:
                 for rule_file in os.listdir('data/yara'):
+                    # Skip if the extension is not right, could cause problems.
+                    if not rule_file.endswith('.yar') and not rule_file.endswith('.yara'):
+                        continue
+                    # Skip if it's the index itself.
                     if rule_file == 'index.yara':
                         continue
+
+                    # Add the rule to the index.
                     line = 'include "{0}"\n'.format(rule_file)
                     rules_index.write(line)
+
             return 'data/yara/index.yara'
 
         arg_rule = ''
@@ -133,6 +143,9 @@ class YaraScan(Module):
                 # of the Yara rule.
                 match_tags = match.meta.get('tags')
                 # If not, use the rule name.
+                # TODO: as we add more and more yara rules, we might remove
+                # this option and only tag the file with rules that had
+                # tags specified in them.
                 if not match_tags:
                     match_tags = match.rule
 
