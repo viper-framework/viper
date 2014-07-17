@@ -574,7 +574,8 @@ class Commands(object):
             # If the user didn't specify any value, just set it to None.
             # Mostly pointless for now, but might have some useful cases
             # in the future.
-            value = None
+            print_error("You need to include a search term.")
+            return
 
         # Search all the files matching the given parameters.
         items = self.db.find(key, value)
