@@ -39,9 +39,6 @@ class Sessions(object):
         print_info("Switched to session #{0} on {1}".format(self.current.id, self.current.file.path))
 
     def new(self, path):
-        # TODO: sould replace an existing session if the file is the same
-        # otherwise we will have multiple entries for the same file.
-
         session = Session()
 
         total = len(self.sessions)
@@ -57,7 +54,18 @@ class Sessions(object):
             session.file.name = row[0].name
             session.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
 
+        # Loop through all existing sessions and check whether there's another
+        # session open on the same file and delete it. This is to avoid
+        # duplicates in sessions.
+        # NOTE: in the future we might want to remove this if sessions have
+        # unique attributes (for example, an history just for each of them).
+        for entry in self.sessions:
+            if entry.file.sha256 == session.file.sha256:
+                self.sessions.remove(entry)
+
+        # Add new session to the list.
         self.sessions.append(session)
+        # Mark the new session as the current one.
         self.current = session
 
         print_info("Session opened on {0}".format(path))
