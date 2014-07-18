@@ -586,7 +586,8 @@ class Commands(object):
         rows = []
         count = 1
         for item in items:
-            row = [count, item.name, item.mime, item.md5]
+            tag = ', '.join([t.tag for t in item.tag if t.tag])
+            row = [count, item.name, item.mime, item.md5, tag]
             if key == 'latest':
                 row.append(item.created_at)
 
@@ -597,7 +598,7 @@ class Commands(object):
         __sessions__.find = items
 
         # Generate a table with the results.
-        header = ['#', 'Name', 'Mime', 'MD5']
+        header = ['#', 'Name', 'Mime', 'MD5', 'Tags']
         if key == 'latest':
             header.append('Created At')
 
