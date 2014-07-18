@@ -567,15 +567,15 @@ class Commands(object):
 
         # The first argument is the search term (or "key").
         key = args[0]
-        try:
-            # The second argument is the search value.
-            value = args[1]
-        except IndexError:
-            # If the user didn't specify any value, just set it to None.
-            # Mostly pointless for now, but might have some useful cases
-            # in the future.
-            print_error("You need to include a search term.")
-            return
+        if key != 'all' and key != 'latest':
+            try:
+                # The second argument is the search value.
+                value = args[1]
+            except IndexError:
+                print_error("You need to include a search term.")
+                return
+        else:
+            value = None
 
         # Search all the files matching the given parameters.
         items = self.db.find(key, value)
