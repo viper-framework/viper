@@ -512,26 +512,30 @@ class Commands(object):
     # This command is used to search for files in the database.
     def cmd_find(self, *args):
         def usage():
-            print("usage: find [-h] [-t] <all|latest|name|type|mime|md5|sha256|tag|note> <value>")
+            print("usage: find [-h] [-a] [-t] <all|latest|name|type|mime|md5|sha256|tag|note> <value>")
 
         def help():
             usage()
             print("")
             print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--tags (-t)\tList tags")
+            print("\t--help (-h)\t\tShow this help message")
+            print("\t--all-projects (-a)\tSearch in all projects")
+            print("\t--tags (-t)\t\tList tags")
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'ht', ['help', 'tags'])
+            opts, argv = getopt.getopt(args, 'aht', ['all-projects', 'help', 'tags'])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
         arg_list_tags = False
+        global_search = False
 
         for opt, value in opts:
+            if opt in ('-a', '--all-projects'):
+                global_search = True
             if opt in ('-h', '--help'):
                 help()
                 return
@@ -566,6 +570,9 @@ class Commands(object):
             return
 
         # The first argument is the search term (or "key").
+        args = list(args)
+        if global_search == True:
+            args.pop(0)
         key = args[0]
         if key != 'all' and key != 'latest':
             try:
@@ -576,21 +583,25 @@ class Commands(object):
                 return
         else:
             value = None
-
-        # Search all the files matching the given parameters.
+               # Search all the files matching the given parameters.
         items = self.db.find(key, value)
         if not items:
-            return
+            if not global_search:
+                return
+        
 
         # Populate the list of search results.
         rows = []
         count = 1
+        if __project__.name == None:
+            project = 'default'
+        else:
+            project = __project__.name
         for item in items:
             tag = ', '.join([t.tag for t in item.tag if t.tag])
-            row = [count, item.name, item.mime, item.md5, tag]
+            row = [count, project, item.name, item.mime, item.md5, tag]
             if key == 'latest':
                 row.append(item.created_at)
-
             rows.append(row)
             count += 1
 
@@ -598,11 +609,59 @@ class Commands(object):
         __sessions__.find = items
 
         # Generate a table with the results.
-        header = ['#', 'Name', 'Mime', 'MD5', 'Tags']
+        header = ['#', 'DB', 'Name', 'Mime', 'MD5', 'Tags']
         if key == 'latest':
             header.append('Created At')
 
-        print(table(header=header, rows=rows))
+ 
+        if global_search == True:
+            last_project = __project__.name
+            projects_path = os.path.join(os.getcwd(), 'projects')
+            if last_project != None: 
+                last_project_path = os.path.join(projects_path, last_project) 
+            for project in os.listdir(projects_path): 
+                if project != __project__.name:
+                    __project__.open(project)
+                    self.db = Database()
+       
+                    if key != 'all' and key != 'latest':
+                        try:
+                            # The second argument is the search value.
+                            value = args[1]
+                        except IndexError:
+                            print_error("You need to include a search term.")
+                            return
+                    else:
+                        value = None
+                    # Search all the files matching the given parameters.
+                    items = self.db.find(key, value)
+                    if not items:
+                        next 
+
+                    for item in items:
+                        tag = ', '.join([t.tag for t in item.tag if t.tag])
+                        row = [count, project, item.name, item.mime, item.md5, tag]
+                        if key == 'latest':
+                            row.append(item.created_at)
+
+                        rows.append(row)
+                        count += 1
+
+                    # Update find results in current session.
+                    __sessions__.find = items
+
+            # Generate a table with the results.
+            header = ['#', 'DB', 'Name', 'Mime', 'MD5', 'Tags']
+            if key == 'latest':
+                header.append('Created At')
+
+            if not last_project:
+                __project__.__init__()
+            else:
+                __project__.open(last_project)
+            self.db = Database()
+        if rows:      
+            print(table(header=header, rows=rows))
 
     ##
     # TAGS
