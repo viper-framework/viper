@@ -18,8 +18,6 @@ def download(url, tor=False):
         sock.connect(address)
         return sock
 
-
-
     if tor:
         if not HAVE_SOCKS:
             print_error("Missing dependency, install socks (`pip install SocksiPy`)")
