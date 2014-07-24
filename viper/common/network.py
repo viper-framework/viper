@@ -18,7 +18,7 @@ def download(url, tor=False):
         sock.connect(address)
         return sock
 
-    import socket
+
 
     if tor:
         if not HAVE_SOCKS:
