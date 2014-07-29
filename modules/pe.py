@@ -411,8 +411,8 @@ class PE(Module):
                     # Loop through opened file's resources.
                     for resource in resources:
                         # If there is a common resource, add it to the list.
-                        if cur_resource[2] == resource[2]:
-                            matched_resources.append(resource[2])
+                        if cur_resource[3] == resource[3]:
+                            matched_resources.append(resource[3])
 
                 # If there are any common resources, add the entry to the list
                 # of matched samples.
