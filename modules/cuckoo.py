@@ -70,7 +70,7 @@ class Cuckoo(Module):
         files = dict(file=open(__sessions__.current.file.path, 'rb'))
 
         if machine:
-            data = {"machine":machine}
+            data = {'machine':machine}
 
         try:
             response = requests.post(url, files=files, data=data)
