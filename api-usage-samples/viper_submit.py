@@ -163,7 +163,8 @@ class Submit(object):
 				print("ERROR: Missing arguments (e.g. \"get <md5|sha256> <path>\")")
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(description="Viper API Actions: add, find, get")
+
 	parser.add_argument("-H", "--host", help="Host of Viper API server", default=None, action="store", required=True)
 	parser.add_argument("-p", "--port", help="Port of Viper API server", default=8080, action="store", required=False)
 	parser.add_argument("-a", "--action", help="Action to be performed", default=None, action="store", required=True)
