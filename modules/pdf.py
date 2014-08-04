@@ -2,11 +2,13 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import getopt
 import json
+import getopt
+import tempfile
 
 from viper.common.out import *
 from viper.common.abstracts import Module
+from vpier.common.utils import get_type
 from viper.core.session import __sessions__
 
 from pdftools.pdfid import *
@@ -62,30 +64,20 @@ class PDF(Module):
         print(table(header=['Name','Count'], rows=streams))
 
     def streams(self):
-        def get_type(data):
-            try:
-                import magic
-            except ImportError:
-                pass
 
-            try:
-                ms = magic.open(magic.MAGIC_NONE)
-                ms.load()
-                file_type = ms.buffer(data)
-            except:
-                try:
-                    file_type = magic.from_buffer(data)
-                except:
-                    return ''
-            finally:
-                try:
-                    ms.close()
-                except:
-                    pass
+        def usage():
+            print("usage: pdf stream [-o=steam] [-d=folder]")
 
-            return file_type
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--dump (-d)\tDestination directory to store resource files in")
+            print("\t--open (-o)\tOpen a session on the specified resource")
+            print("")
 
-        def get_streams(oid=None):
+        def get_streams():
             # This function is brutally ripped from Brandon Dixon's swf_mastah.py.
 
             # Initialize peepdf parser.
@@ -113,24 +105,82 @@ class PDF(Module):
                         encoded_stream = details.encodedStream
                         decoded_stream = details.decodedStream
 
-                        #with open('/tmp/{0}_decoded.bin'.format(oid), 'wb') as handle:
-                        #    handle.write(decoded_stream.strip())
-
-                        results.append([
+                        result = [
                             oid,
                             offset,
                             size,
                             get_type(decoded_stream)[:100]
-                        ])
+                        ]
+
+                        # If the stream needs to be dumped or opened, we do it
+                        # and expand the results with the path to the stream dump.
+                        if arg_open or arg_dump:
+                            # If was instructed to dump, we already have a base folder.
+                            if arg_dump:
+                                folder = arg_dump
+                            # Otherwise we juts generate a temporary one.
+                            else:
+                                folder = tempfile.mkdtemp()
+
+                            # Dump stream to this path.
+                            # TODO: sometimes there appear to be multiple streams
+                            # with the same object ID. Is that even possible?
+                            # It will cause conflicts.
+                            dump_path = '{0}/{1}_{2}_stream.bin'.format(folder, __sessions__.current.file.md5, oid)
+
+                            with open(dump_path, 'wb') as handle:
+                                handle.write(decoded_stream.strip())
+
+                            # Add dump path to the stream attributes.
+                            result.append(dump_path)
+
+                        # Update list of streams.
+                        results.append(result)
 
                 count += 1
 
             return results
 
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'ho:d:s', ['help', 'open=', 'dump='])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_open = None
+        arg_dump = None
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-o', '--open'):
+                arg_open = value
+            elif opt in ('-d', '--dump'):
+                arg_dump = value
+
+        if not __sessions__.is_set():
+            print_error("No session opened")
+            return False
+
+        # Retrieve list of streams.
         streams = get_streams()
 
-        print_info("List of streams:")
-        print(table(header=['ID', 'Offset', 'Size', 'Type'], rows=streams))
+        # Show list of streams.
+        header = ['ID', 'Offset', 'Size', 'Type']
+        if arg_dump or arg_open:
+            header.append('Dumped To')
+
+        print(table(header=header, rows=streams))
+
+        # If the user requested to open a specific stream, we open a new
+        # session on it.
+        if arg_open:
+            for stream in streams:
+                if int(arg_open) == int(stream[0]):
+                    __sessions__.new(stream[4])
+                    return
 
     def usage(self):
         print("usage: pdf <command>")
