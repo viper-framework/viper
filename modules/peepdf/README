@@ -1,0 +1,116 @@
+** Home page **
+
+http://peepdf.eternal-todo.com
+http://twitter.com/peepdf
+
+
+** Dependencies **
+
+- In order to analyse Javascript code "PyV8" is needed:
+
+    http://code.google.com/p/pyv8/
+
+
+- The "sctest" command is a wrapper of "sctest" (libemu). Besides libemu pylibemu is used and must be installed:
+
+    http://libemu.carnivore.it (latest version from git repository, Sourceforge package is outdated)
+    https://github.com/buffer/pylibemu
+
+
+- To support XML output "lxml" is needed:
+
+    http://lxml.de/installation.html
+    
+
+- Included modules: lzw, colorama, jsbeautifier, ccitt, pythonaes (Thanks to all the developers!!)
+
+
+
+** Installation **
+
+No installation is needed apart of the commented dependencies, just execute it!
+
+
+
+** Execution **
+
+There are two important options when peepdf is executed:
+
+-f: Ignores the parsing errors. Analysing malicious files propably leads to parsing errors, so this parameter should be set.
+-l: Sets the loose mode, so does not search for the endobj tag because it's not obligatory. Helpful with malformed files.
+
+
+* Simple execution
+
+Shows the statistics of the file after being decoded/decrypted and analysed:
+
+    python peepdf.py [options] pdf_file
+
+
+* Interactive console
+
+Executes the interactive console to let play with the PDF file:
+
+    python peepdf.py -i [options] pdf_file
+
+If no PDF file is specified it's possible to use the decode/encode/js*/sctest commands and create a new PDF file:
+
+    python peepdf.py -i
+
+
+* Batch execution
+
+It's possible to use a commands file to specify the commands to be executed in the batch mode. This type of execution is good to automatise analysis of several files:
+
+    python peepdf.py [options] -s commands_file pdf_file
+
+
+
+** Updating **
+
+Just type this and you will be updated to the latest version from the repository:
+
+    python peepdf.py -u
+
+
+
+** Some hints **
+
+If the information shown when a PDF file is parsed is not enough to know if it's harmful or not, the following commands can help to do it:
+
+* tree
+
+Shows the tree graph of the file or specified version. Here we can see suspicious elements.
+
+
+* offsets 
+
+Shows the physical map of the file or the specified version of the document. This is helpful to see unusual big objects or big spaces between objects.
+
+
+* search
+
+Search the specified string or hexadecimal string in the objects (decoded and encrypted streams included).
+
+
+* object/rawobject
+
+Shows the (raw) content of the object.
+
+
+* stream/rawstream
+
+Shows the (raw) content of the stream.
+
+
+* The rest of commands, of course
+
+> help
+
+
+
+** Bugs **
+
+Send me bugs and comments, please!! ;) You can do it via mail (jesparza AT eternal-todo.com) or through Google Code (http://peepdf.googlecode.com).
+
+Thanks!!
