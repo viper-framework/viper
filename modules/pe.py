@@ -1,11 +1,10 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
+import re
 import getopt
-import hashlib
 import datetime
 import tempfile
-import re
 
 try:
     import pefile
@@ -14,19 +13,13 @@ try:
 except ImportError:
     HAVE_PEFILE = False
 
-try:
-    import magic
-    HAVE_MAGIC = True
-except ImportError:
-    HAVE_MAGIC = False
-
 from viper.common.out import *
 from viper.common.objects import File
 from viper.common.abstracts import Module
+from viper.common.utils import get_type, get_md5
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
-
 
 class PE(Module):
     cmd = 'pe'
@@ -49,27 +42,6 @@ class PE(Module):
                 return False
 
         return True
-
-    def __get_filetype(self, data):
-        if not HAVE_MAGIC:
-            return None
-
-        try:
-            ms = magic.open(magic.MAGIC_NONE)
-            ms.load()
-            file_type = ms.buffer(data)
-        except:
-            try:
-                file_type = magic.from_buffer(data)
-            except Exception:
-                return None
-
-        return file_type
-
-    def __get_md5(self, data):
-        md5 = hashlib.md5()
-        md5.update(data)
-        return md5.hexdigest()
 
     def imports(self):
         if not self.__check_session():
@@ -263,7 +235,7 @@ class PE(Module):
     def resources(self):
 
         def usage():
-            print("usage: pe resources [-d=folder] [-s]")
+            print("usage: pe resources [-d=folder] [-o=resource number] [-s]")
 
         def help():
             usage()
@@ -298,8 +270,8 @@ class PE(Module):
                                 if hasattr(resource_id, 'directory'):
                                     for resource_lang in resource_id.directory.entries:
                                         data = pe.get_data(resource_lang.data.struct.OffsetToData, resource_lang.data.struct.Size)
-                                        filetype = self.__get_filetype(data)
-                                        md5 = self.__get_md5(data)
+                                        filetype = get_type(data)
+                                        md5 = get_md5(data)
                                         language = pefile.LANG.get(resource_lang.data.lang, None)
                                         sublanguage = pefile.get_sublang_name_for_lang(resource_lang.data.lang, resource_lang.data.sublang)
                                         offset = ('%-8s' % hex(resource_lang.data.struct.OffsetToData)).strip()
@@ -589,7 +561,7 @@ class PE(Module):
             print_warning("No certificate found")
             return
 
-        cert_md5 = self.__get_md5(cert_data)
+        cert_md5 = get_md5(cert_data)
 
         print_info("Found certificate with MD5 {0}".format(bold(cert_md5)))
 
@@ -631,7 +603,7 @@ class PE(Module):
                 if not cur_cert_data:
                     continue
 
-                cur_cert_md5 = self.__get_md5(cur_cert_data)
+                cur_cert_md5 = get_md5(cur_cert_data)
                 if cur_cert_md5 == cert_md5:
                     matches.append([sample.name, sample.sha256])
 
