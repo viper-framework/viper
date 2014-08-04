@@ -8,7 +8,7 @@ import tempfile
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from vpier.common.utils import get_type
+from viper.common.utils import get_type
 from viper.core.session import __sessions__
 
 from pdftools.pdfid import *
