@@ -165,30 +165,42 @@ class Console(object):
                     os.system(data[1:])
                     continue
 
-                # If it's an internal command, we parse the input and split it
-                # between root command and arguments.
-                root, args = self.parse(data)
+                # Try to split commands by ; so that you can sequence multiple
+                # commands at once.
+                # For example:
+                # viper > find name *.pdf; open --last 1; pdf id
+                # This will automatically search for all PDF files, open the first entry
+                # and run the pdf module against it.
+                split_commands = data.split(';')
+                for split_command in split_commands:
+                    split_command = split_command.strip()
+                    if not split_command:
+                        continue
 
-                # Check if the command instructs to terminate.
-                if root in ('exit', 'quit'):
-                    self.stop()
-                    continue
+                    # If it's an internal command, we parse the input and split it
+                    # between root command and arguments.
+                    root, args = self.parse(split_command)
 
-                try:
-                    # If the root command is part of the embedded commands list we
-                    # execute it.
-                    if root in self.cmd.commands:
-                        self.cmd.commands[root]['obj'](*args)
-                    # If the root command is part of loaded modules, we initialize
-                    # the module and execute it.
-                    elif root in __modules__:
-                        module = __modules__[root]['obj']()
-                        module.set_args(args)
-                        module.run()
-                    else:
-                        print("Command not recognized.")
-                except KeyboardInterrupt:
-                    pass
-                except Exception as e:
-                    print_error("The command {0} raised an exception:".format(bold(root)))
-                    traceback.print_exc()
+                    # Check if the command instructs to terminate.
+                    if root in ('exit', 'quit'):
+                        self.stop()
+                        continue
+
+                    try:
+                        # If the root command is part of the embedded commands list we
+                        # execute it.
+                        if root in self.cmd.commands:
+                            self.cmd.commands[root]['obj'](*args)
+                        # If the root command is part of loaded modules, we initialize
+                        # the module and execute it.
+                        elif root in __modules__:
+                            module = __modules__[root]['obj']()
+                            module.set_args(args)
+                            module.run()
+                        else:
+                            print("Command not recognized.")
+                    except KeyboardInterrupt:
+                        pass
+                    except Exception as e:
+                        print_error("The command {0} raised an exception:".format(bold(root)))
+                        traceback.print_exc()
