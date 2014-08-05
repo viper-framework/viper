@@ -135,8 +135,16 @@ class Commands(object):
         if arg_is_file:
             target = os.path.expanduser(target)
 
+            # This is kind of hacky. It checks if there are additional arguments
+            # to the open command, if there is I assume that it's the continuation
+            # of a filename with spaces. I then concatenate them.
+            # TODO: improve this.
+            if len(argv) > 1:
+                for arg in argv[1:]:
+                    target += ' ' + arg
+
             if not os.path.exists(target) or not os.path.isfile(target):
-                print_error("File not found")
+                print_error("File not found: {0}".format(target))
                 return
 
             __sessions__.new(target)
