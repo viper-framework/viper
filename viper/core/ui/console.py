@@ -95,7 +95,7 @@ class Console(object):
 
             # Then autocomplete paths.
             if text.startswith("~"):
-                text = "%s%s" %(os.getenv("HOME"),text[1:])
+                text = "{0}{1}".format(os.getenv("HOME"), text[1:])
             return (glob.glob(text+'*')+[None])[state]
 
         # Auto-complete on tabs.
