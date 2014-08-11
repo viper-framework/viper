@@ -413,12 +413,17 @@ class Commands(object):
                 print_warning("Skip, file \"{0}\" appears to be already stored".format(obj.name))
                 return False
 
-            # Store file to the local repository.
-            new_path = store_sample(obj)
-            if new_path:
-                # Add file to the database.
-                status = self.db.add(obj=obj, tags=tags)
+            # Try to store file object into database.
+            status = self.db.add(obj=obj, tags=tags)
+            if status:
+                # If succeeds, store also in the local repository.
+                # If something fails in the database (for example unicode strings)
+                # we don't want to have the binary lying in the repository with no
+                # associated database record.
+                new_path = store_sable(obj)
                 print_success("Stored file \"{0}\" to {1}".format(obj.name, new_path))
+            else:
+                return False
 
             # Delete the file if requested to do so.
             if arg_delete:
