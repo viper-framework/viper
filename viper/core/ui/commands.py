@@ -855,6 +855,11 @@ class Commands(object):
                 return
             elif opt in ('-z', '--zip'):
                 arg_zip = True
+                
+        # This command requires a session to be opened.
+        if not __sessions__.is_set():
+            print_error("No session opened")
+            return
 
         # Check for valid export path.
         if len(args) ==0:
