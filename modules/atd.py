@@ -103,7 +103,7 @@ class ATD(Module):
             return
 	
 	if response.status_code == 200:
-            print(Sample uploaded successfully)
+            print("Sample uploaded successfully")
 
     def authenticate(self):
         username = raw_input('Username: ')
