@@ -22,7 +22,7 @@ ATD_PASS = None
 class ATD(Module):
     cmd = 'atd'
     description = 'Submit the file to McAfee ATD'
-    authors = ['nex']
+    authors = ['nex', 'lnmyshkin']
 
     def run(self):
         if not __sessions__.is_set():
