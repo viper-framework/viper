@@ -420,7 +420,7 @@ class Commands(object):
                 # If something fails in the database (for example unicode strings)
                 # we don't want to have the binary lying in the repository with no
                 # associated database record.
-                new_path = store_sable(obj)
+                new_path = store_sample(obj)
                 print_success("Stored file \"{0}\" to {1}".format(obj.name, new_path))
             else:
                 return False
