@@ -438,8 +438,8 @@ rule LuxNet
 		$b = "Activator"
 		$c = "WebClient"
 		$d = "op_Equality"
-		$e = "dickcursor.cur"
-		$f = "{0}|{1}|{2}"
+		$e = "dickcursor.cur" wide
+		$f = "{0}|{1}|{2}" wide
 
 	condition:
 		all of them
