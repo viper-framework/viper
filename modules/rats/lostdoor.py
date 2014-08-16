@@ -33,7 +33,7 @@ def new_decoder(split_list):
     raw_dict = {}
     for line in split_list:
         try:
-            k,v = line.split(" = ")
+            k,v = line.split(' = ')
             raw_dict[k[1:-1]] = v[1:-1]
         except:
             continue
@@ -43,7 +43,7 @@ def config_cleaner(raw_dict):
     clean_dict = {}
     for k,v in raw_dict.iteritems():
         if k == 'ip':
-            clean_dict['Domain'] = decrypt_rc4("oussamio", v)
+            clean_dict['Domain'] = decrypt_rc4('oussamio', v)
         if k == 'fire':
             clean_dict['Firewall Bypass'] = v
         if k == 'foder':
@@ -72,69 +72,67 @@ def config_cleaner(raw_dict):
 
 def ver_80(conf):
     conf_dict = {}
-    conf_dict["Domain"] = decrypt_rc4("UniQue OussamiO", conf[1])
-    conf_dict["Campaign"] = conf[2]
-    conf_dict["Enable Startup"] = conf[3]
-    conf_dict["StartupName"] = conf[4]
-    conf_dict["FolderName"] = conf[5]
+    conf_dict['Domain'] = decrypt_rc4('UniQue OussamiO', conf[1])
+    conf_dict['Campaign'] = conf[2]
+    conf_dict['Enable Startup'] = conf[3]
+    conf_dict['StartupName'] = conf[4]
+    conf_dict['FolderName'] = conf[5]
     if conf[6] == "D":
-        conf_dict["Path"] = "App Data Folder"
+        conf_dict['Path'] = 'App Data Folder'
     elif conf[6] == "W":
-        conf_dict["Path"] = "Windows Folder"
+        conf_dict['Path'] = 'Windows Folder'
     if conf[6] == "s":
-        conf_dict["Path"] = "System Folder"
-    conf_dict["Enable Error Message"] = conf[7]
-    conf_dict["Error Message"] = conf[8]
-    conf_dict["Disable Firewall"] = conf[9]
-    #conf_dict[""] = conf[10]
-    #conf_dict[""] = conf[11]
-    conf_dict["USB Spread"] = conf[12]
-    conf_dict["MSN Spread"] = conf[13]
-    conf_dict["P2P Spread"] = conf[14]
-    conf_dict["Melt"] = conf[15]
-    conf_dict["Get Default User Name"] = conf[16]
-    conf_dict["Connection Delay"] = conf[17]
-    conf_dict["Set Hidden"] = conf[18]
-    conf_dict["Protect Process"] = conf[19]
-    #conf_dict[""] = conf[20]
+        conf_dict['Path'] = 'System Folder'
+    conf_dict['Enable Error Message'] = conf[7]
+    conf_dict['Error Message'] = conf[8]
+    conf_dict['Disable Firewall'] = conf[9]
+    #conf_dict[''] = conf[10]
+    #conf_dict[''] = conf[11]
+    conf_dict['USB Spread'] = conf[12]
+    conf_dict['MSN Spread'] = conf[13]
+    conf_dict['P2P Spread'] = conf[14]
+    conf_dict['Melt'] = conf[15]
+    conf_dict['Get Default User Name'] = conf[16]
+    conf_dict['Connection Delay'] = conf[17]
+    conf_dict['Set Hidden'] = conf[18]
+    conf_dict['Protect Process'] = conf[19]
+    #conf_dict[''] = conf[20]
 
     return conf_dict
     
 def ver_801(conf):
     conf_dict = {}
-    conf_dict["Domain"] = decrypt_rc4("UniQue OussamiO", conf[1])
-    conf_dict["Campaign"] = conf[2]
-    conf_dict["Enable Startup"] = conf[3]
-    conf_dict["StartupName"] = conf[4]
-    conf_dict["FolderName"] = conf[5]
-    if conf[6] == "D":
-        conf_dict["Path"] = "App Data Folder"
-    elif conf[6] == "W":
-        conf_dict["Path"] = "Windows Folder"
-    if conf[6] == "s":
-        conf_dict["Path"] = "System Folder"
-    conf_dict["Enable Error Message"] = conf[7]
-    conf_dict["Error Message"] = conf[8]
-    conf_dict["Disable Firewall"] = conf[9]
-    #conf_dict[""] = conf[10]
-    #conf_dict[""] = conf[11]
-    conf_dict["USB Spread"] = conf[12]
-    conf_dict["MSN Spread"] = conf[13]
-    conf_dict["P2P Spread"] = conf[14]
-    conf_dict["Melt"] = conf[15]
-    conf_dict["Get Default User Name"] = conf[16]
-    conf_dict["Connection Delay"] = conf[17]
-    conf_dict["Set Hidden"] = conf[18]
-    conf_dict["Protect Process"] = conf[19]
-    conf_dict["Name To Spread"] = conf[20]
-    conf_dict["Enable Active X"] = conf[21]
-    conf_dict["Active X Key"] = conf[22]
-    conf_dict["Enable Mutex"] = conf[23]
-    conf_dict["Mutex"] = conf[24]
-    conf_dict["Persistant Server"] = conf[25]
-    conf_dict["Offline Keylogger"] = conf[26]
-    conf_dict["Disable Task Manager"] = conf[27]
-    conf_dict["Disable RegEdit"] = conf[28]
+    conf_dict['Domain'] = decrypt_rc4('UniQue OussamiO', conf[1])
+    conf_dict['Campaign'] = conf[2]
+    conf_dict['Enable Startup'] = conf[3]
+    conf_dict['StartupName'] = conf[4]
+    conf_dict['FolderName'] = conf[5]
+    if conf[6] == 'D':
+        conf_dict['Path'] = 'App Data Folder'
+    elif conf[6] == 'W':
+        conf_dict['Path'] = 'Windows Folder'
+    if conf[6] == 's':
+        conf_dict['Path'] = 'System Folder'
+    conf_dict['Enable Error Message'] = conf[7]
+    conf_dict['Error Message'] = conf[8]
+    conf_dict['Disable Firewall'] = conf[9]
+    conf_dict['USB Spread'] = conf[12]
+    conf_dict['MSN Spread'] = conf[13]
+    conf_dict['P2P Spread'] = conf[14]
+    conf_dict['Melt'] = conf[15]
+    conf_dict['Get Default User Name'] = conf[16]
+    conf_dict['Connection Delay'] = conf[17]
+    conf_dict['Set Hidden'] = conf[18]
+    conf_dict['Protect Process'] = conf[19]
+    conf_dict['Name To Spread'] = conf[20]
+    conf_dict['Enable Active X'] = conf[21]
+    conf_dict['Active X Key'] = conf[22]
+    conf_dict['Enable Mutex'] = conf[23]
+    conf_dict['Mutex'] = conf[24]
+    conf_dict['Persistant Server'] = conf[25]
+    conf_dict['Offline Keylogger'] = conf[26]
+    conf_dict['Disable Task Manager'] = conf[27]
+    conf_dict['Disable RegEdit'] = conf[28]
     return conf_dict
 
 def config(data):

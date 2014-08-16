@@ -1,5 +1,5 @@
 # Originally written by Kevin Breen (@KevTheHermit):
-# https://github.com/kevthehermit/RATDecoders/blob/master/Albertino.py
+# https://github.com/kevthehermit/RATDecoders/blob/master/ClientMesh.py
 
 import re
 import string
@@ -30,19 +30,19 @@ def conf_extract(coded_config):
 
 def process_config(raw_config):
     conf_dict = {}
-    conf_dict["Domain"] = raw_config[0]
-    conf_dict["Port"] = raw_config[1]
-    conf_dict["Password"] = raw_config[2]
-    conf_dict["CampaignID"] = raw_config[3]
-    conf_dict["MsgBoxFlag"] = raw_config[4]
-    conf_dict["MsgBoxTitle"] = raw_config[5]
-    conf_dict["MsgBoxText"] = raw_config[6]
-    conf_dict["Startup"] = raw_config[7]
-    conf_dict["RegistryKey"] = raw_config[8]
-    conf_dict["RegistryPersistance"] = raw_config[9]
-    conf_dict["LocalKeyLogger"] = raw_config[10]
-    conf_dict["VisibleFlag"] = raw_config[11]
-    conf_dict["Unknown"] = raw_config[12]
+    conf_dict['Domain'] = raw_config[0]
+    conf_dict['Port'] = raw_config[1]
+    conf_dict['Password'] = raw_config[2]
+    conf_dict['CampaignID'] = raw_config[3]
+    conf_dict['MsgBoxFlag'] = raw_config[4]
+    conf_dict['MsgBoxTitle'] = raw_config[5]
+    conf_dict['MsgBoxText'] = raw_config[6]
+    conf_dict['Startup'] = raw_config[7]
+    conf_dict['RegistryKey'] = raw_config[8]
+    conf_dict['RegistryPersistance'] = raw_config[9]
+    conf_dict['LocalKeyLogger'] = raw_config[10]
+    conf_dict['VisibleFlag'] = raw_config[11]
+    conf_dict['Unknown'] = raw_config[12]
     return conf_dict
 
 def config(data):
