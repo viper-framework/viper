@@ -29,7 +29,7 @@ class Andro(Module):
             
     def run(self):
         def usage():
-            print("usage: apk [-hipfd]")
+            print("usage: apk [-hipfad]")
 
         def help():
             usage()
@@ -39,6 +39,7 @@ class Andro(Module):
             print("\t--info (-i)\tShow General Info")
             print("\t--perm (-p)\tShow APK Permissions")
             print("\t--file (-f)\tShow APK File List")
+            print("\t--all (-a)\tRun All options Excluding Dump")
             print("\t--dump (-d)\tExtract all items from jar")
             return
 
@@ -167,7 +168,7 @@ class Andro(Module):
                 return a, vm, vmx
             except Exception as e:
                 print_error("Error: {0}".format(e))
-                return
+                return False, False, False
 
         #Check for session
         if not __sessions__.is_set():
@@ -181,35 +182,49 @@ class Andro(Module):
 
         # Get args and opts
         try:
-            opts, argv = getopt.getopt(self.args, 'hipfd:', ['help', 'info', 'perm', 'files', 'dump='])
+            opts, argv = getopt.getopt(self.args, 'hipfad:', ['help', 'info', 'perm', 'files', 'all', 'dump='])
         except getopt.GetoptError as e:
             print(e)
             return
             
         arg_dump = None
         for opt, value in opts:
-            if opt in ('-d', '--dump'):
+            if opt in ('-h', '--help'):
+                help()
+                return        
+            elif opt in ('-d', '--dump'):
                 arg_dump = value
                 a, vm, vmx = process_apk()
+                if not a:
+                    return
                 print_info("Decompiling Code")
                 andro_dump(vm, vmx, arg_dump)
                 print_info("Decompiled code saved to {0}".format(arg_dump))
                 return
-            elif opt in ('-h', '--help'):
-                help()
-                return
             elif opt in ('-i', '--info'):
                 a, vm, vmx = process_apk()
+                if not a:
+                    return
                 andro_info(a)
+                return
             elif opt in ('-p', '--perm'):
                 a, vm, vmx = process_apk()
+                if not a:
+                    return
                 andro_perm(a)
                 return
             elif opt in ('-f', '--file'):
                 a, vm, vmx = process_apk()
+                if not a:
+                    return
                 andro_file(a)
                 return
-            else:
-                usage()
-                help()
-                return
+            elif opt in ('-a', '--all'):
+                a, vm, vmx = process_apk()
+                if not a:
+                    return
+                andro_info(a)
+                andro_perm(a)
+                andro_file(a)
+                return                
+        help()
