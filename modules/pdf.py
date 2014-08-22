@@ -91,7 +91,7 @@ class PDF(Module):
             objects = []
             count = 0
 
-            for version in range(len(stats['Version'])):
+            for i in range(len(pdf.body)):
                 body = pdf.body[count]
                 objects = body.objects
 
@@ -121,7 +121,19 @@ class PDF(Module):
                             # Otherwise we juts generate a temporary one.
                             else:
                                 folder = tempfile.mkdtemp()
-
+                            
+                            # Confirm the dump path
+                            if not os.path.exists(folder):
+                                try:
+                                    os.makedirs(folder)
+                                except Exception as e:
+                                    print_error("Unable to create directory at {0}: {1}".format(folder, e))
+                                    return results
+                            else:
+                                if not os.path.isdir(folder):
+                                    print_error("You need to specify a folder not a file")
+                                    return results 
+                            
                             # Dump stream to this path.
                             # TODO: sometimes there appear to be multiple streams
                             # with the same object ID. Is that even possible?
