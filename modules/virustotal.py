@@ -74,6 +74,7 @@ class VirusTotal(Module):
                     signature = ''
                 rows.append([engine, signature])
 
+        rows.sort()
         if rows:
             print_info("VirusTotal Report:")
             print(table(['Antivirus', 'Signature'], rows))
