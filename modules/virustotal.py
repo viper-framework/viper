@@ -4,6 +4,7 @@
 import os
 import json
 import getopt
+import requests
 import urllib
 import urllib2
 
@@ -12,6 +13,7 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 VIRUSTOTAL_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
+VIRUSTOTAL_URL_SUBMIT = 'https://www.virustotal.com/vtapi/v2/file/scan'
 KEY = 'a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088'
 
 class VirusTotal(Module):
@@ -84,5 +86,17 @@ class VirusTotal(Module):
                 print_info("The file is already available on VirusTotal, no need to submit")
         else:
             print_info("The file does not appear to be on VirusTotal yet")
-            # TODO: Add routine to upload files.
+            if arg_submit == False:
+                return
+
+            try:
+                data = {"apikey": KEY}
+                files = {"file": open(__sessions__.current.file.path, "rb").read()}
+                response_data = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
+                virustotal = json.loads(response_data.content)
+                if "verbose_msg" in virustotal:
+                    print_info(virustotal["verbose_msg"])
+            except Exception as e:
+                print_error("Failed Submit: {0}".format(e))
+                return
             pass
