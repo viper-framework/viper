@@ -101,12 +101,14 @@ class VirusTotal(Module):
                     response = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
                 except Exception as e:
                     print_error("Failed Submit: {0}".format(e))
+                    return
 
                 try:
                     virustotal = response.json()
                 except Exception as e:
                     print_error("Unable to parse response: {0}".format(e))
                     print_error("Data:\n{}".format(response.content))
+                    return
 
                 if 'verbose_msg' in virustotal:
                     print_info("{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
