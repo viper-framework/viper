@@ -4,7 +4,6 @@
 import os
 import getopt
 
-
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -16,13 +15,11 @@ try:
     from androguard.core.analysis.analysis import *
     from androguard.core.analysis.ganalysis import *
     from androguard.decompiler.decompiler import *
-    HAVE_ANDRO = True
-except Exception as e:
-    print e
-    HAVE_ANDRO = False
+    HAVE_ANDROGUARD = True
+except Exception:
+    HAVE_ANDROGUARD = False
 
-
-class Andro(Module):
+class AndroidPackage(Module):
     cmd = 'apk'
     description = 'Parse Android Applications'
     authors = ['Kevin Breen']
@@ -36,42 +33,40 @@ class Andro(Module):
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--info (-i)\tShow General Info")
-            print("\t--perm (-p)\tShow APK Permissions")
-            print("\t--file (-f)\tShow APK File List")
-            print("\t--all (-a)\tRun All options Excluding Dump")
-            print("\t--dump (-d)\tExtract all items from jar")
+            print("\t--info (-i)\tShow general info")
+            print("\t--perm (-p)\tShow APK permissions")
+            print("\t--file (-f)\tShow APK file list")
+            print("\t--all (-a)\tRun all options excluding eump")
+            print("\t--dump (-d)\tExtract all items from archive")
             return
 
-
-        def AnalyzeAPK(filename, raw=False, decompiler=None) :
+        def analyze_apk(filename, raw=False, decompiler=None) :
             """
-                Analyze an android application and setup all stuff for a more quickly analysis !
-                
-                :param filename: the filename of the android application or a buffer which represents the application
-                :type filename: string
-                :param raw: True is you would like to use a buffer (optional)
-                :type raw: boolean
-                :param decompiler: ded, dex2jad, dad (optional)
-                :type decompiler: string
-                
-                :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
+            Analyze an android application and setup all stuff for a more quickly analysis !
+            
+            :param filename: the filename of the android application or a buffer which represents the application
+            :type filename: string
+            :param raw: True is you would like to use a buffer (optional)
+            :type raw: boolean
+            :param decompiler: ded, dex2jad, dad (optional)
+            :type decompiler: string
+            
+            :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
             """
             a = APK(filename, raw)
-            d, dx = AnalyzeDex( a.get_dex(), raw=True, decompiler=decompiler )
+            d, dx = analyze_dex( a.get_dex(), raw=True, decompiler=decompiler )
             return a, d, dx
 
-
-        def AnalyzeDex(filename, raw=False, decompiler=None) :
+        def analyze_dex(filename, raw=False, decompiler=None) :
             """
-                Analyze an android dex file and setup all stuff for a more quickly analysis !
+            Analyze an android dex file and setup all stuff for a more quickly analysis !
 
-                :param filename: the filename of the android dex file or a buffer which represents the dex file
-                :type filename: string
-                :param raw: True is you would like to use a buffer (optional)
-                :type raw: boolean
+            :param filename: the filename of the android dex file or a buffer which represents the dex file
+            :type filename: string
+            :param raw: True is you would like to use a buffer (optional)
+            :type raw: boolean
 
-                :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
+            :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
             """
             d = None
             if raw == False :
@@ -83,22 +78,22 @@ class Andro(Module):
             gx = GVMAnalysis( dx, None )
             d.set_vmanalysis( dx )
             d.set_gvmanalysis( gx )
-            RunDecompiler( d, dx, decompiler )
+            run_decompiler( d, dx, decompiler )
             d.create_xref()
             d.create_dref()
 
             return d, dx
 
-        def RunDecompiler(d, dx, decompiler) :
+        def run_decompiler(d, dx, decompiler) :
             """
-                Run the decompiler on a specific analysis
+            Run the decompiler on a specific analysis
 
-                :param d: the DalvikVMFormat object
-                :type d: :class:`DalvikVMFormat` object
-                :param dx: the analysis of the format
-                :type dx: :class:`VMAnalysis` object 
-                :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
-                :type decompiler: string
+            :param d: the DalvikVMFormat object
+            :type d: :class:`DalvikVMFormat` object
+            :param dx: the analysis of the format
+            :type dx: :class:`VMAnalysis` object 
+            :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
+            :type decompiler: string
             """
             if decompiler != None :
               decompiler = decompiler.lower()
@@ -109,7 +104,7 @@ class Andro(Module):
               elif decompiler == "dad" :
                 d.set_decompiler( DecompilerDAD( d, dx ) )
               else :
-                print "Unknown decompiler, use DAD decompiler by default"
+                print_info("Unknown decompiler, use DAD decompiler by default")
                 d.set_decompiler( DecompilerDAD( d, dx ) )
 
         # List all files and types
@@ -162,11 +157,11 @@ class Andro(Module):
         def process_apk():
             # Process the APK File
             try:
-                print_warning("Processing the APK, This may take a moment")
+                print_info("Processing the APK, this may take a moment...")
                 APK_FILE = __sessions__.current.file.path
-                a, vm, vmx = AnalyzeAPK(APK_FILE, decompiler='dad')
+                a, vm, vmx = analyze_apk(APK_FILE, decompiler='dad')
                 return a, vm, vmx
-            except Exception as e:
+            except AttributeError as e:
                 print_error("Error: {0}".format(e))
                 return False, False, False
 
@@ -174,9 +169,10 @@ class Andro(Module):
         if not __sessions__.is_set():
             print_error("No session opened")
             return
+
         # Check for androguard
-        if not HAVE_ANDRO:
-            print_error("Error Importing AndroGuard")
+        if not HAVE_ANDROGUARD:
+            print_error("Unable to import AndroGuard")
             print_error("Install https://code.google.com/p/androguard/downloads/detail?name=androguard-1.9.tar.gz")
             return
 
@@ -185,6 +181,7 @@ class Andro(Module):
             opts, argv = getopt.getopt(self.args, 'hipfad:', ['help', 'info', 'perm', 'files', 'all', 'dump='])
         except getopt.GetoptError as e:
             print(e)
+            usage()
             return
             
         arg_dump = None
@@ -226,5 +223,6 @@ class Andro(Module):
                 andro_info(a)
                 andro_perm(a)
                 andro_file(a)
-                return                
-        help()
+                return
+
+        usage()
