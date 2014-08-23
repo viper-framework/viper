@@ -4,9 +4,12 @@
 import os
 import json
 import getopt
-import requests
-import urllib
-import urllib2
+
+try:
+    import requests
+    HAVE_REQUESTS = True
+except ImportError:
+    HAVE_REQUESTS = False
 
 from viper.common.out import *
 from viper.common.abstracts import Module
@@ -48,24 +51,28 @@ class VirusTotal(Module):
             elif opt in ('-s', '--submit'):
                 arg_submit = True
 
+        if not HAVE_REQUESTS:
+            print_error("Missing dependency, install requests (`pip install requests`)")
+            return
+
         if not __sessions__.is_set():
             print_error("No session opened")
             return
 
-        data = urllib.urlencode({'resource' : __sessions__.current.file.md5, 'apikey' : KEY})
+        data = {'resource' : __sessions__.current.file.md5, 'apikey' : KEY}
 
         try:
-            request = urllib2.Request(VIRUSTOTAL_URL, data)
-            response = urllib2.urlopen(request)
-            response_data = response.read()
+            response = requests.post(VIRUSTOTAL_URL, data=data)
         except Exception as e:
-            print_error("Failed: {0}".format(e))
+            print_error("Failed performing request: {0}".format(e))
             return
 
         try:
-            virustotal = json.loads(response_data)
-        except ValueError as e:
-            print_error("Failed: {0}".format(e))
+            virustotal = response.json()
+        except Exception as e:
+            print_error("Failed parsing the response: {0}".format(e))
+            print_error("Data:\n{}".format(response.content))
+            return
 
         rows = []
         if 'scans' in virustotal:
@@ -86,17 +93,20 @@ class VirusTotal(Module):
                 print_info("The file is already available on VirusTotal, no need to submit")
         else:
             print_info("The file does not appear to be on VirusTotal yet")
-            if arg_submit == False:
-                return
 
-            try:
-                data = {"apikey": KEY}
-                files = {"file": open(__sessions__.current.file.path, "rb").read()}
-                response_data = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
-                virustotal = json.loads(response_data.content)
-                if "verbose_msg" in virustotal:
-                    print_info(virustotal["verbose_msg"])
-            except Exception as e:
-                print_error("Failed Submit: {0}".format(e))
-                return
-            pass
+            if arg_submit:
+                try:
+                    data = {'apikey' : KEY}
+                    files = {'file' : open(__sessions__.current.file.path, 'rb').read()}
+                    response = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
+                except Exception as e:
+                    print_error("Failed Submit: {0}".format(e))
+
+                try:
+                    virustotal = response.json()
+                except Exception as e:
+                    print_error("Unable to parse response: {0}".format(e))
+                    print_error("Data:\n{}".format(response.content))
+
+                if 'verbose_msg' in virustotal:
+                    print_info("{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
