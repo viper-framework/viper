@@ -25,6 +25,10 @@ class PDF(Module):
             print_error('No session opened')
             return
 
+        if 'PDF' not in __sessions__.current.file.type:
+            print_error("The opened file doesn't appear to be a PDF document")
+            return
+
         # Run the parser - Returns an XML DOM Instance.
         pdf_data = PDFiD(__sessions__.current.file.path, False, True)
 
@@ -175,6 +179,10 @@ class PDF(Module):
         if not __sessions__.is_set():
             print_error("No session opened")
             return False
+
+        if 'PDF' not in __sessions__.current.file.type:
+            print_error("The opened file doesn't appear to be a PDF document")
+            return
 
         # Retrieve list of streams.
         streams = get_streams()
