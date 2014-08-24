@@ -17,9 +17,21 @@ except ImportError:
 class Debup(Module):
     cmd = 'debup'
     description = 'Parse McAfee BUP Files'
-    authors = ['nex']
+    authors = ['Kevin Breen', 'nex']
 
     def run(self):
+    
+        def usage():
+            print("usage: debup [-hs]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--info (-i)\tSwitch Session to the Quarantined File")
+            return   
+    
         if not __sessions__.is_set():
             print_error("No session opened")
             return
