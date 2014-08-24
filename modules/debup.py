@@ -29,7 +29,7 @@ class Debup(Module):
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--info (-i)\tSwitch Session to the Quarantined File")
+            print("\t--info (-i)\tSwitch session to the quarantined file")
             return   
     
         if not __sessions__.is_set():
