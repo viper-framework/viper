@@ -100,12 +100,14 @@ class Office(Module):
     def metatimes(self, ole):
         rows = []
         rows.append([
+            1,
             'Root',
             '',
             ole.root.getctime() if ole.root.getctime() else '',
             ole.root.getmtime() if ole.root.getmtime() else ''
         ])
 
+        counter = 2
         for obj in ole.listdir(streams=True, storages=True):
             has_macro = ''
             try:
@@ -115,14 +117,17 @@ class Office(Module):
                 pass
 
             rows.append([
+                counter,
                 string_clean('/'.join(obj)),
                 has_macro,
                 ole.getctime(obj) if ole.getctime(obj) else '',
                 ole.getmtime(obj) if ole.getmtime(obj) else ''
             ])
 
+            counter += 1
+
         print_info("OLE Structure:")
-        print(table(header=['Object', 'Macro', 'Creation', 'Modified'], rows=rows))
+        print(table(header=['#', 'Object', 'Macro', 'Creation', 'Modified'], rows=rows))
 
         ole.close()
 
