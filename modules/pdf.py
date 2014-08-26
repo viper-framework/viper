@@ -162,7 +162,7 @@ class PDF(Module):
             return results
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'ho:d:s', ['help', 'open=', 'dump='])
+            opts, argv = getopt.getopt(self.args[1:], 'ho:d:', ['help', 'open=', 'dump='])
         except getopt.GetoptError as e:
             print(e)
             usage()
