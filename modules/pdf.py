@@ -17,7 +17,7 @@ from peepdf.PDFCore import PDFParser
 
 class PDF(Module):
     cmd = 'pdf'
-    description = 'Extract PDF Stream Information'
+    description = 'Parse and analyze PDF documents'
     authors = ['Kevin Breen', 'nex']
 
     def pdf_id(self):
