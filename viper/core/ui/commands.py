@@ -567,7 +567,7 @@ class Commands(object):
 
                 # Generate the table with the results.
                 header = ['Tag', '# Entries']
-                rows.sort()
+                rows.sort(key=lambda x: x[1], reverse=True)
                 print(table(header=header, rows=rows))
             else:
                 print("No tags available")
