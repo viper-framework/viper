@@ -19,6 +19,7 @@ Viper 1.1 (TBD)
 - Added new IDX parser module
 - Added new ClamAV module
 - Added new APK parsing module
+- Added new SWF parsing module
 - Fixed duplication of sessions when the same file is re-opened
 - Fixed bug in pe resource scan
 
