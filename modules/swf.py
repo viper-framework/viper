@@ -141,7 +141,7 @@ class SWF(Module):
 
                 print_info("Flash object dumped at {0}".format(dump_path))
 
-                # Direclty open a session on the dumped Flash object.
+                # Directly open a session on the dumped Flash object.
                 __sessions__.new(dump_path)
 
     def usage(self):
