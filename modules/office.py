@@ -8,7 +8,6 @@ http://www.decalage.info/python/oletools
 
 import os
 import re
-import string
 import zlib
 import struct
 import getopt
@@ -16,6 +15,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 from viper.common.out import *
+from viper.common.utils import string_clean, hexdump
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -81,10 +81,6 @@ class Office(Module):
 
         return matches
 
-    # Used to clean some of the section names returned in metatimes
-    def string_clean(self, line):
-        return filter(lambda x: x in string.printable, line)
-
     ##
     # OLE FUNCTIONS
     #
@@ -103,19 +99,30 @@ class Office(Module):
 
     def metatimes(self, ole):
         rows = []
-        # Root document.
-        rows.append(['Root', ole.root.getctime(), ole.root.getmtime()])
+        rows.append([
+            'Root',
+            '',
+            ole.root.getctime() if ole.root.getctime() else '',
+            ole.root.getmtime() if ole.root.getmtime() else ''
+        ])
 
-        # All other objects
         for obj in ole.listdir(streams=True, storages=True):
+            has_macro = ''
+            try:
+                if '\x00Attribu' in ole.openstream(obj).read():
+                    has_macro = 'Yes'
+            except:
+                pass
+
             rows.append([
-                self.string_clean('/'.join(obj)),
-                ole.getmtime(obj),
-                ole.getctime(obj)
+                string_clean('/'.join(obj)),
+                has_macro,
+                ole.getctime(obj) if ole.getctime(obj) else '',
+                ole.getmtime(obj) if ole.getmtime(obj) else ''
             ])
 
         print_info("OLE Structure:")
-        print(table(header=['Object', 'Creation', 'Modified'], rows=rows))
+        print(table(header=['Object', 'Macro', 'Creation', 'Modified'], rows=rows))
 
         ole.close()
 
@@ -135,10 +142,10 @@ class Office(Module):
             try:
                 stream_content = ole.openstream(stream).read()
             except Exception as e:
-                print_warning("Unable to open stream {0}: {1}".format(self.string_clean('/'.join(stream)), e))
+                print_warning("Unable to open stream {0}: {1}".format(string_clean('/'.join(stream)), e))
                 continue
 
-            store_path = os.path.join(export_path, self.string_clean('-'.join(stream)))
+            store_path = os.path.join(export_path, string_clean('-'.join(stream)))
 
             flash_objects = self.detect_flash(ole.openstream(stream).read())
             if len(flash_objects) > 0:
@@ -329,14 +336,13 @@ class Office(Module):
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--meta (-m)\tGet The Metadata")
-            print("\t--struct (-s)\tShow The Document Structure")
-            print("\t--oleid (-o)\tGet The OLE Information")
-            print("\t--export (-e)\tExport All Objects (specify destination folder)")
+            print("\t--meta (-m)\tGet the metadata")
+            print("\t--oleid (-o)\tGet the OLE information")
+            print("\t--streams (-s)\tShow the document streams")
+            print("\t--export (-e)\tExport all objects (specify destination folder)")
             print("")
 
-
-        # Tests to check for valid Office structures
+        # Tests to check for valid Office structures.
         OLE_FILE = OleFileIO_PL.isOleFile(__sessions__.current.file.path)
         XML_FILE = zipfile.is_zipfile(__sessions__.current.file.path)
         if OLE_FILE:
@@ -344,11 +350,11 @@ class Office(Module):
         elif XML_FILE:
             zip_xml = zipfile.ZipFile(__sessions__.current.file.path, 'r')
         else:
-            print_error("Not A Valid Office Document")
+            print_error("Not a valid office document")
             return
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'hmsoe:', ['help', 'meta', 'struct', 'oleid', 'export:'])
+            opts, argv = getopt.getopt(self.args[0:], 'hmsoe:', ['help', 'meta', 'streams', 'oleid', 'export:'])
         except getopt.GetoptError as e:
             print(e)
             return
@@ -371,7 +377,7 @@ class Office(Module):
                 elif XML_FILE:
                     self.xmlmeta(zip_xml)
                     return
-            if opt in ('-s','--struct'):
+            if opt in ('-s','--streams'):
                 if OLE_FILE:
                     self.metatimes(ole)
                     return
