@@ -144,7 +144,7 @@ class PDF(Module):
                             # TODO: sometimes there appear to be multiple streams
                             # with the same object ID. Is that even possible?
                             # It will cause conflicts.
-                            dump_path = '{0}/{1}_{2}_stream.bin'.format(folder, __sessions__.current.file.md5, counter)
+                            dump_path = '{0}/{1}_{2}_stream.bin'.format(folder, __sessions__.current.file.md5, object_counter)
 
                             with open(dump_path, 'wb') as handle:
                                 handle.write(decoded_stream.strip())
