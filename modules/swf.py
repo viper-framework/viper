@@ -5,6 +5,7 @@ import os
 import zlib
 import struct
 import getopt
+import tempfile
 from StringIO import StringIO
 
 try:
@@ -15,7 +16,7 @@ except ImportError:
 
 from viper.common.out import *
 from viper.common.abstracts import Module
-from viper.common.utils import hexdump
+from viper.common.utils import hexdump, get_md5
 from viper.core.session import __sessions__
 
 class SWF(Module):
@@ -39,6 +40,36 @@ class SWF(Module):
         return header, version, size, data
 
     def decompress(self):
+        def usage():
+            print("usage: swf decompress [-d=folder]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--dump (-d)\tDump the SWF object to the destination folder (default is /tmp)")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hd', ['help', 'dump'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_dump = None
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-d', '--dump'):
+                if value:
+                    arg_dump = value
+                else:
+                    arg_dump = tempfile.gettempdir()
+
         if not __sessions__.is_set():
             print_error("No session opened")
             return
@@ -73,6 +104,15 @@ class SWF(Module):
 
         if decompressed:
             print(cyan(hexdump(decompressed)))
+
+            if arg_dump:
+                dump_path = os.path.join(arg_dump, '{0}.swf'.format(get_md5(decompressed)))
+                with open(dump_path, 'wb') as handle:
+                    handle.write(decompressed)
+
+                print_info("Flash object dumped at {0}".format(dump_path))
+
+                __sessions__.new(dump_path)
 
     def usage(self):
         print("usage: swf <command>")
