@@ -94,7 +94,7 @@ class PDF(Module):
             results = []
             objects = []
             count = 0
-            object_counter = 0
+            object_counter = 1
 
             for i in range(len(pdf.body)):
                 body = pdf.body[count]
