@@ -2,9 +2,9 @@
 # See the file 'LICENSE' for copying permission.
 
 import re
-import subprocess
 
 from viper.common.out import *
+from viper.common.utils import hexdump
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -79,6 +79,4 @@ class Shellcode(Module):
                 if match:
                     offset = match.start()
                     print_info("{0} pattern matched at offset {1}".format(entry['description'], offset))
-
-                    command = 'hexdump -C {0} -s {1} | head -n 15'.format(__sessions__.current.file.path, offset)
-                    print(cyan(subprocess.check_output(command, shell=True)))
+                    print(cyan(hexdump(__sessions__.current.file.data[offset:], maxlines=15)))
