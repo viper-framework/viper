@@ -25,13 +25,21 @@ class SWF(Module):
     authors = ['nex']
 
     def parse_swf(self):
+        # Open an handle to the opened file so that we can more easily
+        # walk through it.
         swf = open(__sessions__.current.file.path, 'rb')
+        # Extract the file header, so we can detect the compression.
         header = swf.read(3)
+        # Extract the Flash version, not really important.
         version = struct.unpack('<b', swf.read(1))[0]
+        # Extract the actual SWF size, this is important to properly dump
+        # the binary data.
         size = struct.unpack('<i', swf.read(4))[0]
 
         try:
+            # Start from the beginning.
             swf.seek(0)
+            # Extract the right amount of data from the opened file.
             data = swf.read(size)
         except Exception as e:
             print_warning("Unable to read SWF data: {0}".format(e))
@@ -74,44 +82,66 @@ class SWF(Module):
             print_error("No session opened")
             return
 
+        # Check if the file type is right.
+        # TODO: this might be a bit hacky, need to verify whether malformed
+        # Flash exploit would get a different file type.
         if not 'Flash' in __sessions__.current.file.type:
             print_error("The opened file doesn't appear to be a valid SWF object")
             return
 
+        # Retrieve key information from the opened SWF file.
         header, version, size, data = self.parse_swf()
-
+        # Decompressed data.
         decompressed = None
 
+        # Check if the file is already a decompressed Flash object.
         if header == 'FWS':
             print_info("The opened file doesn't appear to be compressed")
             return
+        # Check if the file is compressed with zlib.
         elif header == 'CWS':
             print_info("The opened file appears to be compressed with Zlib")
 
+            # Open an handle on the compressed data.
             compressed = StringIO(data)
+            # Skip the header.
             compressed.read(3)
+            # Decompress and reconstruct the Flash object.
             decompressed = 'FWS' + compressed.read(5) + zlib.decompress(compressed.read())
+        # Check if the file is compressed with lzma.
         elif header == 'ZWS':
             print_info("The opened file appears to be compressed with Lzma")
 
+            # We need an third party library to decompress this.
             if not HAVE_PYLZMA:
                 print_error("Missing dependency, please install pylzma (`pip install pylzma`)")
                 return
 
+            # Open and handle on the compressed data.
             compressed = StringIO(data)
+            # Skip the header.
             compressed.read(3)
+            # Decompress with pylzma and reconstruct the Flash object.
             decompressed = 'FWS' + compressed.read(5) + pylzma.decompress(compressed.read())
 
+        # If we obtained some decompressed data, we print it and eventually
+        # dump it to file.
         if decompressed:
+            # Print the decompressed data
+            # TODO: this prints too much, need to find a better wayto display
+            # this. Paginate?
             print(cyan(hexdump(decompressed)))
 
             if arg_dump:
+                # Dump the decompressed SWF file to the specified directory
+                # or to the default temporary one.
                 dump_path = os.path.join(arg_dump, '{0}.swf'.format(get_md5(decompressed)))
                 with open(dump_path, 'wb') as handle:
                     handle.write(decompressed)
 
                 print_info("Flash object dumped at {0}".format(dump_path))
 
+                # Direclty open a session on the dumped Flash object.
                 __sessions__.new(dump_path)
 
     def usage(self):
