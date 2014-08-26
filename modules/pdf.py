@@ -94,6 +94,7 @@ class PDF(Module):
             results = []
             objects = []
             count = 0
+            object_counter = 0
 
             for i in range(len(pdf.body)):
                 body = pdf.body[count]
@@ -110,6 +111,7 @@ class PDF(Module):
                         decoded_stream = details.decodedStream
 
                         result = [
+                            object_counter,
                             oid,
                             offset,
                             size,
@@ -124,7 +126,7 @@ class PDF(Module):
                                 folder = arg_dump
                             # Otherwise we juts generate a temporary one.
                             else:
-                                folder = tempfile.mkdtemp()
+                                folder = tempfile.gettempdir()
                             
                             # Confirm the dump path
                             if not os.path.exists(folder):
@@ -142,7 +144,7 @@ class PDF(Module):
                             # TODO: sometimes there appear to be multiple streams
                             # with the same object ID. Is that even possible?
                             # It will cause conflicts.
-                            dump_path = '{0}/{1}_{2}_stream.bin'.format(folder, __sessions__.current.file.md5, oid)
+                            dump_path = '{0}/{1}_{2}_stream.bin'.format(folder, __sessions__.current.file.md5, counter)
 
                             with open(dump_path, 'wb') as handle:
                                 handle.write(decoded_stream.strip())
@@ -152,6 +154,8 @@ class PDF(Module):
 
                         # Update list of streams.
                         results.append(result)
+
+                        object_counter += 1
 
                 count += 1
 
@@ -188,7 +192,7 @@ class PDF(Module):
         streams = get_streams()
 
         # Show list of streams.
-        header = ['ID', 'Offset', 'Size', 'Type']
+        header = ['#', 'ID', 'Offset', 'Size', 'Type']
         if arg_dump or arg_open:
             header.append('Dumped To')
 
@@ -199,7 +203,7 @@ class PDF(Module):
         if arg_open:
             for stream in streams:
                 if int(arg_open) == int(stream[0]):
-                    __sessions__.new(stream[4])
+                    __sessions__.new(stream[5])
                     return
 
     def usage(self):
