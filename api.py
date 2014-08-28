@@ -125,6 +125,27 @@ def list_tags():
         results.append(row.tag)
 
     return jsonize(results)
+    
+@route('/file/tags/add', method='POST')
+def add_tags():
+    tags = request.forms.get('tags')
+    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all']:
+        value = request.forms.get(entry)
+        if value:
+            key = entry
+            break
+    db = Database()
+    rows = db.find(key=key, value=value)
+    
+    if not rows:
+        raise HTTPError(404, 'File not found in the database')
+          
+    for row in rows:
+        malware_sha256=row.sha256
+        db.add_tags(malware_sha256, tags)
+
+    return jsonize({'message' : 'added'})
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
