@@ -74,6 +74,48 @@ def get_file(file_hash):
 
     return data
 
+#Delete funtion
+#TODO check for notes to be deleted as well
+@route('/file/delete/<file_hash>', method='GET')
+def delete_file(file_hash):
+    success = False
+    key = ''
+    if len(file_hash) == 32:
+        key = 'md5'
+    elif len(file_hash) == 64:
+        key = 'sha256'
+    else:
+        return HTTPError(400, 'Invalid hash format (use md5 or sha256)')
+
+    db = Database()
+    rows = db.find(key=key, value=file_hash)
+
+    if not rows:
+        raise HTTPError(404, 'File not found in the database')
+	
+    if rows:
+		malware_id = rows[0].id
+		path = get_sample_path(rows[0].sha256)
+		if db.delete(malware_id):
+			success = True
+		else:
+			raise HTTPError(404, 'File not found in repository')
+
+    path = get_sample_path(rows[0].sha256)
+    if not path:
+        raise HTTPError(404, 'File not found in file system')
+    else:	
+        success=os.remove(path)
+    
+    if success:
+        return jsonize({'message' : 'deleted'})
+    else:
+        return HTTPError(500, 'Unable to delete file')
+
+
+
+
+
 @route('/file/find', method='POST')
 def find_file():
     def details(row):
