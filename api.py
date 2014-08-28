@@ -125,6 +125,16 @@ def list_tags():
         results.append(row.tag)
 
     return jsonize(results)
+    
+#TODO we might want to have this function more general and combine it with the find_file() function in order to add tags to all found files
+#TODO make the function more flexible and not only for SHA256
+@route('/file/tags/add', method='POST')
+def add_tags():
+    upload = request.forms.get('sha256')
+    tags = request.forms.get('tags')
+    db.add_tags(upload, tags)
+
+    return jsonize({'message' : 'added'})
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
