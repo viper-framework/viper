@@ -98,7 +98,7 @@ def find_file():
 
         return entry
 
-    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all']:
+    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all','latest']:
         value = request.forms.get(entry)
         if value:
             key = entry
@@ -129,7 +129,7 @@ def list_tags():
 @route('/file/tags/add', method='POST')
 def add_tags():
     tags = request.forms.get('tags')
-    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all']:
+    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all','latest']:
         value = request.forms.get(entry)
         if value:
             key = entry
