@@ -17,12 +17,16 @@ from peepdf.PDFCore import PDFParser
 
 class PDF(Module):
     cmd = 'pdf'
-    description = 'Extract PDF Stream Information'
+    description = 'Parse and analyze PDF documents'
     authors = ['Kevin Breen', 'nex']
 
     def pdf_id(self):
         if not __sessions__.is_set():
             print_error('No session opened')
+            return
+
+        if 'PDF' not in __sessions__.current.file.type:
+            print_error("The opened file doesn't appear to be a PDF document")
             return
 
         # Run the parser - Returns an XML DOM Instance.
@@ -90,8 +94,9 @@ class PDF(Module):
             results = []
             objects = []
             count = 0
+            object_counter = 1
 
-            for version in range(len(stats['Version'])):
+            for i in range(len(pdf.body)):
                 body = pdf.body[count]
                 objects = body.objects
 
@@ -106,6 +111,7 @@ class PDF(Module):
                         decoded_stream = details.decodedStream
 
                         result = [
+                            object_counter,
                             oid,
                             offset,
                             size,
@@ -120,13 +126,25 @@ class PDF(Module):
                                 folder = arg_dump
                             # Otherwise we juts generate a temporary one.
                             else:
-                                folder = tempfile.mkdtemp()
-
+                                folder = tempfile.gettempdir()
+                            
+                            # Confirm the dump path
+                            if not os.path.exists(folder):
+                                try:
+                                    os.makedirs(folder)
+                                except Exception as e:
+                                    print_error("Unable to create directory at {0}: {1}".format(folder, e))
+                                    return results
+                            else:
+                                if not os.path.isdir(folder):
+                                    print_error("You need to specify a folder not a file")
+                                    return results 
+                            
                             # Dump stream to this path.
                             # TODO: sometimes there appear to be multiple streams
                             # with the same object ID. Is that even possible?
                             # It will cause conflicts.
-                            dump_path = '{0}/{1}_{2}_stream.bin'.format(folder, __sessions__.current.file.md5, oid)
+                            dump_path = '{0}/{1}_{2}_pdf_stream.bin'.format(folder, __sessions__.current.file.md5, object_counter)
 
                             with open(dump_path, 'wb') as handle:
                                 handle.write(decoded_stream.strip())
@@ -137,12 +155,14 @@ class PDF(Module):
                         # Update list of streams.
                         results.append(result)
 
+                        object_counter += 1
+
                 count += 1
 
             return results
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'ho:d:s', ['help', 'open=', 'dump='])
+            opts, argv = getopt.getopt(self.args[1:], 'ho:d:', ['help', 'open=', 'dump='])
         except getopt.GetoptError as e:
             print(e)
             usage()
@@ -164,11 +184,15 @@ class PDF(Module):
             print_error("No session opened")
             return False
 
+        if 'PDF' not in __sessions__.current.file.type:
+            print_error("The opened file doesn't appear to be a PDF document")
+            return
+
         # Retrieve list of streams.
         streams = get_streams()
 
         # Show list of streams.
-        header = ['ID', 'Offset', 'Size', 'Type']
+        header = ['#', 'ID', 'Offset', 'Size', 'Type']
         if arg_dump or arg_open:
             header.append('Dumped To')
 
@@ -179,7 +203,7 @@ class PDF(Module):
         if arg_open:
             for stream in streams:
                 if int(arg_open) == int(stream[0]):
-                    __sessions__.new(stream[4])
+                    __sessions__.new(stream[5])
                     return
 
     def usage(self):

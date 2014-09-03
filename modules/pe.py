@@ -129,7 +129,7 @@ class PE(Module):
                     continue
 
                 if compile_time == cur_compile_time:
-                    matches.append([sample.name, sample.sha256, cur_compile_time])
+                    matches.append([sample.name, sample.md5, cur_compile_time])
                 else:
                     if arg_window:
                         if cur_compile_time > compile_time:
@@ -139,12 +139,12 @@ class PE(Module):
 
                         delta_minutes = int(delta.total_seconds()) / 60
                         if delta_minutes <= arg_window:
-                            matches.append([sample.name, sample.sha256, cur_compile_time])
+                            matches.append([sample.name, sample.md5, cur_compile_time])
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'SHA256', 'Compile Time'], rows=matches))
+                print(table(header=['Name', 'MD5', 'Compile Time'], rows=matches))
 
     def peid(self):
 
@@ -389,12 +389,12 @@ class PE(Module):
                 # If there are any common resources, add the entry to the list
                 # of matched samples.
                 if len(matched_resources) > 0:
-                    matches.append([sample.name, sample.sha256, '\n'.join(r for r in matched_resources)])
+                    matches.append([sample.name, sample.md5, '\n'.join(r for r in matched_resources)])
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'SHA256', 'Resource MD5'], rows=matches))
+                print(table(header=['Name', 'MD5', 'Resource MD5'], rows=matches))
 
     def imphash(self):
 
