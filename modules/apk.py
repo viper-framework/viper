@@ -36,7 +36,7 @@ class AndroidPackage(Module):
             print("\t--info (-i)\tShow general info")
             print("\t--perm (-p)\tShow APK permissions")
             print("\t--file (-f)\tShow APK file list")
-            print("\t--all (-a)\tRun all options excluding eump")
+            print("\t--all (-a)\tRun all options excluding dump")
             print("\t--dump (-d)\tExtract all items from archive")
             return
 

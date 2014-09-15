@@ -39,7 +39,7 @@ class VirusTotal(Module):
         arg_submit = False
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'hv', ['help', 'submit'])
+            opts, argv = getopt.getopt(self.args[0:], 'hs', ['help', 'submit'])
         except getopt.GetoptError as e:
             print(e)
             return
