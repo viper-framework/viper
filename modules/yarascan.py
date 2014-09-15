@@ -33,6 +33,7 @@ class YaraScan(Module):
             print("\t--help (-h)\tShow this help message")
             print("\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
             print("\t--all (-a)\tScan all stored files (default if no session is open)")
+            print("\t--tag (-t)\tTag Files with Rule Name (default is not to)")
             print("")
 
         def string_printable(line):
@@ -44,13 +45,34 @@ class YaraScan(Module):
                 else:
                     new_line += '\\x'+c.encode('hex')
             return new_line
-                    
+
+        # This means users can just drop or remove rule files without
+        # having to worry about maintaining the index.
+        # TODO: make paths absolute.
+        # TODO: this regenerates the file at every run, perhaps we
+        # could find a way to optimize this.
+        def rule_index():
+            with open('data/yara/index.yara', 'w') as rules_index:
+                for rule_file in os.listdir('data/yara'):
+                    # Skip if the extension is not right, could cause problems.
+                    if not rule_file.endswith('.yar') and not rule_file.endswith('.yara'):
+                        continue
+                    # Skip if it's the index itself.
+                    if rule_file == 'index.yara':
+                        continue
+
+                    # Add the rule to the index.
+                    line = 'include "{0}"\n'.format(rule_file)
+                    rules_index.write(line)
+
+            return 'data/yara/index.yara'
 
         arg_rule = ''
         arg_scan_all = False
+        arg_tag = False
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hr:a', ['help', 'rule=', 'all'])
+            opts, argv = getopt.getopt(self.args[1:], 'hr:at', ['help', 'rule=', 'all', 'tag'])
         except getopt.GetoptError as e:
             print(e)
             return
@@ -59,14 +81,17 @@ class YaraScan(Module):
             if opt in ('-h', '--help'):
                 help()
                 return
+            if opt in ('-t', '--tag'):
+                arg_tag = True
             elif opt in ('-r', '--rule'):
                 arg_rule = value
             elif opt in ('-a', '--all'):
                 arg_scan_all = True
 
+
         # If no custom ruleset is specified, we use the default one.
         if not arg_rule:
-            arg_rule = 'data/yara/index.yara'
+            arg_rule = rule_index()
 
         # Check if the selected ruleset actually exists.
         if not os.path.exists(arg_rule):
@@ -107,9 +132,25 @@ class YaraScan(Module):
                 entry_path = get_sample_path(entry.sha256)
 
             rows = []
+            tag_list = []
             for match in rules.match(entry_path):
+                # Add a row for each string matched by the rule.
                 for string in match.strings:
                     rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
+
+                # Add matching rules to our list of tags.
+                # First it checks if there are tags specified in the metadata
+                # of the Yara rule.
+                match_tags = match.meta.get('tags')
+                # If not, use the rule name.
+                # TODO: as we add more and more yara rules, we might remove
+                # this option and only tag the file with rules that had
+                # tags specified in them.
+                if not match_tags:
+                    match_tags = match.rule
+
+                # Add the tags to the list.
+                tag_list.append([entry.sha256, match_tags])
 
             if rows:
                 header = [
@@ -118,38 +159,92 @@ class YaraScan(Module):
                     'Offset',
                     'Content'
                 ]
-
                 print(table(header=header, rows=rows))
 
+            # If we selected to add tags do that now.
+            if rows and arg_tag:
+                db = Database()
+                for tag in tag_list:
+                    db.add_tags(tag[0], tag[1])
+
+                # If in a session reset the session to see tags.
+                if __sessions__.is_set() and not arg_scan_all:
+                    print_info("Refreshing session to update attributes...")
+                    __sessions__.new(__sessions__.current.file.path)
+
     def rules(self):
+        def usage():
+            print("usage: yara rules [-h] [-e <rule #>]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--edit (-e)\tOpen an editor to edit the specified rule")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'he:', ['help', 'edit='])
+        except getopt.GetoptError as e:
+            print(e)
+            return
+
+        arg_edit = None
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-e', '--edit'):
+                arg_edit = value
+
+        # Retrieve the list of rules and populatea list.
+        rules = []
+        count = 1
         for folder, folders, files in os.walk('data/yara/'):
             for file_name in files:
-                print_item(os.path.join(folder, file_name))
+                rules.append([count, os.path.join(folder, file_name)])
+                count += 1
 
-    def usage(self):
-        print("usage: yara <command>")
-
-    def help(self):
-        self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\t\tShow this help message")
-        print("\tscan\t\tScan files with Yara signatures")
-        print("\trules\t\tOperate on Yara rules")
-        print("")
+        # If the user wnats to edit a specific rule, loop through all of them
+        # identify which one to open, and launch the default editor.
+        if arg_edit:
+            for rule in rules:
+                if int(arg_edit) == rule[0]:
+                    os.system('"${EDITOR:-nano}" ' + rule[1])
+        # Otherwise, just print the list.
+        else:
+            print(table(header=['#', 'Path'], rows=rules))
+            print("")
+            print("You can edit these rules by specifying --edit and the #")
 
     def run(self):
         if not HAVE_YARA:
             print_error("Missing dependency, install yara")
             return
 
+        def usage():
+            print("usage: yara <help|scan|rules>")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\thelp\t\tShow this help message")
+            print("\tscan\t\tScan files with Yara signatures")
+            print("\trules\t\tOperate on Yara rules")
+            print("")
+
         if len(self.args) == 0:
-            self.help()
+            usage()
             return
 
         if self.args[0] == 'help':
-            self.help()
+            help()
         elif self.args[0] == 'scan':
             self.scan()
         elif self.args[0] == 'rules':
             self.rules()
+        else:
+            usage()

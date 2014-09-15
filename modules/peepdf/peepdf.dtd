@@ -1,0 +1,119 @@
+<!ELEMENT peepdf_analysis ( date, basic, advanced ) >
+<!ATTLIST peepdf_analysis author CDATA #REQUIRED >
+<!ATTLIST peepdf_analysis url CDATA #REQUIRED >
+<!ATTLIST peepdf_analysis version CDATA #REQUIRED >
+
+
+<!ELEMENT date ( #PCDATA ) >
+
+
+<!ELEMENT basic ( filename, md5, sha1, sha256, size, detection, pdf_version, binary, linearized, encrypted, updates, num_objects, num_streams, comments, errors ) >
+
+<!ELEMENT filename ( #PCDATA ) >
+
+<!ELEMENT md5 ( #PCDATA ) >
+
+<!ELEMENT sha1 ( #PCDATA ) >
+
+<!ELEMENT sha256 ( #PCDATA ) >
+
+<!ELEMENT size ( #PCDATA ) >
+
+<!ELEMENT detection ( rate?, report_link? ) >
+
+<!ELEMENT rate ( #PCDATA ) >
+
+<!ELEMENT report_link ( #PCDATA ) >
+
+<!ELEMENT pdf_version ( #PCDATA ) >
+
+<!ELEMENT binary EMPTY >
+<!ATTLIST binary status ( false | true ) #REQUIRED >
+
+<!ELEMENT linearized EMPTY >
+<!ATTLIST linearized status ( false | true ) #REQUIRED >
+
+<!ELEMENT encrypted ( algorithms? ) >
+<!ATTLIST encrypted status ( false | true ) #REQUIRED >
+
+<!ELEMENT algorithms ( algorithm+ ) >
+
+<!ELEMENT algorithm ( #PCDATA ) >
+<!ATTLIST algorithm bits NMTOKEN #REQUIRED >
+
+<!ELEMENT updates ( #PCDATA ) >
+
+<!ELEMENT num_objects ( #PCDATA ) >
+
+<!ELEMENT num_streams ( #PCDATA ) >
+
+<!ELEMENT comments ( #PCDATA ) >
+
+<!ELEMENT errors ( error_message* ) >
+<!ATTLIST errors num NMTOKEN #REQUIRED >
+
+<!ELEMENT error_message ( #PCDATA ) >
+
+
+<!ELEMENT advanced ( version* ) >
+
+<!ELEMENT version ( catalog, info, objects, streams ,js_objects, suspicious_elements, suspicious_urls ) >
+<!ATTLIST version num NMTOKEN #REQUIRED >
+<!ATTLIST version type ( original | update ) #REQUIRED >
+
+<!ELEMENT catalog EMPTY >
+<!ATTLIST catalog object_id NMTOKEN #IMPLIED >
+
+<!ELEMENT info EMPTY >
+<!ATTLIST info object_id NMTOKEN #IMPLIED >
+
+<!ELEMENT objects ( object* ) >
+<!ATTLIST objects num NMTOKEN #REQUIRED >
+
+<!ELEMENT object EMPTY >
+<!ATTLIST object errors ( false | true ) #IMPLIED >
+<!ATTLIST object compressed ( false | true ) #IMPLIED >
+<!ATTLIST object id NMTOKEN #REQUIRED >
+
+<!ELEMENT streams ( stream* ) >
+<!ATTLIST streams num NMTOKEN #REQUIRED >
+
+<!ELEMENT stream EMPTY >
+<!ATTLIST stream encoded ( false | true ) #IMPLIED >
+<!ATTLIST stream id NMTOKEN #REQUIRED >
+<!ATTLIST stream object_stream ( false | true ) #IMPLIED >
+<!ATTLIST stream xref_stream ( false | true ) #IMPLIED >
+<!ATTLIST stream decoding_errors ( false | true ) #IMPLIED >
+
+<!ELEMENT js_objects ( container_object* ) >
+
+<!ELEMENT container_object EMPTY >
+<!ATTLIST container_object id NMTOKEN #REQUIRED >
+
+<!ELEMENT suspicious_elements ( triggers?, actions?, elements?, js_vulns? ) >
+
+<!ELEMENT triggers ( trigger* ) >
+
+<!ELEMENT trigger ( container_object+ ) >
+<!ATTLIST trigger name CDATA #REQUIRED >
+
+<!ELEMENT actions ( action* ) >
+
+<!ELEMENT action ( container_object+ ) >
+<!ATTLIST action name CDATA #REQUIRED >
+
+<!ELEMENT elements ( element* ) >
+
+<!ELEMENT element ( cve*, container_object+ ) >
+<!ATTLIST element name CDATA #REQUIRED >
+
+<!ELEMENT cve ( #PCDATA ) >
+
+<!ELEMENT js_vulns ( vulnerable_function* ) >
+
+<!ELEMENT vulnerable_function ( cve*, container_object+ ) >
+<!ATTLIST vulnerable_function name CDATA #REQUIRED >
+
+<!ELEMENT suspicious_urls ( url* ) >
+
+<!ELEMENT url ( #PCDATA ) >

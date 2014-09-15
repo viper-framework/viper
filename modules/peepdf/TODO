@@ -1,0 +1,9 @@
+Pending tasks:
+
+- Add detection of more exploits/vulns
+- Documentation of methods in PDFCore.py
+- Add the rest of supported stream filters (better testing of existent)
+- Automatic analysis of embedded PDF files
+- Improve the automatic Javascript analysis, getting code from other parts of the documents (getAnnots, etc)
+- GUI
+- ...

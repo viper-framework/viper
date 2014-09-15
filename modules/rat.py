@@ -68,7 +68,7 @@ class RAT(Module):
 
     def run(self):
         def usage():
-            print("usage: xtreme [-hafl]")
+            print("usage: rat [-hafl]")
 
         def help():
             usage()
