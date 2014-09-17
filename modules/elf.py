@@ -8,7 +8,7 @@ import tempfile
 import re
 
 try:
-    import elftools
+    from elftools.elf.elffile import ELFFile
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
@@ -40,11 +40,12 @@ class PE(Module):
             print_error("No session opened")
             return False
 
-        if not self.pe:
+        if not self.elf:
             try:
-                self.elf = elftools.elf.elffile(__sessions__.current.file.get_fd())
+                fd = open(__sessions__.current.file.path, 'rb')
+                self.elf = ELFFile(fd)
             except:
-                print_error("Unable to parse PE file")
+                print_error("Unable to parse ELF file")
                 return False
 
         return True
@@ -70,48 +71,44 @@ class PE(Module):
         md5.update(data)
         return md5.hexdigest()
 
-    def sections(self):
-        if not self.__check_session():
-            return
-
-        if hasattr(self.pe, 'DIRECTORY_ENTRY_IMPORT'):
-            for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
-                try:
-                    print_info("DLL: {0}".format(entry.dll))
-                    for symbol in entry.imports:
-                        print_item("{0}: {1}".format(hex(symbol.address), symbol.name), tabs=1)
-                except:
-                    continue
     
     def segments(self):
         if not self.__check_session():
             return
         
-        print_info("Exports:")
-        if hasattr(self.pe, 'DIRECTORY_ENTRY_EXPORT'):
-            for symbol in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
-                print_item("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
-    
-    
+        rows = []
+        for segment in self.elf.iter_segments():
+            rows.append([segment['p_type'],
+                         segment['p_vaddr'],
+                         segment['p_filesz'],
+                         segment['p_memsz'],
+                         segment['p_flags']
+                         ])
+                         
+        print_info("ELF Segments:") 
+        print(table(header=['Type', 'VirtAddr', 'FileSize', 'MemSize', 'Flags'], rows=rows))
+
     def sections(self):
         if not self.__check_session():
             return
 
         rows = []
-        for section in self.pe.sections:
+        for section in self.elf.iter_sections():
             rows.append([
-                section.Name,
-                hex(section.VirtualAddress),
-                hex(section.Misc_VirtualSize),
-                section.SizeOfRawData,
-                section.get_entropy()
+                section.name,
+                hex(section['sh_addr']), 
+                hex(section['sh_size']),
+                section['sh_type'],
+                section['sh_flags'],
+                0
+                #section.get_entropy()
             ])
 
-        print_info("PE Sections:")
-        print(table(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
+        print_info("ELF Sections:")
+        print(table(header=['Name', 'Addr', 'Size', 'Type', 'Flags', 'Entropy'], rows=rows))
 
     def usage(self):
-        print("usage: pe <command>")
+        print("usage: elf <command>")
 
     def help(self):
         self.usage()
@@ -124,7 +121,7 @@ class PE(Module):
 
     def run(self):
         if not HAVE_ELFTOOLS:
-            print_error("Missing dependency, install pefile (`pip install pefile`)")
+            print_error("Missing dependency, install pyelftools")
             return
 
         if len(self.args) == 0:

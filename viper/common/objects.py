@@ -54,9 +54,6 @@ class File(object):
     def is_valid(self):
         return os.path.exists(self.path) and os.path.isfile(self.path)# and os.path.getsize(self.path) != 0
 
-    def get_fd(self):
-        return open(self.path, 'rb')
-
     def get_chunks(self):
         fd = open(self.path, 'rb')
         while True:
