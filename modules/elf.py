@@ -10,6 +10,8 @@ import re
 try:
     from elftools.elf.elffile import ELFFile
     from elftools.elf.sections import SymbolTableSection
+    from elftools.elf.descriptions import describe_sh_flags 
+    from elftools.elf.descriptions import describe_p_flags
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
@@ -83,7 +85,7 @@ class ELF(Module):
                          segment['p_vaddr'],
                          segment['p_filesz'],
                          segment['p_memsz'],
-                         segment['p_flags']
+                         describe_p_flags(segment['p_flags'])
                          ])
                          
         print_info("ELF Segments:") 
@@ -94,19 +96,18 @@ class ELF(Module):
             return
 
         rows = []
+        # TODO: Add get_entropy in pyelftools sections 
         for section in self.elf.iter_sections():
             rows.append([
                 section.name,
                 hex(section['sh_addr']), 
                 hex(section['sh_size']),
                 section['sh_type'],
-                section['sh_flags'],
-                0
-                #section.get_entropy()
+                describe_sh_flags(section['sh_flags'])
             ])
 
         print_info("ELF Sections:")
-        print(table(header=['Name', 'Addr', 'Size', 'Type', 'Flags', 'Entropy'], rows=rows))
+        print(table(header=['Name', 'Addr', 'Size', 'Type', 'Flags'], rows=rows))
 
     def symbols(self):
         if not self.__check_session():
