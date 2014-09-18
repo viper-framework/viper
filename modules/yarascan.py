@@ -119,59 +119,62 @@ class YaraScan(Module):
                 files.append(sample)
 
         for entry in files:
-            print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
+            if entry.size > 0:
+                print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
 
-            # Check if the entry has a path attribute. This happens when
-            # there is a session open. We need to distinguish this just for
-            # the cases where we're scanning an opened file which has not been
-            # stored yet.
-            if hasattr(entry, 'path'):
-                entry_path = entry.path
-            # This should be triggered only when scanning the full repository.
-            else:
-                entry_path = get_sample_path(entry.sha256)
+                # Check if the entry has a path attribute. This happens when
+                # there is a session open. We need to distinguish this just for
+                # the cases where we're scanning an opened file which has not been
+                # stored yet.
+                if hasattr(entry, 'path'):
+                    entry_path = entry.path
+                # This should be triggered only when scanning the full repository.
+                else:
+                    entry_path = get_sample_path(entry.sha256)
 
-            rows = []
-            tag_list = []
-            for match in rules.match(entry_path):
-                # Add a row for each string matched by the rule.
-                for string in match.strings:
-                    rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
+                rows = []
+                tag_list = []
+                for match in rules.match(entry_path):
+                    # Add a row for each string matched by the rule.
+                    for string in match.strings:
+                        rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
 
-                # Add matching rules to our list of tags.
-                # First it checks if there are tags specified in the metadata
-                # of the Yara rule.
-                match_tags = match.meta.get('tags')
-                # If not, use the rule name.
-                # TODO: as we add more and more yara rules, we might remove
-                # this option and only tag the file with rules that had
-                # tags specified in them.
-                if not match_tags:
-                    match_tags = match.rule
+                    # Add matching rules to our list of tags.
+                    # First it checks if there are tags specified in the metadata
+                    # of the Yara rule.
+                    match_tags = match.meta.get('tags')
+                    # If not, use the rule name.
+                    # TODO: as we add more and more yara rules, we might remove
+                    # this option and only tag the file with rules that had
+                    # tags specified in them.
+                    if not match_tags:
+                        match_tags = match.rule
 
-                # Add the tags to the list.
-                tag_list.append([entry.sha256, match_tags])
+                    # Add the tags to the list.
+                    tag_list.append([entry.sha256, match_tags])
 
-            if rows:
-                header = [
-                    'Rule',
-                    'String',
-                    'Offset',
-                    'Content'
-                ]
-                print(table(header=header, rows=rows))
+                if rows:
+                    header = [
+                        'Rule',
+                        'String',
+                        'Offset',
+                        'Content'
+                    ]
+                    print(table(header=header, rows=rows))
 
-            # If we selected to add tags do that now.
-            if rows and arg_tag:
-                db = Database()
-                for tag in tag_list:
-                    db.add_tags(tag[0], tag[1])
+                # If we selected to add tags do that now.
+                if rows and arg_tag:
+                    db = Database()
+                    for tag in tag_list:
+                        db.add_tags(tag[0], tag[1])
 
-                # If in a session reset the session to see tags.
-                if __sessions__.is_set() and not arg_scan_all:
-                    print_info("Refreshing session to update attributes...")
+                    # If in a session reset the session to see tags.
+                    if __sessions__.is_set() and not arg_scan_all:
+                        print_info("Refreshing session to update attributes...")
                     __sessions__.new(__sessions__.current.file.path)
-
+            else:
+                print_error("Unable to scan 0 byte file")
+                
     def rules(self):
         def usage():
             print("usage: yara rules [-h] [-e <rule #>]")
