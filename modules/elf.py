@@ -12,6 +12,7 @@ try:
     from elftools.elf.sections import SymbolTableSection
     from elftools.elf.descriptions import describe_sh_flags 
     from elftools.elf.descriptions import describe_p_flags
+    from elftools.elf.descriptions import describe_symbol_type
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
@@ -122,7 +123,7 @@ class ELF(Module):
                     cnt,
                     hex(symbol['st_value']),
                     hex(symbol['st_size']),
-                    symbol['st_info']['type'],
+                    describe_symbol_type(symbol['st_info']['type']),
                     symbol.name
                     ])
         
