@@ -27,7 +27,7 @@ class ClamAV(Module):
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--socket(-S)\tSpecify an unix socket (default: Clamd Unix Socket)")
+            print("\t--socket(-s)\tSpecify an unix socket (default: Clamd Unix Socket)")
             print("")
 
         if not HAVE_CLAMD:
@@ -52,7 +52,11 @@ class ClamAV(Module):
             elif opt in ('-s', '--socket'):
                 print_info("Using socket {0} to connect to ClamAV daemon".format(value))
                 socket = value
-                daemon = pyclamd.ClamdUnixSocket(socket)
+                try:
+                    daemon = pyclamd.ClamdUnixSocket(socket)
+                except Exception as e:
+                    print_error("Daemon connection failure, {0}".format(e))
+                    return
 
         if not __sessions__.is_set():
             print_error("No session opened")
