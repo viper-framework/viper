@@ -9,6 +9,7 @@ import re
 
 try:
     from elftools.elf.elffile import ELFFile
+    from elftools.elf.sections import SymbolTableSection
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
@@ -26,8 +27,8 @@ from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
 
-
-class PE(Module):
+# Have a look at scripts/readelf.py - pyelftools
+class ELF(Module):
     cmd = 'elf'
     description = 'Extract information from ELF headers'
     authors = ['emdel']
@@ -107,6 +108,26 @@ class PE(Module):
         print_info("ELF Sections:")
         print(table(header=['Name', 'Addr', 'Size', 'Type', 'Flags', 'Entropy'], rows=rows))
 
+    def symbols(self):
+        if not self.__check_session():
+            return
+
+        rows = []
+        for section in self.elf.iter_sections():
+            if not isinstance(section, SymbolTableSection): continue
+
+            for cnt, symbol in enumerate(section.iter_symbols()):
+                rows.append([
+                    cnt,
+                    hex(symbol['st_value']),
+                    hex(symbol['st_size']),
+                    symbol['st_info']['type'],
+                    symbol.name
+                    ])
+        
+        print_info("ELF Symbols:")
+        print(table(header=['Num', 'Value', 'Size', 'Type', 'Name'], rows=rows))
+
     def usage(self):
         print("usage: elf <command>")
 
@@ -117,6 +138,7 @@ class PE(Module):
         print("\thelp\t\tShow this help message")
         print("\tsections\t\tList ELF sections")
         print("\tsegments\t\tList ELF segments")
+        print("\tsymbols\t\tList ELF symbols")
         print("")
 
     def run(self):
@@ -134,3 +156,5 @@ class PE(Module):
             self.sections()
         elif self.args[0] == 'segments':
             self.segments()
+        elif self.args[0] == 'symbols':
+            self.symbols()
