@@ -1,8 +1,6 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-import getopt
-
 try:
     from elftools.elf.elffile import ELFFile
     from elftools.elf.sections import SymbolTableSection
@@ -12,12 +10,6 @@ try:
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
-
-try:
-    import magic
-    HAVE_MAGIC = True
-except ImportError:
-    HAVE_MAGIC = False
 
 from viper.common.out import *
 from viper.common.abstracts import Module
@@ -110,8 +102,8 @@ class ELF(Module):
         print("")
         print("Options:")
         print("\thelp\t\tShow this help message")
-        print("\tsections\t\tList ELF sections")
-        print("\tsegments\t\tList ELF segments")
+        print("\tsections\tList ELF sections")
+        print("\tsegments\tList ELF segments")
         print("\tsymbols\t\tList ELF symbols")
         print("")
 
