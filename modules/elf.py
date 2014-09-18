@@ -83,8 +83,8 @@ class ELF(Module):
         for segment in self.elf.iter_segments():
             rows.append([segment['p_type'],
                          segment['p_vaddr'],
-                         segment['p_filesz'],
-                         segment['p_memsz'],
+                         hex(segment['p_filesz']),
+                         hex(segment['p_memsz']),
                          describe_p_flags(segment['p_flags'])
                          ])
                          
