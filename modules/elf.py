@@ -2,10 +2,6 @@
 # See the file 'LICENSE' for copying permission.
 
 import getopt
-import hashlib
-import datetime
-import tempfile
-import re
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -24,10 +20,7 @@ except ImportError:
     HAVE_MAGIC = False
 
 from viper.common.out import *
-from viper.common.objects import File
 from viper.common.abstracts import Module
-from viper.core.database import Database
-from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
 
 # Have a look at scripts/readelf.py - pyelftools
@@ -60,12 +53,13 @@ class ELF(Module):
         
         rows = []
         for segment in self.elf.iter_segments():
-            rows.append([segment['p_type'],
-                         segment['p_vaddr'],
-                         hex(segment['p_filesz']),
-                         hex(segment['p_memsz']),
-                         describe_p_flags(segment['p_flags'])
-                         ])
+            rows.append([
+                segment['p_type'],
+                segment['p_vaddr'],
+                hex(segment['p_filesz']),
+                hex(segment['p_memsz']),
+                describe_p_flags(segment['p_flags'])
+            ])
                          
         print_info("ELF Segments:") 
         print(table(header=['Type', 'VirtAddr', 'FileSize', 'MemSize', 'Flags'], rows=rows))
@@ -103,7 +97,7 @@ class ELF(Module):
                     hex(symbol['st_size']),
                     describe_symbol_type(symbol['st_info']['type']),
                     symbol.name
-                    ])
+                ])
         
         print_info("ELF Symbols:")
         print(table(header=['Num', 'Value', 'Size', 'Type', 'Name'], rows=rows))
