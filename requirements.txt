@@ -9,3 +9,5 @@ OleFileIO_PL
 BeautifulSoup4
 bottle
 pylzma
+pyelftools
+
