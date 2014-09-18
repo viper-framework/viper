@@ -54,28 +54,6 @@ class ELF(Module):
 
         return True
 
-    def __get_filetype(self, data):
-        if not HAVE_MAGIC:
-            return None
-
-        try:
-            ms = magic.open(magic.MAGIC_NONE)
-            ms.load()
-            file_type = ms.buffer(data)
-        except:
-            try:
-                file_type = magic.from_buffer(data)
-            except Exception:
-                return None
-
-        return file_type
-
-    def __get_md5(self, data):
-        md5 = hashlib.md5()
-        md5.update(data)
-        return md5.hexdigest()
-
-    
     def segments(self):
         if not self.__check_session():
             return
@@ -145,7 +123,7 @@ class ELF(Module):
 
     def run(self):
         if not HAVE_ELFTOOLS:
-            print_error("Missing dependency, install pyelftools")
+            print_error("Missing dependency, install pyelftools (`pip install pyelftools")
             return
 
         if len(self.args) == 0:
