@@ -150,8 +150,50 @@ class Reports(Module):
 
         print(table(header=['Time', 'URL'], rows=reports))
 
+    def threat(self):
+        # need the URL and the date
+        url = 'http://www.threatexpert.com/report.aspx?md5={0}'.format(__sessions__.current.file.md5)
+        page = requests.get(url)
+        reports = []
+        soup = BeautifulSoup(page.text)
+        if soup.title.text.startswith('ThreatExpert Report'):
+            lists = soup.findAll('li')
+            if len(lists) > 0:
+                time = lists[1].text[21:]
+                reports.append([time, url])
+                print(table(header=['Time', 'URL'], rows=reports))
+        else:
+            print_info("No reports for opened file")
+ 
+    def joe(self):
+        url = 'http://www.joesecurity.org/reports/report-{0}.html'.format(__sessions__.current.file.md5)
+        page = requests.get(url)
+        if '<h2>404 - File Not Found</h2>' in page.text:
+            print_info("No reports for opened file")
+        else:
+            print_info("Report found at {0}".format(url))
+            
+    def meta(self):
+        url = 'https://www.metascan-online.com/en/scanresult/file/{0}'.format(__sessions__.current.file.md5)
+        page = requests.get(url)
+        reports = []
+        print page.text
+        if '<title>Error</title>' in page.text:
+            print_info("No reports for opened file")
+            return
+        pattern = 'scanResult = (.*)};'
+        match = re.search(pattern, page.text)
+        raw_results = match.group(0)[13:-1]
+        json_results = json.loads(raw_results)
+        unprocessed =  json_results['scan_results']['scan_details']
+        for vendor, results in unprocessed.iteritems():
+            if results['scan_result_i'] == 1:
+                reports.append([vendor, string_clean(results['threat_found']), results['def_time']])
+                print(table(header=['Vendor', 'Result', 'Time'], rows=reports))
+                return
+
     def usage(self):
-        print("Usage: reports <malwr|anubis>")
+        print("Usage: reports <malwr|anubis|threat|joe|meta>")
 
     def help(self):
         self.usage()
@@ -160,6 +202,9 @@ class Reports(Module):
         print("\thelp\tShow this help message")
         print("\tmalwr\tFind reports on Malwr")
         print("\tanubis\tFind reports on Anubis")
+        print("\tthreat\tFind reports on ThreatExchange")
+        print("\tjoe\tFind reports on Joe Sandbox")
+        print("\tmeta\tFind reports on metascan")
         print("") 
 
     def run(self):
@@ -181,4 +226,9 @@ class Reports(Module):
             self.malwr()
         elif self.args[0] == 'anubis':
             self.anubis()
- 
+        elif self.args[0] == 'threat':
+            self.threat()
+        elif self.args[0] == 'joe':
+            self.joe()
+        elif self.args[0] == 'meta':
+            self.meta()
