@@ -135,10 +135,10 @@ class Console(object):
                 prefix = bold(cyan(__project__.name)) + ' '
 
             if __sessions__.is_set():
-                prompt = prefix + cyan('viper ') + white(__sessions__.current.file.name) + cyan(' > ')
+                prompt = prefix + cyan('viper ', True) + white(__sessions__.current.file.name, True) + cyan(' > ', True)
             # Otherwise display the basic prompt.
             else:
-                prompt = prefix + cyan('viper > ')
+                prompt = prefix + cyan('viper > ', True)
 
             # Wait for input from the user.
             try:
