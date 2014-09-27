@@ -13,6 +13,7 @@ from bottle import HTTPError
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
+from config import api_port
 
 db = Database()
 
@@ -150,7 +151,7 @@ def add_tags():
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-H', '--host', help='Host to bind the API server on', default='localhost', action='store', required=False)
-    parser.add_argument('-p', '--port', help='Port to bind the API server on', default=8080, action='store', required=False)
+    parser.add_argument('-p', '--port', help='Port to bind the API server on', default=api_port, action='store', required=False)
     args = parser.parse_args()
 
     run(host=args.host, port=args.port)
