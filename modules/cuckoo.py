@@ -12,6 +12,9 @@ except ImportError:
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from config import cuckoo_host as host
+from config import cuckoo_port as port
+
 
 class Cuckoo(Module):
     cmd = 'cuckoo'
@@ -45,9 +48,6 @@ class Cuckoo(Module):
             print(e)
             usage()
             return
-
-        host = 'localhost'
-        port = 8090
 
         for opt, value in opts:
             if opt in ('-h', '--help'):

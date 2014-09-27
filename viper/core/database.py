@@ -12,6 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from viper.common.out import *
 from viper.common.objects import File, Singleton
 from viper.core.project import __project__
+from config import db_conn
 
 Base = declarative_base()
 
@@ -136,15 +137,21 @@ class Note(Base):
 class Database:
     #__metaclass__ = Singleton
 
-    def __init__(self):
-        db_path = os.path.join(__project__.get_path(), 'viper.db')
+    def __init__(self, db_conn=db_conn):
+        if not db_conn:
+            db_path = os.path.join(__project__.get_path(), 'viper.db')
+            db_conn = 'sqlite:///{0}'.format(db_path)
+        try:
+            self.engine = create_engine(db_conn, poolclass=NullPool)
+            self.engine.echo = False
+            self.engine.pool_timeout = 60
+            Base.metadata.create_all(self.engine)
+            self.Session = sessionmaker(bind=self.engine)
+        except Exception as e:
+            print_error("Unable to connect to DataBase: {0}".format(e))
 
-        self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
-        self.engine.echo = False
-        self.engine.pool_timeout = 60
 
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
+
 
     def __del__(self):
         self.engine.dispose()

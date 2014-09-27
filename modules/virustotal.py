@@ -14,10 +14,11 @@ except ImportError:
 from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from config import vt_key as KEY
+
 
 VIRUSTOTAL_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
 VIRUSTOTAL_URL_SUBMIT = 'https://www.virustotal.com/vtapi/v2/file/scan'
-KEY = 'a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088'
 
 class VirusTotal(Module):
     cmd = 'virustotal'
