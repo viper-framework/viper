@@ -94,6 +94,17 @@ class ELF(Module):
         print_info("ELF Symbols:")
         print(table(header=['Num', 'Value', 'Size', 'Type', 'Name'], rows=rows))
 
+    def interp(self):
+        if not self.__check_session():
+            return
+
+        interp = None
+        for segment in self.elf.iter_segments():
+            if segment['p_type'] == 'PT_INTERP':
+                interp = segment
+                break
+        print("Program interpreter: {0}".format(interp.get_interp_name()))
+        
     def usage(self):
         print("usage: elf <command>")
 
@@ -105,6 +116,7 @@ class ELF(Module):
         print("\tsections\tList ELF sections")
         print("\tsegments\tList ELF segments")
         print("\tsymbols\t\tList ELF symbols")
+        print("\tinterp\t\tGet the program interpreter")
         print("")
 
     def run(self):
@@ -124,3 +136,5 @@ class ELF(Module):
             self.segments()
         elif self.args[0] == 'symbols':
             self.symbols()
+        elif self.args[0] == 'interp':
+            self.interp()
