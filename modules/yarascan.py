@@ -119,6 +119,7 @@ class YaraScan(Module):
                 files.append(sample)
 
         for entry in files:
+            if entry.size == 0: continue
             print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
 
             # Check if the entry has a path attribute. This happens when
@@ -170,8 +171,8 @@ class YaraScan(Module):
                 # If in a session reset the session to see tags.
                 if __sessions__.is_set() and not arg_scan_all:
                     print_info("Refreshing session to update attributes...")
-                    __sessions__.new(__sessions__.current.file.path)
-
+                __sessions__.new(__sessions__.current.file.path)
+                
     def rules(self):
         def usage():
             print("usage: yara rules [-h] [-e <rule #>]")
