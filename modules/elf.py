@@ -7,6 +7,7 @@ try:
     from elftools.elf.descriptions import describe_sh_flags 
     from elftools.elf.descriptions import describe_p_flags
     from elftools.elf.descriptions import describe_symbol_type
+    from elftools.elf.dynamic import DynamicSection, DynamicSegment
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
@@ -105,6 +106,17 @@ class ELF(Module):
                 break
         print("Program interpreter: {0}".format(interp.get_interp_name()))
         
+    def dynamic(self):
+        if not self.__check_session():
+            return
+
+        for section in self.elf.iter_sections():
+            if not isinstance(section, DynamicSection):
+                continue
+            for tag in section.iter_tags():
+                if tag.entry.d_tag != "DT_NEEDED": continue
+                print_info(tag.needed)
+
     def usage(self):
         print("usage: elf <command>")
 
@@ -117,6 +129,7 @@ class ELF(Module):
         print("\tsegments\tList ELF segments")
         print("\tsymbols\t\tList ELF symbols")
         print("\tinterp\t\tGet the program interpreter")
+        print("\tdynamic\t\tShow the dynamic section")
         print("")
 
     def run(self):
@@ -138,3 +151,5 @@ class ELF(Module):
             self.symbols()
         elif self.args[0] == 'interp':
             self.interp()
+        elif self.args[0] == 'dynamic':
+            self.dynamic()
