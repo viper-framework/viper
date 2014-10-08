@@ -7,6 +7,7 @@ try:
     from elftools.elf.descriptions import describe_sh_flags 
     from elftools.elf.descriptions import describe_p_flags
     from elftools.elf.descriptions import describe_symbol_type
+    from elftools.elf.dynamic import DynamicSection, DynamicSegment
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
@@ -94,6 +95,28 @@ class ELF(Module):
         print_info("ELF Symbols:")
         print(table(header=['Num', 'Value', 'Size', 'Type', 'Name'], rows=rows))
 
+    def interp(self):
+        if not self.__check_session():
+            return
+
+        interp = None
+        for segment in self.elf.iter_segments():
+            if segment['p_type'] == 'PT_INTERP':
+                interp = segment
+                break
+        print("Program interpreter: {0}".format(interp.get_interp_name()))
+        
+    def dynamic(self):
+        if not self.__check_session():
+            return
+
+        for section in self.elf.iter_sections():
+            if not isinstance(section, DynamicSection):
+                continue
+            for tag in section.iter_tags():
+                if tag.entry.d_tag != "DT_NEEDED": continue
+                print_info(tag.needed)
+
     def usage(self):
         print("usage: elf <command>")
 
@@ -105,6 +128,8 @@ class ELF(Module):
         print("\tsections\tList ELF sections")
         print("\tsegments\tList ELF segments")
         print("\tsymbols\t\tList ELF symbols")
+        print("\tinterp\t\tGet the program interpreter")
+        print("\tdynamic\t\tShow the dynamic section")
         print("")
 
     def run(self):
@@ -124,3 +149,7 @@ class ELF(Module):
             self.segments()
         elif self.args[0] == 'symbols':
             self.symbols()
+        elif self.args[0] == 'interp':
+            self.interp()
+        elif self.args[0] == 'dynamic':
+            self.dynamic()
