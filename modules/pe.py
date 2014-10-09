@@ -13,6 +13,12 @@ try:
 except ImportError:
     HAVE_PEFILE = False
 
+try:
+    from pehash.pehasher import calculate_pehash
+    HAVE_PEHASH = True
+except ImportError:
+    HAVE_PEHASH = False
+
 from viper.common.out import *
 from viper.common.objects import File
 from viper.common.abstracts import Module
@@ -24,7 +30,7 @@ from viper.core.session import __sessions__
 class PE(Module):
     cmd = 'pe'
     description = 'Extract information from PE32 headers'
-    authors = ['nex']
+    authors = ['nex', 'Statixs']
 
     def __init__(self):
         self.pe = None
@@ -815,6 +821,103 @@ class PE(Module):
         print_info("PE Sections:")
         print(table(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
+    def pehash(self): 
+        def usage():
+            print("usage: pe pehash [-hfac]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--file (-f)\tPrints the PEhash of the open file")
+            print("\t--all (-a)\tPrints the PEhash of all files in the project")
+            print("\t--compare (-c)\tCalculate and compare all files in the project")
+            print("")
+
+        def calc_hash(data):
+            if not HAVE_PEHASH:
+                print_error("PEhash not installed, or PEhash is not placed in a function. Please copy PEhash to the modules directory of Viper.")
+            db = Database()
+
+            # Get all the files
+            if data == 'all':
+                samples = db.find(key='all')
+
+                # Calculate and print PEhash for all samples in a table
+                header = ['Name', 'PEhash']
+                rows = []
+                for sample in samples:
+                    sample_path = get_sample_path(sample.sha256)
+                    result = calculate_pehash(sample_path)
+                    rows.append((sample.name, result))
+                print(table(header=header, rows=rows))
+
+            elif data == 'compare':
+                samples = db.find(key='all')
+
+                # Calculate the PEhash for all samples and compare them, print any matching ones with filename
+                rows = []
+                for sample in samples:
+                    sample_path = get_sample_path(sample.sha256)
+                    result = calculate_pehash(sample_path)
+                    rows.append((sample.name, result))
+
+                # Compare samples. sn=sample name, ph=pehash
+                d = {}
+                for sn,ph in rows:
+                    d.setdefault(ph,[]).append(sn)
+                
+                found = False
+                for i in d.items():
+                    if len(i[1]) > 1:
+                        found = True
+                        print("PEhash "+i[0]+"was calculated on files:")
+                        for f in i[1]:
+                            print("\t"+f)
+                if not found:
+                    print_info("There are no files with the same PEhash")
+
+            # Calculate the PEhash of single file based on SHA256 hash
+            else:
+                sample = db.find(key='sha256', value=data)
+                
+                # Check if the sample hash is equal to the hash of the current open session file then calculate the PEhash
+                if sample[0].sha256 == data:
+                    sample_path = get_sample_path(sample[0].sha256)
+                    result = calculate_pehash(sample_path)
+                    print('The PEhash is: ' + result)
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hfac', ['help', 'file', 'all','compare'])
+        except getopt.GetoptError as e:
+            print(e)
+            return
+        
+        # The argument handler
+        argument = False
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+
+            elif opt in ('-f', '--file'):
+                if not __sessions__.is_set():
+                    print_error('No session opened')
+                    return
+                argument = True 
+                calc_hash(__sessions__.current.file.sha256)
+
+            elif opt in ('-a', '--all'):
+                argument = True 
+                calc_hash('all')
+            
+            elif opt in ('-c','--compare'):
+                argument = True
+                calc_hash('compare')
+        if not argument:
+            usage()
+
     def usage(self):
         print("usage: pe <command>")
 
@@ -832,6 +935,7 @@ class PE(Module):
         print("\tsecurity\tShow digital signature")
         print("\tlanguage\tGuess PE language")
         print("\tsections\tList PE Sections")
+        print("\tpehash\t\tCalculate PEhash and compare")
         print("")
 
     def run(self):
@@ -863,3 +967,5 @@ class PE(Module):
             self.sections()
         elif self.args[0] == 'language':
             self.language()
+        elif self.args[0] == 'pehash':
+            self.pehash()
