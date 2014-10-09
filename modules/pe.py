@@ -821,6 +821,9 @@ class PE(Module):
         print_info("PE Sections:")
         print(table(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
+
+
+
     def pehash(self): 
         def usage():
             print("usage: pe pehash [-hfac]")
@@ -935,7 +938,7 @@ class PE(Module):
         print("\tsecurity\tShow digital signature")
         print("\tlanguage\tGuess PE language")
         print("\tsections\tList PE Sections")
-        print("\tpehash\t\tCalculate PEhash and compare")
+        print("\tpehash\t\tCalculate the PEhash and compare them")
         print("")
 
     def run(self):
