@@ -10,4 +10,5 @@ BeautifulSoup4
 bottle
 pylzma
 pyelftools
+bitstring
 
