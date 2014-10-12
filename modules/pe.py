@@ -14,7 +14,7 @@ except ImportError:
     HAVE_PEFILE = False
 
 try:
-    from pehash.pehasher import calculate_pehash
+    from modules.pehash.pehasher import calculate_pehash
     HAVE_PEHASH = True
 except ImportError:
     HAVE_PEHASH = False
@@ -821,105 +821,85 @@ class PE(Module):
         print_info("PE Sections:")
         print(table(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
-
-
-
     def pehash(self): 
         def usage():
-            print("usage: pe pehash [-hfac]")
+            print("usage: pe pehash [-hac]")
 
         def help():
             usage()
             print("")
             print("Options:")
             print("\t--help (-h)\tShow this help message")
-            print("\t--file (-f)\tPrints the PEhash of the open file")
             print("\t--all (-a)\tPrints the PEhash of all files in the project")
             print("\t--compare (-c)\tCalculate and compare all files in the project")
             print("")
 
-        def calc_hash(data):
-            if not HAVE_PEHASH:
-                print_error("PEhash not installed, or PEhash is not placed in a function. Please copy PEhash to the modules directory of Viper.")
-            db = Database()
-
-            # Get all the files
-            if data == 'all':
-                samples = db.find(key='all')
-
-                # Calculate and print PEhash for all samples in a table
-                header = ['Name', 'PEhash']
-                rows = []
-                for sample in samples:
-                    sample_path = get_sample_path(sample.sha256)
-                    result = calculate_pehash(sample_path)
-                    rows.append((sample.name, result))
-                print(table(header=header, rows=rows))
-
-            elif data == 'compare':
-                samples = db.find(key='all')
-
-                # Calculate the PEhash for all samples and compare them, print any matching ones with filename
-                rows = []
-                for sample in samples:
-                    sample_path = get_sample_path(sample.sha256)
-                    result = calculate_pehash(sample_path)
-                    rows.append((sample.name, result))
-
-                # Compare samples. sn=sample name, ph=pehash
-                d = {}
-                for sn,ph in rows:
-                    d.setdefault(ph,[]).append(sn)
-                
-                found = False
-                for i in d.items():
-                    if len(i[1]) > 1:
-                        found = True
-                        print("PEhash "+i[0]+"was calculated on files:")
-                        for f in i[1]:
-                            print("\t"+f)
-                if not found:
-                    print_info("There are no files with the same PEhash")
-
-            # Calculate the PEhash of single file based on SHA256 hash
-            else:
-                sample = db.find(key='sha256', value=data)
-                
-                # Check if the sample hash is equal to the hash of the current open session file then calculate the PEhash
-                if sample[0].sha256 == data:
-                    sample_path = get_sample_path(sample[0].sha256)
-                    result = calculate_pehash(sample_path)
-                    print('The PEhash is: ' + result)
-
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hfac', ['help', 'file', 'all','compare'])
+            opts, argv = getopt.getopt(self.args[1:], 'hacs', ['help', 'all', 'cluster', 'scan'])
         except getopt.GetoptError as e:
             print(e)
             return
         
-        # The argument handler
-        argument = False
+        arg_all = False
+        arg_cluster = False
+        arg_scan = False
+
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
                 return
-
-            elif opt in ('-f', '--file'):
-                if not __sessions__.is_set():
-                    print_error('No session opened')
-                    return
-                argument = True 
-                calc_hash(__sessions__.current.file.sha256)
-
             elif opt in ('-a', '--all'):
-                argument = True 
-                calc_hash('all')
+                arg_all = True
+            elif opt in ('-c', '--cluster'):
+                arg_cluster = True
+            elif opt in ('-s', '--scan'):
+                arg_scan = True
+
+        if not HAVE_PEHASH:
+            print_error("PEhash is missing. Please copy PEhash to the modules directory of Viper")
+            return
+
+        current_pehash = None
+        if __sessions__.is_set():
+            current_pehash = calculate_pehash(__sessions__.current.file.path)
+            print_info("PEhash: {0}".format(bold(current_pehash)))
+
+        if arg_all or arg_cluster or arg_scan:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                pe_hash = calculate_pehash(sample_path)
+                if pe_hash:
+                    rows.append((sample.name, sample.md5, pe_hash))
+
+        if arg_all:
+            print_info("PEhash for all files:")
+            header = ['Name', 'MD5', 'PEhash']
+            print(table(header=header, rows=rows))
+        elif arg_cluster:
+            print_info("Clustering files by PEhash...")
+
+            cluster = {}
+            for sample_name, sample_md5, pe_hash in rows:
+                cluster.setdefault(pe_hash, []).append([sample_name, sample_md5])
             
-            elif opt in ('-c','--compare'):
-                argument = True
-                calc_hash('compare')
-        if not argument:
-            usage()
+            for item in cluster.items():
+                if len(item[1]) > 1:
+                    print_info("PEhash {0} was calculated on files:".format(bold(item[0])))
+                    print(table(header=['Name', 'MD5'], rows=item[1]))
+        elif arg_scan:
+            if __sessions__.is_set() and current_pehash:
+                print_info("Finding matching samples...")
+
+                matches = []
+                for row in rows:
+                    if row[2] == current_pehash:
+                        matches.append([row[0], row[1]])
+
+                print(table(header=['Name', 'MD5'], rows=matches))
 
     def usage(self):
         print("usage: pe <command>")

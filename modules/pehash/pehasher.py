@@ -2,17 +2,38 @@
 from __future__ import division
 
 import sys
-import pefile
-import bitstring
-import string
 import bz2
+import string
 import hashlib
 
-def calculate_pehash(PeFile=None):
-    if PeFile == None:
-        print("no file specified")
+try:
+    import pefile
+    HAVE_PEFILE = True
+except ImportError:
+    HAVE_PEFILE = False
+
+try:
+    import bitstring
+    HAVE_BITSTRING = True
+except ImportError:
+    HAVE_BITSTRING = False
+
+from viper.common.out import *
+
+def calculate_pehash(file_path=None):
+    if not HAVE_PEFILE:
+        print_error("Missing dependency, install pefile (`pip install pefile`)")
+        return ''
+
+    if not HAVE_BITSTRING:
+        print_error("Missing dependency, install bitstring (`pip install bitstring`)")
+        return ''
+
+    if not file_path:
+        return ''
+
     try:
-        exe = pefile.PE(PeFile)
+        exe = pefile.PE(file_path)
     
         #image characteristics
         img_chars = bitstring.BitArray(hex(exe.FILE_HEADER.Characteristics))
@@ -90,6 +111,5 @@ def calculate_pehash(PeFile=None):
         m = hashlib.sha1()
         m.update(pehash_bin.tobytes())
         return str(m.hexdigest())
-    
     except:
-        return "ERROR: The specified file is not a PE"
+        return ''
