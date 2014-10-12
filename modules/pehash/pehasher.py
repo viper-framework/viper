@@ -39,7 +39,10 @@ def calculate_pehash(file_path=None):
         img_chars = bitstring.BitArray(hex(exe.FILE_HEADER.Characteristics))
         #pad to 16 bits
         img_chars = bitstring.BitArray(bytes=img_chars.tobytes())
-        img_chars_xor = img_chars[0:7] ^ img_chars[8:15]
+        if img_chars.len == 16:
+            img_chars_xor = img_chars[0:7] ^ img_chars[8:15]
+        else:
+            img_chars_xor = img_chars[0:7]
     
         #start to build pehash
         pehash_bin = bitstring.BitArray(img_chars_xor)
