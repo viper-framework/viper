@@ -831,7 +831,7 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--all (-a)\tPrints the PEhash of all files in the project")
-            print("\t--compare (-c)\tCalculate and compare all files in the project")
+            print("\t--cluster (-c)\tCalculate and cluster all files in the project")
             print("")
 
         try:
