@@ -1,5 +1,6 @@
 Viper 1.1 (2014-10-22)
 ======================
+
 - Added search by file type
 - Added search by mime type
 - Added possibility to sequence commands through a ; separator
