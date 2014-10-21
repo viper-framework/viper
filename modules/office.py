@@ -359,7 +359,7 @@ class Office(Module):
             return
 
         try:
-            opts, argv = getopt.getopt(self.args[0:], 'hmsoe:', ['help', 'meta', 'streams', 'oleid', 'export:'])
+            opts, argv = getopt.getopt(self.args[0:], 'hmsoe:', ['help', 'meta', 'streams', 'oleid', 'export='])
         except getopt.GetoptError as e:
             print(e)
             return
