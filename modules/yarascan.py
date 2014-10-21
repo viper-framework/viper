@@ -171,7 +171,7 @@ class YaraScan(Module):
                 # If in a session reset the session to see tags.
                 if __sessions__.is_set() and not arg_scan_all:
                     print_info("Refreshing session to update attributes...")
-                __sessions__.new(__sessions__.current.file.path)
+                    __sessions__.new(__sessions__.current.file.path)
                 
     def rules(self):
         def usage():
