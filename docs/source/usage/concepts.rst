@@ -33,7 +33,7 @@ If you opened a project, it will appear both in a startup message as well as in 
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v1.0
+        \_/ |_|  __/|_____)_| v1.1
               |_|
         
     You have 0 files in your test repository
