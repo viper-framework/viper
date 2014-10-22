@@ -832,6 +832,7 @@ class PE(Module):
             print("\t--help (-h)\tShow this help message")
             print("\t--all (-a)\tPrints the PEhash of all files in the project")
             print("\t--cluster (-c)\tCalculate and cluster all files in the project")
+            print("\t--scan (-s)\tScan repository for matching samples")
             print("")
 
         try:
@@ -896,10 +897,16 @@ class PE(Module):
 
                 matches = []
                 for row in rows:
+                    if row[1] == __sessions__.current.file.sha256:
+                        continue
+
                     if row[2] == current_pehash:
                         matches.append([row[0], row[1]])
 
-                print(table(header=['Name', 'MD5'], rows=matches))
+                if matches:
+                    print(table(header=['Name', 'MD5'], rows=matches))
+                else:
+                    print_info("No matches found")
 
     def usage(self):
         print("usage: pe <command>")
