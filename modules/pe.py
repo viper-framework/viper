@@ -897,7 +897,7 @@ class PE(Module):
 
                 matches = []
                 for row in rows:
-                    if row[1] == __sessions__.current.file.sha256:
+                    if row[1] == __sessions__.current.file.md5:
                         continue
 
                     if row[2] == current_pehash:
