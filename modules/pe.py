@@ -523,6 +523,7 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--dump (-d)\tDestination directory to store digital signature in")
+            print("\t--all (-a)\tFind all samples with a digital signature")
             print("\t--scan (-s)\tScan the repository for common certificates")
             print("")
 
@@ -540,13 +541,14 @@ class PE(Module):
                 return None
 
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hd:s', ['help', 'dump=', 'scan'])
+            opts, argv = getopt.getopt(self.args[1:], 'hd:as', ['help', 'dump=', 'all', 'scan'])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
         arg_folder = None
+        arg_all = False
         arg_scan = False
 
         for opt, value in opts:
@@ -555,6 +557,8 @@ class PE(Module):
                 return
             elif opt in ('-d', '--dump'):
                 arg_folder = value
+            elif opt in ('-a', '--all'):
+                arg_all = True
             elif opt in ('-s', '--scan'):
                 arg_scan = True
 
@@ -581,12 +585,14 @@ class PE(Module):
                        bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
 
         # TODO: do scan for certificate's serial number.
-        if arg_scan:
-            print_info("Scanning the repository for matching samples...")
+        # TODO: make arg_all so that it doesn't require an opened session.
+        if arg_all or arg_scan:
+            print_info("Scanning the repository for signed samples...")
 
             db = Database()
             samples = db.find(key='all')
 
+            allofthem = []
             matches = []
             for sample in samples:
                 # Skip if it's the same file.
@@ -613,10 +619,19 @@ class PE(Module):
                 if cur_cert_md5 == cert_md5:
                     matches.append([sample.name, sample.sha256])
 
-            print_info("{0} relevant matches found".format(bold(len(matches))))
+                allofthem.append([sample.name, sample.md5, cur_cert_md5])
 
-            if len(matches) > 0:
-                print(table(header=['Name', 'SHA256'], rows=matches))                
+            if arg_all:
+                print_info("{0} signed samples found".format(bold(len(allofthem))))
+
+                if len(allofthem) > 0:
+                    print(table(header=['Name', 'MD5', 'Cert MD5'], rows=allofthem))
+
+            if arg_scan:
+                print_info("{0} relevant matches found".format(bold(len(matches))))
+
+                if len(matches) > 0:
+                    print(table(header=['Name', 'SHA256'], rows=matches))                
 
     def language(self):
 
