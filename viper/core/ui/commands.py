@@ -1,6 +1,7 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
+import argparse
 import os
 import time
 import getopt
@@ -17,6 +18,7 @@ from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
+
 
 class Commands(object):
 
@@ -83,65 +85,33 @@ class Commands(object):
     # While the session is active, every operation and module executed will be
     # run against the file specified.
     def cmd_open(self, *args):
-        def usage():
-            print("usage: open [-h] [-f] [-u] [-l] [-t] <target|md5|sha256>")
 
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--file (-f)\tThe target is a file")
-            print("\t--url (-u)\tThe target is a URL")
-            print("\t--last (-l)\tThe target is the entry number from the last find command's results")
-            print("\t--tor (-t)\tDownload the file through Tor")
-            print("")
-            print("You can also specify a MD5 or SHA256 hash to a previously stored")
-            print("file in order to open a session on it.")
-            print("")
+        parser = argparse.ArgumentParser(description="Open a file", epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('-f', '--file', action="store_true", help="The target is a file")
+        group.add_argument('-u', '--url', action="store_true", help="The target is a URL")
+        group.add_argument('-l', '--last', action="store_true", help="The target is the entry number from the last find command's results")
+        parser.add_argument('-t', '--tor', action="store_true", help="Download the file through Tor")
+        parser.add_argument("value", nargs='*', help="target|md5|sha256")
 
         try:
-            opts, argv = getopt.getopt(args, 'hfult', ['help', 'file', 'url', 'last', 'tor'])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_is_file = False
-        arg_is_url = False
-        arg_last = False
-        arg_use_tor = False
+        arg_is_file = args.file
+        arg_is_url = args.url
+        arg_last = args.last
+        arg_use_tor = args.tor
+        target = " ".join(args.value)
 
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-f', '--file'):
-                arg_is_file = True
-            elif opt in ('-u', '--url'):
-                arg_is_url = True
-            elif opt in ('-l', '--last'):
-                arg_last = True
-            elif opt in ('-t', '--tor'):
-                arg_use_tor = True
-
-        if len(argv) == 0:
-            usage()
+        if not arg_last and target is None:
+            parser.print_usage()
             return
-        else:
-            target = argv[0]
 
         # If it's a file path, open a session on it.
         if arg_is_file:
             target = os.path.expanduser(target)
-
-            # This is kind of hacky. It checks if there are additional arguments
-            # to the open command, if there is I assume that it's the continuation
-            # of a filename with spaces. I then concatenate them.
-            # TODO: improve this.
-            if len(argv) > 1:
-                for arg in argv[1:]:
-                    target += ' ' + arg
 
             if not os.path.exists(target) or not os.path.isfile(target):
                 print_error("File not found: {0}".format(target))
@@ -174,7 +144,7 @@ class Commands(object):
                 print_warning("You haven't performed a find yet")
         # Otherwise we assume it's an hash of an previously stored sample.
         else:
-            target = argv[0].strip().lower()
+            target = target.strip().lower()
 
             if len(target) == 32:
                 key = 'md5'
@@ -861,7 +831,7 @@ class Commands(object):
                 return
             elif opt in ('-z', '--zip'):
                 arg_zip = True
-                
+
         # This command requires a session to be opened.
         if not __sessions__.is_set():
             print_error("No session opened")
