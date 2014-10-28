@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import getopt
+import ConfigParser
 
 try:
     import requests
@@ -16,7 +17,7 @@ from viper.core.session import __sessions__
 class Cuckoo(Module):
     cmd = 'cuckoo'
     description = 'Submit the file to Cuckoo Sandbox'
-    authors = ['nex']
+    authors = ['nex','deralexxx']
 
     def run(self):
         if not __sessions__.is_set():
@@ -46,8 +47,11 @@ class Cuckoo(Module):
             usage()
             return
 
-        host = 'localhost'
-        port = 8090
+        #reading config file
+        config = ConfigParser.ConfigParser()
+        config.read('viper.cfg')
+        host = config.get('viper','cuckoo_host')
+        port = config.get('viper','cuckoo_port')
 
         for opt, value in opts:
             if opt in ('-h', '--help'):
