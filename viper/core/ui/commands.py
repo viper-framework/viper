@@ -135,6 +135,7 @@ class Commands(object):
             if __sessions__.find:
                 count = 1
                 for item in __sessions__.find:
+                    # FIXME: that seems broken.
                     if count == int(target):
                         __sessions__.new(get_sample_path(item.sha256))
                         break
@@ -205,48 +206,25 @@ class Commands(object):
     # This command allows you to view, add, modify and delete notes associated
     # with the currently opened file.
     def cmd_notes(self, *args):
-        def usage():
-            print("usage: notes [-h] [-l] [-a] [-e <note id>] [-d <note id>]")
 
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--list (-l)\tList all notes available for the current file")
-            print("\t--add (-a)\tAdd a new note to the current file")
-            print("\t--view (-v)\tView the specified note")
-            print("\t--edit (-e)\tEdit an existing note")
-            print("\t--delete (-d)\tDelete an existing note")
-            print("")
+        parser = argparse.ArgumentParser(description="Show information on the opened file")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('-l', '--list', action="store_true", help="List all notes available for the current file")
+        group.add_argument('-a', '--add', action="store_true", help="Add a new note to the current file")
+        group.add_argument('-v', '--view', type=int, help="View the specified note")
+        group.add_argument('-e', '--edit', type=int, help="Edit an existing note")
+        group.add_argument('-d', '--delete', type=int, help="Delete an existing note")
 
         try:
-            opts, argv = getopt.getopt(args, 'hlav:e:d:', ['help', 'list', 'add', 'view=', 'edit=', 'delete='])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_list = False
-        arg_add = False
-        arg_view = None
-        arg_edit = None
-        arg_delete = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-l', '--list'):
-                arg_list = True
-            elif opt in ('-a', '--add'):
-                arg_add = True
-            elif opt in ('-v', '--view'):
-                arg_view = value
-            elif opt in ('-e', '--edit'):
-                arg_edit = value
-            elif opt in ('-d', '--delete'):
-                arg_delete = value
+        arg_list = args.list
+        arg_add = args.add
+        arg_view = args.view
+        arg_edit = args.edit
+        arg_delete = args.delete
 
         if not __sessions__.is_set():
             print_error("No session opened")
@@ -323,7 +301,7 @@ class Commands(object):
             # Delete the note with the specified ID.
             Database().delete_note(arg_delete)
         else:
-            usage()
+            parser.print_usage()
 
     ##
     # STORE
