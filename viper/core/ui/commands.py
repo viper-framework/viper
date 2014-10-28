@@ -307,52 +307,34 @@ class Commands(object):
     # This command stores the opened file in the local repository and tries
     # to store details in the database.
     def cmd_store(self, *args):
-        def usage():
-            print("usage: store [-h] [-d] [-f <path>] [-s <size>] [-y <type>] [-n <name>] [-t]")
 
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--delete (-d)\tDelete the original file")
-            print("\t--folder (-f)\tSpecify a folder to import")
-            print("\t--file-size (-s)\tSpecify a maximum file size")
-            print("\t--file-type (-y)\tSpecify a file type pattern")
-            print("\t--file-name (-n)\tSpecify a file name pattern")
-            print("\t--tags (-t)\tSpecify a list of comma-separated tags")
-            print("")
+        parser = argparse.ArgumentParser(description="Store the opened file to the local repository")
+        parser.add_argument('-d', '--delete', action="store_true", help="Delete the original file")
+        parser.add_argument('-f', '--folder', type=str, nargs='+', help="Specify a folder to import")
+        parser.add_argument('-s', '--file-size', type=int, help="Specify a maximum file size")
+        parser.add_argument('-y', '--file-type', type=str, help="Specify a file type pattern")
+        parser.add_argument('-n', '--file-name', type=str, help="Specify a file name pattern")
+        parser.add_argument('-t', '--tags', type=str, nargs='+', help="Specify a list of comma-separated tags")
 
         try:
-            opts, argv = getopt.getopt(args, 'hdf:s:y:n:t:', ['help', 'delete', 'folder=', 'file-size=', 'file-type=', 'file-name=', 'tags='])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_delete = False
-        arg_folder = False
-        arg_file_size = None
-        arg_file_type = None
-        arg_file_name = None
-        arg_tags = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-d', '--delete'):
-                arg_delete = True
-            elif opt in ('-f', '--folder'):
-                arg_folder = value
-            elif opt in ('-s', '--file-size'):
-                arg_file_size = value
-            elif opt in ('-y', '--file-type'):
-                arg_file_type = value
-            elif opt in ('-n', '--file-name'):
-                arg_file_name = value
-            elif opt in ('-t', '--tags'):
-                arg_tags = value
+        arg_delete = args.delete
+        if args.folder is not None:
+            # Allows to have spaces in the path.
+            arg_folder = " ".join(args.folder)
+        else:
+            arg_folder = None
+        arg_file_size = args.file_size
+        arg_file_type = args.file_type
+        arg_file_name = args.file_name
+        if args.tags is not None:
+            # Remove the spaces in the list of tags
+            arg_tags = "".join(args.tags)
+        else:
+            arg_tags = None
 
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
@@ -384,7 +366,7 @@ class Commands(object):
         # to add all contained files to the local repository.
         # This is note going to open a new session.
         # TODO: perhaps disable or make recursion optional?
-        if arg_folder:
+        if arg_folder is not None:
             # Check if the specified folder is valid.
             if os.path.isdir(arg_folder):
                 # Walk through the folder and subfolders.
