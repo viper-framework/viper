@@ -118,8 +118,7 @@ class Commands(object):
                 return
 
             __sessions__.new(target)
-        # If it's a URL, download it and open a session on the temporary
-        # file.
+        # If it's a URL, download it and open a session on the temporary file.
         elif arg_is_url:
             data = download(url=target, tor=arg_use_tor)
 
@@ -152,7 +151,7 @@ class Commands(object):
             elif len(target) == 64:
                 key = 'sha256'
             else:
-                usage()
+                parser.print_usage()
                 return
 
             rows = self.db.find(key=key, value=target)
@@ -211,9 +210,9 @@ class Commands(object):
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-l', '--list', action="store_true", help="List all notes available for the current file")
         group.add_argument('-a', '--add', action="store_true", help="Add a new note to the current file")
-        group.add_argument('-v', '--view', type=int, help="View the specified note")
-        group.add_argument('-e', '--edit', type=int, help="Edit an existing note")
-        group.add_argument('-d', '--delete', type=int, help="Delete an existing note")
+        group.add_argument('-v', '--view', metavar='note_id', type=int, help="View the specified note")
+        group.add_argument('-e', '--edit', metavar='note_id', type=int, help="Edit an existing note")
+        group.add_argument('-d', '--delete', metavar='note_id', type=int, help="Delete an existing note")
 
         try:
             args = parser.parse_args(args)
@@ -275,7 +274,6 @@ class Commands(object):
                 print(note.body)
             else:
                 print_info("There is no note with ID {0}".format(arg_view))
-
 
         elif arg_edit:
             # Retrieve note with the specified ID.
