@@ -86,7 +86,7 @@ class Commands(object):
     # run against the file specified.
     def cmd_open(self, *args):
 
-        parser = argparse.ArgumentParser(description="Open a file", epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.")
+        parser = argparse.ArgumentParser(prog="open", description="Open a file", epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-f', '--file', action="store_true", help="The target is a file")
         group.add_argument('-u', '--url', action="store_true", help="The target is a URL")
@@ -206,7 +206,7 @@ class Commands(object):
     # with the currently opened file.
     def cmd_notes(self, *args):
 
-        parser = argparse.ArgumentParser(description="Show information on the opened file")
+        parser = argparse.ArgumentParser(prog="notes", description="Show information on the opened file")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-l', '--list', action="store_true", help="List all notes available for the current file")
         group.add_argument('-a', '--add', action="store_true", help="Add a new note to the current file")
@@ -308,7 +308,7 @@ class Commands(object):
     # to store details in the database.
     def cmd_store(self, *args):
 
-        parser = argparse.ArgumentParser(description="Store the opened file to the local repository")
+        parser = argparse.ArgumentParser(prog="store", description="Store the opened file to the local repository")
         parser.add_argument('-d', '--delete', action="store_true", help="Delete the original file")
         parser.add_argument('-f', '--folder', type=str, nargs='+', help="Specify a folder to import")
         parser.add_argument('-s', '--file-size', type=int, help="Specify a maximum file size")
@@ -623,36 +623,19 @@ class Commands(object):
     #
     # This command is used to list and switch across all the opened sessions.
     def cmd_sessions(self, *args):
-        def usage():
-            print("usage: sessions [-h] [-l] [-s=session]")
 
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--list (-l)\tList all existing sessions")
-            print("\t--switch (-s)\tSwitch to the specified session")
-            print("")
+        parser = argparse.ArgumentParser(prog="sessions", description="Open a file", epilog="List or switch sessions")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('-l', '--list', action="store_true", help="List all existing sessions")
+        group.add_argument('-s', '--switch', type=int, help="Switch to the specified session")
 
         try:
-            opts, argv = getopt.getopt(args, 'hls:', ['help', 'list', 'switch='])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_list = False
-        arg_switch = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-l', '--list'):
-                arg_list = True
-            elif opt in ('-s', '--switch'):
-                arg_switch = int(value)
+        arg_list = args.list
+        arg_switch = args.switch
 
         if arg_list:
             if not __sessions__.sessions:
@@ -675,7 +658,6 @@ class Commands(object):
 
             print_info("Opened Sessions:")
             print(table(header=['#', 'Name', 'MD5', 'Created At', 'Current'], rows=rows))
-            return
         elif arg_switch:
             for session in __sessions__.sessions:
                 if arg_switch == session.id:
@@ -683,9 +665,8 @@ class Commands(object):
                     return
 
             print_warning("The specified session ID doesn't seem to exist")
-            return
-
-        usage()
+        else:
+            parser.print_usage()
 
     ##
     # PROJECTS
@@ -693,36 +674,18 @@ class Commands(object):
     # This command retrieves a list of all projects.
     # You can also switch to a different project.
     def cmd_projects(self, *args):
-        def usage():
-            print("usage: projects [-h] [-l] [-s=project]")
-
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--list (-l)\tList all existing projects")
-            print("\t--switch (-s)\tSwitch to the specified project")
-            print("")
+        parser = argparse.ArgumentParser(prog="projects", description="Open a file", epilog="List or switch existing projects")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('-l', '--list', action="store_true", help="List all existing projects")
+        group.add_argument('-s', '--switch', help="Switch to the specified project")
 
         try:
-            opts, argv = getopt.getopt(args, 'hls:', ['help', 'list', 'switch='])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_list = False
-        arg_switch = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-l', '--list'):
-                arg_list = True
-            elif opt in ('-s', '--switch'):
-                arg_switch = value
+        arg_list = args.list
+        arg_switch = args.switch
 
         projects_path = os.path.join(os.getcwd(), 'projects')
 
@@ -743,7 +706,6 @@ class Commands(object):
                     rows.append([project, time.ctime(os.path.getctime(project_path)), current])
 
             print(table(header=['Project Name', 'Creation Time', 'Current'], rows=rows))
-            return
         elif arg_switch:
             if __sessions__.is_set():
                 __sessions__.close()
@@ -754,9 +716,8 @@ class Commands(object):
 
             # Need to re-initialize the Database to open the new SQLite file.
             self.db = Database()
-            return
-
-        usage()
+        else:
+            parser.print_usage()
 
     ##
     # EXPORT
