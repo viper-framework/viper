@@ -4,7 +4,6 @@
 import argparse
 import os
 import time
-import getopt
 import fnmatch
 import tempfile
 import shutil
@@ -384,13 +383,13 @@ class Commands(object):
                         # Check if the file name matches the provided pattern.
                         if arg_file_name:
                             if not fnmatch.fnmatch(file_name, arg_file_name):
-                                #print_warning("Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
+                                # print_warning("Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
                                 continue
 
                         # Check if the file type matches the provided pattern.
                         if arg_file_type:
                             if arg_file_type not in File(file_path).type:
-                                #print_warning("Skip, file \"{0}\" doesn't match the file type".format(file_path))
+                                # print_warning("Skip, file \"{0}\" doesn't match the file type".format(file_path))
                                 continue
 
                         # Check if file exceeds maximum size limit.
@@ -452,32 +451,19 @@ class Commands(object):
     #
     # This command is used to search for files in the database.
     def cmd_find(self, *args):
-        def usage():
-            print("usage: find [-h] [-t] <all|latest|name|type|mime|md5|sha256|tag|note> <value>")
 
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--tags (-t)\tList tags")
-            print("")
-
+        parser = argparse.ArgumentParser(prog="find", description="Find a file")
+        parser.add_argument('-t', '--tags', action="store_true", help="List tags")
+        parser.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note"], help="Where to search.")
+        parser.add_argument("value", nargs='?', help="String to search.")
         try:
-            opts, argv = getopt.getopt(args, 'ht', ['help', 'tags'])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_list_tags = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-t', '--tags'):
-                arg_list_tags = True
+        arg_list_tags = args.tags
+        arg_type = args.type
+        arg_value = args.value
 
         # One of the most useful search terms is by tag. With the --tags
         # argument we first retrieve a list of existing tags and the count
@@ -503,16 +489,15 @@ class Commands(object):
             return
 
         # At this point, if there are no search terms specified, return.
-        if len(args) == 0:
-            usage()
+        if arg_type is None:
+            argparse.print_usage()
             return
 
-        # The first argument is the search term (or "key").
-        key = args[0]
+        key = arg_type
         if key != 'all' and key != 'latest':
             try:
                 # The second argument is the search value.
-                value = args[1]
+                value = arg_value
             except IndexError:
                 print_error("You need to include a search term.")
                 return
@@ -551,36 +536,17 @@ class Commands(object):
     #
     # This command is used to modify the tags of the opened file.
     def cmd_tags(self, *args):
-        def usage():
-            print("usage: tags [-h] [-a=tags] [-d=tag]")
 
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--add (-a)\tAdd tags to the opened file (comma separated)")
-            print("\t--delete (-d)\tDelete a tag from the opened file")
-            print("")
-
+        parser = argparse.ArgumentParser(prog="tags", description="Modify tags of the opened file")
+        parser.add_argument('-a', '--add', help="Add tags to the opened file (comma separated)")
+        parser.add_argument('-d', '--delete', help="Delete a tag from the opened file")
         try:
-            opts, argv = getopt.getopt(args, 'ha:d:', ['help', 'add=', 'delete='])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_add = None
-        arg_delete = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-a', '--add'):
-                arg_add = value
-            elif opt in ('-d', '--delete'):
-                arg_delete = value
+        arg_add = args.add
+        arg_delete = args.delete
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
@@ -590,8 +556,8 @@ class Commands(object):
         # If no arguments are specified, there's not much to do.
         # However, it could make sense to also retrieve a list of existing
         # tags from this command, and not just from the "find" command alone.
-        if not arg_add and not arg_delete:
-            usage()
+        if arg_add is None and arg_delete is None:
+            parser.print_usage()
             return
 
         # TODO: handle situation where addition or deletion of a tag fail.
@@ -674,6 +640,7 @@ class Commands(object):
     # This command retrieves a list of all projects.
     # You can also switch to a different project.
     def cmd_projects(self, *args):
+
         parser = argparse.ArgumentParser(prog="projects", description="Open a file", epilog="List or switch existing projects")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-l', '--list', action="store_true", help="List all existing projects")
@@ -724,32 +691,18 @@ class Commands(object):
     #
     # This command will export the current session to file or zip.
     def cmd_export(self, *args):
-        def usage():
-            print("usage: export [-h] [-z] <path or archive name>")
 
-        def help():
-            usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--zip (-z)\tExport session in a zip archive")
-            print("")
+        parser = argparse.ArgumentParser(prog="export", description="Export the current session to file or zip")
+        parser.add_argument('-z', '--zip', action="store_true", help="Export session in a zip archive")
+        parser.add_argument('value', help="path or archive name")
 
         try:
-            opts, argv = getopt.getopt(args, 'hz', ['help', 'zip'])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
+            args = parser.parse_args(args)
+        except:
             return
 
-        arg_zip = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-z', '--zip'):
-                arg_zip = True
+        arg_zip = args.zip
+        arg_value = args.value
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
@@ -757,16 +710,16 @@ class Commands(object):
             return
 
         # Check for valid export path.
-        if len(args) ==0:
-            usage()
+        if args.path is None:
+            parser.print_usage()
             return
 
         # TODO: having for one a folder and for the other a full
         # target path can be confusing. We should perhaps standardize this.
 
         # Abort if the specified path already exists.
-        if os.path.isfile(argv[0]):
-            print_error("File at path \"{0}\" already exists, abort".format(argv[0]))
+        if os.path.isfile(arg_value):
+            print_error("File at path \"{0}\" already exists, abort".format(arg_value))
             return
 
         # If the argument chosed so, archive the file when exporting it.
@@ -774,16 +727,16 @@ class Commands(object):
         # and default it to "infected".
         if arg_zip:
             try:
-                with ZipFile(argv[0], 'w') as export_zip:
+                with ZipFile(arg_value, 'w') as export_zip:
                     export_zip.write(__sessions__.current.file.path, arcname=__sessions__.current.file.name)
             except IOError as e:
                 print_error("Unable to export file: {0}".format(e))
             else:
-                print_info("File archived and exported to {0}".format(argv[0]))
+                print_info("File archived and exported to {0}".format(arg_value))
         # Otherwise just dump it to the given directory.
         else:
             # XXX: Export file with the original file name.
-            store_path = os.path.join(argv[0], __sessions__.current.file.name)
+            store_path = os.path.join(arg_value, __sessions__.current.file.name)
 
             try:
                 shutil.copyfile(__sessions__.current.file.path, store_path)
