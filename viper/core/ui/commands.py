@@ -87,11 +87,11 @@ class Commands(object):
 
         parser = argparse.ArgumentParser(prog="open", description="Open a file", epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.")
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('-f', '--file', action="store_true", help="The target is a file")
-        group.add_argument('-u', '--url', action="store_true", help="The target is a URL")
-        group.add_argument('-l', '--last', action="store_true", help="The target is the entry number from the last find command's results")
+        group.add_argument('-f', '--file', action="store_true", help="target is a file")
+        group.add_argument('-u', '--url', action="store_true", help="target is a URL")
+        group.add_argument('-l', '--last', action="store_true", help="target is the entry number from the last find command's results")
         parser.add_argument('-t', '--tor', action="store_true", help="Download the file through Tor")
-        parser.add_argument("value", nargs='*', help="target|md5|sha256")
+        parser.add_argument("value", metavar='Path, URL, hash or ID', nargs='*', help="Target to open. Hash can be md5 or sha256. ID has to be from the last search.")
 
         try:
             args = parser.parse_args(args)
@@ -133,7 +133,6 @@ class Commands(object):
             if __sessions__.find:
                 count = 1
                 for item in __sessions__.find:
-                    # FIXME: that seems broken.
                     if count == int(target):
                         __sessions__.new(get_sample_path(item.sha256))
                         break
@@ -241,9 +240,7 @@ class Commands(object):
                 return
 
             # Populate table rows.
-            rows = []
-            for note in notes:
-                rows.append([note.id, note.title])
+            rows = [[note.id, note.title] for note in notes]
 
             # Display list of existing notes.
             print(table(header=['ID', 'Title'], rows=rows))
@@ -453,8 +450,9 @@ class Commands(object):
     def cmd_find(self, *args):
 
         parser = argparse.ArgumentParser(prog="find", description="Find a file")
-        parser.add_argument('-t', '--tags', action="store_true", help="List tags")
-        parser.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note"], help="Where to search.")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('-t', '--tags', action="store_true", help="List available tags and quit")
+        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note"], help="Where to search.")
         parser.add_argument("value", nargs='?', help="String to search.")
         try:
             args = parser.parse_args(args)
@@ -490,7 +488,7 @@ class Commands(object):
 
         # At this point, if there are no search terms specified, return.
         if arg_type is None:
-            argparse.print_usage()
+            parser.print_usage()
             return
 
         key = arg_type
@@ -551,6 +549,7 @@ class Commands(object):
         # This command requires a session to be opened.
         if not __sessions__.is_set():
             print_error("No session opened")
+            parser.print_usage()
             return
 
         # If no arguments are specified, there's not much to do.
@@ -707,6 +706,7 @@ class Commands(object):
         # This command requires a session to be opened.
         if not __sessions__.is_set():
             print_error("No session opened")
+            parser.print_usage()
             return
 
         # Check for valid export path.
