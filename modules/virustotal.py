@@ -122,9 +122,9 @@ class VirusTotal(Module):
                         try:
                             virustotal = response.json
                         except Exception as e:
-                        print_error("Failed parsing the response: {0}".format(e))
-                        print_error("Data:\n{}".format(response.content))
-                        return                        
+                            print_error("Failed parsing the response: {0}".format(e))
+                            print_error("Data:\n{}".format(response.content))
+                            return                        
                     else:
                         print_error("Failed parsing the response: {0}".format(e))
                         print_error("Data:\n{}".format(response.content))
