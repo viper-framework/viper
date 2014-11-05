@@ -152,8 +152,11 @@ class EmailParse(Module):
             # Headers
             rows = []
             for x in msg.keys():
-                if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature']:
+                # Adding Received to ignore list. this has to be handeled separately if there are more then one line
+                if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature','Received']:
                     rows.append([x, string_clean(msg.get(x))])
+            for x in msg.get_all('Received'):
+                rows.append(['Received', string_clean(x)])
             print_info("Email headers:")
             rows = sorted(rows, key=lambda entry: entry[0])
             print(table(header=['Key', 'Value'], rows=rows))
