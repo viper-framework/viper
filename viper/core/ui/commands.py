@@ -135,8 +135,16 @@ class Commands(object):
         if arg_is_file:
             target = os.path.expanduser(target)
 
+            # This is kind of hacky. It checks if there are additional arguments
+            # to the open command, if there is I assume that it's the continuation
+            # of a filename with spaces. I then concatenate them.
+            # TODO: improve this.
+            if len(argv) > 1:
+                for arg in argv[1:]:
+                    target += ' ' + arg
+
             if not os.path.exists(target) or not os.path.isfile(target):
-                print_error("File not found")
+                print_error("File not found: {0}".format(target))
                 return
 
             __sessions__.new(target)
@@ -405,12 +413,17 @@ class Commands(object):
                 print_warning("Skip, file \"{0}\" appears to be already stored".format(obj.name))
                 return False
 
-            # Store file to the local repository.
-            new_path = store_sample(obj)
-            if new_path:
-                # Add file to the database.
-                status = self.db.add(obj=obj, tags=tags)
+            # Try to store file object into database.
+            status = self.db.add(obj=obj, tags=tags)
+            if status:
+                # If succeeds, store also in the local repository.
+                # If something fails in the database (for example unicode strings)
+                # we don't want to have the binary lying in the repository with no
+                # associated database record.
+                new_path = store_sample(obj)
                 print_success("Stored file \"{0}\" to {1}".format(obj.name, new_path))
+            else:
+                return False
 
             # Delete the file if requested to do so.
             if arg_delete:
@@ -554,6 +567,7 @@ class Commands(object):
 
                 # Generate the table with the results.
                 header = ['Tag', '# Entries']
+                rows.sort(key=lambda x: x[1], reverse=True)
                 print(table(header=header, rows=rows))
             else:
                 print("No tags available")
@@ -847,6 +861,11 @@ class Commands(object):
                 return
             elif opt in ('-z', '--zip'):
                 arg_zip = True
+                
+        # This command requires a session to be opened.
+        if not __sessions__.is_set():
+            print_error("No session opened")
+            return
 
         # Check for valid export path.
         if len(args) ==0:

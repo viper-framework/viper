@@ -11,6 +11,7 @@ Viper provides a set of core command used to interact repositories of files you 
     | clear    | Clear the console                             |
     | close    | Close the current session                     |
     | delete   | Delete the opened file                        |
+    | export   | Export the current session to file or zip     |
     | find     | Find a file                                   |
     | help     | Show this help message                        |
     | info     | Show information on the opened file           |
@@ -50,7 +51,7 @@ For example, this is how to launch Viper with a specific project::
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v1.0
+        \_/ |_|  __/|_____)_| v1.1
               |_|
         
     You have 0 files in your test1 repository
@@ -156,6 +157,18 @@ An example of execution is the following::
     shell poisonivy.exe > sessions --switch 2
     [*] Switched to session #2 on ~/viper/binaries/6/7/6/a/676a818365c573e236245e8182db87ba1bc021c5d8ee7443b9f673f26e7fd7d1
     shell zeus.exe > 
+
+
+export
+------
+
+The ``export`` command is used to export the currently opened file to the target path or archive name. You can zip up the file in a new archive too::
+
+    usage: export [-h] [-z] <path or archive name>
+
+    Options:
+        --help (-h) Show this help message
+        --zip (-z)  Export session in a zip archive
 
 
 close

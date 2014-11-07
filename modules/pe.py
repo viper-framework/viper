@@ -1,11 +1,10 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
+import re
 import getopt
-import hashlib
 import datetime
 import tempfile
-import re
 
 try:
     import pefile
@@ -15,23 +14,23 @@ except ImportError:
     HAVE_PEFILE = False
 
 try:
-    import magic
-    HAVE_MAGIC = True
+    from modules.pehash.pehasher import calculate_pehash
+    HAVE_PEHASH = True
 except ImportError:
-    HAVE_MAGIC = False
+    HAVE_PEHASH = False
 
 from viper.common.out import *
 from viper.common.objects import File
 from viper.common.abstracts import Module
+from viper.common.utils import get_type, get_md5
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
 
-
 class PE(Module):
     cmd = 'pe'
     description = 'Extract information from PE32 headers'
-    authors = ['nex']
+    authors = ['nex', 'Statixs']
 
     def __init__(self):
         self.pe = None
@@ -49,27 +48,6 @@ class PE(Module):
                 return False
 
         return True
-
-    def __get_filetype(self, data):
-        if not HAVE_MAGIC:
-            return None
-
-        try:
-            ms = magic.open(magic.MAGIC_NONE)
-            ms.load()
-            file_type = ms.buffer(data)
-        except:
-            try:
-                file_type = magic.from_buffer(data)
-            except Exception:
-                return None
-
-        return file_type
-
-    def __get_md5(self, data):
-        md5 = hashlib.md5()
-        md5.update(data)
-        return md5.hexdigest()
 
     def imports(self):
         if not self.__check_session():
@@ -157,7 +135,7 @@ class PE(Module):
                     continue
 
                 if compile_time == cur_compile_time:
-                    matches.append([sample.name, sample.sha256, cur_compile_time])
+                    matches.append([sample.name, sample.md5, cur_compile_time])
                 else:
                     if arg_window:
                         if cur_compile_time > compile_time:
@@ -167,12 +145,12 @@ class PE(Module):
 
                         delta_minutes = int(delta.total_seconds()) / 60
                         if delta_minutes <= arg_window:
-                            matches.append([sample.name, sample.sha256, cur_compile_time])
+                            matches.append([sample.name, sample.md5, cur_compile_time])
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'SHA256', 'Compile Time'], rows=matches))
+                print(table(header=['Name', 'MD5', 'Compile Time'], rows=matches))
 
     def peid(self):
 
@@ -263,7 +241,7 @@ class PE(Module):
     def resources(self):
 
         def usage():
-            print("usage: pe resources [-d=folder] [-s]")
+            print("usage: pe resources [-d=folder] [-o=resource number] [-s]")
 
         def help():
             usage()
@@ -298,8 +276,8 @@ class PE(Module):
                                 if hasattr(resource_id, 'directory'):
                                     for resource_lang in resource_id.directory.entries:
                                         data = pe.get_data(resource_lang.data.struct.OffsetToData, resource_lang.data.struct.Size)
-                                        filetype = self.__get_filetype(data)
-                                        md5 = self.__get_md5(data)
+                                        filetype = get_type(data)
+                                        md5 = get_md5(data)
                                         language = pefile.LANG.get(resource_lang.data.lang, None)
                                         sublanguage = pefile.get_sublang_name_for_lang(resource_lang.data.lang, resource_lang.data.sublang)
                                         offset = ('%-8s' % hex(resource_lang.data.struct.OffsetToData)).strip()
@@ -417,12 +395,12 @@ class PE(Module):
                 # If there are any common resources, add the entry to the list
                 # of matched samples.
                 if len(matched_resources) > 0:
-                    matches.append([sample.name, sample.sha256, '\n'.join(r for r in matched_resources)])
+                    matches.append([sample.name, sample.md5, '\n'.join(r for r in matched_resources)])
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'SHA256', 'Resource MD5'], rows=matches))
+                print(table(header=['Name', 'MD5', 'Resource MD5'], rows=matches))
 
     def imphash(self):
 
@@ -545,6 +523,7 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--dump (-d)\tDestination directory to store digital signature in")
+            print("\t--all (-a)\tFind all samples with a digital signature")
             print("\t--scan (-s)\tScan the repository for common certificates")
             print("")
 
@@ -561,59 +540,16 @@ class PE(Module):
             else:
                 return None
 
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hd:s', ['help', 'dump=', 'scan'])
-        except getopt.GetoptError as e:
-            print(e)
-            usage()
-            return
-
-        arg_folder = None
-        arg_scan = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-d', '--dump'):
-                arg_folder = value
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
-
-        if not self.__check_session():
-            return
-
-        cert_data = get_certificate(self.pe)
-
-        if not cert_data:
-            print_warning("No certificate found")
-            return
-
-        cert_md5 = self.__get_md5(cert_data)
-
-        print_info("Found certificate with MD5 {0}".format(bold(cert_md5)))
-
-        if arg_folder:
-            cert_path = os.path.join(arg_folder, '{0}.crt'.format(__sessions__.current.file.sha256))
-            with open(cert_path, 'wb+') as cert_handle:
-                cert_handle.write(cert_data)
-
-            print_info("Dumped certificate to {0}".format(cert_path))
-            print_info("You can parse it using the following command:\n\t" + 
-                       bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
-
-        # TODO: do scan for certificate's serial number.
-        if arg_scan:
-            print_info("Scanning the repository for matching samples...")
-
+        def get_signed_samples(current=None, cert_filter=None):
             db = Database()
             samples = db.find(key='all')
 
-            matches = []
+            results = []
             for sample in samples:
                 # Skip if it's the same file.
-                if sample.sha256 == __sessions__.current.file.sha256:
-                    continue
+                if current:
+                    if sample.sha256 == current:
+                        continue
 
                 # Obtain path to the binary.
                 sample_path = get_sample_path(sample.sha256)
@@ -631,9 +567,77 @@ class PE(Module):
                 if not cur_cert_data:
                     continue
 
-                cur_cert_md5 = self.__get_md5(cur_cert_data)
-                if cur_cert_md5 == cert_md5:
-                    matches.append([sample.name, sample.sha256])
+                cur_cert_md5 = get_md5(cur_cert_data)
+
+                if cert_filter:
+                    if cur_cert_md5 == cert_filter:
+                        results.append([sample.name, sample.md5])
+                else:
+                    results.append([sample.name, sample.md5, cur_cert_md5])
+
+            return results
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hd:as', ['help', 'dump=', 'all', 'scan'])
+        except getopt.GetoptError as e:
+            print(e)
+            usage()
+            return
+
+        arg_folder = None
+        arg_all = False
+        arg_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-d', '--dump'):
+                arg_folder = value
+            elif opt in ('-a', '--all'):
+                arg_all = True
+            elif opt in ('-s', '--scan'):
+                arg_scan = True
+
+        if arg_all:
+            print_info("Scanning the repository for all signed samples...")
+
+            all_of_them = get_signed_samples()
+
+            print_info("{0} signed samples found".format(bold(len(all_of_them))))
+
+            if len(all_of_them) > 0:
+                print(table(header=['Name', 'MD5', 'Cert MD5'], rows=all_of_them))
+
+            return
+
+        if not self.__check_session():
+            return
+
+        cert_data = get_certificate(self.pe)
+
+        if not cert_data:
+            print_warning("No certificate found")
+            return
+
+        cert_md5 = get_md5(cert_data)
+
+        print_info("Found certificate with MD5 {0}".format(bold(cert_md5)))
+
+        if arg_folder:
+            cert_path = os.path.join(arg_folder, '{0}.crt'.format(__sessions__.current.file.sha256))
+            with open(cert_path, 'wb+') as cert_handle:
+                cert_handle.write(cert_data)
+
+            print_info("Dumped certificate to {0}".format(cert_path))
+            print_info("You can parse it using the following command:\n\t" + 
+                       bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
+
+        # TODO: do scan for certificate's serial number.
+        if arg_scan:
+            print_info("Scanning the repository for matching signed samples...")
+
+            matches = get_signed_samples(current=__sessions__.current.file.sha256, cert_filter=cert_md5)
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
@@ -843,6 +847,93 @@ class PE(Module):
         print_info("PE Sections:")
         print(table(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
+    def pehash(self): 
+        def usage():
+            print("usage: pe pehash [-hac]")
+
+        def help():
+            usage()
+            print("")
+            print("Options:")
+            print("\t--help (-h)\tShow this help message")
+            print("\t--all (-a)\tPrints the PEhash of all files in the project")
+            print("\t--cluster (-c)\tCalculate and cluster all files in the project")
+            print("\t--scan (-s)\tScan repository for matching samples")
+            print("")
+
+        try:
+            opts, argv = getopt.getopt(self.args[1:], 'hacs', ['help', 'all', 'cluster', 'scan'])
+        except getopt.GetoptError as e:
+            print(e)
+            return
+        
+        arg_all = False
+        arg_cluster = False
+        arg_scan = False
+
+        for opt, value in opts:
+            if opt in ('-h', '--help'):
+                help()
+                return
+            elif opt in ('-a', '--all'):
+                arg_all = True
+            elif opt in ('-c', '--cluster'):
+                arg_cluster = True
+            elif opt in ('-s', '--scan'):
+                arg_scan = True
+
+        if not HAVE_PEHASH:
+            print_error("PEhash is missing. Please copy PEhash to the modules directory of Viper")
+            return
+
+        current_pehash = None
+        if __sessions__.is_set():
+            current_pehash = calculate_pehash(__sessions__.current.file.path)
+            print_info("PEhash: {0}".format(bold(current_pehash)))
+
+        if arg_all or arg_cluster or arg_scan:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                pe_hash = calculate_pehash(sample_path)
+                if pe_hash:
+                    rows.append((sample.name, sample.md5, pe_hash))
+
+        if arg_all:
+            print_info("PEhash for all files:")
+            header = ['Name', 'MD5', 'PEhash']
+            print(table(header=header, rows=rows))
+        elif arg_cluster:
+            print_info("Clustering files by PEhash...")
+
+            cluster = {}
+            for sample_name, sample_md5, pe_hash in rows:
+                cluster.setdefault(pe_hash, []).append([sample_name, sample_md5])
+            
+            for item in cluster.items():
+                if len(item[1]) > 1:
+                    print_info("PEhash {0} was calculated on files:".format(bold(item[0])))
+                    print(table(header=['Name', 'MD5'], rows=item[1]))
+        elif arg_scan:
+            if __sessions__.is_set() and current_pehash:
+                print_info("Finding matching samples...")
+
+                matches = []
+                for row in rows:
+                    if row[1] == __sessions__.current.file.md5:
+                        continue
+
+                    if row[2] == current_pehash:
+                        matches.append([row[0], row[1]])
+
+                if matches:
+                    print(table(header=['Name', 'MD5'], rows=matches))
+                else:
+                    print_info("No matches found")
+
     def usage(self):
         print("usage: pe <command>")
 
@@ -860,6 +951,7 @@ class PE(Module):
         print("\tsecurity\tShow digital signature")
         print("\tlanguage\tGuess PE language")
         print("\tsections\tList PE Sections")
+        print("\tpehash\t\tCalculate the PEhash and compare them")
         print("")
 
     def run(self):
@@ -891,3 +983,5 @@ class PE(Module):
             self.sections()
         elif self.args[0] == 'language':
             self.language()
+        elif self.args[0] == 'pehash':
+            self.pehash()

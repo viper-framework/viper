@@ -1,0 +1,32 @@
+Viper 1.1 (2014-10-22)
+======================
+
+- Added search by file type
+- Added search by mime type
+- Added possibility to sequence commands through a ; separator
+- Added automatic tagging of files matched by Yara signatures
+- Added option to edit Yara rules through default editor
+- Added auto-completion for command and module names
+- Added auto-completion for tilde expansion
+- Added option to submit file to VirusTotal
+- Added update.py utility
+- Added many new Yara signatures
+- Added auto-generation of index.yara file
+- Added Linux and Windows support to IDA module
+- Added ROT support to XOR module
+- Added peepdf support in PDF module to list, dump and open streams
+- Added many new RAT decoders (Albertino, Clientmesh, DarkRat, Greame, LostDoor, LuxNet, Pandora, Punisher, SmallNet, AdWind, xRat)
+- Added new export command
+- Added new IDX parser module
+- Added new ClamAV module
+- Added new APK parsing module
+- Added new SWF parsing module
+- Added new ELF parsing module
+- Added pehash to PE module
+- Fixed duplication of sessions when the same file is re-opened
+- Fixed bug in pe resource scan
+
+Viper 1.0 (2014-07-12)
+======================
+
+Initial release.

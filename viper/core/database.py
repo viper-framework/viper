@@ -265,7 +265,8 @@ class Database:
             except IntegrityError:
                 session.rollback()
                 malware_entry = session.query(Malware).filter(Malware.md5 == obj.md5).first()
-            except SQLAlchemyError:
+            except SQLAlchemyError as e:
+                print_error("Unable to store file: {0}".format(e))
                 session.rollback()
                 return False
 
