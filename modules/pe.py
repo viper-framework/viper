@@ -540,6 +540,43 @@ class PE(Module):
             else:
                 return None
 
+        def get_signed_samples(current=None, cert_filter=None):
+            db = Database()
+            samples = db.find(key='all')
+
+            results = []
+            for sample in samples:
+                # Skip if it's the same file.
+                if current:
+                    if sample.sha256 == current:
+                        continue
+
+                # Obtain path to the binary.
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                # Open PE instance.
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                except:
+                    continue
+
+                cur_cert_data = get_certificate(cur_pe)
+
+                if not cur_cert_data:
+                    continue
+
+                cur_cert_md5 = get_md5(cur_cert_data)
+
+                if cert_filter:
+                    if cur_cert_md5 == cert_filter:
+                        results.append([sample.name, sample.md5])
+                else:
+                    results.append([sample.name, sample.md5, cur_cert_md5])
+
+            return results
+
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hd:as', ['help', 'dump=', 'all', 'scan'])
         except getopt.GetoptError as e:
@@ -561,6 +598,18 @@ class PE(Module):
                 arg_all = True
             elif opt in ('-s', '--scan'):
                 arg_scan = True
+
+        if arg_all:
+            print_info("Scanning the repository for all signed samples...")
+
+            all_of_them = get_signed_samples()
+
+            print_info("{0} signed samples found".format(bold(len(all_of_them))))
+
+            if len(all_of_them) > 0:
+                print(table(header=['Name', 'MD5', 'Cert MD5'], rows=all_of_them))
+
+            return
 
         if not self.__check_session():
             return
@@ -585,53 +634,15 @@ class PE(Module):
                        bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
 
         # TODO: do scan for certificate's serial number.
-        # TODO: make arg_all so that it doesn't require an opened session.
-        if arg_all or arg_scan:
-            print_info("Scanning the repository for signed samples...")
+        if arg_scan:
+            print_info("Scanning the repository for matching signed samples...")
 
-            db = Database()
-            samples = db.find(key='all')
+            matches = get_signed_samples(current=__sessions__.current.file.sha256, cert_filter=cert_md5)
 
-            allofthem = []
-            matches = []
-            for sample in samples:
-                # Skip if it's the same file.
-                if sample.sha256 == __sessions__.current.file.sha256:
-                    continue
+            print_info("{0} relevant matches found".format(bold(len(matches))))
 
-                # Obtain path to the binary.
-                sample_path = get_sample_path(sample.sha256)
-                if not os.path.exists(sample_path):
-                    continue
-
-                # Open PE instance.
-                try:
-                    cur_pe = pefile.PE(sample_path)
-                except:
-                    continue
-
-                cur_cert_data = get_certificate(cur_pe)
-
-                if not cur_cert_data:
-                    continue
-
-                cur_cert_md5 = get_md5(cur_cert_data)
-                if cur_cert_md5 == cert_md5:
-                    matches.append([sample.name, sample.sha256])
-
-                allofthem.append([sample.name, sample.md5, cur_cert_md5])
-
-            if arg_all:
-                print_info("{0} signed samples found".format(bold(len(allofthem))))
-
-                if len(allofthem) > 0:
-                    print(table(header=['Name', 'MD5', 'Cert MD5'], rows=allofthem))
-
-            if arg_scan:
-                print_info("{0} relevant matches found".format(bold(len(matches))))
-
-                if len(matches) > 0:
-                    print(table(header=['Name', 'SHA256'], rows=matches))                
+            if len(matches) > 0:
+                print(table(header=['Name', 'SHA256'], rows=matches))                
 
     def language(self):
 
