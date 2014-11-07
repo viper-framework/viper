@@ -205,7 +205,7 @@ class EmailParse(Module):
 
                     if part.get_content_type() in ('text/plain', 'text/html'):
                         part_content = part.get_payload(decode=True)
-                        for link in re.findall(r'(https?://\S+)', part_content):
+                        for link in re.findall(r'(https?://[^"<>\s]+)', part_content):
                             if link not in links:
                                 links.append(link)
 
