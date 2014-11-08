@@ -290,9 +290,9 @@ class Database:
 
         return True
 
-    def find(self, key, value=None):
+    def find(self, key, value=None, offset=0):
         session = self.Session()
-
+        offset = int(offset)
         rows = None
 
         if key == 'all':
@@ -306,8 +306,8 @@ class Database:
                     return None
             else:
                 value = 5
-
-            rows = session.query(Malware).order_by(Malware.created_at.desc()).limit(value)
+            
+            rows = session.query(Malware).order_by(Malware.created_at.desc()).limit(value).offset(offset)
         elif key == 'md5':
             rows = session.query(Malware).filter(Malware.md5 == value).all()
         elif key == 'sha256':
