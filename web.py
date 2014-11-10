@@ -524,7 +524,14 @@ if __name__ == '__main__':
     if args.port:
         web_port = args.port
     
+    bv = bottle.__version__.split('.')[1]
+    if int(bv) < 12:
+        print "Please Upgrade Bottle to the latest version 'sudo pip install --upgrade bottle'"
+        sys.exit()
+    
+    if not os.path.exists('projects'):
+        os.mkdir('projects')
     
     # Set template dir
     bottle.TEMPLATE_PATH.insert(0,'data/web')
-    run(host=args.host, port=web_port, debug=True, reloader=True)
+    run(host=args.host, port=web_port, reloader=True)
