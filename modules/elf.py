@@ -104,8 +104,11 @@ class ELF(Module):
             if segment['p_type'] == 'PT_INTERP':
                 interp = segment
                 break
-        print("Program interpreter: {0}".format(interp.get_interp_name()))
-        
+        if interp:
+            print("Program interpreter: {0}".format(interp.get_interp_name()))
+        else:
+            print_error("No PT_INTERP entry found")
+
     def dynamic(self):
         if not self.__check_session():
             return
