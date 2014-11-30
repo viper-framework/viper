@@ -21,15 +21,14 @@ from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
+from config import MALWR_USER, MALWARE_PASS, ANUBIS_USER, ANUBIS_PASS
+
+
 MALWR_LOGIN = 'https://malwr.com/account/login/'
-MALWR_USER = None
-MALWR_PASS = None
 MALWR_SEARCH = 'https://malwr.com/analysis/search/'
 MALWR_PREFIX = 'https://malwr.com'
 
 ANUBIS_LOGIN = 'https://anubis.iseclab.org/?action=login' 
-ANUBIS_USER = None
-ANUBIS_PASS = None
 ANUBIS_SEARCH = 'https://anubis.iseclab.org/?action=hashquery' 
 ANUBIS_PREFIX = 'https://anubis.iseclab.org/'
 
