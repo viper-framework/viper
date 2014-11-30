@@ -134,7 +134,7 @@ class Strings(Module):
             return
 
         if os.path.exists(__sessions__.current.file.path):
-            regexp = '[\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
+            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
             strings = re.findall(regexp, __sessions__.current.file.data)
 
         if arg_all:
