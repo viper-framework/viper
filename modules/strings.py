@@ -74,7 +74,7 @@ class Strings(Module):
         results = []
         for entry in strings:
             to_add = False
-            if DOMAIN_REGEX.search(entry):
+            if DOMAIN_REGEX.search(entry) and not IPV4_REGEX.search(entry):
                 if entry[entry.rfind('.') + 1:].upper() in TLD:
                     to_add = True
             elif IPV4_REGEX.search(entry):
