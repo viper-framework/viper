@@ -1,6 +1,4 @@
-% include("header.tpl", title="Search Results")
-
-       
+% include("header.tpl", title="Search Results")     
 % for proj in results.iterkeys():
     % if len(results[proj]) > 0:
         <div class="panel panel-default">
@@ -12,13 +10,11 @@
                     <tr>
                         <th>Name</th>
                         <th>Sha256</th>
-
                     </tr>
                     % for res in results[proj]:
                         <tr>
                             <td><a href="/file/{{proj}}/{{res[1]}}">{{res[0]}}</a></td>
                             <td>{{res[1]}}</td>
-
                         </tr>
                     % end      
                 </table>
@@ -26,14 +22,4 @@
         </div>
     % end
 % end
-            
-            
-            
-            
-            
-
-
-
-
-
 % include("footer.tpl")
