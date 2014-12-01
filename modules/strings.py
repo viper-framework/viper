@@ -74,7 +74,7 @@ class Strings(Module):
         results = []
         for entry in strings:
             to_add = False
-            if DOMAIN_REGEX.search(entry):
+            if DOMAIN_REGEX.search(entry) and not IPV4_REGEX.search(entry):
                 if entry[entry.rfind('.') + 1:].upper() in TLD:
                     to_add = True
             elif IPV4_REGEX.search(entry):
@@ -134,7 +134,7 @@ class Strings(Module):
             return
 
         if os.path.exists(__sessions__.current.file.path):
-            regexp = '[\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
+            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
             strings = re.findall(regexp, __sessions__.current.file.data)
 
         if arg_all:
