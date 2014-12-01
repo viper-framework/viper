@@ -21,7 +21,6 @@
     display: block;
 }
 
-
 /* Adds padding to Note Rows.
 -------------------------------------------------- */
 
@@ -30,23 +29,28 @@
     padding-top: 20px;
 }
 
-
 /* Sticky footer styles
 -------------------------------------------------- */
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 body {
-  /* Margin bottom by footer height */
-  margin-bottom: 60px;
+    /* Margin bottom by footer height */
+    margin-bottom: 60px;
 }
 .footer {
-  padding-top: 5px;
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  /* Set the fixed height of the footer here */
-  height: 30px;
-  background-color: #f5f5f5;
+    padding-top: 5px;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 30px;
+    background-color: #f5f5f5;
+}
+
+/* Misc
+-------------------------------------------------- */
+.mono {
+    font-family: monospace;
 }

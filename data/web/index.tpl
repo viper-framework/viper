@@ -118,14 +118,14 @@ $(document).ready( function() {
             <tr>
                 <th>#</th>
                 <th>Name</th>
-                <th>Sha256</th>
+                <th>SHA256</th>
                 <th>Tags</th>
             </tr>
             % for row in latest:
             <tr>
                 <td>{{row.id}}</td>
                 <td><a href="/file/{{p}}/{{row.sha256}}">{{row.name}}</a></td>
-                <td>{{row.sha256}}</td>
+                <td><span class="mono">{{row.sha256}}</span></td>
                 <td>
                 % for tags in row.tag:
                 {{tags.tag}},
