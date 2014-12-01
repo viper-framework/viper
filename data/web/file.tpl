@@ -11,8 +11,6 @@
             % include("sections/notes.tpl")
             % include("sections/modules.tpl")   
         </div>
-
 <script type="text/javascript" src="/static/js/ajax_submit.js"></script>
 
-      
 % include("footer.tpl")
