@@ -146,6 +146,44 @@ def add_tags():
 
     return jsonize({'message' : 'added'})
     
+@route('/file/send_cuckoo/<file_hash>', method='POST')
+def send_cuckoo_file(file_hash):
+    
+    def send_to_cuckoo(arg_path,arg_host,arg_port):
+            url = 'http://{0}:{1}/tasks/create/file'.format(arg_host, arg_port)
+
+            print url
+            print arg_path
+            files = dict(file=open(arg_path, 'rb'))
+
+            try:
+                response = requests.post(url, files=files)
+            except requests.ConnectionError:
+                print_error("Unable to connect to Cuckoo API at {0}:{1}".format(arg_host, arg_port))
+                return
+            return response
+    
+    host = request.forms.get('host')
+    port = request.forms.get('port')
+    key = ''
+    if len(file_hash) == 32:
+        key = 'md5'
+    elif len(file_hash) == 64:
+        key = 'sha256'
+    else:
+        return HTTPError(400, 'Invalid hash format (use md5 or sha256)')
+
+    db = Database()
+    rows = db.find(key=key, value=file_hash)
+
+    if not rows:
+        raise HTTPError(404, 'File not found in the database')
+
+    path = get_sample_path(rows[0].sha256)
+    if not path:
+        raise HTTPError(404, 'File not found in the repository')
+  
+    return send_to_cuckoo(path,host,port)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
