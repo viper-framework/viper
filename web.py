@@ -25,7 +25,7 @@ from viper.core.project import __project__
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
-
+from viper.common import network
 ##
 # User Config
 ##
@@ -253,6 +253,42 @@ def add_file():
         redirect("/project/{0}".format(project))
     else:
         return template('error.tpl', error="Unable to Store The File")
+
+#add file from url
+@route('/URLDownload', method='POST')
+def url_download():
+    url = request.forms.get('url')
+    tags = request.forms.get('tag_list')
+    tags = "url,"+tags
+    if request.forms.get("tor"):
+        upload = network.download(url,tor=True)
+    else:
+        upload = network.download(url,tor=False)
+    if upload == None:
+        return template('error.tpl', error="server can't download from URL")
+    # Set Project
+    project = 'Main'
+    db = Database()
+    tf = tempfile.NamedTemporaryFile()
+    tf.write(upload)
+    if tf == None:
+        return template('error.tpl', error="server can't download from URL")
+    tf.flush()
+    tf_obj = File(tf.name)
+    tf_obj.name = tf_obj.sha256
+    new_path = store_sample(tf_obj)
+    success = False
+    if new_path:
+        # Add file to the database.
+        success = db.add(obj=tf_obj, tags=tags)
+
+    if success:
+        #redirect("/project/{0}".format(project))
+        redirect("/file/Main/"+tf_obj.sha256)
+    else:
+        return template('error.tpl', error="Unable to Store The File,already in database")
+
+
 
 # File Download
 @route("/get/<file_hash>", method="GET")

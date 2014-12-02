@@ -57,8 +57,8 @@ $(document).ready( function() {
         <input type="password" class="form-control" name="zip_pass" id="zip_pass" placeholder="Zip Password">
     </div>
     
-<!-- End Zip --> 
-   
+<!-- End Zip -->
+
     <div class="form-group">
         <label for="tag_list">Tags</label>
         <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
@@ -69,6 +69,42 @@ $(document).ready( function() {
 </form>
 </div>
 </div>
+
+<!-- Download from URL -->
+
+    <div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">URL Download</h3>
+    </div>
+    <form class="form-inline" role="form" action="/URLDownload" enctype="multipart/form-data" method="post" name="submit">
+
+
+
+    <div class="form-group">
+        <label class="sr-only" for="URL">URL</label>
+        <input type="search" class="form-control" name="url" id="url" placeholder="URL">
+    </div>
+
+       <div class="form-group">
+        <label for="tag_list">Tags</label>
+        <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
+    </div>
+
+    <div class="checkbox">
+    <label>
+      <input type="checkbox" name="tor" value="tor"> tor
+    </label>
+  </div>
+
+
+    <button type="submit" class="btn btn-default">Run</button>
+
+    </form>
+
+    </div>
+
+<!-- end Download From URL -->
+
 
 <!-- Search -->
 <div class="panel panel-default">
