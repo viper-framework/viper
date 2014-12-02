@@ -1,12 +1,6 @@
 % include("header.tpl", title="Viper Web Interface")
-<!-- File Uploader -->
 
-<div class="panel panel-default">
-    <div class="panel-heading">
-        <h3 class="panel-title">Upload Sample</h3>
-    </div>
-    <div class="panel-body">
-    
+<!-- File Uploader -->
 <script type="text/javascript">
 $(document).on('change', '.btn-file :file', function() {
   var input = $(this),
@@ -31,80 +25,71 @@ $(document).ready( function() {
 });
 </script>
 
-
-<form class="form-inline" role="form" action="/add" enctype="multipart/form-data" method="post" name="submit">
-
-    <div class="form-group">
-            <div class="input-group">
-                <span class="input-group-btn">
-                    <span class="btn btn-default btn-file">
-                        Browse&hellip; <input type="file" name="file">
-                    </span>
-                </span>
-                <input type="text" class="form-control" readonly>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Upload Sample</h3>
+    </div>
+    <div class="panel-body">
+        <form class="form-inline" role="form" action="/add" enctype="multipart/form-data" method="post" name="submit">
+            <div class="form-group">
+                    <div class="input-group">
+                        <span class="input-group-btn">
+                            <span class="btn btn-default btn-file">
+                                Browse&hellip; <input type="file" name="file">
+                            </span>
+                        </span>
+                        <input type="text" class="form-control" readonly>
+                    </div>
             </div>
-    </div>
-<!-- Zip Uploads -->  
 
-    <div class="checkbox">
-        <label>
-        <input type="checkbox" name="unzip" value="unzip"> UnZip
-        </label>
-    </div>
+            <div class="checkbox">
+                <label>
+                <input type="checkbox" name="unzip" value="unzip"> UnZip
+                </label>
+            </div>
 
-    <div class="form-group">
-        <label class="sr-only" for="zip_pass">Zip Pass</label>
-        <input type="password" class="form-control" name="zip_pass" id="zip_pass" placeholder="Zip Password">
-    </div>
-    
-<!-- End Zip -->
+            <div class="form-group">
+                <label class="sr-only" for="zip_pass">Zip Pass</label>
+                <input type="password" class="form-control" name="zip_pass" id="zip_pass" placeholder="Zip Password">
+            </div>
 
-    <div class="form-group">
-        <label for="tag_list">Tags</label>
-        <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
+
+            <div class="form-group">
+                <label for="tag_list">Tags</label>
+                <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
+            </div>
+            
+            <input type="hidden" name="project" value="{{p}}" />
+            <button type="submit" class="btn btn-default">Upload</button>
+        </form>
     </div>
-    
-    <input type="hidden" name="project" value="{{p}}" />
-    <button type="submit" class="btn btn-default">Upload</button>
-</form>
-</div>
 </div>
 
 <!-- Download from URL -->
-
-    <div class="panel panel-default">
+<div class="panel panel-default">
     <div class="panel-heading">
         <h3 class="panel-title">URL Download</h3>
     </div>
-    <form class="form-inline" role="form" action="/URLDownload" enctype="multipart/form-data" method="post" name="submit">
+    <div class="panel-body">
+        <form class="form-inline" role="form" action="/URLDownload" enctype="multipart/form-data" method="post" name="submit">
+            <div class="form-group">
+                <label class="sr-only" for="URL">URL</label>
+                <input type="search" class="form-control" name="url" id="url" placeholder="URL">
+            </div>
 
+            <div class="checkbox">
+                <label><input type="checkbox" name="tor" value="tor"> Use Tor</label>
+            </div>
 
+            <div class="form-group">
+                <label for="tag_list">Tags</label>
+                <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
+            </div>
 
-    <div class="form-group">
-        <label class="sr-only" for="URL">URL</label>
-        <input type="search" class="form-control" name="url" id="url" placeholder="URL">
+            <button type="submit" class="btn btn-default">Run</button>
+        </form>
     </div>
-
-       <div class="form-group">
-        <label for="tag_list">Tags</label>
-        <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
-    </div>
-
-    <div class="checkbox">
-    <label>
-      <input type="checkbox" name="tor" value="tor"> tor
-    </label>
-  </div>
-
-
-    <button type="submit" class="btn btn-default">Run</button>
-
-    </form>
-
-    </div>
-
-<!-- end Download From URL -->
-
+</div>
 
 <!-- Search -->
 <div class="panel panel-default">
