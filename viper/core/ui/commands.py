@@ -12,6 +12,7 @@ from zipfile import ZipFile
 from viper.common.out import *
 from viper.common.objects import File
 from viper.common.network import download
+from viper.common.network import VirusTotal
 from viper.core.session import __sessions__
 from viper.core.project import __project__
 from viper.core.plugins import __modules__
@@ -84,7 +85,7 @@ class Commands(object):
     # run against the file specified.
     def cmd_open(self, *args):
         def usage():
-            print("usage: open [-h] [-f] [-u] [-l] [-t] <target|md5|sha256>")
+            print("usage: open [-h] [-f] [-u] [-v] [-l] [-t] <target|md5|sha256>")
 
         def help():
             usage()
@@ -93,6 +94,7 @@ class Commands(object):
             print("\t--help (-h)\tShow this help message")
             print("\t--file (-f)\tThe target is a file")
             print("\t--url (-u)\tThe target is a URL")
+            print("\t--virustotal (-v)\tDownload the file from VirusTotal")
             print("\t--last (-l)\tThe target is the entry number from the last find command's results")
             print("\t--tor (-t)\tDownload the file through Tor")
             print("")
@@ -101,7 +103,7 @@ class Commands(object):
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hfult', ['help', 'file', 'url', 'last', 'tor'])
+            opts, argv = getopt.getopt(args, 'hfult', ['help', 'file', 'url', 'virustotal', 'last', 'tor'])
         except getopt.GetoptError as e:
             print(e)
             usage()
@@ -109,6 +111,7 @@ class Commands(object):
 
         arg_is_file = False
         arg_is_url = False
+        arg_is_vt = False
         arg_last = False
         arg_use_tor = False
 
@@ -120,6 +123,8 @@ class Commands(object):
                 arg_is_file = True
             elif opt in ('-u', '--url'):
                 arg_is_url = True
+            elif opt in ('-v', '--virustotal'):
+                arg_is_vt = True
             elif opt in ('-l', '--last'):
                 arg_last = True
             elif opt in ('-t', '--tor'):
@@ -159,6 +164,19 @@ class Commands(object):
                 tmp.close()
 
                 __sessions__.new(tmp.name)
+
+        #If it's VirusTotal, download it and open a session on the temporary
+        # file
+        elif arg_is_vt:
+            data = VirusTotal(target)
+            if data:
+                tmp = tempfile.NamedTemporaryFile(delete=False)
+                tmp.write(data)
+                tmp.close()
+
+                __sessions__.new(tmp.name)
+
+
         # Try to open the specified file from the list of results from
         # the last find command.
         elif arg_last:
