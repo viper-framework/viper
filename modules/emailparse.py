@@ -21,21 +21,26 @@ class EmailParse(Module):
 
     def run(self):
         def usage():
-            print("usage: email [-hefro]")
+            print("usage: email [-hefrtTsao]")
 
         def help():
             usage()
             print("")
             print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--envelope (-e)\tShow the email envelope")
-            print("\t--attach (-f)\tShow Attachment information")
-            print("\t--header (-r)\tShow email Header information")
-            print("\t--all (-a)\tRun all the options")
-            print("\t--open (-o)\tSwitch session to the specified attachment")
+            print("\t--help (-h)\t\tShow this help message")
+            print("\t--envelope (-e)\t\tShow the email envelope")
+            print("\t--attach (-f)\t\tShow Attachment information")
+            print("\t--header (-r)\t\tShow email Header information")
+            print("\t--trace (-t)\t\tShow email path via Received headers")
+            print("\t--traceall (-T)\t\tShow email path via verbose Received headers")
+            print("\t--spoofcheck (-s)\tTest email for possible spoofing")
+            print("\t--all (-a)\t\tRun all the options")
+            print("\t--open (-o)\t\tSwitch session to the specified attachment")
         
         def string_clean(value):
-            return re.sub('[\n\t\r]', '', value)
+            if value:
+                return re.sub('[\n\t\r]', '', value)
+            return ""
 
         def parse_ole_msg(ole):
             stream_dirs = ole.listdir()
@@ -118,19 +123,37 @@ class EmailParse(Module):
 
             else:
                 for part in msg.walk():
-                    if part.get_content_maintype() == 'multipart' or not part.get('Content-Disposition'):
+                    if part.get_content_type() == 'message/rfc822':
+                        rfc822 = True
+                    else:
+                        rfc822 = False
+                    
+                    if part.get_content_maintype() == 'multipart' \
+                    or not part.get('Content-Disposition') \
+                    and not rfc822:
                         continue
 
                     att_count += 1
                     if att_count == att_id:
-                        print_info("Switching session to {0}".format(part.get_filename()))
-                        data = part.get_payload(decode=True)
+                        if rfc822:
+                            data = part.as_string()
+                            m = re.match("Content-Type: message/rfc822\r?\n\r?\n(.*)", data, flags=re.S)
+                            if not m:
+                                print_error("Could not extract RFC822 formatted message")
+                                return
+                            data = m.group(1)
+                            att_size = len(data)
+                            filename = "rfc822msg_{0}.eml".format(att_size)
+                        else:
+                            data = part.get_payload(decode=True)
+                            filename = part.get_filename()
 
+                        print_info("Switching session to {0}".format(filename))
+                        
                         if data:
-                            tmp_path = os.path.join(tempfile.gettempdir(), part.get_filename())
+                            tmp_path = os.path.join(tempfile.gettempdir(), filename)
                             with open(tmp_path, 'w') as tmp:
                                 tmp.write(data)
-
                             __sessions__.new(tmp_path)
                             return
 
@@ -162,6 +185,145 @@ class EmailParse(Module):
             print(table(header=['Key', 'Value'], rows=rows))
             return
 
+        def email_trace(msg, verbose):
+            rows = []
+            if verbose:
+                fields = ['from', 'by', 'with', 'id', 'for', 'timestamp']
+            else:
+                fields = ['from', 'by', 'timestamp']
+            for x in msg.get_all('Received'):
+                x = string_clean(x)
+                cre = re.compile("""
+                    (?: from \s+ (?P<from>.*?) (?=by|with|id|ID|for|;|$) )?
+                    (?: by \s+ (?P<by>.*?) (?=with|id|ID|for|;|$) )?
+                    (?: with \s+ (?P<with>.*?) (?=id|ID|for|;|$) )?
+                    (?: (id|ID) \s+ (?P<id>.*?) (?=for|;|$) )?
+                    (?: for \s+ (?P<for>.*?) (?=;|$) )?
+                    (?: \s* ; \s* (?P<timestamp>.*) )?
+                    """,
+                    flags=re.X|re.I)
+                m = cre.search(x)
+                if not m:
+                    print_error("Received header regex didn't match")
+                    return
+                t = []
+                for groupname in fields:
+                    t.append(string_clean(m.group(groupname)))
+                rows.insert(0,t)
+            print_info("Email path trace:")
+            print(table(header=fields, rows=rows))
+            return
+
+        def email_spoofcheck(msg, dnsenabled):
+            print_info("Email spoof check:")
+            
+            # test 1: check if From address is the same as Sender, Reply-To, and Return-Path
+            rows = [
+                ['Sender', string_clean(msg.get("Sender"))],
+                ['From', string_clean(msg.get("From"))],
+                ['Reply-To', string_clean(msg.get("Reply-To"))],
+                ['Return-Path', string_clean(msg.get("Return-Path"))]
+            ]
+            print(table(header=['Key', 'Value'], rows=rows))
+            addr = {
+                'Sender' : email.utils.parseaddr(string_clean(msg.get("Sender")))[1],
+                'From' : email.utils.parseaddr(string_clean(msg.get("From")))[1],
+                'Reply-To' : email.utils.parseaddr(string_clean(msg.get("Reply-To")))[1], 
+                'Return-Path' : email.utils.parseaddr(string_clean(msg.get("Return-Path")))[1]
+            }
+            if (addr['From'] == ''):
+                print_error("No From address!")
+                return
+            elif addr['Sender'] and (addr['From'] != addr['Sender']):
+                print_warning("Email FAILED: From address different than Sender")
+            elif addr['Reply-To'] and (addr['From'] != addr['Reply-To']):
+                print_warning("Email FAILED: From address different than Reply-To")
+            elif addr['Return-Path'] and (addr['From'] != addr['Return-Path']):
+                print_warning("Email FAILED: From address different than Return-Path")
+            else:
+                print_success("Email PASSED: From address the same as Sender, Reply-To, and Return-Path")
+
+            # test 2: check to see if first Received: by domain matches sender MX domain
+            if not dnsenabled:
+                print_info("Unable to run Received by / sender check without dnspython available")
+            else:
+                r = msg.get_all('Received')[-1]
+                m = re.search("by\s+(\S*?)(?:\s+\(.*?\))?\s+with", r)
+                if not m:
+                    print_error("Received header regex didn't match")
+                    return
+                byname = m.group(1)
+                # this can be either a name or an IP
+                m = re.search("(\w+\.\w+|\d+\.\d+\.\d+\.\d+)$", byname)
+                if not m:
+                    print_error("Could not find domain or IP in Received by field")
+                    return
+                bydomain = m.group(1)
+                domains = [ ['Received by', bydomain] ]
+                # if it's an IP, do the reverse lookup
+                m = re.search("\.\d+$", bydomain)
+                if m:
+                    bydomain = str(dns.reversename.from_address(bydomain)).strip('.')
+                    domains.append(['Received by reverse lookup', bydomain])
+                # if the email has a Sender header, use that
+                if (addr['Sender'] != ""):
+                    m = re.search("(\w+\.\w+)$", addr['Sender'])
+                    if not m:
+                        print_error("Sender header regex didn't match")
+                        return
+                    fromdomain = m.group(1)
+                    domains.append(['Sender', fromdomain])
+                # otherwise, use the From header
+                else:
+                    m = re.search("(\w+\.\w+)$", addr['From'])
+                    if not m:
+                        print_error("From header regex didn't match")
+                        return
+                    fromdomain = m.group(1)
+                    domains.append(['From', fromdomain])
+                
+                bymatch = False
+                mx = dns.resolver.query(fromdomain, 'MX')
+                for rdata in mx:
+                    m = re.search("(\w+\.\w+).$", str(rdata.exchange))
+                    if not m:
+                        print_error("MX domain regex didn't match")
+                        continue
+                    domains.append(['MX for ' + fromdomain, m.group(1)])
+                    if bydomain == m.group(1):
+                        bymatch = True
+                print(table(header=['Key', 'Value'], rows=domains))
+                if bymatch:
+                    print_success("Email PASSED: Received by domain found in Sender/From MX domains")
+                else:
+                    print_warning("Email FAILED: Could not match Received by domain to Sender/From MX")
+
+            # test 3: look at SPF records
+            rspf = []
+            results = set()
+            allspf = msg.get_all('Received-SPF')
+            if not allspf:
+                return
+            for spf in allspf:
+                # print_info(string_clean(spf))
+                m = re.search("\s*(\w+)\s+\((.*?):\s*(.*?)\)\s+(.*);", string_clean(spf))
+                if not m:
+                    print_error("Received-SPF regex didn't match")
+                    return
+                rspf.append([m.group(2), m.group(1), m.group(3), m.group(4)])
+                results = results | {m.group(1)}
+            print(table(header=['Domain', 'Action', 'Info', 'Additional'], rows=rspf))
+            if results & {'fail', 'softfail'}:
+                print_warning("Email FAILED: Found fail or softfail SPF results")
+            elif results & {'none', 'neutral'}:
+                print_warning("Email NEUTRAL: Found none or neutral SPF results")
+            elif results & {'permerror', 'temperror'}:
+                print_warning("Email NEUTRAL: Found error condition")
+            elif results & {'pass'}:
+                print_success("Email PASSED: Found SPF pass result")
+
+            return
+            
         def email_attachments(msg, ole_flag):
             # Attachments
             att_count = 0
@@ -202,22 +364,39 @@ class EmailParse(Module):
                 
             else:
                 # Walk through email string.
-                for part in msg.walk():
-                    if part.get_content_maintype() == 'multipart':
+                for part in msg.walk():                    
+                    content_type = part.get_content_type()
+
+                    if content_type == 'multipart':
                         continue
 
-                    if part.get_content_type() in ('text/plain', 'text/html'):
+                    if content_type in ('text/plain', 'text/html'):
                         part_content = part.get_payload(decode=True)
                         for link in re.findall(r'(https?://[^"<>\s]+)', part_content):
                             if link not in links:
                                 links.append(link)
 
+                    if content_type == 'message/rfc822':
+                        part_content = part.as_string()
+                        m = re.match("Content-Type: message/rfc822\r?\n\r?\n(.*)", part_content, flags=re.S)
+                        if not m:
+                            print_error("Could not extract RFC822 formatted message")
+                            return
+                        part_content = m.group(1)
+                        att_size = len(part_content)
+                        att_file_name = "rfc822msg_{0}.eml".format(att_size)
+                        att_md5 = hashlib.md5(part_content).hexdigest()
+                        att_count += 1
+                        rows.append([att_count, att_file_name, content_type, att_size, att_md5]) 
+                        continue
+
                     if not part.get('Content-Disposition'):
-                        # These are not attachemnts.
+                        # These are not attachments.
                         continue
 
                     att_file_name = part.get_filename()
                     att_size = len(part_content)            
+
                     if not att_file_name:
                         continue
 
@@ -243,10 +422,18 @@ class EmailParse(Module):
             return
 
         try:
-            opts, argv = getopt.getopt(self.args, 'hefrao:', ['help', 'envelope', 'attach', 'header', 'all', 'open='])
+            opts, argv = getopt.getopt(self.args, 'hefrtTsao:', ['help', 'envelope', 'attach', 'header', 'trace', 'traceall', 'spoofcheck', 'all', 'open='])
         except getopt.GetoptError as e:
             print(e)
             return
+
+        # see if we can load the dns library for MX lookup spoof detecton
+        try:
+            import dns.resolver
+            import dns.reversename
+            dnsenabled = True
+        except ImportError:
+            dnsenabled = False
 
         # Try to open as an ole msg, if not treat as email string
         try:
@@ -282,11 +469,28 @@ class EmailParse(Module):
                     msg = parse_ole_msg(ole)
                 email_header(msg)
                 return
+            elif opt in ('-t','--trace'):
+                if ole_flag:
+                    msg = parse_ole_msg(ole)
+                email_trace(msg, False)
+                return
+            elif opt in ('-T','--traceall'):
+                if ole_flag:
+                    msg = parse_ole_msg(ole)
+                email_trace(msg, True)
+                return
+            elif opt in ('-s', '--spoofcheck'):
+                if ole_flag:
+                    msg = parse_ole_msg(ole)
+                email_spoofcheck(msg, dnsenabled)
+                return
             elif opt in ('-a', '--all'):
                 if ole_flag:
                     msg = parse_ole_msg(ole)
                 email_envelope(msg)
                 email_header(msg)
+                email_trace(msg, True)
+                email_spoofcheck(msg, dnsenabled)
                 if ole_flag:
                     msg = ole
                 email_attachments(msg, ole_flag)

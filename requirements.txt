@@ -11,4 +11,5 @@ bottle
 pylzma
 pyelftools
 bitstring
+dnspython
 
