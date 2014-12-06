@@ -20,24 +20,24 @@ class ClamAV(Module):
 
     def run(self):
         def usage():
-            print("usage: clamav [-h] [-s]")
+            self.log('', "usage: clamav [-h] [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--socket(-s)\tSpecify an unix socket (default: Clamd Unix Socket)")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--socket(-s)\tSpecify an unix socket (default: Clamd Unix Socket)")
+            self.log('', "")
 
         if not HAVE_CLAMD:
-            print_error("Missing dependency, install requests (`pip install pyclamd`)")
+            self.log('error', "Missing dependency, install requests (`pip install pyclamd`)")
             return
 
         try:
             opts, argv = getopt.getopt(self.args, 'hs:', ['help', 'socket='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -50,16 +50,16 @@ class ClamAV(Module):
                 help()
                 return
             elif opt in ('-s', '--socket'):
-                print_info("Using socket {0} to connect to ClamAV daemon".format(value))
+                self.log('info', "Using socket {0} to connect to ClamAV daemon".format(value))
                 socket = value
                 try:
                     daemon = pyclamd.ClamdUnixSocket(socket)
                 except Exception as e:
-                    print_error("Daemon connection failure, {0}".format(e))
+                    self.log('error', "Daemon connection failure, {0}".format(e))
                     return
 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         try:
@@ -67,16 +67,16 @@ class ClamAV(Module):
                 daemon = pyclamd.ClamdUnixSocket()
                 socket = 'Clamav'
         except Exception as e:
-            print_error("Daemon connection failure, {0}".format(e))
+            self.log('error', "Daemon connection failure, {0}".format(e))
             return
 
         try:
             if daemon.ping():
                 results = daemon.scan_file(__sessions__.current.file.path)
             else:
-                print_error("Unable to connect to the daemon")
+                self.log('error', "Unable to connect to the daemon")
         except Exception as e:
-            print_error("Unable to scan with antivirus daemon, {0}".format(e))
+            self.log('error', "Unable to scan with antivirus daemon, {0}".format(e))
             return
 
         found = None
@@ -88,6 +88,6 @@ class ClamAV(Module):
                 name = results[item][1]
 
         if found == 'ERROR':
-            print_error("Check permissions of the binary folder, {0}".format(name))
+            self.log('error', "Check permissions of the binary folder, {0}".format(name))
         else:
-            print_info("Daemon {0} returns: {1}".format(socket, name))
+            self.log('info', "Daemon {0} returns: {1}".format(socket, name))

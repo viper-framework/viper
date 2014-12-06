@@ -1,4 +1,3 @@
-<!-- STATIC -->
 <div class="tab-pane active" id="static">
     <div class="panel panel-default">
         <div class="panel-body">
@@ -48,19 +47,17 @@
                     <td><a class="btn btn-primary btn-small" href="/get/{{project}}/{{file_info[8]}}">Download</a> <a class="btn btn-primary btn-small" onClick="$('#cuckoo').load('/cuckoo/submit?hash={{file_info[8]}}&amp;project={{project}}');">Cuckoo</a> <span id="cuckoo"></span></td>
                 </tr>          
             </table>
-            
-            <!-- Tags -->
+
             <div class="alert alert-success" role="alert">
                 Tags: 
                 % for tag in file_info[1].split(','):
                     % if len(tag) > 0:
-                    % tag = tag.strip()
-                    <span><a href="/tags?action=search&amp;value={{tag}}" class="alert-link">{{tag}}</a> <a href="/tags?action=delete&amp;value={{tag}}" class="alert-link"><span class="glyphicon glyphicon-remove"></span></a></span>
+                        % tag = tag.strip()
+                        <span><a href="/tags?action=search&amp;value={{tag}}" class="alert-link">{{tag}}</a> <a href="/tags?action=delete&amp;value={{tag}}" class="alert-link"><span class="glyphicon glyphicon-remove"></span></a></span>
                     % end
                 % end
                 <a href="#newTag"><span class="glyphicon glyphicon-pencil" data-toggle="modal" data-target="#newTag"></span></a>
             </div>
-
             <div class="modal fade" id="newTag" tabindex="-1" role="dialog" aria-labelledby="newNoteLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -70,9 +67,7 @@
                         </div>
                         <div class="modal-body">
                             <form role="form" action="/tags/add" enctype="multipart/form-data" method="post">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" name="tags" id="tag" placeholder="Tags">
-                                </div>
+                                <input type="text" class="form-control" name="tags" id="tag" placeholder="Tags">
                                 <button type="submit" class="btn btn-default" name="new" value="New">Save</button>
                                 <input type="hidden" name="sha256" value="{{file_info[8]}}" />
                                 <input type="hidden" name="project" value="{{project}}" />
@@ -84,8 +79,6 @@
                     </div>
                 </div>
             </div>
-            <!-- End Tags -->
         </div>
     </div>
 </div>
-<!-- END STATIC -->

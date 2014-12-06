@@ -21,18 +21,18 @@ class Exif(Module):
 
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if not HAVE_EXIF:
-            print_error("Missing dependency, install pyexiftool")
+            self.log('error', "Missing dependency, install pyexiftool")
             return
 
         try:
             with exiftool.ExifTool() as et:
                 metadata = et.get_metadata(__sessions__.current.file.path)
         except OSError:
-            print_error("Exiftool is not installed")
+            self.log('error', "Exiftool is not installed")
             return
 
         rows = []
@@ -41,5 +41,5 @@ class Exif(Module):
 
         rows = sorted(rows, key=lambda entry: entry[0])
 
-        print_info("MetaData:")
-        print(table(header=['Key', 'Value'], rows=rows))
+        self.log('info', "MetaData:")
+        self.log('table', dict(header=['Key', 'Value'], rows=rows))

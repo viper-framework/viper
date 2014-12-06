@@ -41,24 +41,24 @@ class Radare(Module):
 
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         def usage():
-            print("usage: r2 [-h] [-s]")
+            self.log('', "usage: r2 [-h] [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--webserver (-w)\tStart web-frontend for radare2")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--webserver (-w)\tStart web-frontend for radare2")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'hw', ['help', 'webserver'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         for opt, value in opts:
@@ -79,20 +79,20 @@ class Radare(Module):
             if "native" in filetype:
                 to_print.append('perhaps a driver (.sys)')
 
-            print_info(' '.join(to_print))
+            self.log('info', ' '.join(to_print))
         elif 'PE32' in filetype:
             self.ext = '.exe'
-            print_info(' '.join([arch, 'bit executable (Windows)']))
+            self.log('info', ' '.join([arch, 'bit executable (Windows)']))
         elif 'shared object' in filetype:
             self.ext = '.so'
-            print_info(' '.join([arch, 'bit shared object (linux)']))
+            self.log('info', ' '.join([arch, 'bit shared object (linux)']))
         elif 'ELF' in filetype:
             self.ext = ''
-            print_info(' '.join([arch, 'bit executable (linux)']))
+            self.log('info', ' '.join([arch, 'bit executable (linux)']))
         else:
-            print_error("Unknown binary")
+            self.log('error', "Unknown binary")
 
         try:
             self.open_radare(__sessions__.current.file.path)
         except:
-            print_error("Unable to start Radare2")
+            self.log('error', "Unable to start Radare2")

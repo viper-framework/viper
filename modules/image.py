@@ -18,7 +18,7 @@ class Image(Module):
 
     def ghiro(self):
         if not HAVE_REQUESTS:
-            print_error("Missing dependency, install requests (`pip install requests`)")
+            self.log('error', "Missing dependency, install requests (`pip install requests`)")
             return
 
         payload = dict(private='true', json='true')
@@ -31,26 +31,26 @@ class Image(Module):
             report = results['report']
 
             if len(report['signatures']) > 0:
-                print(bold("Signatures:"))
+                self.log('', bold("Signatures:"))
 
                 for signature in report['signatures']:
-                    print_item(signature['description'])
+                    self.log('item', signature['description'])
         else:
-            print_error("The analysis failed")
+            self.log('error', "The analysis failed")
 
     def usage(self):
-        print("usage: image <command>")
+        self.log('', "usage: image <command>")
 
     def help(self):
         self.usage()
-        print("")
-        print("Options:")
-        print("\tghiro\t\tUpload the file to imageforensic.org and retrieve report")
-        print("")
+        self.log('', "")
+        self.log('', "Options:")
+        self.log('', "\tghiro\t\tUpload the file to imageforensic.org and retrieve report")
+        self.log('', "")
 
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if len(self.args) == 0:

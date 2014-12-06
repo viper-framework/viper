@@ -26,22 +26,22 @@ class VirusTotal(Module):
 
     def run(self):
         def usage():
-            print("usage: virustotal [-h] [-s]")
+            self.log('', "usage: virustotal [-h] [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--submit (-s)\tSubmit file to VirusTotal (by default it only looks up the hash)")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--submit (-s)\tSubmit file to VirusTotal (by default it only looks up the hash)")
+            self.log('', "")
 
         arg_submit = False
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'hs', ['help', 'submit'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         for opt, value in opts:
@@ -52,11 +52,11 @@ class VirusTotal(Module):
                 arg_submit = True
 
         if not HAVE_REQUESTS:
-            print_error("Missing dependency, install requests (`pip install requests`)")
+            self.log('error', "Missing dependency, install requests (`pip install requests`)")
             return
 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         data = {'resource' : __sessions__.current.file.md5, 'apikey' : KEY}
@@ -64,7 +64,7 @@ class VirusTotal(Module):
         try:
             response = requests.post(VIRUSTOTAL_URL, data=data)
         except Exception as e:
-            print_error("Failed performing request: {0}".format(e))
+            self.log('error', "Failed performing request: {0}".format(e))
             return
 
         try:
@@ -76,12 +76,12 @@ class VirusTotal(Module):
                 try:
                     virustotal = response.json
                 except Exception as e:
-                    print_error("Failed parsing the response: {0}".format(e))
-                    print_error("Data:\n{}".format(response.content))
+                    self.log('error', "Failed parsing the response: {0}".format(e))
+                    self.log('error', "Data:\n{}".format(response.content))
                     return                        
             else:
-                print_error("Failed parsing the response: {0}".format(e))
-                print_error("Data:\n{}".format(response.content))
+                self.log('error', "Failed parsing the response: {0}".format(e))
+                self.log('error', "Data:\n{}".format(response.content))
                 return
 
         rows = []
@@ -95,14 +95,14 @@ class VirusTotal(Module):
 
         rows.sort()
         if rows:
-            print_info("VirusTotal Report:")
-            print(table(['Antivirus', 'Signature'], rows))
+            self.log('info', "VirusTotal Report:")
+            self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
 
             if arg_submit:
-                print("")
-                print_info("The file is already available on VirusTotal, no need to submit")
+                self.log('', "")
+                self.log('info', "The file is already available on VirusTotal, no need to submit")
         else:
-            print_info("The file does not appear to be on VirusTotal yet")
+            self.log('info', "The file does not appear to be on VirusTotal yet")
 
             if arg_submit:
                 try:
@@ -110,7 +110,7 @@ class VirusTotal(Module):
                     files = {'file' : open(__sessions__.current.file.path, 'rb').read()}
                     response = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
                 except Exception as e:
-                    print_error("Failed Submit: {0}".format(e))
+                    self.log('error', "Failed Submit: {0}".format(e))
                     return
 
                 try:
@@ -122,13 +122,13 @@ class VirusTotal(Module):
                         try:
                             virustotal = response.json
                         except Exception as e:
-                            print_error("Failed parsing the response: {0}".format(e))
-                            print_error("Data:\n{}".format(response.content))
+                            self.log('error', "Failed parsing the response: {0}".format(e))
+                            self.log('error', "Data:\n{}".format(response.content))
                             return                        
                     else:
-                        print_error("Failed parsing the response: {0}".format(e))
-                        print_error("Data:\n{}".format(response.content))
+                        self.log('error', "Failed parsing the response: {0}".format(e))
+                        self.log('error', "Data:\n{}".format(response.content))
                         return
 
                 if 'verbose_msg' in virustotal:
-                    print_info("{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
+                    self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))

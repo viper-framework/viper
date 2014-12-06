@@ -1,4 +1,3 @@
-<!-- NOTES -->     
 <div class="tab-pane" id="notes">
     <div class="panel panel-default">
         <div class="panel-body">
@@ -8,13 +7,8 @@
                     <div class="col-md-4">
                         <div class="note-box">
                             <form role="form" action="/file/notes" enctype="multipart/form-data" method="post" onsubmit="window.location.reload();">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" name="noteTitle" value="{{note[0]}}">
-                                </div>
-
-                                <div class="form-group">
-                                    <textarea class="form-control" rows="5" name="noteBody">{{note[1]}}</textarea>
-                                </div>
+                                <input type="text" class="form-control" name="noteTitle" value="{{note[0]}}">
+                                <textarea class="form-control" rows="5" name="noteBody">{{note[1]}}</textarea>
                                 <input type="hidden" name="id" value="{{note[2]}}" />
                                 <input type="hidden" name="sha256" value="{{file_info[8]}}" />
                                 <input type="hidden" name="project" value="{{project}}" />
@@ -35,13 +29,8 @@
                         </div>
                         <div class="modal-body">
                             <form role="form" action="/file/notes" enctype="multipart/form-data" method="post" onsubmit="window.location.reload();">
-                                <div class="form-group">
-                                    <input type="text" class="form-control" name="noteTitle" id="noteTitle" placeholder="Title">
-                                </div>
-
-                                <div class="form-group">
-                                    <textarea class="form-control" rows="3" name="noteBody" id="noteBody" placeholder="Note Text"></textarea>
-                                </div>
+                                <input type="text" class="form-control" name="noteTitle" id="noteTitle" placeholder="Title">
+                                <textarea class="form-control" rows="3" name="noteBody" id="noteBody" placeholder="Note Text"></textarea>
                                 <button type="submit" class="btn btn-default" name="new" value="New">Save</button>
                                 <input type="hidden" name="sha256" value="{{file_info[8]}}" />
                                 <input type="hidden" name="project" value="{{project}}" />
@@ -56,4 +45,3 @@
         </div>
     </div>
 </div>
-<!-- END NOTES -->

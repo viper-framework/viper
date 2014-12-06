@@ -41,19 +41,19 @@ class XorSearch(Module):
         ]
 
         def usage():
-            print("usage: xor [-x] [-r] [-a] [-o] [-s=term]")
+            self.log('', "usage: xor [-x] [-r] [-a] [-o] [-s=term]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--search (-s)\tSpecify a custom term to search")
-            print("\t--xor (-x)\tSearch XOR (default)")
-            print("\t--rot (-r)\tSearch ROT")
-            print("\t--all (-a)\tAttempt search with all available modes")
-            print("\t--output (-o)\tSave Decoded Data")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--search (-s)\tSpecify a custom term to search")
+            self.log('', "\t--xor (-x)\tSearch XOR (default)")
+            self.log('', "\t--rot (-r)\tSearch ROT")
+            self.log('', "\t--all (-a)\tAttempt search with all available modes")
+            self.log('', "\t--output (-o)\tSave Decoded Data")
+            self.log('', "")
 
         def xordata(data, key):
             encoded = bytearray(data)
@@ -81,7 +81,7 @@ class XorSearch(Module):
                 for term in terms:
                     if term in xored:
                         found = True
-                        print_error("Matched: {0} with key: {1}".format(term, hex(key)))
+                        self.log('error', "Matched: {0} with key: {1}".format(term, hex(key)))
                 if found and save_path:
                     save_output(xored, save_path, key)
    
@@ -92,7 +92,7 @@ class XorSearch(Module):
                 for term in terms:
                     if term.lower() in roted:
                         found = True
-                        print_error("Matched: {0} with ROT: {1}".format(term, key))
+                        self.log('error', "Matched: {0} with ROT: {1}".format(term, key))
                 if found and save_path:
                     save_output(roted, save_path, key)
 
@@ -102,26 +102,26 @@ class XorSearch(Module):
                 try:
                     os.makedirs(save_path)
                 except Exception as e:
-                    print_error("Unable to create directory at {0}: {1}".format(save_path, e))
+                    self.log('error', "Unable to create directory at {0}: {1}".format(save_path, e))
                     return
             else:
                 if not os.path.isdir(save_path):
-                    print_error("You need to specify a folder not a file")
+                    self.log('error', "You need to specify a folder not a file")
                     return           
             save_name = "{0}/{1}_{2}.bin".format(save_path, __sessions__.current.file.name, str(hex(key)))
             with open(save_name, 'wb') as output:
                 output.write(data)
-            print_info("Saved Output to {0}".format(save_name))
+            self.log('info', "Saved Output to {0}".format(save_name))
 
                     
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
             
         try:
             opts, argv = getopt.getopt(self.args, 'hxrao:s:', ['help', 'xor', 'rot', 'all',  'output=', 'search='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         xor = True
@@ -145,16 +145,16 @@ class XorSearch(Module):
                 xor = True
                 rot = True
 
-        print_info("Searching for the following strings:")
+        self.log('info', "Searching for the following strings:")
         for term in terms:
-            print_item(term)
+            self.log('item', term)
 
-        print_info("Hold on, this might take a while...")
+        self.log('info', "Hold on, this might take a while...")
 
         if xor:
-            print_info("Searching XOR")
+            self.log('info', "Searching XOR")
             xor_search(terms, save_path)
 
         if rot:
-            print_info("Searching ROT")
+            self.log('info', "Searching ROT")
             rot_search(terms, save_path)

@@ -27,7 +27,7 @@ class ELF(Module):
 
     def __check_session(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return False
 
         if not self.elf:
@@ -35,7 +35,7 @@ class ELF(Module):
                 fd = open(__sessions__.current.file.path, 'rb')
                 self.elf = ELFFile(fd)
             except:
-                print_error("Unable to parse ELF file")
+                self.log('error', "Unable to parse ELF file")
                 return False
 
         return True
@@ -54,8 +54,8 @@ class ELF(Module):
                 describe_p_flags(segment['p_flags'])
             ])
                          
-        print_info("ELF Segments:") 
-        print(table(header=['Type', 'VirtAddr', 'FileSize', 'MemSize', 'Flags'], rows=rows))
+        self.log('info', "ELF Segments:") 
+        self.log('table', dict(header=['Type', 'VirtAddr', 'FileSize', 'MemSize', 'Flags'], rows=rows))
 
     def sections(self):
         if not self.__check_session():
@@ -72,8 +72,8 @@ class ELF(Module):
                 describe_sh_flags(section['sh_flags'])
             ])
 
-        print_info("ELF Sections:")
-        print(table(header=['Name', 'Addr', 'Size', 'Type', 'Flags'], rows=rows))
+        self.log('info', "ELF Sections:")
+        self.log('table', dict(header=['Name', 'Addr', 'Size', 'Type', 'Flags'], rows=rows))
 
     def symbols(self):
         if not self.__check_session():
@@ -92,8 +92,8 @@ class ELF(Module):
                     symbol.name
                 ])
         
-        print_info("ELF Symbols:")
-        print(table(header=['Num', 'Value', 'Size', 'Type', 'Name'], rows=rows))
+        self.log('info', "ELF Symbols:")
+        self.log('table', dict(header=['Num', 'Value', 'Size', 'Type', 'Name'], rows=rows))
 
     def interp(self):
         if not self.__check_session():
@@ -105,9 +105,9 @@ class ELF(Module):
                 interp = segment
                 break
         if interp:
-            print("Program interpreter: {0}".format(interp.get_interp_name()))
+            self.log('', "Program interpreter: {0}".format(interp.get_interp_name()))
         else:
-            print_error("No PT_INTERP entry found")
+            self.log('error', "No PT_INTERP entry found")
 
     def dynamic(self):
         if not self.__check_session():
@@ -118,26 +118,26 @@ class ELF(Module):
                 continue
             for tag in section.iter_tags():
                 if tag.entry.d_tag != "DT_NEEDED": continue
-                print_info(tag.needed)
+                self.log('info', tag.needed)
 
     def usage(self):
-        print("usage: elf <command>")
+        self.log('', "usage: elf <command>")
 
     def help(self):
         self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\t\tShow this help message")
-        print("\tsections\tList ELF sections")
-        print("\tsegments\tList ELF segments")
-        print("\tsymbols\t\tList ELF symbols")
-        print("\tinterp\t\tGet the program interpreter")
-        print("\tdynamic\t\tShow the dynamic section")
-        print("")
+        self.log('', "")
+        self.log('', "Options:")
+        self.log('', "\thelp\t\tShow this help message")
+        self.log('', "\tsections\tList ELF sections")
+        self.log('', "\tsegments\tList ELF segments")
+        self.log('', "\tsymbols\t\tList ELF symbols")
+        self.log('', "\tinterp\t\tGet the program interpreter")
+        self.log('', "\tdynamic\t\tShow the dynamic section")
+        self.log('', "")
 
     def run(self):
         if not HAVE_ELFTOOLS:
-            print_error("Missing dependency, install pyelftools (`pip install pyelftools")
+            self.log('error', "Missing dependency, install pyelftools (`pip install pyelftools")
             return
 
         if len(self.args) == 0:
