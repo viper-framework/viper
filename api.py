@@ -4,6 +4,7 @@
 
 import os
 import json
+import copy
 import argparse
 import tempfile
 
@@ -166,8 +167,11 @@ def run_module():
         module = __modules__[module_name]['obj']()
         module.run()
 
-        if module.output:
-            return jsonize(dict(project=project, module=module_name, sha256=sha256, outout=module.output))
+        module_output = copy.deepcopy(module.output)
+        del(module.output[:])
+
+        if module_output:
+            return jsonize(dict(project=project, module=module_name, sha256=sha256, output=module_output))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
