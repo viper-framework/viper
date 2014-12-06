@@ -321,7 +321,7 @@ def file_download(file_hash, project=False):
 @route('/search', method='POST')
 def find_file():
     key = request.forms.get('key')
-    value = request.forms.get('term')
+    value = request.forms.get('term').lower()
     project_search = request.forms.get('project')
     curr_project = request.forms.get('curr_project')
     results = {}
