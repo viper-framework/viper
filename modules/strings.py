@@ -71,19 +71,28 @@ class Strings(Module):
     authors = ['nex', 'Brian Wallace']
 
     def extract_hosts(self, strings):
+        results = []
         for entry in strings:
-            if DOMAIN_REGEX.search(entry):
+            to_add = False
+            if DOMAIN_REGEX.search(entry) and not IPV4_REGEX.search(entry):
                 if entry[entry.rfind('.') + 1:].upper() in TLD:
-                    print_item(entry)
+                    to_add = True
             elif IPV4_REGEX.search(entry):
-                print_item(entry)
+                to_add = True
             elif IPV6_REGEX.search(entry):
                 try:
                     inet_pton(AF_INET6, entry)
                 except socket_error:
                     continue
                 else:
-                    print_item(entry)
+                    to_add = True
+
+            if to_add:
+                if entry not in results:
+                    results.append(entry)
+
+        for result in results:
+            print_item(result)
 
     def run(self):
         def usage():
@@ -125,7 +134,7 @@ class Strings(Module):
             return
 
         if os.path.exists(__sessions__.current.file.path):
-            regexp = '[\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
+            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
             strings = re.findall(regexp, __sessions__.current.file.data)
 
         if arg_all:

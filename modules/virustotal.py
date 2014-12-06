@@ -69,10 +69,20 @@ class VirusTotal(Module):
 
         try:
             virustotal = response.json()
+            # since python 2.7 the above line causes the Error dict object not callable
         except Exception as e:
-            print_error("Failed parsing the response: {0}".format(e))
-            print_error("Data:\n{}".format(response.content))
-            return
+            # workaround in case of python 2.7
+            if str(e) == "'dict' object is not callable":
+                try:
+                    virustotal = response.json
+                except Exception as e:
+                    print_error("Failed parsing the response: {0}".format(e))
+                    print_error("Data:\n{}".format(response.content))
+                    return                        
+            else:
+                print_error("Failed parsing the response: {0}".format(e))
+                print_error("Data:\n{}".format(response.content))
+                return
 
         rows = []
         if 'scans' in virustotal:
@@ -105,10 +115,20 @@ class VirusTotal(Module):
 
                 try:
                     virustotal = response.json()
+                    # since python 2.7 the above line causes the Error dict object not callable
                 except Exception as e:
-                    print_error("Unable to parse response: {0}".format(e))
-                    print_error("Data:\n{}".format(response.content))
-                    return
+                    # workaround in case of python 2.7
+                    if str(e) == "'dict' object is not callable":
+                        try:
+                            virustotal = response.json
+                        except Exception as e:
+                            print_error("Failed parsing the response: {0}".format(e))
+                            print_error("Data:\n{}".format(response.content))
+                            return                        
+                    else:
+                        print_error("Failed parsing the response: {0}".format(e))
+                        print_error("Data:\n{}".format(response.content))
+                        return
 
                 if 'verbose_msg' in virustotal:
                     print_info("{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))

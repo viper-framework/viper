@@ -73,6 +73,29 @@ class Console(object):
 
         return data
 
+    def print_output(self, output):
+        if not output:
+            return
+
+        for entry in output:
+            if entry['type'] == 'info':
+                print_info(entry['data'])
+            elif entry['type'] == 'item':
+                print_item(entry['data'])
+            elif entry['type'] == 'warning':
+                print_warning(entry['data'])
+            elif entry['type'] == 'error':
+                print_error(entry['data'])
+            elif entry['type'] == 'success':
+                print_success(entry['data'])
+            elif entry['type'] == 'table':
+                print(table(
+                    header=entry['data']['header'],
+                    rows=entry['data']['rows']
+                ))
+            else:
+                print(entry['data'])
+
     def stop(self):
         # Stop main loop.
         self.active = False
@@ -199,6 +222,9 @@ class Console(object):
                             module = __modules__[root]['obj']()
                             module.set_args(args)
                             module.run()
+
+                            self.print_output(module.output)
+                            del(module.output[:])
                         else:
                             print("Command not recognized.")
                     except KeyboardInterrupt:

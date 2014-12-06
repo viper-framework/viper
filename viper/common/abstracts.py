@@ -6,9 +6,16 @@ class Module(object):
     description = ''
     args = []
     authors = []
+    output = []
 
     def set_args(self, args):
         self.args = args
+
+    def log(self, event_type, event_data):
+        self.output.append(dict(
+            type=event_type,
+            data=event_data
+        ))
 
     def usage(self):
         raise NotImplementedError

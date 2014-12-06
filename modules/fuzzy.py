@@ -22,34 +22,34 @@ class Fuzzy(Module):
 
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if not HAVE_PYDEEP:
-            print_error("Missing dependency, install pydeep (`pip install pydeep`)")
+            self.log('error', "Missing dependency, install pydeep (`pip install pydeep`)")
             return
 
         if not __sessions__.current.file.ssdeep:
-            print_error("No ssdeep hash available for opened file")
+            self.log('error', "No ssdeep hash available for opened file")
             return
 
         def usage():
-            print("usage: fuzzy [-v]")
+            self.log('', "usage: fuzzy [-v]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--verbose (-v)\tPrints verbose logging")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--verbose (-v)\tPrints verbose logging")
+            self.log('', "")
 
         arg_verbose = False
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'hv', ['help', 'verbose'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('error', e)
             return
 
         for opt, value in opts:
@@ -75,9 +75,9 @@ class Fuzzy(Module):
                 matches.append(['{0}%'.format(score), sample.name, sample.sha256])
 
             if arg_verbose:
-                print("Match {0}%: {2} [{1}]".format(score, sample.name, sample.sha256))
+                self.log('info', "Match {0}%: {2} [{1}]".format(score, sample.name, sample.sha256))
 
-        print_info("{0} relevant matches found".format(bold(len(matches))))
+        self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
         if len(matches) > 0:
-            print(table(header=['Score', 'Name', 'SHA256'], rows=matches))
+            self.log('table', dict(header=['Score', 'Name', 'SHA256'], rows=matches))

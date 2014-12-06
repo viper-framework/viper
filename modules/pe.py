@@ -523,6 +523,7 @@ class PE(Module):
             print("Options:")
             print("\t--help (-h)\tShow this help message")
             print("\t--dump (-d)\tDestination directory to store digital signature in")
+            print("\t--all (-a)\tFind all samples with a digital signature")
             print("\t--scan (-s)\tScan the repository for common certificates")
             print("")
 
@@ -539,14 +540,52 @@ class PE(Module):
             else:
                 return None
 
+        def get_signed_samples(current=None, cert_filter=None):
+            db = Database()
+            samples = db.find(key='all')
+
+            results = []
+            for sample in samples:
+                # Skip if it's the same file.
+                if current:
+                    if sample.sha256 == current:
+                        continue
+
+                # Obtain path to the binary.
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                # Open PE instance.
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                except:
+                    continue
+
+                cur_cert_data = get_certificate(cur_pe)
+
+                if not cur_cert_data:
+                    continue
+
+                cur_cert_md5 = get_md5(cur_cert_data)
+
+                if cert_filter:
+                    if cur_cert_md5 == cert_filter:
+                        results.append([sample.name, sample.md5])
+                else:
+                    results.append([sample.name, sample.md5, cur_cert_md5])
+
+            return results
+
         try:
-            opts, argv = getopt.getopt(self.args[1:], 'hd:s', ['help', 'dump=', 'scan'])
+            opts, argv = getopt.getopt(self.args[1:], 'hd:as', ['help', 'dump=', 'all', 'scan'])
         except getopt.GetoptError as e:
             print(e)
             usage()
             return
 
         arg_folder = None
+        arg_all = False
         arg_scan = False
 
         for opt, value in opts:
@@ -555,8 +594,22 @@ class PE(Module):
                 return
             elif opt in ('-d', '--dump'):
                 arg_folder = value
+            elif opt in ('-a', '--all'):
+                arg_all = True
             elif opt in ('-s', '--scan'):
                 arg_scan = True
+
+        if arg_all:
+            print_info("Scanning the repository for all signed samples...")
+
+            all_of_them = get_signed_samples()
+
+            print_info("{0} signed samples found".format(bold(len(all_of_them))))
+
+            if len(all_of_them) > 0:
+                print(table(header=['Name', 'MD5', 'Cert MD5'], rows=all_of_them))
+
+            return
 
         if not self.__check_session():
             return
@@ -582,36 +635,9 @@ class PE(Module):
 
         # TODO: do scan for certificate's serial number.
         if arg_scan:
-            print_info("Scanning the repository for matching samples...")
+            print_info("Scanning the repository for matching signed samples...")
 
-            db = Database()
-            samples = db.find(key='all')
-
-            matches = []
-            for sample in samples:
-                # Skip if it's the same file.
-                if sample.sha256 == __sessions__.current.file.sha256:
-                    continue
-
-                # Obtain path to the binary.
-                sample_path = get_sample_path(sample.sha256)
-                if not os.path.exists(sample_path):
-                    continue
-
-                # Open PE instance.
-                try:
-                    cur_pe = pefile.PE(sample_path)
-                except:
-                    continue
-
-                cur_cert_data = get_certificate(cur_pe)
-
-                if not cur_cert_data:
-                    continue
-
-                cur_cert_md5 = get_md5(cur_cert_data)
-                if cur_cert_md5 == cert_md5:
-                    matches.append([sample.name, sample.sha256])
+            matches = get_signed_samples(current=__sessions__.current.file.sha256, cert_filter=cert_md5)
 
             print_info("{0} relevant matches found".format(bold(len(matches))))
 
@@ -897,7 +923,7 @@ class PE(Module):
 
                 matches = []
                 for row in rows:
-                    if row[1] == __sessions__.current.file.sha256:
+                    if row[1] == __sessions__.current.file.md5:
                         continue
 
                     if row[2] == current_pehash:

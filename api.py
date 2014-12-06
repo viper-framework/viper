@@ -4,6 +4,7 @@
 
 import os
 import json
+import copy
 import argparse
 import tempfile
 
@@ -13,6 +14,9 @@ from bottle import HTTPError
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
+from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+from viper.core.project import __project__
 
 db = Database()
 
@@ -145,7 +149,29 @@ def add_tags():
         db.add_tags(malware_sha256, tags)
 
     return jsonize({'message' : 'added'})
-    
+
+@route('/modules/run', method='POST')
+def run_module():
+    project = request.forms.get('project')
+    if project:
+        __project__.open(project)
+
+    sha256 = request.forms.get('sha256')
+    if sha256:
+        file_path = get_sample_path(sha256)
+        if file_path:
+            __sessions__.new(file_path)
+
+    module_name = request.forms.get('module')
+    if module_name in __modules__:
+        module = __modules__[module_name]['obj']()
+        module.run()
+
+        module_output = copy.deepcopy(module.output)
+        del(module.output[:])
+
+        if module_output:
+            return jsonize(dict(project=project, module=module_name, sha256=sha256, output=module_output))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
