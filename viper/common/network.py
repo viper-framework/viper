@@ -59,7 +59,7 @@ def VirusTotal(hash):
             return downloadedFile
             print "\n\tMalware Downloaded"
         else:
-            print_error(md5 + " -- Not Found for Download")
+            print_error(hash + " -- Not Found for Download")
 
     except Exception:
-        print_error(md5 + " -- Not Found for Download")
+        print_error(hash + " -- Not Found for Download")

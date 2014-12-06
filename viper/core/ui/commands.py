@@ -103,7 +103,7 @@ class Commands(object):
             print("")
 
         try:
-            opts, argv = getopt.getopt(args, 'hfult', ['help', 'file', 'url', 'virustotal', 'last', 'tor'])
+            opts, argv = getopt.getopt(args, 'hfuvlt', ['help', 'file', 'url', 'virustotal', 'last', 'tor'])
         except getopt.GetoptError as e:
             print(e)
             usage()
