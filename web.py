@@ -208,8 +208,8 @@ def file_info(file_hash, project=False):
 @route('/add', method='POST')
 def add_file():
     tags = request.forms.get('tag_list')
-    upload = request.files.get('file')
-
+    uploads = request.files.getlist('file')
+    
     # Set Project
     project = request.forms.get('project')
     if project in project_list():
@@ -218,41 +218,41 @@ def add_file():
         __project__.open('../')
         project = 'Main'
     db = Database()    
-
+    file_list = []
     # Write temp file to disk
     with upload_temp() as temp_dir:
-        file_path = os.path.join(temp_dir, upload.filename)
-        with open(file_path, 'w') as tmp_file:
-            tmp_file.write(upload.file.read())
-        file_list = []
-        # Zip Files
-        if request.forms.get('unzip'):
-            zip_pass = request.forms.get('zip_pass')
-            try:
-                with ZipFile(file_path) as zf:
-                    zf.extractall(temp_dir, pwd=zip_pass)            
-                for root, dirs, files in os.walk(temp_dir, topdown=False):
-                    for name in files:
-                        if not name == upload.filename:
-                            file_list.append(os.path.join(root, name))
-            except Exception as e:
-                return template('error.tpl', error="Error with zipfile - {0}".format(e))
-        # Non zip files
-        else:
-            file_list.append(file_path)
-        
+        for upload in uploads:
+            file_path = os.path.join(temp_dir, upload.filename)
+            with open(file_path, 'w') as tmp_file:
+                tmp_file.write(upload.file.read())
+            # Zip Files
+            if request.forms.get('unzip'):
+                zip_pass = request.forms.get('zip_pass')
+                try:
+                    with ZipFile(file_path) as zf:
+                        zf.extractall(temp_dir, pwd=zip_pass)            
+                    for root, dirs, files in os.walk(temp_dir, topdown=False):
+                        for name in files:
+                            if not name == upload.filename:
+                                file_list.append(os.path.join(root, name))
+                except Exception as e:
+                    return template('error.tpl', error="Error with zipfile - {0}".format(e))
+            # Non zip files
+            else:
+                file_list.append(file_path)
+            
         # Add each file
         for new_file in file_list:
+            print new_file
             obj = File(new_file)
             new_path = store_sample(obj)
-            success = False
+            success = True
             if new_path:
                 # Add file to the database.
                 success = db.add(obj=obj, tags=tags)
-    if success:
-        redirect("/project/{0}".format(project))
-    else:
-        return template('error.tpl', error="Unable to Store The File")
+                if not success:
+                    return template('error.tpl', error="Unable to Store The File: {0}".format(upload.filename))
+    redirect("/project/{0}".format(project))
 
 #add file from url
 @route('/URLDownload', method='POST')

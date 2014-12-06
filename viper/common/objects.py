@@ -38,7 +38,7 @@ class File(object):
         self.crc32 = ''
         self.ssdeep = ''
         self.tags = ''
-
+        
         if self.is_valid():
             self.name = os.path.basename(self.path)
             self.size = os.path.getsize(self.path)

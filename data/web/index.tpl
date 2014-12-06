@@ -35,7 +35,7 @@ $(document).ready( function() {
                     <div class="input-group">
                         <span class="input-group-btn">
                             <span class="btn btn-default btn-file">
-                                Browse&hellip; <input type="file" name="file">
+                                Browse&hellip; <input type="file" name="file" multiple>
                             </span>
                         </span>
                         <input type="text" class="form-control" readonly>
