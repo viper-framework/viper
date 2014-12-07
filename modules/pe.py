@@ -58,18 +58,18 @@ class PE(Module):
                 try:
                     self.log('info', "DLL: {0}".format(entry.dll))
                     for symbol in entry.imports:
-                        self.log('item', "{0}: {1}".format(hex(symbol.address), symbol.name), tabs=1)
+                        self.log('item', "{0}: {1}".format(hex(symbol.address), symbol.name))
                 except:
                     continue
-    
+
     def exports(self):
         if not self.__check_session():
             return
-        
+
         self.log('info', "Exports:")
         if hasattr(self.pe, 'DIRECTORY_ENTRY_EXPORT'):
             for symbol in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
-                self.log('item', "{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
+                self.log('item', "{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal))
 
     def compiletime(self):
 
@@ -307,7 +307,7 @@ class PE(Module):
                     except Exception as e:
                         self.log('error', e)
                         continue
-            
+
             return resources
 
         try:
@@ -630,7 +630,7 @@ class PE(Module):
                 cert_handle.write(cert_data)
 
             self.log('info', "Dumped certificate to {0}".format(cert_path))
-            self.log('info', "You can parse it using the following command:\n\t" + 
+            self.log('info', "You can parse it using the following command:\n\t" +
                        bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
 
         # TODO: do scan for certificate's serial number.
@@ -642,7 +642,7 @@ class PE(Module):
             self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                self.log('table', dict(header=['Name', 'SHA256'], rows=matches))                
+                self.log('table', dict(header=['Name', 'SHA256'], rows=matches))
 
     def language(self):
 
@@ -664,7 +664,7 @@ class PE(Module):
                     iat.append(peimport.dll)
 
             return iat
-        
+
         def check_module(iat, match):
             for imp in iat:
                 if imp.find(match) != -1:
@@ -691,7 +691,7 @@ class PE(Module):
                         if 'Delphi' in p:
                             return True
             return False
-                    
+
         def is_vbdotnet(data):
             for line in data:
                 if 'Compiler' in line:
@@ -714,7 +714,7 @@ class PE(Module):
                     return True
 
             return False
-        
+
         def get_strings(content):
             regexp = '[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
             return re.findall(regexp, content)
@@ -733,14 +733,14 @@ class PE(Module):
             if check_module(iat, 'mscoree.dll') and not found:
                 dotnet = True
                 found = '.NET'
-            
+
             # C DLL check
             if not found and (check_module(iat, 'msvcr') or check_module(iat, 'MSVCR') or check_module(iat, 'c++')):
                 cpp_count += 1
 
             if not found:
                 data = get_strings(content)
-                
+
                 if is_cpp(data, cpp_count) and not found:
                     found = 'CPP'
                 if not found and cpp_count == 1:
@@ -772,7 +772,7 @@ class PE(Module):
 
         if not self.__check_session():
             return
-        
+
         if is_packed(self.pe):
             self.log('warning', "Probably packed, the language guess might be unreliable")
 
@@ -803,7 +803,7 @@ class PE(Module):
 
                 if not os.path.exists(sample_path):
                     continue
-                
+
                 try:
                     cur_pe = pefile.PE(sample_path)
                 except pefile.PEFormatError as e:
@@ -847,7 +847,7 @@ class PE(Module):
         self.log('info', "PE Sections:")
         self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
-    def pehash(self): 
+    def pehash(self):
         def usage():
             self.log('', "usage: pe pehash [-hac]")
 
@@ -866,7 +866,7 @@ class PE(Module):
         except getopt.GetoptError as e:
             self.log('', e)
             return
-        
+
         arg_all = False
         arg_cluster = False
         arg_scan = False
@@ -912,7 +912,7 @@ class PE(Module):
             cluster = {}
             for sample_name, sample_md5, pe_hash in rows:
                 cluster.setdefault(pe_hash, []).append([sample_name, sample_md5])
-            
+
             for item in cluster.items():
                 if len(item[1]) > 1:
                     self.log('info', "PEhash {0} was calculated on files:".format(bold(item[0])))
