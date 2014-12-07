@@ -123,9 +123,9 @@ class Idx(Module):
         complete_byte = data.read(1)
         cache_ver = struct.unpack('>i', data.read(4))[0]
         if cache_ver not in (602, 603, 604, 605, 606):
-            print_error("Invalid IDX header found")
+            self.log('error', "Invalid IDX header found")
             return
-        print_info("IDX File Version {0}.{1}".format(cache_ver / 100, cache_ver - 600))
+        self.log('info', "IDX File Version {0}.{1}".format(cache_ver / 100, cache_ver - 600))
         # Different IDX cache versions have data in different offsets
         if cache_ver in [602, 603, 604, 605]:
             if cache_ver in [602, 603, 604]:
@@ -186,16 +186,16 @@ class Idx(Module):
             sec_four = sec4_parse()
 
         header = ['Field', 'Value']
-        print("")
-        print_info("Section One")
-        print(table(header=header, rows=sec_one))
-        print("")
-        print_info("Section Two")
-        print(table(header=header, rows=sec_two))
-        print("")
-        print_info("Section Three")
-        print(table(header=header, rows=sec_three))
-        print("")
-        print_info("Section Four")
+        self.log('', "")
+        self.log('info', "Section One")
+        self.log('table', dict(header=header, rows=sec_one))
+        self.log('', "")
+        self.log('info', "Section Two")
+        self.log('table', dict(header=header, rows=sec_two))
+        self.log('', "")
+        self.log('info', "Section Three")
+        self.log('table', dict(header=header, rows=sec_three))
+        self.log('', "")
+        self.log('info', "Section Four")
         for item in sec_four:
-            print_item(item)
+            self.log('item', item)

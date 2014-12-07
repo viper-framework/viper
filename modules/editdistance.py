@@ -17,14 +17,14 @@ class Editdistance(Module):
 
 
     def usage(self):
-        print("Usage: editdistance")
+        self.log('', "Usage: editdistance")
 
     def help(self):
         self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\tShow this help message")
-        print("") 
+        self.log('', "")
+        self.log('', "Options:")
+        self.log('', "\thelp\tShow this help message")
+        self.log('', "") 
 
     def edit(self):
         db = Database()
@@ -64,11 +64,11 @@ class Editdistance(Module):
             edit = levenshtein(i[0], i[1])
             distance.append(edit)
  
-        print_info("Average Edit distance: {0}".format(sum(distance)/len(distance))) 
+        self.log('info', "Average Edit distance: {0}".format(sum(distance)/len(distance))) 
 
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
  
         if len(self.args) != 0:

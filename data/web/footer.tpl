@@ -1,6 +1,4 @@
         </div> 
-
-            <!-- Footer -->
         <script type="text/javascript" src="/static/bootstrap/js/bootstrap.js"></script>
         <div class="footer">
             <div class="container">
@@ -9,6 +7,5 @@
                 </div>
             </div>
         </div>
-
     </body>
 </html>

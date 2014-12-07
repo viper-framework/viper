@@ -92,25 +92,25 @@ class Strings(Module):
                     results.append(entry)
 
         for result in results:
-            print_item(result)
+            self.log('item', result)
 
     def run(self):
         def usage():
-            print("usage: strings [-haH]")
+            self.log('', "usage: strings [-haH]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--all (-a)\tPrint all strings")
-            print("\t--hosts (-H)\tExtract IP addresses and domains from strings")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--all (-a)\tPrint all strings")
+            self.log('', "\t--hosts (-H)\tExtract IP addresses and domains from strings")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'haH', ['help', 'all', 'hosts'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         arg_all = False
@@ -130,7 +130,7 @@ class Strings(Module):
             return
 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if os.path.exists(__sessions__.current.file.path):
@@ -139,6 +139,6 @@ class Strings(Module):
 
         if arg_all:
             for entry in strings:
-                print(entry)
+                self.log('', entry)
         elif arg_hosts:
             self.extract_hosts(strings)

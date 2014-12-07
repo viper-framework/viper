@@ -119,37 +119,37 @@ class HTMLParse(Module):
 
     def run(self):
         def usage():
-            print("usage: html [-hslfeid]")
-            print("The --dump option is availiable for iframes scripts and images")
-            print("If you use --dump with images an http request will be executed to fetch each image")
+            self.log('', "usage: html [-hslfeid]")
+            self.log('', "The --dump option is availiable for iframes scripts and images")
+            self.log('', "If you use --dump with images an http request will be executed to fetch each image")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--script (-s)\tExtract all script tags")
-            print("\t--links (-l)\tShow all links")
-            print("\t--iframe (-f)\tShow all iframes")
-            print("\t--embed (-e)\tShow all embedded files")
-            print("\t--images (-i)\tExtract all images")
-            print("\t--dump (-d)\tDump all outputs to files")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--script (-s)\tExtract all script tags")
+            self.log('', "\t--links (-l)\tShow all links")
+            self.log('', "\t--iframe (-f)\tShow all iframes")
+            self.log('', "\t--embed (-e)\tShow all embedded files")
+            self.log('', "\t--images (-i)\tExtract all images")
+            self.log('', "\t--dump (-d)\tDump all outputs to files")
                 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         try:
             opts, argv = getopt.getopt(self.args, 'hslfeid:', ['help', 'script', 'links', 'frame', 'embed', 'images', 'dump='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         try:
             html_data = open(__sessions__.current.file.path).read()
             self.soup = BeautifulSoup(html_data)
         except Exception as e:
-            print_error("Something went wrong: {0}".format(e))
+            self.log('error', "Something went wrong: {0}".format(e))
             return
 
         # Check first if the --dump option has been enabled.
@@ -165,64 +165,64 @@ class HTMLParse(Module):
             elif opt in ('-s', '--script'):
                 scripts, script_content = self.parse_scripts()
                 if arg_dump:
-                    print_info("Dumping Output to {0}".format(arg_dump))
+                    self.log('info', "Dumping Output to {0}".format(arg_dump))
                     for s in script_content:
                         self.dump_output(s, arg_dump, 'Scripts')
                     return
                 else:
-                    print_info("Scripts:")
-                    print(table(header=['Type', 'Source', 'Entropy'], rows=scripts))
+                    self.log('info', "Scripts:")
+                    self.log('table', dict(header=['Type', 'Source', 'Entropy'], rows=scripts))
                 return
             elif opt in ('-l' '--links'):
                 links = self.parse_hrefs()
-                print_info("Links")
-                print_info("Target \t Text")
+                self.log('info', "Links")
+                self.log('info', "Target \t Text")
                 for link in links:
-                    print_item("{0}\t {1}".format(link[0], self.string_clean(link[1])))
+                    self.log('item', "{0}\t {1}".format(link[0], self.string_clean(link[1])))
                 return
                 
             # iFrames
             elif opt in ('-f', '--frame'):
                 frames, frame_content = self.parse_iframes()
                 if arg_dump:
-                    print_info("Dumping Output to {0}".format(arg_dump))
+                    self.log('info', "Dumping Output to {0}".format(arg_dump))
                     for f in frame_content:
                         self.dump_output(f, arg_dump, 'iframe')
                     return
                 else:
-                    print_info("IFrames")
-                    print(table(header=['Source','Size','Entropy'], rows=frames))
+                    self.log('info', "IFrames")
+                    self.log('table', dict(header=['Source','Size','Entropy'], rows=frames))
                 return
                 
             # Images
             elif opt in ('-i','--images'):
                 images = self.parse_images()
                 if arg_dump:
-                    print_info("Dumping Images to {0}".format(arg_dump))
-                    print_error("Not Implemented Yet")
+                    self.log('info', "Dumping Images to {0}".format(arg_dump))
+                    self.log('error', "Not Implemented Yet")
                     # this will need an extra http request to download the images
                     return
                 else:
-                    print_info("Images")
-                    print(table(header=['Source','Alt',], rows=images))
+                    self.log('info', "Images")
+                    self.log('table', dict(header=['Source','Alt',], rows=images))
                 return
 
             # Embedded
             elif opt in ('-e','--embed'):
                 java, flash = self.parse_embedded()
                 if arg_dump:
-                    print_info("Dumping Embedded Items to {0}".format(arg_dump))
-                    print_error("Not Implemented Yet")
+                    self.log('info', "Dumping Embedded Items to {0}".format(arg_dump))
+                    self.log('error', "Not Implemented Yet")
                     # this will need an extra http request to download the images
                     return
                 else:
                     if len(java) > 0:
-                        print_info("Embedded Java Objects")
-                        print(table(header=['Archive','Code',], rows=java))
+                        self.log('info', "Embedded Java Objects")
+                        self.log('table', dict(header=['Archive','Code',], rows=java))
                         print ""
                     if len(flash) > 0:
-                        print_info("Embedded Flash Objects")
-                        print(table(header=['Swf Src'], rows=flash))
+                        self.log('info', "Embedded Flash Objects")
+                        self.log('table', dict(header=['Swf Src'], rows=flash))
                 return
 
         help()

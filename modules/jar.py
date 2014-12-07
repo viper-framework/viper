@@ -17,14 +17,14 @@ class Jar(Module):
             
     def run(self):
         def usage():
-            print("usage: jar [-hd]")
+            self.log('', "usage: jar [-hd]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--dump (-d)\tExtract all items from jar")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--dump (-d)\tExtract all items from jar")
             return
 
         def read_manifest(manifest):
@@ -35,13 +35,13 @@ class Jar(Module):
                     item, value = line.split(':')
                     rows.append([item, value])
 
-            print_info("Manifest File:")
-            print(table(header=['Item','Value'], rows=rows))
+            self.log('info', "Manifest File:")
+            self.log('table', dict(header=['Item','Value'], rows=rows))
 
         try:
             opts, argv = getopt.getopt(self.args, 'hd:', ['help', 'dump='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         arg_dump = None
@@ -53,11 +53,11 @@ class Jar(Module):
                 return
 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if not zipfile.is_zipfile(__sessions__.current.file.path):
-            print_error("Doesn't Appear to be a valid jar archive")
+            self.log('error', "Doesn't Appear to be a valid jar archive")
             return
 
         with zipfile.ZipFile(__sessions__.current.file.path, 'r') as archive:
@@ -72,10 +72,10 @@ class Jar(Module):
                 item_md5 = hashlib.md5(item_data).hexdigest()
                 jar_tree.append([name, item_md5])
 
-            print_info("Jar Tree:")
-            print(table(header=['Java File', 'MD5'], rows=jar_tree))
+            self.log('info', "Jar Tree:")
+            self.log('table', dict(header=['Java File', 'MD5'], rows=jar_tree))
 
             if arg_dump:
                 archive.extractall(arg_dump)
-                print_info("Archive content extracted to {0}".format(arg_dump))
+                self.log('info', "Archive content extracted to {0}".format(arg_dump))
                 return

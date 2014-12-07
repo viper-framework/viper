@@ -37,14 +37,14 @@ class PE(Module):
 
     def __check_session(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return False
 
         if not self.pe:
             try:
                 self.pe = pefile.PE(__sessions__.current.file.path)
             except pefile.PEFormatError as e:
-                print_error("Unable to parse PE file: {0}".format(e))
+                self.log('error', "Unable to parse PE file: {0}".format(e))
                 return False
 
         return True
@@ -56,9 +56,9 @@ class PE(Module):
         if hasattr(self.pe, 'DIRECTORY_ENTRY_IMPORT'):
             for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
                 try:
-                    print_info("DLL: {0}".format(entry.dll))
+                    self.log('info', "DLL: {0}".format(entry.dll))
                     for symbol in entry.imports:
-                        print_item("{0}: {1}".format(hex(symbol.address), symbol.name), tabs=1)
+                        self.log('item', "{0}: {1}".format(hex(symbol.address), symbol.name), tabs=1)
                 except:
                     continue
     
@@ -66,24 +66,24 @@ class PE(Module):
         if not self.__check_session():
             return
         
-        print_info("Exports:")
+        self.log('info', "Exports:")
         if hasattr(self.pe, 'DIRECTORY_ENTRY_EXPORT'):
             for symbol in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
-                print_item("{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
+                self.log('item', "{0}: {1} ({2})".format(hex(self.pe.OPTIONAL_HEADER.ImageBase + symbol.address), symbol.name, symbol.ordinal), tabs=1)
 
     def compiletime(self):
 
         def usage():
-            print("usage: pe compiletime [-s] [-w=minutes]")
+            self.log('', "usage: pe compiletime [-s] [-w=minutes]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--scan (-s)\tScan the repository for common compile time")
-            print("\t--window (-w)\tSpecify an optional time window in minutes")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--scan (-s)\tScan the repository for common compile time")
+            self.log('', "\t--window (-w)\tSpecify an optional time window in minutes")
+            self.log('', "")
 
         def get_compiletime(pe):
             return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
@@ -91,7 +91,7 @@ class PE(Module):
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hsw:', ['help', 'scan', 'window='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -111,10 +111,10 @@ class PE(Module):
             return
 
         compile_time = get_compiletime(self.pe)
-        print_info("Compile Time: {0}".format(bold(compile_time)))
+        self.log('info', "Compile Time: {0}".format(bold(compile_time)))
 
         if arg_scan:
-            print_info("Scanning the repository for matching samples...")
+            self.log('info', "Scanning the repository for matching samples...")
 
             db = Database()
             samples = db.find(key='all')
@@ -147,23 +147,23 @@ class PE(Module):
                         if delta_minutes <= arg_window:
                             matches.append([sample.name, sample.md5, cur_compile_time])
 
-            print_info("{0} relevant matches found".format(bold(len(matches))))
+            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'MD5', 'Compile Time'], rows=matches))
+                self.log('table', dict(header=['Name', 'MD5', 'Compile Time'], rows=matches))
 
     def peid(self):
 
         def usage():
-            print("usage: pe peid [-s]")
+            self.log('', "usage: pe peid [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--scan (-s)\tScan the repository for PEiD signatures")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--scan (-s)\tScan the repository for PEiD signatures")
+            self.log('', "")
 
         def get_signatures():
             with file('data/peid/UserDB.TXT', 'rt') as f:
@@ -180,7 +180,7 @@ class PE(Module):
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hsf', ['help', 'scan'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -200,17 +200,17 @@ class PE(Module):
         peid_matches = get_matches(self.pe, signatures)
 
         if peid_matches:
-            print_info("PEiD Signatures:")
+            self.log('info', "PEiD Signatures:")
             for sig in peid_matches:
                 if type(sig) is list:
-                    print_item(sig[0])
+                    self.log('item', sig[0])
                 else:
-                    print_item(sig)
+                    self.log('item', sig)
         else:
-            print_info("No PEiD signatures matched.")
+            self.log('info', "No PEiD signatures matched.")
 
         if arg_scan and peid_matches:
-            print_info("Scanning the repository for matching samples...")
+            self.log('info', "Scanning the repository for matching samples...")
 
             db = Database()
             samples = db.find(key='all')
@@ -233,25 +233,25 @@ class PE(Module):
                 if peid_matches == cur_peid_matches:
                     matches.append([sample.name, sample.sha256])
 
-            print_info("{0} relevant matches found".format(bold(len(matches))))
+            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'SHA256'], rows=matches))
+                self.log('table', dict(header=['Name', 'SHA256'], rows=matches))
 
     def resources(self):
 
         def usage():
-            print("usage: pe resources [-d=folder] [-o=resource number] [-s]")
+            self.log('', "usage: pe resources [-d=folder] [-o=resource number] [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--dump (-d)\tDestination directory to store resource files in")
-            print("\t--open (-o)\tOpen a session on the specified resource")
-            print("\t--scan (-s)\tScan the repository for common resources")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--dump (-d)\tDestination directory to store resource files in")
+            self.log('', "\t--open (-o)\tOpen a session on the specified resource")
+            self.log('', "\t--scan (-s)\tScan the repository for common resources")
+            self.log('', "")
 
         # Use this function to retrieve resources for the given PE instance.
         # Returns all the identified resources with indicators and attributes.
@@ -305,7 +305,7 @@ class PE(Module):
 
                                         count += 1
                     except Exception as e:
-                        print_error(e)
+                        self.log('error', e)
                         continue
             
             return resources
@@ -313,7 +313,7 @@ class PE(Module):
         try:
             opts, argv = getopt.getopt(self.args[1:], 'ho:d:s', ['help', 'open=', 'dump=', 'scan'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -339,7 +339,7 @@ class PE(Module):
         resources = get_resources(self.pe)
 
         if not resources:
-            print_warning("No resources found")
+            self.log('warning', "No resources found")
             return
 
         headers = ['#', 'Name', 'Offset', 'MD5', 'Size', 'File Type', 'Language', 'Sublanguage']
@@ -357,7 +357,7 @@ class PE(Module):
         # If instructed to perform a scan across the repository, start looping
         # through all available files.
         elif arg_scan:
-            print_info("Scanning the repository for matching samples...")
+            self.log('info', "Scanning the repository for matching samples...")
 
             # Retrieve list of samples stored locally and available in the
             # database.
@@ -397,29 +397,29 @@ class PE(Module):
                 if len(matched_resources) > 0:
                     matches.append([sample.name, sample.md5, '\n'.join(r for r in matched_resources)])
 
-            print_info("{0} relevant matches found".format(bold(len(matches))))
+            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'MD5', 'Resource MD5'], rows=matches))
+                self.log('table', dict(header=['Name', 'MD5', 'Resource MD5'], rows=matches))
 
     def imphash(self):
 
         def usage():
-            print("usage: pe imphash [-s]")
+            self.log('', "usage: pe imphash [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--scan (-s)\tScan for all samples with same imphash")
-            print("\t--cluster (-c)\tCluster repository by imphash (careful, could be massive)")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--scan (-s)\tScan for all samples with same imphash")
+            self.log('', "\t--cluster (-c)\tCluster repository by imphash (careful, could be massive)")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hsc', ['help', 'scan', 'cluster'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -436,11 +436,11 @@ class PE(Module):
                 arg_cluster = True
 
         if arg_scan and arg_cluster:
-            print_error("You selected two exclusive options, pick one")
+            self.log('error', "You selected two exclusive options, pick one")
             return
 
         if arg_cluster:
-            print_info("Clustering all samples by imphash...")
+            self.log('info', "Clustering all samples by imphash...")
 
             db = Database()
             samples = db.find(key='all')
@@ -466,12 +466,12 @@ class PE(Module):
                 if len(value) == 1:
                     continue
 
-                print_info("Imphash cluster {0}".format(bold(key)))
+                self.log('info', "Imphash cluster {0}".format(bold(key)))
 
                 for entry in value:
-                    print_item("{0} [{1}]".format(entry[0], entry[1]))
+                    self.log('item', "{0} [{1}]".format(entry[0], entry[1]))
 
-                print("")
+                self.log('', "")
 
             return
 
@@ -479,13 +479,13 @@ class PE(Module):
             try:
                 imphash = self.pe.get_imphash()
             except AttributeError:
-                print_error("No imphash support, upgrade pefile to a version >= 1.2.10-139 (`pip install --upgrade pefile`)")
+                self.log('error', "No imphash support, upgrade pefile to a version >= 1.2.10-139 (`pip install --upgrade pefile`)")
                 return
 
-            print_info("Imphash: {0}".format(bold(imphash)))
+            self.log('info', "Imphash: {0}".format(bold(imphash)))
 
             if arg_scan:
-                print_info("Scanning the repository for matching samples...")
+                self.log('info', "Scanning the repository for matching samples...")
 
                 db = Database()
                 samples = db.find(key='all')
@@ -507,25 +507,25 @@ class PE(Module):
                     if imphash == cur_imphash:
                         matches.append([sample.name, sample.sha256])
 
-                print_info("{0} relevant matches found".format(bold(len(matches))))
+                self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
                 if len(matches) > 0:
-                    print(table(header=['Name', 'SHA256'], rows=matches))
+                    self.log('table', dict(header=['Name', 'SHA256'], rows=matches))
 
     def security(self):
 
         def usage():
-            print("usage: pe security [-d=folder] [-s]")
+            self.log('', "usage: pe security [-d=folder] [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--dump (-d)\tDestination directory to store digital signature in")
-            print("\t--all (-a)\tFind all samples with a digital signature")
-            print("\t--scan (-s)\tScan the repository for common certificates")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--dump (-d)\tDestination directory to store digital signature in")
+            self.log('', "\t--all (-a)\tFind all samples with a digital signature")
+            self.log('', "\t--scan (-s)\tScan the repository for common certificates")
+            self.log('', "")
 
         def get_certificate(pe):
             # TODO: this only extract the raw list of certificate data.
@@ -580,7 +580,7 @@ class PE(Module):
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hd:as', ['help', 'dump=', 'all', 'scan'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -600,14 +600,14 @@ class PE(Module):
                 arg_scan = True
 
         if arg_all:
-            print_info("Scanning the repository for all signed samples...")
+            self.log('info', "Scanning the repository for all signed samples...")
 
             all_of_them = get_signed_samples()
 
-            print_info("{0} signed samples found".format(bold(len(all_of_them))))
+            self.log('info', "{0} signed samples found".format(bold(len(all_of_them))))
 
             if len(all_of_them) > 0:
-                print(table(header=['Name', 'MD5', 'Cert MD5'], rows=all_of_them))
+                self.log('table', dict(header=['Name', 'MD5', 'Cert MD5'], rows=all_of_them))
 
             return
 
@@ -617,45 +617,45 @@ class PE(Module):
         cert_data = get_certificate(self.pe)
 
         if not cert_data:
-            print_warning("No certificate found")
+            self.log('warning', "No certificate found")
             return
 
         cert_md5 = get_md5(cert_data)
 
-        print_info("Found certificate with MD5 {0}".format(bold(cert_md5)))
+        self.log('info', "Found certificate with MD5 {0}".format(bold(cert_md5)))
 
         if arg_folder:
             cert_path = os.path.join(arg_folder, '{0}.crt'.format(__sessions__.current.file.sha256))
             with open(cert_path, 'wb+') as cert_handle:
                 cert_handle.write(cert_data)
 
-            print_info("Dumped certificate to {0}".format(cert_path))
-            print_info("You can parse it using the following command:\n\t" + 
+            self.log('info', "Dumped certificate to {0}".format(cert_path))
+            self.log('info', "You can parse it using the following command:\n\t" + 
                        bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
 
         # TODO: do scan for certificate's serial number.
         if arg_scan:
-            print_info("Scanning the repository for matching signed samples...")
+            self.log('info', "Scanning the repository for matching signed samples...")
 
             matches = get_signed_samples(current=__sessions__.current.file.sha256, cert_filter=cert_md5)
 
-            print_info("{0} relevant matches found".format(bold(len(matches))))
+            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                print(table(header=['Name', 'SHA256'], rows=matches))                
+                self.log('table', dict(header=['Name', 'SHA256'], rows=matches))                
 
     def language(self):
 
         def usage():
-            print("usage: pe language [-s]")
+            self.log('', "usage: pe language [-s]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--scan (-s)\tScan the repository")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--scan (-s)\tScan the repository")
+            self.log('', "")
 
         def get_iat(pe):
             iat = []
@@ -726,7 +726,7 @@ class PE(Module):
 
             # VB check
             if check_module(iat, 'VB'):
-                print_info("{0} - Possible language: Visual Basic".format(sample.name))
+                self.log('info', "{0} - Possible language: Visual Basic".format(sample.name))
                 return True
 
             # .NET check
@@ -757,7 +757,7 @@ class PE(Module):
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -774,7 +774,7 @@ class PE(Module):
             return
         
         if is_packed(self.pe):
-            print_warning("Probably packed, the language guess might be unreliable")
+            self.log('warning', "Probably packed, the language guess might be unreliable")
 
         language = find_language(
             get_iat(self.pe),
@@ -783,13 +783,13 @@ class PE(Module):
         )
 
         if language:
-            print_info("Probable language: {0}".format(bold(language)))
+            self.log('info', "Probable language: {0}".format(bold(language)))
         else:
-            print_error("Programming language not identified")
+            self.log('error', "Programming language not identified")
             return
 
         if arg_scan:
-            print_info("Scanning the repository for matching samples...")
+            self.log('info', "Scanning the repository for matching samples...")
 
             db = Database()
             samples = db.find(key='all')
@@ -826,9 +826,9 @@ class PE(Module):
                     matches.append([sample.name, sample.md5, cur_packed])
 
             if matches:
-                print(table(header=['Name', 'MD5', 'Is Packed'], rows=matches))
+                self.log('table', dict(header=['Name', 'MD5', 'Is Packed'], rows=matches))
             else:
-                print_info("No matches found")
+                self.log('info', "No matches found")
 
     def sections(self):
         if not self.__check_session():
@@ -844,27 +844,27 @@ class PE(Module):
                 section.get_entropy()
             ])
 
-        print_info("PE Sections:")
-        print(table(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
+        self.log('info', "PE Sections:")
+        self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
     def pehash(self): 
         def usage():
-            print("usage: pe pehash [-hac]")
+            self.log('', "usage: pe pehash [-hac]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--all (-a)\tPrints the PEhash of all files in the project")
-            print("\t--cluster (-c)\tCalculate and cluster all files in the project")
-            print("\t--scan (-s)\tScan repository for matching samples")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--all (-a)\tPrints the PEhash of all files in the project")
+            self.log('', "\t--cluster (-c)\tCalculate and cluster all files in the project")
+            self.log('', "\t--scan (-s)\tScan repository for matching samples")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hacs', ['help', 'all', 'cluster', 'scan'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
         
         arg_all = False
@@ -883,13 +883,13 @@ class PE(Module):
                 arg_scan = True
 
         if not HAVE_PEHASH:
-            print_error("PEhash is missing. Please copy PEhash to the modules directory of Viper")
+            self.log('error', "PEhash is missing. Please copy PEhash to the modules directory of Viper")
             return
 
         current_pehash = None
         if __sessions__.is_set():
             current_pehash = calculate_pehash(__sessions__.current.file.path)
-            print_info("PEhash: {0}".format(bold(current_pehash)))
+            self.log('info', "PEhash: {0}".format(bold(current_pehash)))
 
         if arg_all or arg_cluster or arg_scan:
             db = Database()
@@ -903,11 +903,11 @@ class PE(Module):
                     rows.append((sample.name, sample.md5, pe_hash))
 
         if arg_all:
-            print_info("PEhash for all files:")
+            self.log('info', "PEhash for all files:")
             header = ['Name', 'MD5', 'PEhash']
-            print(table(header=header, rows=rows))
+            self.log('table', dict(header=header, rows=rows))
         elif arg_cluster:
-            print_info("Clustering files by PEhash...")
+            self.log('info', "Clustering files by PEhash...")
 
             cluster = {}
             for sample_name, sample_md5, pe_hash in rows:
@@ -915,11 +915,11 @@ class PE(Module):
             
             for item in cluster.items():
                 if len(item[1]) > 1:
-                    print_info("PEhash {0} was calculated on files:".format(bold(item[0])))
-                    print(table(header=['Name', 'MD5'], rows=item[1]))
+                    self.log('info', "PEhash {0} was calculated on files:".format(bold(item[0])))
+                    self.log('table', dict(header=['Name', 'MD5'], rows=item[1]))
         elif arg_scan:
             if __sessions__.is_set() and current_pehash:
-                print_info("Finding matching samples...")
+                self.log('info', "Finding matching samples...")
 
                 matches = []
                 for row in rows:
@@ -930,33 +930,33 @@ class PE(Module):
                         matches.append([row[0], row[1]])
 
                 if matches:
-                    print(table(header=['Name', 'MD5'], rows=matches))
+                    self.log('table', dict(header=['Name', 'MD5'], rows=matches))
                 else:
-                    print_info("No matches found")
+                    self.log('info', "No matches found")
 
     def usage(self):
-        print("usage: pe <command>")
+        self.log('', "usage: pe <command>")
 
     def help(self):
         self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\t\tShow this help message")
-        print("\timports\t\tList PE imports")
-        print("\texports\t\tList PE exports")
-        print("\tresources\tList PE resources")
-        print("\timphash\t\tGet and scan for imphash")
-        print("\tcompiletime\tShow the compiletime")
-        print("\tpeid\t\tShow the PEiD signatures")
-        print("\tsecurity\tShow digital signature")
-        print("\tlanguage\tGuess PE language")
-        print("\tsections\tList PE Sections")
-        print("\tpehash\t\tCalculate the PEhash and compare them")
-        print("")
+        self.log('', "")
+        self.log('', "Options:")
+        self.log('', "\thelp\t\tShow this help message")
+        self.log('', "\timports\t\tList PE imports")
+        self.log('', "\texports\t\tList PE exports")
+        self.log('', "\tresources\tList PE resources")
+        self.log('', "\timphash\t\tGet and scan for imphash")
+        self.log('', "\tcompiletime\tShow the compiletime")
+        self.log('', "\tpeid\t\tShow the PEiD signatures")
+        self.log('', "\tsecurity\tShow digital signature")
+        self.log('', "\tlanguage\tGuess PE language")
+        self.log('', "\tsections\tList PE Sections")
+        self.log('', "\tpehash\t\tCalculate the PEhash and compare them")
+        self.log('', "")
 
     def run(self):
         if not HAVE_PEFILE:
-            print_error("Missing dependency, install pefile (`pip install pefile`)")
+            self.log('error', "Missing dependency, install pefile (`pip install pefile`)")
             return
 
         if len(self.args) == 0:

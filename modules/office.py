@@ -88,12 +88,12 @@ class Office(Module):
     def metadata(self, ole):
         meta = ole.get_metadata()
         for attribs in ['SUMMARY_ATTRIBS', 'DOCSUM_ATTRIBS']:
-            print_info("{0} Metadata".format(attribs))
+            self.log('info', "{0} Metadata".format(attribs))
             rows = []
             for key in getattr(meta, attribs):
                 rows.append([key, getattr(meta, key)])
 
-            print(table(header=['Name', 'Value'], rows=rows))
+            self.log('table', dict(header=['Name', 'Value'], rows=rows))
 
         ole.close()
 
@@ -126,8 +126,8 @@ class Office(Module):
 
             counter += 1
 
-        print_info("OLE Structure:")
-        print(table(header=['#', 'Object', 'Macro', 'Creation', 'Modified'], rows=rows))
+        self.log('info', "OLE Structure:")
+        self.log('table', dict(header=['#', 'Object', 'Macro', 'Creation', 'Modified'], rows=rows))
 
         ole.close()
 
@@ -136,25 +136,25 @@ class Office(Module):
             try:
                 os.makedirs(export_path)
             except Exception as e:
-                print_error("Unable to create directory at {0}: {1}".format(export_path, e))
+                self.log('error', "Unable to create directory at {0}: {1}".format(export_path, e))
                 return
         else:
             if not os.path.isdir(export_path):
-                print_error("You need to specify a folder, not a file")
+                self.log('error', "You need to specify a folder, not a file")
                 return
 
         for stream in ole.listdir(streams=True, storages=True):
             try:
                 stream_content = ole.openstream(stream).read()
             except Exception as e:
-                print_warning("Unable to open stream {0}: {1}".format(string_clean('/'.join(stream)), e))
+                self.log('warning', "Unable to open stream {0}: {1}".format(string_clean('/'.join(stream)), e))
                 continue
 
             store_path = os.path.join(export_path, string_clean('-'.join(stream)))
 
             flash_objects = self.detect_flash(ole.openstream(stream).read())
             if len(flash_objects) > 0:
-                print_info("Saving Flash objects...")
+                self.log('info', "Saving Flash objects...")
                 count = 1
 
                 for flash in flash_objects:
@@ -164,19 +164,19 @@ class Office(Module):
                         with open(save_path, 'wb') as flash_out:
                             flash_out.write(flash[4])
 
-                        print_item("Saved Decompressed Flash File to {0}".format(save_path))
+                        self.log('item', "Saved Decompressed Flash File to {0}".format(save_path))
 
                     save_path = '{0}-FLASH-{1}'.format(store_path, count)
                     with open(save_path, 'wb') as flash_out:
                         flash_out.write(flash[3])
 
-                    print_item("Saved Flash File to {0}".format(save_path))
+                    self.log('item', "Saved Flash File to {0}".format(save_path))
                     count += 1
 
             with open(store_path, 'wb') as out:
                 out.write(stream_content)
 
-            print_info("Saved stream to {0}".format(store_path))
+            self.log('info', "Saved stream to {0}".format(store_path))
 
         ole.close()
 
@@ -246,9 +246,9 @@ class Office(Module):
         ]
 
         # Print the results.
-        print_info("OLE Info:")
+        self.log('info', "OLE Info:")
         # TODO: There are some non ascii chars that need stripping.
-        print(table(header=['Test', 'Result'], rows=rows))
+        self.log('table', dict(header=['Test', 'Result'], rows=rows))
 
         ole.close()
 
@@ -282,70 +282,70 @@ class Office(Module):
                 vba_list.append(name.split('/')[-1])
 
         # Print the results.
-        print_info("App MetaData:")
-        print(table(header=['Field', 'Value'], rows=meta1))
-        print_info("Core MetaData:")
-        print(table(header=['Field', 'Value'], rows=meta2))
+        self.log('info', "App MetaData:")
+        self.log('table', dict(header=['Field', 'Value'], rows=meta1))
+        self.log('info', "Core MetaData:")
+        self.log('table', dict(header=['Field', 'Value'], rows=meta2))
         if len(embedded_list) > 0:
-            print_info("Embedded Objects")
+            self.log('info', "Embedded Objects")
             for item in embedded_list:
-                print_item(item)
+                self.log('item', item)
         if len(vba_list) > 0:
-            print_info("Macro Objects")
+            self.log('info', "Macro Objects")
             for item in vba_list:
-                print_item(item)
+                self.log('item', item)
         if len(media_list) > 0:
-            print_info("Media Objects")
+            self.log('info', "Media Objects")
             for item in media_list:
-                print_item(item)
+                self.log('item', item)
 
     def xmlstruct(self, zip_xml):
-        print_info("Document Structure")
+        self.log('info', "Document Structure")
         for name in zip_xml.namelist():
-            print_item(name)
+            self.log('item', name)
 
     def xml_export(self, zip_xml, export_path):
         if not os.path.exists(export_path):
             try:
                 os.makedirs(export_path)
             except Exception as e:
-                print_error("Unable to create directory at {0}: {1}".format(export_path, e))
+                self.log('error', "Unable to create directory at {0}: {1}".format(export_path, e))
                 return
         else:
             if not os.path.isdir(export_path):
-                print_error("You need to specify a folder, not a file")
+                self.log('error', "You need to specify a folder, not a file")
                 return
         try:
             zip_xml.extractall(export_path)
-            print_info("Saved all objects to {0}".format(export_path))
+            self.log('info', "Saved all objects to {0}".format(export_path))
         except Exception as e:
-            print_error("Unable to export objects: {0}".format(e))
+            self.log('error', "Unable to export objects: {0}".format(e))
             return
         return
 
     # Main starts here
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if not HAVE_OLE:
-            print_error("Missing dependency, install OleFileIO (`pip install OleFileIO_PL`)")
+            self.log('error', "Missing dependency, install OleFileIO (`pip install OleFileIO_PL`)")
             return
 
         def usage():
-            print("usage: office [-hmsoe:]")
+            self.log('', "usage: office [-hmsoe:]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--meta (-m)\tGet the metadata")
-            print("\t--oleid (-o)\tGet the OLE information")
-            print("\t--streams (-s)\tShow the document streams")
-            print("\t--export (-e)\tExport all objects (specify destination folder)")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--meta (-m)\tGet the metadata")
+            self.log('', "\t--oleid (-o)\tGet the OLE information")
+            self.log('', "\t--streams (-s)\tShow the document streams")
+            self.log('', "\t--export (-e)\tExport all objects (specify destination folder)")
+            self.log('', "")
 
         # Tests to check for valid Office structures.
         OLE_FILE = OleFileIO_PL.isOleFile(__sessions__.current.file.path)
@@ -355,13 +355,13 @@ class Office(Module):
         elif XML_FILE:
             zip_xml = zipfile.ZipFile(__sessions__.current.file.path, 'r')
         else:
-            print_error("Not a valid office document")
+            self.log('error', "Not a valid office document")
             return
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'hmsoe:', ['help', 'meta', 'streams', 'oleid', 'export='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         for opt, value in opts:

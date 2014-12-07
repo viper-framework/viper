@@ -42,27 +42,27 @@ class SWF(Module):
             # Extract the right amount of data from the opened file.
             data = swf.read(size)
         except Exception as e:
-            print_warning("Unable to read SWF data: {0}".format(e))
+            self.log('warning', "Unable to read SWF data: {0}".format(e))
             data = None
 
         return header, version, size, data
 
     def decompress(self):
         def usage():
-            print("usage: swf decompress [-d=folder]")
+            self.log('', "usage: swf decompress [-d=folder]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--dump (-d)\tDump the SWF object to the destination folder (default is /tmp)")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--dump (-d)\tDump the SWF object to the destination folder (default is /tmp)")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hd', ['help', 'dump'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -79,14 +79,14 @@ class SWF(Module):
                     arg_dump = tempfile.gettempdir()
 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         # Check if the file type is right.
         # TODO: this might be a bit hacky, need to verify whether malformed
         # Flash exploit would get a different file type.
         if not 'Flash' in __sessions__.current.file.type:
-            print_error("The opened file doesn't appear to be a valid SWF object")
+            self.log('error', "The opened file doesn't appear to be a valid SWF object")
             return
 
         # Retrieve key information from the opened SWF file.
@@ -96,11 +96,11 @@ class SWF(Module):
 
         # Check if the file is already a decompressed Flash object.
         if header == 'FWS':
-            print_info("The opened file doesn't appear to be compressed")
+            self.log('info', "The opened file doesn't appear to be compressed")
             return
         # Check if the file is compressed with zlib.
         elif header == 'CWS':
-            print_info("The opened file appears to be compressed with Zlib")
+            self.log('info', "The opened file appears to be compressed with Zlib")
 
             # Open an handle on the compressed data.
             compressed = StringIO(data)
@@ -110,11 +110,11 @@ class SWF(Module):
             decompressed = 'FWS' + compressed.read(5) + zlib.decompress(compressed.read())
         # Check if the file is compressed with lzma.
         elif header == 'ZWS':
-            print_info("The opened file appears to be compressed with Lzma")
+            self.log('info', "The opened file appears to be compressed with Lzma")
 
             # We need an third party library to decompress this.
             if not HAVE_PYLZMA:
-                print_error("Missing dependency, please install pylzma (`pip install pylzma`)")
+                self.log('error', "Missing dependency, please install pylzma (`pip install pylzma`)")
                 return
 
             # Open and handle on the compressed data.
@@ -130,7 +130,7 @@ class SWF(Module):
             # Print the decompressed data
             # TODO: this prints too much, need to find a better wayto display
             # this. Paginate?
-            print(cyan(hexdump(decompressed)))
+            self.log('', cyan(hexdump(decompressed)))
 
             if arg_dump:
                 # Dump the decompressed SWF file to the specified directory
@@ -139,21 +139,21 @@ class SWF(Module):
                 with open(dump_path, 'wb') as handle:
                     handle.write(decompressed)
 
-                print_info("Flash object dumped at {0}".format(dump_path))
+                self.log('info', "Flash object dumped at {0}".format(dump_path))
 
                 # Directly open a session on the dumped Flash object.
                 __sessions__.new(dump_path)
 
     def usage(self):
-        print("usage: swf <command>")
+        self.log('', "usage: swf <command>")
 
     def help(self):
         self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\t\tShow this help message")
-        print("\tdecompress\tAttempt to decompress the Flash object")
-        print("")
+        self.log('', "")
+        self.log('', "Options:")
+        self.log('', "\thelp\t\tShow this help message")
+        self.log('', "\tdecompress\tAttempt to decompress the Flash object")
+        self.log('', "")
 
     def run(self):
         if len(self.args) == 0:
