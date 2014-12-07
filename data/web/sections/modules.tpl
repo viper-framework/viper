@@ -1,4 +1,3 @@
-<!-- Modules -->
 <div class="tab-pane" id="modules">
     <div class="panel panel-default">
         <div class="panel-body">
@@ -15,7 +14,7 @@
             </form>
             <hr/>
             <div class="row">
-                <div class="col-md-6">
+                <div class="col-md-8">
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h3 class="panel-title">Module Output</h3>
@@ -27,7 +26,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="panel panel-default">
                         <div class="panel-heading">Module help</div>
                         <div class="panel-body">
@@ -153,4 +152,3 @@
         </div>
     </div>
 </div>
-<!-- End Modules -->

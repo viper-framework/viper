@@ -99,10 +99,10 @@ class Reports(Module):
         
         reports = self.malwr_parse(p.text)
         if not reports:
-            print_info("No reports for opened file")
+            self.log('info', "No reports for opened file")
             return
 
-        print(table(header=['Time', 'URL'], rows=reports))
+        self.log('table', dict(header=['Time', 'URL'], rows=reports))
 
     def anubis_parse(self, page):
         reports = []
@@ -145,10 +145,10 @@ class Reports(Module):
         
         reports = self.anubis_parse(res.text)
         if not reports:
-            print_info("No reports for opened file")
+            self.log('info', "No reports for opened file")
             return
 
-        print(table(header=['Time', 'URL'], rows=reports))
+        self.log('table', dict(header=['Time', 'URL'], rows=reports))
 
     def threat(self):
         # need the URL and the date
@@ -161,17 +161,17 @@ class Reports(Module):
             if len(lists) > 0:
                 time = lists[1].text[21:]
                 reports.append([time, url])
-                print(table(header=['Time', 'URL'], rows=reports))
+                self.log('table', dict(header=['Time', 'URL'], rows=reports))
         else:
-            print_info("No reports for opened file")
+            self.log('info', "No reports for opened file")
  
     def joe(self):
         url = 'http://www.joesecurity.org/reports/report-{0}.html'.format(__sessions__.current.file.md5)
         page = requests.get(url)
         if '<h2>404 - File Not Found</h2>' in page.text:
-            print_info("No reports for opened file")
+            self.log('info', "No reports for opened file")
         else:
-            print_info("Report found at {0}".format(url))
+            self.log('info', "Report found at {0}".format(url))
             
     def meta(self):
         url = 'https://www.metascan-online.com/en/scanresult/file/{0}'.format(__sessions__.current.file.md5)
@@ -179,7 +179,7 @@ class Reports(Module):
         reports = []
         print page.text
         if '<title>Error</title>' in page.text:
-            print_info("No reports for opened file")
+            self.log('info', "No reports for opened file")
             return
         pattern = 'scanResult = (.*)};'
         match = re.search(pattern, page.text)
@@ -189,31 +189,31 @@ class Reports(Module):
         for vendor, results in unprocessed.iteritems():
             if results['scan_result_i'] == 1:
                 reports.append([vendor, string_clean(results['threat_found']), results['def_time']])
-                print(table(header=['Vendor', 'Result', 'Time'], rows=reports))
+                self.log('table', dict(header=['Vendor', 'Result', 'Time'], rows=reports))
                 return
 
     def usage(self):
-        print("Usage: reports <malwr|anubis|threat|joe|meta>")
+        self.log('', "Usage: reports <malwr|anubis|threat|joe|meta>")
 
     def help(self):
         self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\tShow this help message")
-        print("\tmalwr\tFind reports on Malwr")
-        print("\tanubis\tFind reports on Anubis")
-        print("\tthreat\tFind reports on ThreatExchange")
-        print("\tjoe\tFind reports on Joe Sandbox")
-        print("\tmeta\tFind reports on metascan")
-        print("") 
+        self.log('', "")
+        self.log('', "Options:")
+        self.log('', "\thelp\tShow this help message")
+        self.log('', "\tmalwr\tFind reports on Malwr")
+        self.log('', "\tanubis\tFind reports on Anubis")
+        self.log('', "\tthreat\tFind reports on ThreatExchange")
+        self.log('', "\tjoe\tFind reports on Joe Sandbox")
+        self.log('', "\tmeta\tFind reports on metascan")
+        self.log('', "") 
 
     def run(self):
         if not HAVE_REQUESTS and not HAVE_BS4:
-            print_error("Missing dependencies (`pip install requests beautifulsoup4`)")
+            self.log('error', "Missing dependencies (`pip install requests beautifulsoup4`)")
             return
 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if len(self.args) == 0:

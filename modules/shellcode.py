@@ -15,7 +15,7 @@ class Shellcode(Module):
 
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         collection = [
@@ -71,12 +71,12 @@ class Shellcode(Module):
 
         ]
 
-        print_info("Searching for known shellcode patterns...")
+        self.log('info', "Searching for known shellcode patterns...")
 
         for entry in collection:
             for pattern in entry['patterns']:
                 match = re.search(pattern, __sessions__.current.file.data)
                 if match:
                     offset = match.start()
-                    print_info("{0} pattern matched at offset {1}".format(entry['description'], offset))
-                    print(cyan(hexdump(__sessions__.current.file.data[offset:], maxlines=15)))
+                    self.log('info', "{0} pattern matched at offset {1}".format(entry['description'], offset))
+                    self.log('', cyan(hexdump(__sessions__.current.file.data[offset:], maxlines=15)))

@@ -26,18 +26,18 @@ class AndroidPackage(Module):
             
     def run(self):
         def usage():
-            print("usage: apk [-hipfad]")
+            self.log('', "usage: apk [-hipfad]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--info (-i)\tShow general info")
-            print("\t--perm (-p)\tShow APK permissions")
-            print("\t--file (-f)\tShow APK file list")
-            print("\t--all (-a)\tRun all options excluding dump")
-            print("\t--dump (-d)\tExtract all items from archive")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--info (-i)\tShow general info")
+            self.log('', "\t--perm (-p)\tShow APK permissions")
+            self.log('', "\t--file (-f)\tShow APK file list")
+            self.log('', "\t--all (-a)\tRun all options excluding dump")
+            self.log('', "\t--dump (-d)\tExtract all items from archive")
             return
 
         def analyze_apk(filename, raw=False, decompiler=None) :
@@ -104,38 +104,38 @@ class AndroidPackage(Module):
               elif decompiler == "dad" :
                 d.set_decompiler( DecompilerDAD( d, dx ) )
               else :
-                print_info("Unknown decompiler, use DAD decompiler by default")
+                self.log('info', "Unknown decompiler, use DAD decompiler by default")
                 d.set_decompiler( DecompilerDAD( d, dx ) )
 
         # List all files and types
         def andro_file(a):
-            print_info("APK Contents")
+            self.log('info', "APK Contents")
             rows = []
             for file_name, file_type in a.files.iteritems():
                 rows.append([file_name, file_type])
-            print(table(header=['File Name', 'File Type'], rows=rows))
+            self.log('table', dict(header=['File Name', 'File Type'], rows=rows))
 
         # List general info
         def andro_info(a):
-            print_info("APK General Information")
-            print_item("Package Name: {0}".format(a.package))
-            print_item("Version Code: {0}".format(a.androidversion['Code']))
-            print_item("Main Activity: {0}".format(a.get_main_activity()))
-            print_info("Other Activities")
+            self.log('info', "APK General Information")
+            self.log('item', "Package Name: {0}".format(a.package))
+            self.log('item', "Version Code: {0}".format(a.androidversion['Code']))
+            self.log('item', "Main Activity: {0}".format(a.get_main_activity()))
+            self.log('info', "Other Activities")
             for item in a.get_activities():
-                print_item(item)
-            print_info("Services")
+                self.log('item', item)
+            self.log('info', "Services")
             for item in a.get_services():
-                print_item(item)
-            print_info("Receivers")
+                self.log('item', item)
+            self.log('info', "Receivers")
             for item in a.get_receivers():
-                print_item(item)
+                self.log('item', item)
 
         # List all the permisisons
         def andro_perm(a):
-            print_info("APK Permissions")
+            self.log('info', "APK Permissions")
             for perms in a.permissions:
-                print_item(perms)
+                self.log('item', perms)
 
         # Decompile and Dump all the methods
         def andro_dump(vm, vmx, dump_path):
@@ -157,30 +157,30 @@ class AndroidPackage(Module):
         def process_apk():
             # Process the APK File
             try:
-                print_info("Processing the APK, this may take a moment...")
+                self.log('info', "Processing the APK, this may take a moment...")
                 APK_FILE = __sessions__.current.file.path
                 a, vm, vmx = analyze_apk(APK_FILE, decompiler='dad')
                 return a, vm, vmx
             except AttributeError as e:
-                print_error("Error: {0}".format(e))
+                self.log('error', "Error: {0}".format(e))
                 return False, False, False
 
         #Check for session
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         # Check for androguard
         if not HAVE_ANDROGUARD:
-            print_error("Unable to import AndroGuard")
-            print_error("Install https://code.google.com/p/androguard/downloads/detail?name=androguard-1.9.tar.gz")
+            self.log('error', "Unable to import AndroGuard")
+            self.log('error', "Install https://code.google.com/p/androguard/downloads/detail?name=androguard-1.9.tar.gz")
             return
 
         # Get args and opts
         try:
             opts, argv = getopt.getopt(self.args, 'hipfad:', ['help', 'info', 'perm', 'files', 'all', 'dump='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
             
@@ -194,9 +194,9 @@ class AndroidPackage(Module):
                 a, vm, vmx = process_apk()
                 if not a:
                     return
-                print_info("Decompiling Code")
+                self.log('info', "Decompiling Code")
                 andro_dump(vm, vmx, arg_dump)
-                print_info("Decompiled code saved to {0}".format(arg_dump))
+                self.log('info', "Decompiled code saved to {0}".format(arg_dump))
                 return
             elif opt in ('-i', '--info'):
                 a, vm, vmx = process_apk()

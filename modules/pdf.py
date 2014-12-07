@@ -22,11 +22,11 @@ class PDF(Module):
 
     def pdf_id(self):
         if not __sessions__.is_set():
-            print_error('No session opened')
+            self.log('error', 'No session opened')
             return
 
         if 'PDF' not in __sessions__.current.file.type:
-            print_error("The opened file doesn't appear to be a PDF document")
+            self.log('error', "The opened file doesn't appear to be a PDF document")
             return
 
         # Run the parser - Returns an XML DOM Instance.
@@ -61,25 +61,25 @@ class PDF(Module):
         for stream in pdf['pdfid']['keywords']['keyword']:
             streams.append([stream['name'], stream['count']])
         
-        print_info("General Info:")
-        print(table(header=['Desc','Value'], rows=info))
+        self.log('info', "General Info:")
+        self.log('table', dict(header=['Desc','Value'], rows=info))
 
-        print_info("Streams & Count:")
-        print(table(header=['Name','Count'], rows=streams))
+        self.log('info', "Streams & Count:")
+        self.log('table', dict(header=['Name','Count'], rows=streams))
 
     def streams(self):
 
         def usage():
-            print("usage: pdf stream [-o=steam] [-d=folder]")
+            self.log('', "usage: pdf stream [-o=steam] [-d=folder]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--dump (-d)\tDestination directory to store resource files in")
-            print("\t--open (-o)\tOpen a session on the specified resource")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--dump (-d)\tDestination directory to store resource files in")
+            self.log('', "\t--open (-o)\tOpen a session on the specified resource")
+            self.log('', "")
 
         def get_streams():
             # This function is brutally ripped from Brandon Dixon's swf_mastah.py.
@@ -133,11 +133,11 @@ class PDF(Module):
                                 try:
                                     os.makedirs(folder)
                                 except Exception as e:
-                                    print_error("Unable to create directory at {0}: {1}".format(folder, e))
+                                    self.log('error', "Unable to create directory at {0}: {1}".format(folder, e))
                                     return results
                             else:
                                 if not os.path.isdir(folder):
-                                    print_error("You need to specify a folder not a file")
+                                    self.log('error', "You need to specify a folder not a file")
                                     return results 
                             
                             # Dump stream to this path.
@@ -164,7 +164,7 @@ class PDF(Module):
         try:
             opts, argv = getopt.getopt(self.args[1:], 'ho:d:', ['help', 'open=', 'dump='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -181,11 +181,11 @@ class PDF(Module):
                 arg_dump = value
 
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return False
 
         if 'PDF' not in __sessions__.current.file.type:
-            print_error("The opened file doesn't appear to be a PDF document")
+            self.log('error', "The opened file doesn't appear to be a PDF document")
             return
 
         # Retrieve list of streams.
@@ -196,7 +196,7 @@ class PDF(Module):
         if arg_dump or arg_open:
             header.append('Dumped To')
 
-        print(table(header=header, rows=streams))
+        self.log('table', dict(header=header, rows=streams))
 
         # If the user requested to open a specific stream, we open a new
         # session on it.
@@ -207,16 +207,16 @@ class PDF(Module):
                     return
 
     def usage(self):
-        print("usage: pdf <command>")
+        self.log('', "usage: pdf <command>")
 
     def help(self):
         self.usage()
-        print("")
-        print("Options:")
-        print("\thelp\t\tShow this help message")
-        print("\tid\t\tShow general information on the PDF")
-        print("\tstreams\t\tExtract stream objects from PDF")
-        print("")
+        self.log('', "")
+        self.log('', "Options:")
+        self.log('', "\thelp\t\tShow this help message")
+        self.log('', "\tid\t\tShow general information on the PDF")
+        self.log('', "\tstreams\t\tExtract stream objects from PDF")
+        self.log('', "")
 
     def run(self):
         if len(self.args) == 0:

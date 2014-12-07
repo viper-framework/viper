@@ -24,17 +24,17 @@ class YaraScan(Module):
 
     def scan(self):
         def usage():
-            print("usage: yara scan [-a]")
+            self.log('', "usage: yara scan [-a]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
-            print("\t--all (-a)\tScan all stored files (default if no session is open)")
-            print("\t--tag (-t)\tTag Files with Rule Name (default is not to)")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
+            self.log('', "\t--all (-a)\tScan all stored files (default if no session is open)")
+            self.log('', "\t--tag (-t)\tTag Files with Rule Name (default is not to)")
+            self.log('', "")
 
         def string_printable(line):
             line = str(line)
@@ -74,7 +74,7 @@ class YaraScan(Module):
         try:
             opts, argv = getopt.getopt(self.args[1:], 'hr:at', ['help', 'rule=', 'all', 'tag'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         for opt, value in opts:
@@ -95,7 +95,7 @@ class YaraScan(Module):
 
         # Check if the selected ruleset actually exists.
         if not os.path.exists(arg_rule):
-            print_error("No valid Yara ruleset at {0}".format(arg_rule))
+            self.log('error', "No valid Yara ruleset at {0}".format(arg_rule))
             return
 
         # Compile all rules from given ruleset.
@@ -110,7 +110,7 @@ class YaraScan(Module):
         # Otherwise we loop through all files in the repository and queue
         # them up for scan.
         else:
-            print_info("Scanning all stored files...")
+            self.log('info', "Scanning all stored files...")
 
             db = Database()
             samples = db.find(key='all')
@@ -120,7 +120,7 @@ class YaraScan(Module):
 
         for entry in files:
             if entry.size == 0: continue
-            print_info("Scanning {0} ({1})".format(entry.name, entry.sha256))
+            self.log('info', "Scanning {0} ({1})".format(entry.name, entry.sha256))
 
             # Check if the entry has a path attribute. This happens when
             # there is a session open. We need to distinguish this just for
@@ -160,7 +160,7 @@ class YaraScan(Module):
                     'Offset',
                     'Content'
                 ]
-                print(table(header=header, rows=rows))
+                self.log('table', dict(header=header, rows=rows))
 
             # If we selected to add tags do that now.
             if rows and arg_tag:
@@ -170,25 +170,25 @@ class YaraScan(Module):
 
                 # If in a session reset the session to see tags.
                 if __sessions__.is_set() and not arg_scan_all:
-                    print_info("Refreshing session to update attributes...")
+                    self.log('info', "Refreshing session to update attributes...")
                     __sessions__.new(__sessions__.current.file.path)
                 
     def rules(self):
         def usage():
-            print("usage: yara rules [-h] [-e <rule #>]")
+            self.log('', "usage: yara rules [-h] [-e <rule #>]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--edit (-e)\tOpen an editor to edit the specified rule")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--edit (-e)\tOpen an editor to edit the specified rule")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args[1:], 'he:', ['help', 'edit='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         arg_edit = None
@@ -216,26 +216,26 @@ class YaraScan(Module):
                     os.system('"${EDITOR:-nano}" ' + rule[1])
         # Otherwise, just print the list.
         else:
-            print(table(header=['#', 'Path'], rows=rules))
-            print("")
-            print("You can edit these rules by specifying --edit and the #")
+            self.log('table', dict(header=['#', 'Path'], rows=rules))
+            self.log('', "")
+            self.log('', "You can edit these rules by specifying --edit and the #")
 
     def run(self):
         if not HAVE_YARA:
-            print_error("Missing dependency, install yara")
+            self.log('error', "Missing dependency, install yara")
             return
 
         def usage():
-            print("usage: yara <help|scan|rules>")
+            self.log('', "usage: yara <help|scan|rules>")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\thelp\t\tShow this help message")
-            print("\tscan\t\tScan files with Yara signatures")
-            print("\trules\t\tOperate on Yara rules")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\thelp\t\tShow this help message")
+            self.log('', "\tscan\t\tScan files with Yara signatures")
+            self.log('', "\trules\t\tOperate on Yara rules")
+            self.log('', "")
 
         if len(self.args) == 0:
             usage()

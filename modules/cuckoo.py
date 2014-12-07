@@ -20,29 +20,29 @@ class Cuckoo(Module):
 
     def run(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if not HAVE_REQUESTS:
-            print_error("Missing dependency, install requests (`pip install requests`)")
+            self.log('error', "Missing dependency, install requests (`pip install requests`)")
             return
 
         def usage():
-            print("usage: cuckoo [-H=host] [-p=port]")
+            self.log('', "usage: cuckoo [-H=host] [-p=port]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--host (-H)\tSpecify an host (default: localhost)")
-            print("\t--port (-p)\tSpecify a port (default: 8090")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--host (-H)\tSpecify an host (default: localhost)")
+            self.log('', "\t--port (-p)\tSpecify a port (default: 8090")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args, 'hH:p:', ['help', 'host=', 'port='])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             usage()
             return
 
@@ -67,7 +67,7 @@ class Cuckoo(Module):
         try:
             response = requests.post(url, files=files)
         except requests.ConnectionError:
-            print_error("Unable to connect to Cuckoo API at {0}:{1}".format(host, port))
+            self.log('error', "Unable to connect to Cuckoo API at {0}:{1}".format(host, port))
             return
 
         print response.text

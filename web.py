@@ -16,7 +16,6 @@ import tempfile
 import contextlib
 
 from zipfile import ZipFile
-from StringIO import StringIO
 from bottle import route, request, response, run, get, template, static_file, redirect
 
 from viper.core.session import __sessions__
@@ -53,6 +52,46 @@ def parse(data):
     if len(words) > 1:
         args = words[1:]
     return (root, args)
+
+
+def print_output(output):
+    if not output:
+        return '<p class="text-danger">! The command Generated no Output</p>' 
+    return_html = ''
+    for entry in output:
+        # Skip lines that say seesion opened
+        if 'Session opened on' in entry['data']:
+            continue
+        if entry['type'] == 'info':
+            return_html += '<p class="text-primary">{0}</p>'.format(entry['data'])
+            #self.log('info', entry['data'])
+        elif entry['type'] == 'item':
+            return_html += '<li class="text-primary">{0}</li>'.format(entry['data'])
+        elif entry['type'] == 'warning':
+            return_html += '<p class="text-warning">{0}</p>'.format(entry['data'])
+        elif entry['type'] == 'error':
+            return_html += '<p class="text-danger">{0}</p>'.format(entry['data'])
+        elif entry['type'] == 'success':
+            return_html += '<p class="text-success">{0}</p>'.format(entry['data'])
+        elif entry['type'] == 'table':
+            # set the table
+            return_html += '<table class="table table-bordered">'
+            # Column Titles
+            return_html += '<tr>'
+            for column in entry['data']['header']:
+                return_html += '<th>{0}</th>'.format(column)
+            return_html += '</tr>'
+            # Rows
+            for row in entry['data']['rows']:
+                return_html += '<tr>'
+                for cell in row:
+                    return_html += '<td>{0}</td>'.format(cell)
+                return_html += '</tr>'
+            # Close table
+            return_html += '</table>'
+        else:
+            return_html += '<p>{0}</p>'.format(entry['data'])
+    return return_html
     
 def parse_text(module_text):
     # String to hold the new text
@@ -80,27 +119,26 @@ def project_list():
     return p_list
 
 def module_text(file_hash, cmd_string):
-    # redirect stdout to a memory file
-    sys.stdout = StringIO()
-
     # A lot of commands rely on an open session
     # open a session on the file hash
     path = get_sample_path(file_hash)
     __sessions__.new(path)
-    
-    # Run the Module with args, the ouptut will end up in a StringIO Object
+    # Run the Module with args
     if __sessions__.is_set():
         root, args = parse(cmd_string)
         if root in __modules__:
             module = __modules__[root]['obj']()
             module.set_args(args)
             module.run()
-    
-    # Parse the raw data to something we can use
-    clean_text = parse_text(sys.stdout.getvalue())
+            html = print_output(module.output)
+            del(module.output[:])
+        else:
+            html = '<p class="text-danger">{0} is not a valid command</p>'.format(cmd_string)
+    else:
+        '<p class="text-danger">! There is no open session</p>'
     # close the session
     __sessions__.close()
-    return clean_text
+    return html
 
 # context manager for file uploader   
 @contextlib.contextmanager

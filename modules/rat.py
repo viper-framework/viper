@@ -18,29 +18,29 @@ class RAT(Module):
     authors = ['Kevin Breen', 'nex']
 
     def list(self):
-        print_info("List of available RAT modules:")
+        self.log('info', "List of available RAT modules:")
 
         for folder, folders, files in os.walk('modules/rats/'):
             for file_name in files:
                 if not file_name.endswith('.py') or file_name.startswith('__init__'):
                     continue
 
-                print_item(os.path.join(folder, file_name))
+                self.log('item', os.path.join(folder, file_name))
 
     def get_config(self, family):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         try:
             module = importlib.import_module('modules.rats.{0}'.format(family))
         except ImportError:
-            print_error("There is no module for family {0}".format(bold(family)))
+            self.log('error', "There is no module for family {0}".format(bold(family)))
             return
 
         config = module.config(__sessions__.current.file.data)
         if not config:
-            print_error("No Configuration Detected")
+            self.log('error', "No Configuration Detected")
             return
 
         rows = []
@@ -49,41 +49,41 @@ class RAT(Module):
 
         rows = sorted(rows, key=lambda entry: entry[0])
 
-        print_info("Configuration:")
-        print(table(header=['Key', 'Value'], rows=rows))
+        self.log('info', "Configuration:")
+        self.log('table', dict(header=['Key', 'Value'], rows=rows))
 
     def auto(self):
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         rules = yara.compile('data/yara/rats.yara')
         for match in rules.match(__sessions__.current.file.path):
             if 'family' in match.meta:
-                print_info("Automatically detected supported RAT {0}".format(match.rule))
+                self.log('info', "Automatically detected supported RAT {0}".format(match.rule))
                 self.get_config(match.meta['family'])
                 return
 
-        print_info("No known RAT detected")
+        self.log('info', "No known RAT detected")
 
     def run(self):
         def usage():
-            print("usage: rat [-hafl]")
+            self.log('', "usage: rat [-hafl]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--auto (-a)\tAutomatically detect RAT")
-            print("\t--family (-f)\tSpecify which RAT family")
-            print("\t--list (-l)\tList available RAT modules")
-            print("")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--auto (-a)\tAutomatically detect RAT")
+            self.log('', "\t--family (-f)\tSpecify which RAT family")
+            self.log('', "\t--list (-l)\tList available RAT modules")
+            self.log('', "")
 
         try:
             opts, argv = getopt.getopt(self.args[0:], 'haf:l', ['help', 'auto', 'family=', 'list'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         for opt, value in opts:

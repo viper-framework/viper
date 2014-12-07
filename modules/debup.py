@@ -22,22 +22,22 @@ class Debup(Module):
     def run(self):
     
         def usage():
-            print("usage: debup [-hs]")
+            self.log('', "usage: debup [-hs]")
 
         def help():
             usage()
-            print("")
-            print("Options:")
-            print("\t--help (-h)\tShow this help message")
-            print("\t--info (-i)\tSwitch session to the quarantined file")
+            self.log('', "")
+            self.log('', "Options:")
+            self.log('', "\t--help (-h)\tShow this help message")
+            self.log('', "\t--info (-i)\tSwitch session to the quarantined file")
             return   
     
         if not __sessions__.is_set():
-            print_error("No session opened")
+            self.log('error', "No session opened")
             return
 
         if not HAVE_OLE:
-            print_error("Missing dependency, install OleFileIO (`pip install OleFileIO_PL`)")
+            self.log('error', "Missing dependency, install OleFileIO (`pip install OleFileIO_PL`)")
             return
         
         def xordata(data, key):
@@ -49,11 +49,11 @@ class Debup(Module):
         def bupextract():
             # Check for valid OLE
             if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
-                print_error("Not a valid BUP File")
+                self.log('error', "Not a valid BUP File")
                 return
             ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
             # We know that BUPS are xor'd with 6A which is dec 106 for the decoder
-            print_info("Switching Session to Embedded File")
+            self.log('info', "Switching Session to Embedded File")
             data = xordata(ole.openstream('File_0').read(), 106)
             # this is a lot of work jsut to get a filename.
             data2 = xordata(ole.openstream('Details').read(), 106)
@@ -72,13 +72,13 @@ class Debup(Module):
                 __sessions__.new(tempName)
                 return
             else:
-                print_error("Unble to Switch Session")
+                self.log('error', "Unble to Switch Session")
 
         # Run Functions
         try:
             opts, argv = getopt.getopt(self.args[0:], 'hs', ['help', 'session'])
         except getopt.GetoptError as e:
-            print(e)
+            self.log('', e)
             return
 
         for opt, value in opts:
@@ -91,7 +91,7 @@ class Debup(Module):
 
         # Check for valid OLE
         if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
-            print_error("Not a valid BUP File")
+            self.log('error', "Not a valid BUP File")
             return
 
         ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
@@ -108,7 +108,7 @@ class Debup(Module):
             except:
                 pass
 
-        print_info("BUP Details:")
-        print(table(header=['Description', 'Value'], rows=rows))
+        self.log('info', "BUP Details:")
+        self.log('table', dict(header=['Description', 'Value'], rows=rows))
 
         ole.close()
