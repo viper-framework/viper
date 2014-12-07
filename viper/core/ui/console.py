@@ -73,28 +73,50 @@ class Console(object):
 
         return data
 
-    def print_output(self, output):
+    def print_output(self, output, filename):
         if not output:
             return
-
-        for entry in output:
-            if entry['type'] == 'info':
-                print_info(entry['data'])
-            elif entry['type'] == 'item':
-                print_item(entry['data'])
-            elif entry['type'] == 'warning':
-                print_warning(entry['data'])
-            elif entry['type'] == 'error':
-                print_error(entry['data'])
-            elif entry['type'] == 'success':
-                print_success(entry['data'])
-            elif entry['type'] == 'table':
-                print(table(
-                    header=entry['data']['header'],
-                    rows=entry['data']['rows']
-                ))
-            else:
-                print(entry['data'])
+        if filename:
+            with open(filename.strip(), 'a') as out:
+                for entry in output:
+                    if entry['type'] == 'info':
+                        out.write('[*] {0}\n'.format(entry['data']))
+                    elif entry['type'] == 'item':
+                        out.write('  [-] {0}\n'.format(entry['data']))
+                    elif entry['type'] == 'warning':
+                        out.write('[!] {0}\n'.format(entry['data']))
+                    elif entry['type'] == 'error':
+                        out.write('[!] {0}\n'.format(entry['data']))
+                    elif entry['type'] == 'success':
+                        out.write('[+] {0}\n'.format(entry['data']))
+                    elif entry['type'] == 'table':
+                        out.write(str(table(
+                            header=entry['data']['header'],
+                            rows=entry['data']['rows']
+                        )))
+                        out.write('\n')
+                    else:
+                        out.write('{0}\n'.format(entry['data']))
+            print_success("Output written to {0}".format(filename))
+        else:
+            for entry in output:
+                if entry['type'] == 'info':
+                    print_info(entry['data'])
+                elif entry['type'] == 'item':
+                    print_item(entry['data'])
+                elif entry['type'] == 'warning':
+                    print_warning(entry['data'])
+                elif entry['type'] == 'error':
+                    print_error(entry['data'])
+                elif entry['type'] == 'success':
+                    print_success(entry['data'])
+                elif entry['type'] == 'table':
+                    print(table(
+                        header=entry['data']['header'],
+                        rows=entry['data']['rows']
+                    ))
+                else:
+                    print(entry['data'])
 
     def stop(self):
         # Stop main loop.
@@ -178,11 +200,20 @@ class Console(object):
                 # If there are recognized keywords, we replace them with
                 # their respective value.
                 data = self.keywords(data)
-
                 # Skip if the input is empty.
                 if not data:
                     continue
-
+                
+                # Check for output redirection
+                # If there is a > in the string, we assume 
+                # the user wants to output to file
+                if '>' in data:
+                    try:
+                        data, filename = data.split('>')
+                    except:
+                        filename = False
+                else:
+                    filename = False
                 # If the input starts with an exclamation mark, we treat the
                 # input as a bash command and execute it.
                 # At this point the keywords should be replaced.
@@ -223,7 +254,7 @@ class Console(object):
                             module.set_args(args)
                             module.run()
 
-                            self.print_output(module.output)
+                            self.print_output(module.output, filename)
                             del(module.output[:])
                         else:
                             print("Command not recognized.")
