@@ -7,12 +7,11 @@ import email
 import getopt
 import hashlib
 import tempfile
-import mimetypes
 import OleFileIO_PL
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+
 
 class EmailParse(Module):
     cmd = 'email'
@@ -36,7 +35,7 @@ class EmailParse(Module):
             self.log('', "\t--spoofcheck (-s)\tTest email for possible spoofing")
             self.log('', "\t--all (-a)\t\tRun all the options")
             self.log('', "\t--open (-o)\t\tSwitch session to the specified attachment")
-        
+
         def string_clean(value):
             if value:
                 return re.sub('[\n\t\r]', '', value)
@@ -45,17 +44,17 @@ class EmailParse(Module):
         def parse_ole_msg(ole):
             stream_dirs = ole.listdir()
             for stream in stream_dirs:
-                #get stream that contains the email header
+                # get stream that contains the email header
                 if stream[0].startswith('__substg1.0_007D'):
                     email_header = ole.openstream(stream).read()
-                    if stream[0].endswith('001F'): # Unicode probably needs something better than just stripping \x00
+                    if stream[0].endswith('001F'):  # Unicode probably needs something better than just stripping \x00
                         email_header = email_header.replace('\x00', '')
             # If it came from outlook we may need to trim some lines
             try:
                 email_header = email_header.split('Version 2.0\x0d\x0a', 1)[1]
             except:
                 pass
-                
+
             # Leaving us an RFC compliant email to parse
             msg = email.message_from_string(email_header)
             return msg
@@ -64,15 +63,15 @@ class EmailParse(Module):
             # Hard part now, each part of the attachment is in a seperate stream
 
             # need to get a unique stream id for each att
-            # its in the streamname as an 8 digit number. 
-            for i in range(20): # arbitrary count of emails. i dont expecet this many
+            # its in the streamname as an 8 digit number.
+            for i in range(20):  # arbitrary count of emails. i dont expecet this many
                 stream_number = str(i).zfill(8)
-                stream_name = '__attach_version1.0_#'+stream_number
-                #Unicode
+                stream_name = '__attach_version1.0_#' + stream_number
+                # Unicode
                 try:
-                    att_filename = ole.openstream(stream_name+'/__substg1.0_3704001F').read()
-                    att_mime = ole.openstream(stream_name+'/__substg1.0_370E001F').read()
-                    att_data = ole.openstream(stream_name+'/__substg1.0_37010102').read()
+                    att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read()
+                    att_mime = ole.openstream(stream_name + '/__substg1.0_370E001F').read()
+                    att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
                     print i, att_size, att_md5, att_filename, att_mime
@@ -80,9 +79,9 @@ class EmailParse(Module):
                     pass
                 # ASCII
                 try:
-                    att_filename = ole.openstream(stream_name+'/__substg1.0_3704001E').read()
-                    att_mime = ole.openstream(stream_name+'/__substg1.0_370E001E').read()
-                    att_data = ole.openstream(stream_name+'/__substg1.0_37010102').read()
+                    att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read()
+                    att_mime = ole.openstream(stream_name + '/__substg1.0_370E001E').read()
+                    att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
                     print i, att_size, att_md5, att_filename, att_mime
@@ -96,21 +95,21 @@ class EmailParse(Module):
                 # Hard part now, each part of the attachment is in a seperate stream
 
                 # need to get a unique stream id for each att
-                # its in the streamname as an 8 digit number. 
-                for i in range(20): # arbitrary count of emails. i dont expecet this many
+                # its in the streamname as an 8 digit number.
+                for i in range(20):  # arbitrary count of emails. i dont expecet this many
                     stream_number = str(i).zfill(8)
-                    stream_name = '__attach_version1.0_#'+stream_number
-                    #Unicode
+                    stream_name = '__attach_version1.0_#' + stream_number
+                    # Unicode
                     try:
-                        att_filename = ole.openstream(stream_name+'/__substg1.0_3704001F').read()
+                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read()
                         att_filename = att_filename.replace('\x00', '')
-                        att_data = ole.openstream(stream_name+'/__substg1.0_37010102').read()
+                        att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     except:
                         pass
                     # ASCII
                     try:
-                        att_filename = ole.openstream(stream_name+'/__substg1.0_3704001E').read()
-                        att_data = ole.openstream(stream_name+'/__substg1.0_37010102').read()
+                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read()
+                        att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     except:
                         pass
                     if i == att_id:
@@ -127,10 +126,10 @@ class EmailParse(Module):
                         rfc822 = True
                     else:
                         rfc822 = False
-                    
+
                     if part.get_content_maintype() == 'multipart' \
-                    or not part.get('Content-Disposition') \
-                    and not rfc822:
+                        or not part.get('Content-Disposition') \
+                            and not rfc822:
                         continue
 
                     att_count += 1
@@ -149,7 +148,7 @@ class EmailParse(Module):
                             filename = part.get_filename()
 
                         self.log('info', "Switching session to {0}".format(filename))
-                        
+
                         if data:
                             tmp_path = os.path.join(tempfile.gettempdir(), filename)
                             with open(tmp_path, 'w') as tmp:
@@ -176,7 +175,7 @@ class EmailParse(Module):
             rows = []
             for x in msg.keys():
                 # Adding Received to ignore list. this has to be handeled separately if there are more then one line
-                if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature','Received']:
+                if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature', 'Received']:
                     rows.append([x, string_clean(msg.get(x))])
             for x in msg.get_all('Received'):
                 rows.append(['Received', string_clean(x)])
@@ -200,8 +199,7 @@ class EmailParse(Module):
                     (?: (id|ID) \s+ (?P<id>.*?) (?=for|;|$) )?
                     (?: for \s+ (?P<for>.*?) (?=;|$) )?
                     (?: \s* ; \s* (?P<timestamp>.*) )?
-                    """,
-                    flags=re.X|re.I)
+                    """, flags=re.X | re.I)
                 m = cre.search(x)
                 if not m:
                     self.log('error', "Received header regex didn't match")
@@ -209,14 +207,14 @@ class EmailParse(Module):
                 t = []
                 for groupname in fields:
                     t.append(string_clean(m.group(groupname)))
-                rows.insert(0,t)
+                rows.insert(0, t)
             self.log('info', "Email path trace:")
             self.log('table', dict(header=fields, rows=rows))
             return
 
         def email_spoofcheck(msg, dnsenabled):
             self.log('info', "Email spoof check:")
-            
+
             # test 1: check if From address is the same as Sender, Reply-To, and Return-Path
             rows = [
                 ['Sender', string_clean(msg.get("Sender"))],
@@ -226,10 +224,10 @@ class EmailParse(Module):
             ]
             self.log('table', dict(header=['Key', 'Value'], rows=rows))
             addr = {
-                'Sender' : email.utils.parseaddr(string_clean(msg.get("Sender")))[1],
-                'From' : email.utils.parseaddr(string_clean(msg.get("From")))[1],
-                'Reply-To' : email.utils.parseaddr(string_clean(msg.get("Reply-To")))[1], 
-                'Return-Path' : email.utils.parseaddr(string_clean(msg.get("Return-Path")))[1]
+                'Sender': email.utils.parseaddr(string_clean(msg.get("Sender")))[1],
+                'From': email.utils.parseaddr(string_clean(msg.get("From")))[1],
+                'Reply-To': email.utils.parseaddr(string_clean(msg.get("Reply-To")))[1],
+                'Return-Path': email.utils.parseaddr(string_clean(msg.get("Return-Path")))[1]
             }
             if (addr['From'] == ''):
                 self.log('error', "No From address!")
@@ -259,7 +257,7 @@ class EmailParse(Module):
                     self.log('error', "Could not find domain or IP in Received by field")
                     return
                 bydomain = m.group(1)
-                domains = [ ['Received by', bydomain] ]
+                domains = [['Received by', bydomain]]
                 # if it's an IP, do the reverse lookup
                 m = re.search("\.\d+$", bydomain)
                 if m:
@@ -281,7 +279,7 @@ class EmailParse(Module):
                         return
                     fromdomain = m.group(1)
                     domains.append(['From', fromdomain])
-                
+
                 bymatch = False
                 mx = dns.resolver.query(fromdomain, 'MX')
                 for rdata in mx:
@@ -323,7 +321,7 @@ class EmailParse(Module):
                 self.log('success', "Email PASSED: Found SPF pass result")
 
             return
-            
+
         def email_attachments(msg, ole_flag):
             # Attachments
             att_count = 0
@@ -334,15 +332,15 @@ class EmailParse(Module):
                 # Hard part now, each part of the attachment is in a seperate stream
 
                 # need to get a unique stream id for each att
-                # its in the streamname as an 8 digit number. 
-                for i in range(20): # arbitrary count of emails. i dont expecet this many
+                # its in the streamname as an 8 digit number.
+                for i in range(20):  # arbitrary count of emails. i dont expecet this many
                     stream_number = str(i).zfill(8)
-                    stream_name = '__attach_version1.0_#'+stream_number
-                    #Unicode
+                    stream_name = '__attach_version1.0_#' + stream_number
+                    # Unicode
                     try:
-                        att_filename = ole.openstream(stream_name+'/__substg1.0_3704001F').read()
-                        att_mime = ole.openstream(stream_name+'/__substg1.0_370E001F').read()
-                        att_data = ole.openstream(stream_name+'/__substg1.0_37010102').read()
+                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read()
+                        att_mime = ole.openstream(stream_name + '/__substg1.0_370E001F').read()
+                        att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                         att_size = len(att_data)
                         att_md5 = hashlib.md5(att_data).hexdigest()
                         rows.append([i, att_filename, att_mime, att_size, att_md5])
@@ -351,20 +349,19 @@ class EmailParse(Module):
                         pass
                     # ASCII
                     try:
-                        att_filename = ole.openstream(stream_name+'/__substg1.0_3704001E').read()
-                        att_mime = ole.openstream(stream_name+'/__substg1.0_370E001E').read()
-                        att_data = ole.openstream(stream_name+'/__substg1.0_37010102').read()
+                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read()
+                        att_mime = ole.openstream(stream_name + '/__substg1.0_370E001E').read()
+                        att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                         att_size = len(att_data)
                         att_md5 = hashlib.md5(att_data).hexdigest()
                         rows.append([i, att_filename, att_mime, att_size, att_md5])
                         att_count += 1
                     except:
                         pass
-                
-                
+
             else:
                 # Walk through email string.
-                for part in msg.walk():                    
+                for part in msg.walk():
                     content_type = part.get_content_type()
 
                     if content_type == 'multipart':
@@ -387,7 +384,7 @@ class EmailParse(Module):
                         att_file_name = "rfc822msg_{0}.eml".format(att_size)
                         att_md5 = hashlib.md5(part_content).hexdigest()
                         att_count += 1
-                        rows.append([att_count, att_file_name, content_type, att_size, att_md5]) 
+                        rows.append([att_count, att_file_name, content_type, att_size, att_md5])
                         continue
 
                     if not part.get('Content-Disposition'):
@@ -395,7 +392,7 @@ class EmailParse(Module):
                         continue
 
                     att_file_name = part.get_filename()
-                    att_size = len(part_content)            
+                    att_size = len(part_content)
 
                     if not att_file_name:
                         continue
@@ -408,15 +405,14 @@ class EmailParse(Module):
             self.log('info', "Email attachments (total: {0}):".format(att_count))
             if att_count > 0:
                 self.log('table', dict(header=['ID', 'FileName', 'Content Type', 'File Size', 'MD5'], rows=rows))
-            
+
             self.log('info', "Email links:")
             for link in links:
                 self.log('item', link)
             return
-            
-            
+
         # Start Here
-        
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
@@ -444,7 +440,7 @@ class EmailParse(Module):
             email_handle = open(__sessions__.current.file.path)
             msg = email.message_from_file(email_handle)
             email_handle.close()
-        
+
         for opt, value in opts:
             if opt in ('-h', '--help'):
                 help()
@@ -464,17 +460,17 @@ class EmailParse(Module):
                     msg = ole
                 email_attachments(msg, ole_flag)
                 return
-            elif opt in ('-r','--header'):
+            elif opt in ('-r', '--header'):
                 if ole_flag:
                     msg = parse_ole_msg(ole)
                 email_header(msg)
                 return
-            elif opt in ('-t','--trace'):
+            elif opt in ('-t', '--trace'):
                 if ole_flag:
                     msg = parse_ole_msg(ole)
                 email_trace(msg, False)
                 return
-            elif opt in ('-T','--traceall'):
+            elif opt in ('-T', '--traceall'):
                 if ole_flag:
                     msg = parse_ole_msg(ole)
                 email_trace(msg, True)
