@@ -3,8 +3,8 @@
 
 import os
 import re
+import argparse
 import email
-import getopt
 import hashlib
 import tempfile
 import OleFileIO_PL
@@ -18,23 +18,18 @@ class EmailParse(Module):
     description = 'Parse eml and msg email files'
     authors = ['Kevin Breen', 'nex']
 
-    def run(self):
-        def usage():
-            self.log('', "usage: email [-hefrtTsao]")
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(prog=self.cmd, description=self.description)
+        self.parser.add_argument('-e', '--envelope', action='store_true', help='Show the email envelope')
+        self.parser.add_argument('-f', '--attach', action='store_true', help='Show Attachment information')
+        self.parser.add_argument('-r', '--header', action='store_true', help='Show email Header information')
+        self.parser.add_argument('-t', '--trace', action='store_true', help='Show email path via Received headers')
+        self.parser.add_argument('-T', '--traceall', action='store_true', help='Show email path via verbose Received headers')
+        self.parser.add_argument('-s', '--spoofcheck', action='store_true', help='Test email for possible spoofing')
+        self.parser.add_argument('-a', '--all', action='store_true', help='Run all the options')
+        self.parser.add_argument('-o', '--open', type=int, help='Switch session to the specified attachment')
 
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\t\tShow this help message")
-            self.log('', "\t--envelope (-e)\t\tShow the email envelope")
-            self.log('', "\t--attach (-f)\t\tShow Attachment information")
-            self.log('', "\t--header (-r)\t\tShow email Header information")
-            self.log('', "\t--trace (-t)\t\tShow email path via Received headers")
-            self.log('', "\t--traceall (-T)\t\tShow email path via verbose Received headers")
-            self.log('', "\t--spoofcheck (-s)\tTest email for possible spoofing")
-            self.log('', "\t--all (-a)\t\tRun all the options")
-            self.log('', "\t--open (-o)\t\tSwitch session to the specified attachment")
+    def run(self):
 
         def string_clean(value):
             if value:
@@ -418,9 +413,11 @@ class EmailParse(Module):
             return
 
         try:
-            opts, argv = getopt.getopt(self.args, 'hefrtTsao:', ['help', 'envelope', 'attach', 'header', 'trace', 'traceall', 'spoofcheck', 'all', 'open='])
-        except getopt.GetoptError as e:
+            parsed_args = self.parser.parse_args(self.args)
+        except argparse.ArgumentError as e:
             self.log('', e)
+            return
+        except:
             return
 
         # see if we can load the dns library for MX lookup spoof detecton
@@ -441,55 +438,51 @@ class EmailParse(Module):
             msg = email.message_from_file(email_handle)
             email_handle.close()
 
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-o', '--open'):
-                if ole_flag:
-                    msg = ole
-                att_session(int(value), msg, ole_flag)
-                return
-            elif opt in ('-e' '--envelope'):
-                if ole_flag:
-                    msg = parse_ole_msg(ole)
-                email_envelope(msg)
-                return
-            elif opt in ('-f', '--attach'):
-                if ole_flag:
-                    msg = ole
-                email_attachments(msg, ole_flag)
-                return
-            elif opt in ('-r', '--header'):
-                if ole_flag:
-                    msg = parse_ole_msg(ole)
-                email_header(msg)
-                return
-            elif opt in ('-t', '--trace'):
-                if ole_flag:
-                    msg = parse_ole_msg(ole)
-                email_trace(msg, False)
-                return
-            elif opt in ('-T', '--traceall'):
-                if ole_flag:
-                    msg = parse_ole_msg(ole)
-                email_trace(msg, True)
-                return
-            elif opt in ('-s', '--spoofcheck'):
-                if ole_flag:
-                    msg = parse_ole_msg(ole)
-                email_spoofcheck(msg, dnsenabled)
-                return
-            elif opt in ('-a', '--all'):
-                if ole_flag:
-                    msg = parse_ole_msg(ole)
-                email_envelope(msg)
-                email_header(msg)
-                email_trace(msg, True)
-                email_spoofcheck(msg, dnsenabled)
-                if ole_flag:
-                    msg = ole
-                email_attachments(msg, ole_flag)
-                return
-
-        usage()
+        if parsed_args.open is not None:
+            if ole_flag:
+                msg = ole
+            att_session(parsed_args.open, msg, ole_flag)
+            return
+        elif parsed_args.envelope:
+            if ole_flag:
+                msg = parse_ole_msg(ole)
+            email_envelope(msg)
+            return
+        elif parsed_args.attach:
+            if ole_flag:
+                msg = ole
+            email_attachments(msg, ole_flag)
+            return
+        elif parsed_args.header:
+            if ole_flag:
+                msg = parse_ole_msg(ole)
+            email_header(msg)
+            return
+        elif parsed_args.trace:
+            if ole_flag:
+                msg = parse_ole_msg(ole)
+            email_trace(msg, False)
+            return
+        elif parsed_args.traceall:
+            if ole_flag:
+                msg = parse_ole_msg(ole)
+            email_trace(msg, True)
+            return
+        elif parsed_args.spoofcheck:
+            if ole_flag:
+                msg = parse_ole_msg(ole)
+            email_spoofcheck(msg, dnsenabled)
+            return
+        elif parsed_args.all:
+            if ole_flag:
+                msg = parse_ole_msg(ole)
+            email_envelope(msg)
+            email_header(msg)
+            email_trace(msg, True)
+            email_spoofcheck(msg, dnsenabled)
+            if ole_flag:
+                msg = ole
+            email_attachments(msg, ole_flag)
+            return
+        else:
+            self.usage()
