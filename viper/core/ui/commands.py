@@ -60,6 +60,7 @@ class Commands(object):
         for command_name, command_item in self.commands.items():
             rows.append([command_name, command_item['description']])
 
+        rows.append(["exit, quit", "Exit Viper"])
         rows = sorted(rows, key=lambda entry: entry[0])
 
         print(table(['Command', 'Description'], rows))
