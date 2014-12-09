@@ -3,6 +3,7 @@
 
 import socket
 import urllib2
+import urllib
 
 try:
     import socks
@@ -44,3 +45,21 @@ def download(url, tor=False):
         print_error("Failed download: {0}".format(e))
     else:
         return data
+
+def VirusTotal(hash):
+    try:
+        api = "YourApiKey"
+        param = {'hash':hash,'apikey':api}
+        url = "https://www.virustotal.com/vtapi/v2/" + "file/download"
+        data = urllib.urlencode(param)
+        req = urllib2.Request(url,data)
+        result = urllib2.urlopen(req)
+        downloadedFile = result.read()
+        if len(downloadedFile) > 0:
+            return downloadedFile
+            print "\n\tMalware Downloaded"
+        else:
+            print_error(hash + " -- Not Found for Download")
+
+    except Exception:
+        print_error(hash + " -- Not Found for Download")

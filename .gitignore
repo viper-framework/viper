@@ -1,5 +1,5 @@
 *.py[cod]
-
+viper/common/cred.py
 # C extensions
 *.so
 
