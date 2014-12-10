@@ -7,7 +7,6 @@ import sys
 import shlex
 import subprocess
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -16,12 +15,14 @@ ext = ".bin"
 run_ida = {'linux2': 'idaq', 'darwin': 'open -a idaq',
            'win32': 'idaq'}
 
+
 class Ida(Module):
     cmd = 'ida'
     description = 'Start IDA Pro'
     authors = ['Sascha Rommelfangen', 'Raphaël Vinot']
 
     def __init__(self):
+        super(Ida, self).__init__()
         self.is_64b = False
         self.ext = ''
 
@@ -45,6 +46,10 @@ class Ida(Module):
         subprocess.Popen(args)
 
     def run(self):
+        super(Ida, self).run()
+        if self.parsed_args is None:
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
@@ -76,7 +81,7 @@ class Ida(Module):
             to_print = [arch, 'bit DLL (Windows)']
             if "native" in filetype:
                 to_print.append('perhaps a driver (.sys)')
-            
+
             self.log('info', ' '.join(to_print))
 
         try:
