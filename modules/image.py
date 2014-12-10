@@ -7,14 +7,19 @@ try:
 except ImportError:
     HAVE_REQUESTS = False
 
-from viper.common.out import *
+from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+
 
 class Image(Module):
     cmd = 'image'
     description = 'Perform analysis on images'
     authors = ['nex']
+
+    def __init__(self):
+        super(Image, self).__init__()
+        self.parser.add_argument('-g', '--ghiro', action='store_true', help='Upload the file to imageforensic.org and retrieve report')
 
     def ghiro(self):
         if not HAVE_REQUESTS:
@@ -38,24 +43,14 @@ class Image(Module):
         else:
             self.log('error', "The analysis failed")
 
-    def usage(self):
-        self.log('', "usage: image <command>")
-
-    def help(self):
-        self.usage()
-        self.log('', "")
-        self.log('', "Options:")
-        self.log('', "\tghiro\t\tUpload the file to imageforensic.org and retrieve report")
-        self.log('', "")
-
     def run(self):
+        super(Image, self).run()
+        if self.parsed_args is None:
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        if len(self.args) == 0:
-            self.help()
-            return
-
-        if self.args[0] == 'ghiro':
+        if self.parsed_args.ghiro:
             self.ghiro()
