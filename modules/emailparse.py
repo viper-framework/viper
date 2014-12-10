@@ -3,7 +3,6 @@
 
 import os
 import re
-import argparse
 import email
 import hashlib
 import tempfile
@@ -19,7 +18,7 @@ class EmailParse(Module):
     authors = ['Kevin Breen', 'nex']
 
     def __init__(self):
-        self.parser = argparse.ArgumentParser(prog=self.cmd, description=self.description)
+        super(EmailParse, self).__init__()
         self.parser.add_argument('-e', '--envelope', action='store_true', help='Show the email envelope')
         self.parser.add_argument('-f', '--attach', action='store_true', help='Show Attachment information')
         self.parser.add_argument('-r', '--header', action='store_true', help='Show email Header information')
@@ -29,7 +28,7 @@ class EmailParse(Module):
         self.parser.add_argument('-a', '--all', action='store_true', help='Run all the options')
         self.parser.add_argument('-o', '--open', type=int, help='Switch session to the specified attachment')
 
-    def run(self):
+    def run(self, *args):
 
         def string_clean(value):
             if value:
@@ -407,17 +406,12 @@ class EmailParse(Module):
             return
 
         # Start Here
-
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        try:
-            parsed_args = self.parser.parse_args(self.args)
-        except argparse.ArgumentError as e:
-            self.log('', e)
-            return
-        except:
+        super(EmailParse, self).run(*args)
+        if self.parsed_args is None:
             return
 
         # see if we can load the dns library for MX lookup spoof detecton
@@ -438,42 +432,35 @@ class EmailParse(Module):
             msg = email.message_from_file(email_handle)
             email_handle.close()
 
-        if parsed_args.open is not None:
+        if self.parsed_args.open is not None:
             if ole_flag:
                 msg = ole
-            att_session(parsed_args.open, msg, ole_flag)
-            return
-        elif parsed_args.envelope:
+            att_session(self.parsed_args.open, msg, ole_flag)
+        elif self.parsed_args.envelope:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_envelope(msg)
-            return
-        elif parsed_args.attach:
+        elif self.parsed_args.attach:
             if ole_flag:
                 msg = ole
             email_attachments(msg, ole_flag)
-            return
-        elif parsed_args.header:
+        elif self.parsed_args.header:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_header(msg)
-            return
-        elif parsed_args.trace:
+        elif self.parsed_args.trace:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_trace(msg, False)
-            return
-        elif parsed_args.traceall:
+        elif self.parsed_args.traceall:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_trace(msg, True)
-            return
-        elif parsed_args.spoofcheck:
+        elif self.parsed_args.spoofcheck:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_spoofcheck(msg, dnsenabled)
-            return
-        elif parsed_args.all:
+        elif self.parsed_args.all:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_envelope(msg)
@@ -483,6 +470,3 @@ class EmailParse(Module):
             if ole_flag:
                 msg = ole
             email_attachments(msg, ole_flag)
-            return
-        else:
-            self.usage()
