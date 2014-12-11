@@ -16,6 +16,9 @@ class Idx(Module):
     description = 'Parse Java idx files'
     authors = ['Kevin Breen']
 
+    def __init__(self):
+        super(Idx, self).__init__()
+
     def run(self):
 
         def sec2_parse():
@@ -110,6 +113,10 @@ class Idx(Module):
                     else:
                         unknowns += 1
             return sec_four
+
+        super(Idx, self).run()
+        if self.parsed_args is None:
+            return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
