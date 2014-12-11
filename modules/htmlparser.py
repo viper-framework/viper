@@ -4,12 +4,10 @@
 import os
 import re
 import math
-import getopt
 import string
 import hashlib
 from collections import Counter
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -19,12 +17,20 @@ try:
 except ImportError:
     HAVE_BS4 = False
 
+
 class HTMLParse(Module):
     cmd = 'html'
     description = 'Parse html files and extract content'
     authors = ['Kevin Breen', 'nex']
 
     def __init__(self):
+        super(HTMLParse, self).__init__()
+        self.parser.add_argument('-s', '--script', action='store_true', help='Extract all script tags')
+        self.parser.add_argument('-l', '--links', action='store_true', help='Show all links')
+        self.parser.add_argument('-f', '--iframe', action='store_true', help='Show all iframes')
+        self.parser.add_argument('-e', '--embed', action='store_true', help='Show all embedded files')
+        self.parser.add_argument('-i', '--images', action='store_true', help='Extract all images')
+        self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Dump all outputs to files. This option is availiable for iframes scripts and images, if you use it with images an http request will be executed to fetch each image')
         self.soup = None
 
     def string_clean(self, value):
@@ -37,7 +43,7 @@ class HTMLParse(Module):
     def shannon_entropy(self, s):
         s = str(s)
         p, lns = Counter(s), float(len(s))
-        return -sum(count/lns * math.log(count/lns, 2) for count in p.values())
+        return -sum(count / lns * math.log(count / lns, 2) for count in p.values())
 
     def dump_output(self, stream, out_dir, out_type):
         stream = str(stream)
@@ -75,7 +81,7 @@ class HTMLParse(Module):
             links.append([url, text])
 
         return links
-        
+
     def parse_iframes(self):
         # TODO: soup the iframe contents and look for hrefs.
         iframes = []
@@ -86,11 +92,11 @@ class HTMLParse(Module):
             entropy = self.shannon_entropy(content)
             size = "{0}x{1}".format(frame.get('width'), frame.get('height'))
             # Because None can be misleading when no width or height is specified for the ifame
-            size = size.replace('NonexNone','Not Specified')
+            size = size.replace('NonexNone', 'Not Specified')
             iframes.append([src, size, entropy])
             frame_content.append(content)
         return iframes, frame_content
-            
+
     def parse_embedded(self):
         # Java Applets
         java = []
@@ -107,7 +113,6 @@ class HTMLParse(Module):
             data = obj.get('data')
             flash.append([data])
         return java, flash
-            
 
     def parse_images(self):
         images = []
@@ -118,31 +123,12 @@ class HTMLParse(Module):
         return images
 
     def run(self):
-        def usage():
-            self.log('', "usage: html [-hslfeid]")
-            self.log('', "The --dump option is availiable for iframes scripts and images")
-            self.log('', "If you use --dump with images an http request will be executed to fetch each image")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--script (-s)\tExtract all script tags")
-            self.log('', "\t--links (-l)\tShow all links")
-            self.log('', "\t--iframe (-f)\tShow all iframes")
-            self.log('', "\t--embed (-e)\tShow all embedded files")
-            self.log('', "\t--images (-i)\tExtract all images")
-            self.log('', "\t--dump (-d)\tDump all outputs to files")
-                
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
+        super(HTMLParse, self).run()
+        if self.parsed_args is None:
             return
 
-        try:
-            opts, argv = getopt.getopt(self.args, 'hslfeid:', ['help', 'script', 'links', 'frame', 'embed', 'images', 'dump='])
-        except getopt.GetoptError as e:
-            self.log('', e)
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
             return
 
         try:
@@ -152,77 +138,60 @@ class HTMLParse(Module):
             self.log('error', "Something went wrong: {0}".format(e))
             return
 
-        # Check first if the --dump option has been enabled.
-        arg_dump = None
-        for opt, value in opts:
-            if opt in ('-d', '--dump'):
-                arg_dump = value
-        
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-s', '--script'):
-                scripts, script_content = self.parse_scripts()
-                if arg_dump:
-                    self.log('info', "Dumping Output to {0}".format(arg_dump))
-                    for s in script_content:
-                        self.dump_output(s, arg_dump, 'Scripts')
-                    return
-                else:
-                    self.log('info', "Scripts:")
-                    self.log('table', dict(header=['Type', 'Source', 'Entropy'], rows=scripts))
-                return
-            elif opt in ('-l' '--links'):
+        # Set dump path, none if not set.
+        arg_dump = self.parsed_args.dump
+
+        if self.parsed_args.script:
+
+            scripts, script_content = self.parse_scripts()
+            if arg_dump:
+                self.log('info', "Dumping Output to {0}".format(arg_dump))
+                for s in script_content:
+                    self.dump_output(s, arg_dump, 'Scripts')
+            else:
+                self.log('info', "Scripts:")
+                self.log('table', dict(header=['Type', 'Source', 'Entropy'], rows=scripts))
+
+        elif self.parsed_args.links:
                 links = self.parse_hrefs()
                 self.log('info', "Links")
                 self.log('info', "Target \t Text")
                 for link in links:
                     self.log('item', "{0}\t {1}".format(link[0], self.string_clean(link[1])))
-                return
-                
-            # iFrames
-            elif opt in ('-f', '--frame'):
-                frames, frame_content = self.parse_iframes()
-                if arg_dump:
-                    self.log('info', "Dumping Output to {0}".format(arg_dump))
-                    for f in frame_content:
-                        self.dump_output(f, arg_dump, 'iframe')
-                    return
-                else:
-                    self.log('info', "IFrames")
-                    self.log('table', dict(header=['Source','Size','Entropy'], rows=frames))
-                return
-                
-            # Images
-            elif opt in ('-i','--images'):
-                images = self.parse_images()
-                if arg_dump:
-                    self.log('info', "Dumping Images to {0}".format(arg_dump))
-                    self.log('error', "Not Implemented Yet")
-                    # this will need an extra http request to download the images
-                    return
-                else:
-                    self.log('info', "Images")
-                    self.log('table', dict(header=['Source','Alt',], rows=images))
-                return
+        # iFrames
+        elif self.parsed_args.frame:
+            frames, frame_content = self.parse_iframes()
+            if arg_dump:
+                self.log('info', "Dumping Output to {0}".format(arg_dump))
+                for f in frame_content:
+                    self.dump_output(f, arg_dump, 'iframe')
+            else:
+                self.log('info', "IFrames")
+                self.log('table', dict(header=['Source', 'Size', 'Entropy'], rows=frames))
 
-            # Embedded
-            elif opt in ('-e','--embed'):
-                java, flash = self.parse_embedded()
-                if arg_dump:
-                    self.log('info', "Dumping Embedded Items to {0}".format(arg_dump))
-                    self.log('error', "Not Implemented Yet")
-                    # this will need an extra http request to download the images
-                    return
-                else:
-                    if len(java) > 0:
-                        self.log('info', "Embedded Java Objects")
-                        self.log('table', dict(header=['Archive','Code',], rows=java))
-                        print ""
-                    if len(flash) > 0:
-                        self.log('info', "Embedded Flash Objects")
-                        self.log('table', dict(header=['Swf Src'], rows=flash))
-                return
+        # Images
+        elif self.parsed_args.images:
+            images = self.parse_images()
+            if arg_dump:
+                self.log('info', "Dumping Images to {0}".format(arg_dump))
+                self.log('error', "Not Implemented Yet")
+                # this will need an extra http request to download the images
+            else:
+                self.log('info', "Images")
+                self.log('table', dict(header=['Source', 'Alt', ], rows=images))
 
-        help()
+        # Embedded
+        elif self.parsed_args.embed:
+            java, flash = self.parse_embedded()
+            if arg_dump:
+                self.log('info', "Dumping Embedded Items to {0}".format(arg_dump))
+                self.log('error', "Not Implemented Yet")
+                # this will need an extra http request to download the images
+            else:
+                if len(java) > 0:
+                    self.log('info', "Embedded Java Objects")
+                    self.log('table', dict(header=['Archive', 'Code', ], rows=java))
+                    print ""
+                if len(flash) > 0:
+                    self.log('info', "Embedded Flash Objects")
+                    self.log('table', dict(header=['Swf Src'], rows=flash))
