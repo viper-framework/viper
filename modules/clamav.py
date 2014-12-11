@@ -1,62 +1,45 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-import getopt
-
 try:
     import pyclamd
     HAVE_CLAMD = True
 except ImportError:
     HAVE_CLAMD = False
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+
 
 class ClamAV(Module):
     cmd = 'clamav'
     description = 'Scan file from local ClamAV daemon'
     authors = ['neriberto']
 
-    def run(self):
-        def usage():
-            self.log('', "usage: clamav [-h] [-s]")
+    def __init__(self):
+        super(ClamAV, self).__init__()
+        self.parser.add_argument('-s', '--socket', help='Specify an unix socket (default: Clamd Unix Socket)')
 
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--socket(-s)\tSpecify an unix socket (default: Clamd Unix Socket)")
-            self.log('', "")
+    def run(self):
+        super(ClamAV, self).run()
+        if self.parsed_args is None:
+            return
 
         if not HAVE_CLAMD:
             self.log('error', "Missing dependency, install requests (`pip install pyclamd`)")
             return
 
-        try:
-            opts, argv = getopt.getopt(self.args, 'hs:', ['help', 'socket='])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
         daemon = None
-        result = None
         socket = None
 
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
+        if self.parsed_args.socket is not None:
+            socket = self.parsed_args.socket
+            self.log('info', "Using socket {0} to connect to ClamAV daemon".format(socket))
+            try:
+                daemon = pyclamd.ClamdUnixSocket(socket)
+            except Exception as e:
+                self.log('error', "Daemon connection failure, {0}".format(e))
                 return
-            elif opt in ('-s', '--socket'):
-                self.log('info', "Using socket {0} to connect to ClamAV daemon".format(value))
-                socket = value
-                try:
-                    daemon = pyclamd.ClamdUnixSocket(socket)
-                except Exception as e:
-                    self.log('error', "Daemon connection failure, {0}".format(e))
-                    return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
