@@ -14,8 +14,7 @@ import getopt
 import zipfile
 import xml.etree.ElementTree as ET
 
-from viper.common.out import *
-from viper.common.utils import string_clean, hexdump
+from viper.common.utils import string_clean
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -24,6 +23,7 @@ try:
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
+
 
 class Office(Module):
     cmd = 'office'
@@ -45,23 +45,23 @@ class Office(Module):
 
             # TODO: one struct.unpack should be simpler.
             # Read Header
-            header = data[start:start+3]
+            header = data[start:start + 3]
             # Read Version
-            ver = struct.unpack('<b', data[start+3])[0]
+            ver = struct.unpack('<b', data[start + 3])[0]
             # Error check for version above 20
             # TODO: is this accurate? (check SWF specifications).
             if ver > 20:
                 continue
 
             # Read SWF Size.
-            size = struct.unpack('<i', data[start+4:start+8])[0]
+            size = struct.unpack('<i', data[start + 4:start + 8])[0]
             if (start + size) > len(data) or size < 1024:
                 # Declared size larger than remaining data, this is not
                 # a SWF or declared size too small for a usual SWF.
                 continue
 
             # Read SWF into buffer. If compressed read uncompressed size.
-            swf = data[start:start+size]
+            swf = data[start:start + size]
             is_compressed = False
             swf_deflate = None
             if 'CWS' in header:
@@ -265,7 +265,6 @@ class Office(Module):
 
     def xmlmeta(self, zip_xml):
         media_list = []
-        meta_list = []
         embedded_list = []
         vba_list = []
         for name in zip_xml.namelist():
@@ -375,21 +374,21 @@ class Office(Module):
             if opt in ('-h', '--help'):
                 help()
                 return
-            if opt in ('-m','--meta'):
+            if opt in ('-m', '--meta'):
                 if OLE_FILE:
                     self.metadata(ole)
                     return
                 elif XML_FILE:
                     self.xmlmeta(zip_xml)
                     return
-            if opt in ('-s','--streams'):
+            if opt in ('-s', '--streams'):
                 if OLE_FILE:
                     self.metatimes(ole)
                     return
                 elif XML_FILE:
                     self.xmlstruct(zip_xml)
                     return
-            if opt in ('-o','--oleid'):
+            if opt in ('-o', '--oleid'):
                 if OLE_FILE:
                     self.oleid(ole)
                     return
