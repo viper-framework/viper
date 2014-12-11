@@ -54,6 +54,9 @@ class Idx(Module):
             data.seek(32)
             len_URL = struct.unpack('b', data.read(1))[0]
             data_URL = data.read(len_URL)
+            # keep those 2 unused variables
+            namespace_len = struct.unpack('>h', data.read(2))[0]
+            namespace = data.read(namespace_len)
             sec2_fields = struct.unpack('>l', data.read(4))[0]
             sec_two.append(['URL', data_URL])
 
@@ -125,6 +128,11 @@ class Idx(Module):
         # Main starts here
         data = open(__sessions__.current.file.path)
         file_size = __sessions__.current.file.size
+
+        # Keep those 2 unused variables
+        busy_byte = data.read(1)
+        complete_byte = data.read(1)
+
         cache_ver = struct.unpack('>i', data.read(4))[0]
         if cache_ver not in (602, 603, 604, 605, 606):
             self.log('error', "Invalid IDX header found")
@@ -136,6 +144,8 @@ class Idx(Module):
                 data.seek(8)
             elif cache_ver == 605:
                 data.seek(6)
+            # Not used, keep
+            is_shortcut_img = data.read(1)
             content_len = struct.unpack('>l', data.read(4))[0]
             last_modified_date = struct.unpack('>q', data.read(8))[0] / 1000
             expiration_date = struct.unpack('>q', data.read(8))[0] / 1000
@@ -155,6 +165,8 @@ class Idx(Module):
                 sec4_len = 0
                 sec5_len = 0
             elif cache_ver in [603, 604, 605]:
+                # Not used, keep
+                known_to_be_signed = data.read(1)
                 sec2_len = struct.unpack('>i', data.read(4))[0]
                 sec3_len = struct.unpack('>i', data.read(4))[0]
                 sec4_len = struct.unpack('>i', data.read(4))[0]
@@ -162,6 +174,9 @@ class Idx(Module):
 
                 blacklist_timestamp = struct.unpack('>q', data.read(8))[0] / 1000
                 cert_expiration_date = struct.unpack('>q', data.read(8))[0] / 1000
+                # Not used, keep
+                class_verification_status = data.read(1)
+                reduced_manifest_length = struct.unpack('>l', data.read(4))[0]
 
                 sec_one.append(['Section 2 length', sec2_len])
                 if sec3_len:
