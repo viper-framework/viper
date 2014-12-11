@@ -2,9 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import getopt
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -14,24 +12,22 @@ try:
 except ImportError:
     HAVE_OLE = False
 
+
 class Debup(Module):
     cmd = 'debup'
     description = 'Parse McAfee BUP Files'
     authors = ['Kevin Breen', 'nex']
 
-    def run(self):
-    
-        def usage():
-            self.log('', "usage: debup [-hs]")
+    def __init__(self):
+        super(Debup, self).__init__()
+        self.parser.add_argument('-s', '--session', action='store_true', help='Switch session to the quarantined file')
 
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--info (-i)\tSwitch session to the quarantined file")
-            return   
-    
+    def run(self):
+
+        super(Debup, self).run()
+        if self.parsed_args is None:
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
@@ -39,7 +35,7 @@ class Debup(Module):
         if not HAVE_OLE:
             self.log('error', "Missing dependency, install OleFileIO (`pip install OleFileIO_PL`)")
             return
-        
+
         def xordata(data, key):
             encoded = bytearray(data)
             for i in range(len(encoded)):
@@ -75,19 +71,8 @@ class Debup(Module):
                 self.log('error', "Unble to Switch Session")
 
         # Run Functions
-        try:
-            opts, argv = getopt.getopt(self.args[0:], 'hs', ['help', 'session'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            return
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            if opt in ('-s','--session'):
-                bupextract()
-                return
+        if self.parsed_args.session:
+            bupextract()
 
         # Check for valid OLE
         if not OleFileIO_PL.isOleFile(__sessions__.current.file.path):
@@ -103,8 +88,8 @@ class Debup(Module):
 
         for line in lines:
             try:
-                k,v = line.split('=')
-                rows.append([k,v[:-1]]) #Strip the \r from v
+                k, v = line.split('=')
+                rows.append([k, v[:-1]])  # Strip the \r from v
             except:
                 pass
 
