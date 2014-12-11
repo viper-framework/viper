@@ -2,20 +2,25 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import re
-import getopt
 import importlib
 
 import yara
 
-from viper.common.out import *
+from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+
 
 class RAT(Module):
     cmd = 'rat'
     description = 'Extract information from known RAT families'
     authors = ['Kevin Breen', 'nex']
+
+    def __init__(self):
+        super(RAT, self).__init__()
+        self.parser.add_argument('-a', '--auto', action='store_true', help='Automatically detect RAT')
+        self.parser.add_argument('-f', '--family', help='Specify which RAT family')
+        self.parser.add_argument('-l', '--list', action='store_true', help='List available RAT modules')
 
     def list(self):
         self.log('info', "List of available RAT modules:")
@@ -67,37 +72,13 @@ class RAT(Module):
         self.log('info', "No known RAT detected")
 
     def run(self):
-        def usage():
-            self.log('', "usage: rat [-hafl]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--auto (-a)\tAutomatically detect RAT")
-            self.log('', "\t--family (-f)\tSpecify which RAT family")
-            self.log('', "\t--list (-l)\tList available RAT modules")
-            self.log('', "")
-
-        try:
-            opts, argv = getopt.getopt(self.args[0:], 'haf:l', ['help', 'auto', 'family=', 'list'])
-        except getopt.GetoptError as e:
-            self.log('', e)
+        super(RAT, self).run()
+        if self.parsed_args is None:
             return
 
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-a', '--auto'):
-                self.auto()
-                return
-            elif opt in ('-f', '--family'):
-                self.get_config(value)
-                return
-            elif opt in ('-l', '--list'):
-                self.list()
-                return
-
-        usage()
+        if self.parsed_args.auto:
+            self.auto()
+        elif self.parsed_args.family:
+            self.get_config(self.parsed_args.family)
+        elif self.parsed_args.list:
+            self.list()
