@@ -5,55 +5,46 @@
 # ROL, ROR
 
 import os
-import getopt
-from string import ascii_lowercase as lc, ascii_uppercase as uc
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+
 
 class XorSearch(Module):
     cmd = 'xor'
     description = 'Search for xor Strings'
     authors = ['Kevin Breen', 'nex']
 
+    def __init__(self):
+        super(XorSearch, self).__init__()
+        self.parser.add_argument('-s', '--search', metavar='terms', nargs='+', help='Specify a custom term to search')
+        self.parser.add_argument('-x', '--xor', action='store_true', help='Search XOR (default)')
+        self.parser.add_argument('-r', '--rot', action='store_true', help='Search ROT')
+        self.parser.add_argument('-a', '--all', action='store_true', help='Attempt search with all available modes')
+        self.parser.add_argument('-o', '--output', metavar='path', help='Save Decoded Data')
+
     def run(self):
         terms = [
             'This Program',
-            'GetSystemDirectory', 
+            'GetSystemDirectory',
             'CreateFile',
             'IsBadReadPtr',
             'IsBadWritePtr'
-            'GetProcAddress', 
-            'LoadLibrary', 
+            'GetProcAddress',
+            'LoadLibrary',
             'WinExec',
-            'CreateFile' 
+            'CreateFile'
             'ShellExecute',
-            'CloseHandle', 
-            'UrlDownloadToFile', 
-            'GetTempPath', 
+            'CloseHandle',
+            'UrlDownloadToFile',
+            'GetTempPath',
             'ReadFile',
-            'WriteFile', 
+            'WriteFile',
             'SetFilePointer',
-            'GetProcAddr', 
+            'GetProcAddr',
             'VirtualAlloc',
             'http'
         ]
-
-        def usage():
-            self.log('', "usage: xor [-x] [-r] [-a] [-o] [-s=term]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--search (-s)\tSpecify a custom term to search")
-            self.log('', "\t--xor (-x)\tSearch XOR (default)")
-            self.log('', "\t--rot (-r)\tSearch ROT")
-            self.log('', "\t--all (-a)\tAttempt search with all available modes")
-            self.log('', "\t--output (-o)\tSave Decoded Data")
-            self.log('', "")
 
         def xordata(data, key):
             encoded = bytearray(data)
@@ -73,7 +64,7 @@ class XorSearch(Module):
                         num -= 26
                     encoded += chr(num)
             return encoded.lower()
-        
+
         def xor_search(terms, save_path):
             for key in range(1, 256):
                 found = False
@@ -84,7 +75,7 @@ class XorSearch(Module):
                         self.log('error', "Matched: {0} with key: {1}".format(term, hex(key)))
                 if found and save_path:
                     save_output(xored, save_path, key)
-   
+
         def rot_search(terms, save_path):
             for key in range(1, 25):
                 found = False
@@ -107,43 +98,31 @@ class XorSearch(Module):
             else:
                 if not os.path.isdir(save_path):
                     self.log('error', "You need to specify a folder not a file")
-                    return           
+                    return
             save_name = "{0}/{1}_{2}.bin".format(save_path, __sessions__.current.file.name, str(hex(key)))
             with open(save_name, 'wb') as output:
                 output.write(data)
             self.log('info', "Saved Output to {0}".format(save_name))
 
-                    
+        super(XorSearch, self).run()
+        if self.parsed_args is None:
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
-            
-        try:
-            opts, argv = getopt.getopt(self.args, 'hxrao:s:', ['help', 'xor', 'rot', 'all',  'output=', 'search='])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            return
 
-        xor = True
-        rot = False
-        save_path = False
-        
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            if opt in ('-o', '--output'):
-                save_path = value
-            elif opt in ('-s', '--search'):
-                terms = [value]   
-            elif opt in ('-x', '--xor'):
-                xor = True
-            elif opt in ('-r', '--rot'):
-                rot = True
-                xor = False
-            elif opt in ('-a', '--all'):
-                xor = True
-                rot = True
+        xor = self.parsed_args.xor
+        rot = self.parsed_args.rot
+        save_path = self.parsed_args.output
+
+        if not xor and not rot:
+            xor = True
+        if self.parsed_args.search is not None:
+            terms = self.parsed_args.search
+        if self.parsed_args.all:
+            xor = True
+            rot = True
 
         self.log('info', "Searching for the following strings:")
         for term in terms:
