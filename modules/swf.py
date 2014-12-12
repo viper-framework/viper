@@ -4,7 +4,6 @@
 import os
 import zlib
 import struct
-import getopt
 import tempfile
 from StringIO import StringIO
 
@@ -14,15 +13,20 @@ try:
 except ImportError:
     HAVE_PYLZMA = False
 
-from viper.common.out import *
+from viper.common.out import cyan
 from viper.common.abstracts import Module
 from viper.common.utils import hexdump, get_md5
 from viper.core.session import __sessions__
 
+
 class SWF(Module):
     cmd = 'swf'
-    description = 'Parse and analyze Flash objects'
+    description = 'Parse, analyze and decompress Flash objects'
     authors = ['nex']
+
+    def __init__(self):
+        super(SWF, self).__init__()
+        self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Dump the SWF object to the destination folder (default is tmpdir)')
 
     def parse_swf(self):
         # Open an handle to the opened file so that we can more easily
@@ -47,45 +51,12 @@ class SWF(Module):
 
         return header, version, size, data
 
-    def decompress(self):
-        def usage():
-            self.log('', "usage: swf decompress [-d=folder]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--dump (-d)\tDump the SWF object to the destination folder (default is /tmp)")
-            self.log('', "")
-
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hd', ['help', 'dump'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_dump = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-d', '--dump'):
-                if value:
-                    arg_dump = value
-                else:
-                    arg_dump = tempfile.gettempdir()
-
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return
+    def decompress(self, dump_dir):
 
         # Check if the file type is right.
         # TODO: this might be a bit hacky, need to verify whether malformed
         # Flash exploit would get a different file type.
-        if not 'Flash' in __sessions__.current.file.type:
+        if 'Flash' not in __sessions__.current.file.type:
             self.log('error', "The opened file doesn't appear to be a valid SWF object")
             return
 
@@ -132,10 +103,10 @@ class SWF(Module):
             # this. Paginate?
             self.log('', cyan(hexdump(decompressed)))
 
-            if arg_dump:
+            if dump_dir:
                 # Dump the decompressed SWF file to the specified directory
                 # or to the default temporary one.
-                dump_path = os.path.join(arg_dump, '{0}.swf'.format(get_md5(decompressed)))
+                dump_path = os.path.join(dump_dir, '{0}.swf'.format(get_md5(decompressed)))
                 with open(dump_path, 'wb') as handle:
                     handle.write(decompressed)
 
@@ -144,23 +115,17 @@ class SWF(Module):
                 # Directly open a session on the dumped Flash object.
                 __sessions__.new(dump_path)
 
-    def usage(self):
-        self.log('', "usage: swf <command>")
-
-    def help(self):
-        self.usage()
-        self.log('', "")
-        self.log('', "Options:")
-        self.log('', "\thelp\t\tShow this help message")
-        self.log('', "\tdecompress\tAttempt to decompress the Flash object")
-        self.log('', "")
-
     def run(self):
-        if len(self.args) == 0:
-            self.help()
+
+        super(SWF, self).run()
+        if self.parsed_args is None:
             return
 
-        if self.args[0] == 'help':
-            self.help()
-        elif self.args[0] == 'decompress':
-            self.decompress()
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return
+
+        arg_dump = self.parsed_args.dump
+        if arg_dump is None:
+            arg_dump = tempfile.gettempdir()
+        self.decompress(arg_dump)
