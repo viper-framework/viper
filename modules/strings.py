@@ -6,7 +6,6 @@ import re
 import getopt
 from socket import inet_pton, AF_INET6, error as socket_error
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -25,7 +24,8 @@ IPV6_REGEX = re.compile('((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-F
                         '\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7}'
                         ')|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d'
                         '\d|[1-9]?\d)){3}))|:)))(%.+)?', re.IGNORECASE | re.S)
-TLD = ['AC', 'ACADEMY', 'ACTOR', 'AD', 'AE', 'AERO', 'AF', 'AG', 'AGENCY', 'AI', 'AL', 'AM', 'AN', 'AO', 'AQ', 'AR',
+TLD = [
+    'AC', 'ACADEMY', 'ACTOR', 'AD', 'AE', 'AERO', 'AF', 'AG', 'AGENCY', 'AI', 'AL', 'AM', 'AN', 'AO', 'AQ', 'AR',
     'ARPA', 'AS', 'ASIA', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BAR', 'BARGAINS', 'BB', 'BD', 'BE', 'BERLIN', 'BEST',
     'BF', 'BG', 'BH', 'BI', 'BID', 'BIKE', 'BIZ', 'BJ', 'BLUE', 'BM', 'BN', 'BO', 'BOUTIQUE', 'BR', 'BS', 'BT',
     'BUILD', 'BUILDERS', 'BUZZ', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CAB', 'CAMERA', 'CAMP', 'CARDS', 'CAREERS', 'CAT',
@@ -65,10 +65,16 @@ TLD = ['AC', 'ACADEMY', 'ACTOR', 'AD', 'AE', 'AERO', 'AF', 'AG', 'AGENCY', 'AI',
     'XN--XKC2AL3HYE2A', 'XN--XKC2DL3A5EE0H', 'XN--YFRO4I67O', 'XN--YGBI2AMMX', 'XN--ZFR164B', 'XXX', 'XYZ', 'YE',
     'YT', 'ZA', 'ZM', 'ZONE', 'ZW']
 
+
 class Strings(Module):
     cmd = 'strings'
     description = 'Extract strings from file'
     authors = ['nex', 'Brian Wallace']
+
+    def __init__(self):
+        super(Strings, self).__init__()
+        self.parser.add_argument('-a', '--all', action='store_true', help='Print all strings')
+        self.parser.add_argument('-H', '--hosts', action='store_true', help='Extract IP addresses and domains from strings')
 
     def extract_hosts(self, strings):
         results = []
@@ -95,35 +101,12 @@ class Strings(Module):
             self.log('item', result)
 
     def run(self):
-        def usage():
-            self.log('', "usage: strings [-haH]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--all (-a)\tPrint all strings")
-            self.log('', "\t--hosts (-H)\tExtract IP addresses and domains from strings")
-            self.log('', "")
-
-        try:
-            opts, argv = getopt.getopt(self.args[0:], 'haH', ['help', 'all', 'hosts'])
-        except getopt.GetoptError as e:
-            self.log('', e)
+        super(Strings, self).run()
+        if self.parsed_args is None:
             return
 
-        arg_all = False
-        arg_hosts = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-a', '--all'):
-                arg_all = True
-            elif opt in ('-H', '--hosts'):
-                arg_hosts = True
+        arg_all = self.parsed_args.all
+        arg_hosts = self.parsed_args.hosts
 
         if not arg_all and not arg_hosts:
             usage()
