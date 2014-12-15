@@ -3,7 +3,6 @@
 
 import os
 import re
-import getopt
 from socket import inet_pton, AF_INET6, error as socket_error
 
 from viper.common.abstracts import Module
@@ -107,10 +106,6 @@ class Strings(Module):
 
         arg_all = self.parsed_args.all
         arg_hosts = self.parsed_args.hosts
-
-        if not arg_all and not arg_hosts:
-            usage()
-            return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
