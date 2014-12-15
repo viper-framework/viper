@@ -2,10 +2,8 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import getopt
-import string as printstring # string is being used as a var - easier to replace here
+import string as printstring  # string is being used as a var - easier to replace here
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
@@ -17,24 +15,24 @@ try:
 except ImportError:
     HAVE_YARA = False
 
+
 class YaraScan(Module):
     cmd = 'yara'
     description = 'Run Yara scan'
     authors = ['nex']
 
-    def scan(self):
-        def usage():
-            self.log('', "usage: yara scan [-a]")
+    def __init__(self):
+        super(YaraScan, self).__init__()
+        subparsers = self.parser.add_subparsers(dest='subname')
+        parser_scan = subparsers.add_parser('scan', help='Scan files with Yara signatures')
+        parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (default will run data/yara/index.yara)')
+        parser_scan.add_argument('-a', '--all', action='store_true', help='Scan all stored files (default if no session is open)')
+        parser_scan.add_argument('-t', '--tag', action='store_true', help='Tag Files with Rule Name (default is not to)')
 
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--rule (-r)\tSpecify a ruleset file path (default will run data/yara/index.yara)")
-            self.log('', "\t--all (-a)\tScan all stored files (default if no session is open)")
-            self.log('', "\t--tag (-t)\tTag Files with Rule Name (default is not to)")
-            self.log('', "")
+        parser_rules = subparsers.add_parser('rules', help='Operate on Yara rules')
+        parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
+
+    def scan(self):
 
         def string_printable(line):
             line = str(line)
@@ -43,7 +41,7 @@ class YaraScan(Module):
                 if c in printstring.printable:
                     new_line += c
                 else:
-                    new_line += '\\x'+c.encode('hex')
+                    new_line += '\\x' + c.encode('hex')
             return new_line
 
         # This means users can just drop or remove rule files without
@@ -67,27 +65,9 @@ class YaraScan(Module):
 
             return 'data/yara/index.yara'
 
-        arg_rule = ''
-        arg_scan_all = False
-        arg_tag = False
-
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hr:at', ['help', 'rule=', 'all', 'tag'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            return
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            if opt in ('-t', '--tag'):
-                arg_tag = True
-            elif opt in ('-r', '--rule'):
-                arg_rule = value
-            elif opt in ('-a', '--all'):
-                arg_scan_all = True
-
+        arg_rule = self.parsed_args.rule
+        arg_scan_all = self.parsed_args.all
+        arg_tag = self.parsed_args.tag
 
         # If no custom ruleset is specified, we use the default one.
         if not arg_rule:
@@ -119,7 +99,8 @@ class YaraScan(Module):
                 files.append(sample)
 
         for entry in files:
-            if entry.size == 0: continue
+            if entry.size == 0:
+                continue
             self.log('info', "Scanning {0} ({1})".format(entry.name, entry.sha256))
 
             # Check if the entry has a path attribute. This happens when
@@ -172,33 +153,9 @@ class YaraScan(Module):
                 if __sessions__.is_set() and not arg_scan_all:
                     self.log('info', "Refreshing session to update attributes...")
                     __sessions__.new(__sessions__.current.file.path)
-                
+
     def rules(self):
-        def usage():
-            self.log('', "usage: yara rules [-h] [-e <rule #>]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--edit (-e)\tOpen an editor to edit the specified rule")
-            self.log('', "")
-
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'he:', ['help', 'edit='])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            return
-
-        arg_edit = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-e', '--edit'):
-                arg_edit = value
+        arg_edit = self.parsed_args.edit
 
         # Retrieve the list of rules and populatea list.
         rules = []
@@ -214,6 +171,7 @@ class YaraScan(Module):
             for rule in rules:
                 if int(arg_edit) == rule[0]:
                     os.system('"${EDITOR:-nano}" ' + rule[1])
+                    break
         # Otherwise, just print the list.
         else:
             self.log('table', dict(header=['#', 'Path'], rows=rules))
@@ -221,31 +179,15 @@ class YaraScan(Module):
             self.log('', "You can edit these rules by specifying --edit and the #")
 
     def run(self):
+        super(YaraScan, self).run()
+        if self.parsed_args is None:
+            return
+
         if not HAVE_YARA:
             self.log('error', "Missing dependency, install yara")
             return
 
-        def usage():
-            self.log('', "usage: yara <help|scan|rules>")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\thelp\t\tShow this help message")
-            self.log('', "\tscan\t\tScan files with Yara signatures")
-            self.log('', "\trules\t\tOperate on Yara rules")
-            self.log('', "")
-
-        if len(self.args) == 0:
-            usage()
-            return
-
-        if self.args[0] == 'help':
-            help()
-        elif self.args[0] == 'scan':
+        if self.parsed_args.subname == 'scan':
             self.scan()
-        elif self.args[0] == 'rules':
+        elif self.parsed_args.subname == 'rules':
             self.rules()
-        else:
-            usage()
