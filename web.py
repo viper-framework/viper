@@ -619,7 +619,10 @@ def cuckoo_submit():
 def hex_viewer():
     # get post data
     file_hash = request.forms.get('file_hash')
-    hex_offset = request.forms.get('hex_start')
+    try:
+        hex_offset = int(request.forms.get('hex_start'))
+    except:
+        return '<p class="text-danger">Error Generating Request</p>'
     hex_length = 256
     
     # get file path
