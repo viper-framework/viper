@@ -1,8 +1,8 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
 import re
-import getopt
 import datetime
 import tempfile
 
@@ -19,13 +19,13 @@ try:
 except ImportError:
     HAVE_PEHASH = False
 
-from viper.common.out import *
-from viper.common.objects import File
+from viper.common.out import bold, table
 from viper.common.abstracts import Module
 from viper.common.utils import get_type, get_md5
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
+
 
 class PE(Module):
     cmd = 'pe'
@@ -33,6 +33,41 @@ class PE(Module):
     authors = ['nex', 'Statixs']
 
     def __init__(self):
+        super(PE, self).__init__()
+        subparsers = self.parser.add_subparsers(dest='subname')
+        subparsers.add_parser('imports', help='List PE imports')
+        subparsers.add_parser('exports', help='List PE exports')
+
+        parser_res = subparsers.add_parser('resources', help='List PE resources')
+        parser_res.add_argument('-d', '--dump', metavar='folder', help='Destination directory to store resource files in')
+        parser_res.add_argument('-o', '--open', metavar='resource number', type=int, help='Open a session on the specified resource')
+        parser_res.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common resources')
+
+        parser_imp = subparsers.add_parser('imphash', help='Get and scan for imphash')
+        parser_imp.add_argument('-s', '--scan', action='store_true', help='Scan for all samples with same imphash')
+        parser_imp.add_argument('-c', '--cluster', action='store_true', help='Cluster repository by imphash (careful, could be massive)')
+
+        parser_comp = subparsers.add_parser('compiletime', help='Show the compiletime')
+        parser_comp.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common compile time')
+        parser_comp.add_argument('-w', '--window', type=int, help='Specify an optional time window in minutes')
+
+        parser_peid = subparsers.add_parser('peid', help='Show the PEiD signatures')
+        parser_peid.add_argument('-s', '--scan', action='store_true', help='Scan the repository for PEiD signatures')
+
+        parser_sec = subparsers.add_parser('security', help='Show digital signature')
+        parser_sec.add_argument('-d', '--dump', metavar='folder', help='Destination directory to store digital signature in')
+        parser_sec.add_argument('-a', '--all', action='store_true', help='Find all samples with a digital signature')
+        parser_sec.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common certificates')
+
+        parser_lang = subparsers.add_parser('language', help='Guess PE language')
+        parser_lang.add_argument('-s', '--scan', action='store_true', help='Scan the repository')
+
+        subparsers.add_parser('sections', help='List PE Sections')
+        parser_peh = subparsers.add_parser('pehash', help='Calculate the PEhash and compare them')
+        parser_peh.add_argument('-a', '--all', action='store_true', help='Prints the PEhash of all files in the project')
+        parser_peh.add_argument('-c', '--cluster', action='store_true', help='Calculate and cluster all files in the project')
+        parser_peh.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
+
         self.pe = None
 
     def __check_session(self):
@@ -73,39 +108,11 @@ class PE(Module):
 
     def compiletime(self):
 
-        def usage():
-            self.log('', "usage: pe compiletime [-s] [-w=minutes]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--scan (-s)\tScan the repository for common compile time")
-            self.log('', "\t--window (-w)\tSpecify an optional time window in minutes")
-            self.log('', "")
-
         def get_compiletime(pe):
             return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
 
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hsw:', ['help', 'scan', 'window='])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_scan = False
-        arg_window = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
-            elif opt in ('-w', '--window'):
-                arg_window = int(value)
+        arg_scan = self.parsed_args.scan
+        arg_window = self.parsed_args.window
 
         if not self.__check_session():
             return
@@ -154,17 +161,6 @@ class PE(Module):
 
     def peid(self):
 
-        def usage():
-            self.log('', "usage: pe peid [-s]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--scan (-s)\tScan the repository for PEiD signatures")
-            self.log('', "")
-
         def get_signatures():
             with file('data/peid/UserDB.TXT', 'rt') as f:
                 sig_data = f.read()
@@ -177,21 +173,7 @@ class PE(Module):
             matches = signatures.match_all(pe, ep_only=True)
             return matches
 
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hsf', ['help', 'scan'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_scan = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
+        arg_scan = self.parsed_args.scan
 
         if not self.__check_session():
             return
@@ -240,19 +222,6 @@ class PE(Module):
 
     def resources(self):
 
-        def usage():
-            self.log('', "usage: pe resources [-d=folder] [-o=resource number] [-s]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--dump (-d)\tDestination directory to store resource files in")
-            self.log('', "\t--open (-o)\tOpen a session on the specified resource")
-            self.log('', "\t--scan (-s)\tScan the repository for common resources")
-            self.log('', "")
-
         # Use this function to retrieve resources for the given PE instance.
         # Returns all the identified resources with indicators and attributes.
         def get_resources(pe):
@@ -268,7 +237,7 @@ class PE(Module):
                         else:
                             name = str(pefile.RESOURCE_TYPE.get(resource_type.struct.Id))
 
-                        if name == None:
+                        if name is None:
                             name = str(resource_type.struct.Id)
 
                         if hasattr(resource_type, 'directory'):
@@ -310,27 +279,9 @@ class PE(Module):
 
             return resources
 
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'ho:d:s', ['help', 'open=', 'dump=', 'scan'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_open = None
-        arg_dump = None
-        arg_scan = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-o', '--open'):
-                arg_open = int(value)
-            elif opt in ('-d', '--dump'):
-                arg_dump = value
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
+        arg_open = self.parsed_args.open
+        arg_dump = self.parsed_args.dump
+        arg_scan = self.parsed_args.scan
 
         if not self.__check_session():
             return
@@ -404,36 +355,8 @@ class PE(Module):
 
     def imphash(self):
 
-        def usage():
-            self.log('', "usage: pe imphash [-s]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--scan (-s)\tScan for all samples with same imphash")
-            self.log('', "\t--cluster (-c)\tCluster repository by imphash (careful, could be massive)")
-            self.log('', "")
-
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hsc', ['help', 'scan', 'cluster'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_scan = False
-        arg_cluster = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
-            elif opt in ('-c', '--cluster'):
-                arg_cluster = True
+        arg_scan = self.parsed_args.scan
+        arg_cluster = self.parsed_args.cluster
 
         if arg_scan and arg_cluster:
             self.log('error', "You selected two exclusive options, pick one")
@@ -514,29 +437,16 @@ class PE(Module):
 
     def security(self):
 
-        def usage():
-            self.log('', "usage: pe security [-d=folder] [-s]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--dump (-d)\tDestination directory to store digital signature in")
-            self.log('', "\t--all (-a)\tFind all samples with a digital signature")
-            self.log('', "\t--scan (-s)\tScan the repository for common certificates")
-            self.log('', "")
-
         def get_certificate(pe):
             # TODO: this only extract the raw list of certificate data.
             # I need to parse them, extract single certificates and perhaps return
             # the PEM data of the first certificate only.
             pe_security_dir = pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_SECURITY']
             address = pe.OPTIONAL_HEADER.DATA_DIRECTORY[pe_security_dir].VirtualAddress
-            size = pe.OPTIONAL_HEADER.DATA_DIRECTORY[pe_security_dir].Size
+            #  size = pe.OPTIONAL_HEADER.DATA_DIRECTORY[pe_security_dir].Size
 
             if address:
-                return pe.write()[address+8:]
+                return pe.write()[address + 8:]
             else:
                 return None
 
@@ -577,27 +487,9 @@ class PE(Module):
 
             return results
 
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hd:as', ['help', 'dump=', 'all', 'scan'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_folder = None
-        arg_all = False
-        arg_scan = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-d', '--dump'):
-                arg_folder = value
-            elif opt in ('-a', '--all'):
-                arg_all = True
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
+        arg_folder = self.parsed_args.dump
+        arg_all = self.parsed_args.all
+        arg_scan = self.parsed_args.scan
 
         if arg_all:
             self.log('info', "Scanning the repository for all signed samples...")
@@ -631,7 +523,7 @@ class PE(Module):
 
             self.log('info', "Dumped certificate to {0}".format(cert_path))
             self.log('info', "You can parse it using the following command:\n\t" +
-                       bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
+                     bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
 
         # TODO: do scan for certificate's serial number.
         if arg_scan:
@@ -645,17 +537,6 @@ class PE(Module):
                 self.log('table', dict(header=['Name', 'SHA256'], rows=matches))
 
     def language(self):
-
-        def usage():
-            self.log('', "usage: pe language [-s]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--scan (-s)\tScan the repository")
-            self.log('', "")
 
         def get_iat(pe):
             iat = []
@@ -754,21 +635,7 @@ class PE(Module):
 
             return found
 
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hs', ['help', 'scan'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_scan = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
+        arg_scan = self.parsed_args.scan
 
         if not self.__check_session():
             return
@@ -848,39 +715,10 @@ class PE(Module):
         self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
     def pehash(self):
-        def usage():
-            self.log('', "usage: pe pehash [-hac]")
 
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--all (-a)\tPrints the PEhash of all files in the project")
-            self.log('', "\t--cluster (-c)\tCalculate and cluster all files in the project")
-            self.log('', "\t--scan (-s)\tScan repository for matching samples")
-            self.log('', "")
-
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'hacs', ['help', 'all', 'cluster', 'scan'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            return
-
-        arg_all = False
-        arg_cluster = False
-        arg_scan = False
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-a', '--all'):
-                arg_all = True
-            elif opt in ('-c', '--cluster'):
-                arg_cluster = True
-            elif opt in ('-s', '--scan'):
-                arg_scan = True
+        arg_all = self.parsed_args.all
+        arg_cluster = self.parsed_args.cluster
+        arg_scan = self.parsed_args.scan
 
         if not HAVE_PEHASH:
             self.log('error', "PEhash is missing. Please copy PEhash to the modules directory of Viper")
@@ -934,54 +772,32 @@ class PE(Module):
                 else:
                     self.log('info', "No matches found")
 
-    def usage(self):
-        self.log('', "usage: pe <command>")
-
-    def help(self):
-        self.usage()
-        self.log('', "")
-        self.log('', "Options:")
-        self.log('', "\thelp\t\tShow this help message")
-        self.log('', "\timports\t\tList PE imports")
-        self.log('', "\texports\t\tList PE exports")
-        self.log('', "\tresources\tList PE resources")
-        self.log('', "\timphash\t\tGet and scan for imphash")
-        self.log('', "\tcompiletime\tShow the compiletime")
-        self.log('', "\tpeid\t\tShow the PEiD signatures")
-        self.log('', "\tsecurity\tShow digital signature")
-        self.log('', "\tlanguage\tGuess PE language")
-        self.log('', "\tsections\tList PE Sections")
-        self.log('', "\tpehash\t\tCalculate the PEhash and compare them")
-        self.log('', "")
-
     def run(self):
+        super(PE, self).run()
+        if self.parsed_args is None:
+            return
+
         if not HAVE_PEFILE:
             self.log('error', "Missing dependency, install pefile (`pip install pefile`)")
             return
 
-        if len(self.args) == 0:
-            self.help()
-            return
-
-        if self.args[0] == 'help':
-            self.help()
-        elif self.args[0] == 'imports':
+        if self.parsed_args.subname == 'imports':
             self.imports()
-        elif self.args[0] == 'exports':
+        elif self.parsed_args.subname == 'exports':
             self.exports()
-        elif self.args[0] == 'resources':
+        elif self.parsed_args.subname == 'resources':
             self.resources()
-        elif self.args[0] == 'imphash':
+        elif self.parsed_args.subname == 'imphash':
             self.imphash()
-        elif self.args[0] == 'compiletime':
+        elif self.parsed_args.subname == 'compiletime':
             self.compiletime()
-        elif self.args[0] == 'peid':
+        elif self.parsed_args.subname == 'peid':
             self.peid()
-        elif self.args[0] == 'security':
+        elif self.parsed_args.subname == 'security':
             self.security()
-        elif self.args[0] == 'sections':
+        elif self.parsed_args.subname == 'sections':
             self.sections()
-        elif self.args[0] == 'language':
+        elif self.parsed_args.subname == 'language':
             self.language()
-        elif self.args[0] == 'pehash':
+        elif self.parsed_args.subname == 'pehash':
             self.pehash()
