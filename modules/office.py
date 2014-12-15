@@ -332,7 +332,7 @@ class Office(Module):
     def run(self):
         super(Office, self).run()
         if self.parsed_args is None:
-                return
+            return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
