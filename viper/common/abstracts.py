@@ -4,10 +4,33 @@
 import argparse
 
 
+class ArgumentErrorCallback(Exception):
+
+    def __init__(self, message, level=''):
+        self.message = message.strip() + '\n'
+        self.level = level.strip()
+
+    def __str__(self):
+        return '{}: {}'.format(self.level, self.message)
+
+    def get(self):
+        return self.level, self.message
+
+
 class ArgumentParser(argparse.ArgumentParser):
 
+    def print_usage(self):
+        raise ArgumentErrorCallback(self.format_usage())
+
+    def print_help(self):
+        raise ArgumentErrorCallback(self.format_help())
+
     def error(self, message):
-        raise Exception('error: {}\n'.format(message))
+        raise ArgumentErrorCallback(message, 'error')
+
+    def exit(self, status, message=None):
+        if message is not None:
+            raise ArgumentErrorCallback(message)
 
 
 class Module(object):
@@ -18,8 +41,7 @@ class Module(object):
     output = []
 
     def __init__(self):
-        self.parser = ArgumentParser(prog=self.cmd, description=self.description, add_help=False)
-        self.parser.add_argument('-h', '--help', action='store_true', help='show this help message')
+        self.parser = ArgumentParser(prog=self.cmd, description=self.description)
 
     def set_args(self, args):
         self.args = args
@@ -36,13 +58,12 @@ class Module(object):
     def help(self):
         self.log('', self.parser.format_help())
 
-    def run(self, *args):
+    def run(self):
         self.parsed_args = None
-        try:
-            self.parsed_args = self.parser.parse_args(self.args)
-            if self.parsed_args.help:
-                self.help()
-                self.parsed_args = None
-        except Exception as e:
+        if len(self.args) == 0:
             self.usage()
-            self.log('', e)
+        else:
+            try:
+                self.parsed_args = self.parser.parse_args(self.args)
+            except ArgumentErrorCallback as e:
+                self.log(*e.get())
