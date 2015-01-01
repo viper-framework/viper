@@ -16,12 +16,16 @@ if (chosen == "apk") {
   selbox.options[selbox.options.length] = new Option('Decompile','dump');
 }
 
+if (chosen == "clamav") {
+  selbox.options[selbox.options.length] = new Option('Scan','run');
+}
+
 if (chosen == "debup") {
   selbox.options[selbox.options.length] = new Option('Info','info');
   selbox.options[selbox.options.length] = new Option('Extract','extract');
 }
 
-if (chosen == "edit") {
+if (chosen == "editdistance") {
   selbox.options[selbox.options.length] = new Option('Calculate','run');
 }
 
@@ -65,6 +69,10 @@ if (chosen == "idx") {
   selbox.options[selbox.options.length] = new Option('Parse IDX','run');
 }
 
+if (chosen == "image") {
+  selbox.options[selbox.options.length] = new Option('Submit To Ghiro','ghiro');
+}
+
 if (chosen == "jar") {
   selbox.options[selbox.options.length] = new Option('Parse Java Archive','run');
 }
@@ -97,6 +105,14 @@ if (chosen == "pe") {
 if (chosen == "rat") {
   selbox.options[selbox.options.length] = new Option('List Decoders','list');
   selbox.options[selbox.options.length] = new Option('Auto Detect','auto');
+}
+
+if (chosen == "reports") {
+  selbox.options[selbox.options.length] = new Option('Find Reports On Malwr','malwr');
+  selbox.options[selbox.options.length] = new Option('Find Reports On Anubis','anubis');
+  selbox.options[selbox.options.length] = new Option('Find Reports on ThreatExchange','threat');
+  selbox.options[selbox.options.length] = new Option('Find Reports On Joe Sandbox','joe');
+  selbox.options[selbox.options.length] = new Option('Find Reports On metascan','meta');
 }
 
 if (chosen == "shellcode") {
