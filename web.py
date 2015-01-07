@@ -41,20 +41,23 @@ cuckoo_web = 'http://localhost:9191'
 
 # Module Dicts
 mod_dicts = {}
-mod_dicts['apk'] = {'info':'-i', 'perm':'-p', 'list':'-f', 'all':'-a', 'dump':''}
+mod_dicts['apk'] = {'help':'-h','info':'-i', 'perm':'-p', 'list':'-f', 'all':'-a', 'dump':'-d'}
+mod_dicts['clamav'] = {'run':''}
 mod_dicts['debup'] = {'info':'', 'extract':'-s'}
-mod_dicts['edit'] = {'run':''}
+mod_dicts['editdistance'] = {'run':''}
 mod_dicts['elf'] = {'sections':'sections', 'segments':'segments', 'symbols':'symbols', 'interp':'interp', 'dynamic':'dynamic'}
 mod_dicts['email'] = {'envelope': '-e', 'attach': '-f', 'header':'-r', 'trace':'-t', 'traceall':'-T', 'spoof':'-s', 'all':'-a'}
 mod_dicts['exif'] = {'run':''}
 mod_dicts['fuzzy'] = {'run':''}
 mod_dicts['html'] = {'scripts':'-s', 'links':'-l', 'iframe':'-f', 'embed':'-e', 'images':'-i', 'dump':'-d'}
 mod_dicts['idx'] = {'run':''}
+mod_dicts['image'] = {'ghiro':'ghiro'}
 mod_dicts['jar'] = {'run':''}
 mod_dicts['office'] = {'meta':'-m', 'oleid':'-o', 'streams':'-s', 'export':'-e'}
 mod_dicts['pdf'] = {'id':'id', 'streams':'streams'}
 mod_dicts['pe'] = {'imports':'imports', 'exports':'exports', 'res':'resources', 'imp':'imphash', 'compile':'compiletime', 'peid':'peid', 'security':'security', 'language':'language', 'sections':'sections', 'pehash':'pehash'}
 mod_dicts['rat'] = {'auto':'-a', 'list': '-l'}
+mod_dicts['reports'] = {'malwr':'malwr', 'anubis':'anubis', 'threat':'threat', 'joe':'joe', 'meta':'meta'}
 mod_dicts['shellcode'] = {'run':''}
 mod_dicts['strings'] = {'all':'-a', 'hosts':'-H'}
 mod_dicts['swf'] = {'decom':'decompress'}

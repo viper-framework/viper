@@ -7,19 +7,23 @@
                         <select class="form-control" name="module" onchange="setOptions(document.modules.module.options[document.modules.module.selectedIndex].value);">
                           <option value="module">Module</option>
                           <option value="apk">APK - Parse Android APKs</option>
+                          <option value="clamav">ClamaAV - Scan file from local ClamAV daemon</option>
                           <option value="debup">Debup - Parse McAfee BUP Files</option>
-                          <option value="edit">Edit Distance - Filename Edit Distance</option>
+                          <option value="editdistance">Edit Distance - Filename Edit Distance</option>
+                          <option value="elf">ELF - Extract information from ELF headers</option>
                           <option value="email">Email - Parse eml and msg Files</option>
                           <option value="exif">Exif - Extract MetaData</option>
                           <option value="fuzzy">Fuzzy - SSdeep CTPH Scan</option>
                           <option value="html">HTML - Parse HTML Data</option>
                           <option value="idx">IDX - Parse Java IDX Files</option>
+                          <option value="image">Image - Perfome Analysis On Images</option>
                           <option value="jar">JAR - Parse Java Archives</option>
                           <option value="office">Office - Office Document Parser</option>
                           <option value="pdf">PDF - EPDF Document Parser</option>
                           <option value="pe">PE - Parse PE32 Files</option>
                           <option value="rat">RAT - Extract Config From Common Rats</option>
-                          <option value="shellocode">ShellCode - Identify ShellCode Patterns</option>
+                          <option value="reports">Reports - Online Sandbox Reports</option>
+                          <option value="shellcode">ShellCode - Identify ShellCode Patterns</option>
                           <option value="strings">Strings - Extract Strings</option>
                           <option value="swf">SWF - Parse SWF Files</option>
                           <option value="virustotal">VirusTotal</option>
