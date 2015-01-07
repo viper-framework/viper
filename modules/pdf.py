@@ -3,37 +3,37 @@
 
 import os
 import json
-import getopt
 import tempfile
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.common.utils import get_type
 from viper.core.session import __sessions__
 
-from pdftools.pdfid import *
-from peepdf.PDFConsole import PDFConsole
+from pdftools.pdfid import PDFiD, PDFiD2JSON
 from peepdf.PDFCore import PDFParser
+
 
 class PDF(Module):
     cmd = 'pdf'
     description = 'Parse and analyze PDF documents'
     authors = ['Kevin Breen', 'nex']
 
-    def pdf_id(self):
-        if not __sessions__.is_set():
-            self.log('error', 'No session opened')
-            return
+    def __init__(self):
+        super(PDF, self).__init__()
+        subparsers = self.parser.add_subparsers(dest='subname')
+        subparsers.add_parser('id', help='Show general information on the PDF')
 
-        if 'PDF' not in __sessions__.current.file.type:
-            self.log('error', "The opened file doesn't appear to be a PDF document")
-            return
+        parser_streams = subparsers.add_parser('streams', help='Extract stream objects from PDF')
+        parser_streams.add_argument('-d', '--dump', help='Destination directory to store resource files in')
+        parser_streams.add_argument('-o', '--open', help='Open a session on the specified resource')
+
+    def pdf_id(self):
 
         # Run the parser - Returns an XML DOM Instance.
         pdf_data = PDFiD(__sessions__.current.file.path, False, True)
 
         # This converts to string.
-        #pdf_string = PDFiD2String(pdf_data, True)
+        # pdf_string = PDFiD2String(pdf_data, True)
 
         # This converts to JSON.
         pdf_json = PDFiD2JSON(pdf_data, True)
@@ -50,36 +50,24 @@ class PDF(Module):
             ['Count %% EOF', pdf['pdfid']['countEof']],
             ['Data After EOF', pdf['pdfid']['countChatAfterLastEof']]
         ]
-        
+
         # If there are date sections lets get them as well.
         dates = pdf['pdfid']['dates']['date']
         for date in dates:
-            info.append([date['name'],date['value']])
+            info.append([date['name'], date['value']])
 
         # Get streams, counts and format.
         streams = []
         for stream in pdf['pdfid']['keywords']['keyword']:
             streams.append([stream['name'], stream['count']])
-        
+
         self.log('info', "General Info:")
-        self.log('table', dict(header=['Desc','Value'], rows=info))
+        self.log('table', dict(header=['Desc', 'Value'], rows=info))
 
         self.log('info', "Streams & Count:")
-        self.log('table', dict(header=['Name','Count'], rows=streams))
+        self.log('table', dict(header=['Name', 'Count'], rows=streams))
 
     def streams(self):
-
-        def usage():
-            self.log('', "usage: pdf stream [-o=steam] [-d=folder]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--dump (-d)\tDestination directory to store resource files in")
-            self.log('', "\t--open (-o)\tOpen a session on the specified resource")
-            self.log('', "")
 
         def get_streams():
             # This function is brutally ripped from Brandon Dixon's swf_mastah.py.
@@ -89,7 +77,6 @@ class PDF(Module):
             # Parse currently opened PDF document.
             ret, pdf = parser.parse(__sessions__.current.file.path, True, False)
             # Generate statistics.
-            stats = pdf.getStats()
 
             results = []
             objects = []
@@ -107,7 +94,6 @@ class PDF(Module):
                     details = objects[index].object
 
                     if details.type == 'stream':
-                        encoded_stream = details.encodedStream
                         decoded_stream = details.decodedStream
 
                         result = [
@@ -127,7 +113,7 @@ class PDF(Module):
                             # Otherwise we juts generate a temporary one.
                             else:
                                 folder = tempfile.gettempdir()
-                            
+
                             # Confirm the dump path
                             if not os.path.exists(folder):
                                 try:
@@ -138,8 +124,8 @@ class PDF(Module):
                             else:
                                 if not os.path.isdir(folder):
                                     self.log('error', "You need to specify a folder not a file")
-                                    return results 
-                            
+                                    return results
+
                             # Dump stream to this path.
                             # TODO: sometimes there appear to be multiple streams
                             # with the same object ID. Is that even possible?
@@ -161,32 +147,8 @@ class PDF(Module):
 
             return results
 
-        try:
-            opts, argv = getopt.getopt(self.args[1:], 'ho:d:', ['help', 'open=', 'dump='])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            usage()
-            return
-
-        arg_open = None
-        arg_dump = None
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-o', '--open'):
-                arg_open = value
-            elif opt in ('-d', '--dump'):
-                arg_dump = value
-
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return False
-
-        if 'PDF' not in __sessions__.current.file.type:
-            self.log('error', "The opened file doesn't appear to be a PDF document")
-            return
+        arg_open = self.parsed_args.open
+        arg_dump = self.parsed_args.dump
 
         # Retrieve list of streams.
         streams = get_streams()
@@ -206,26 +168,20 @@ class PDF(Module):
                     __sessions__.new(stream[5])
                     return
 
-    def usage(self):
-        self.log('', "usage: pdf <command>")
-
-    def help(self):
-        self.usage()
-        self.log('', "")
-        self.log('', "Options:")
-        self.log('', "\thelp\t\tShow this help message")
-        self.log('', "\tid\t\tShow general information on the PDF")
-        self.log('', "\tstreams\t\tExtract stream objects from PDF")
-        self.log('', "")
-
     def run(self):
-        if len(self.args) == 0:
-            self.help()
+        super(PDF, self).run()
+        if self.parsed_args is None:
             return
 
-        if self.args[0] == 'help':
-            self.help()
-        elif self.args[0] == 'id':
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return False
+
+        if 'PDF' not in __sessions__.current.file.type:
+            self.log('error', "The opened file doesn't appear to be a PDF document")
+            return
+
+        if self.parsed_args.subname == 'id':
             self.pdf_id()
-        elif self.args[0] == 'streams':
+        elif self.parsed_args.subname == 'streams':
             self.streams()

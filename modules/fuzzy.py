@@ -1,10 +1,7 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
-import getopt
-
-from viper.common.out import *
+from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
@@ -15,12 +12,21 @@ try:
 except ImportError:
     HAVE_PYDEEP = False
 
+
 class Fuzzy(Module):
     cmd = 'fuzzy'
     description = 'Search for similar files through fuzzy hashing'
     authors = ['nex']
 
+    def __init__(self):
+        super(Fuzzy, self).__init__()
+        self.parser.add_argument('-v', '--verbose', action='store_true', help='Prints verbose logging')
+
     def run(self):
+        super(Fuzzy, self).run()
+        if self.parsed_args is None:
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
@@ -33,31 +39,10 @@ class Fuzzy(Module):
             self.log('error', "No ssdeep hash available for opened file")
             return
 
-        def usage():
-            self.log('', "usage: fuzzy [-v]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--verbose (-v)\tPrints verbose logging")
-            self.log('', "")
-
         arg_verbose = False
 
-        try:
-            opts, argv = getopt.getopt(self.args[0:], 'hv', ['help', 'verbose'])
-        except getopt.GetoptError as e:
-            self.log('error', e)
-            return
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-v', '--verbose'):
-                arg_verbose = True
+        if self.parsed_args.verbose:
+            arg_verbose = True
 
         db = Database()
         samples = db.find(key='all')

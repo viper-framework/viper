@@ -4,16 +4,17 @@
 
 import os
 import sys
-import getopt
+import shlex
+import subprocess
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 ext = ".bin"
 
 run_radare = {'linux2': 'r2', 'darwin': 'r2',
-           'win32': 'r2'}
+              'win32': 'r2'}
+
 
 class Radare(Module):
     cmd = 'r2'
@@ -21,6 +22,8 @@ class Radare(Module):
     authors = ['dukebarman']
 
     def __init__(self):
+        super(Radare, self).__init__()
+        self.parser.add_argument('-w', '--webserver', action='store_true', help='Start web-frontend for radare2')
         self.is_64b = False
         self.ext = ''
         self.server = ''
@@ -36,37 +39,21 @@ class Radare(Module):
         if not os.path.lexists(destination):
             os.link(filename, destination)
 
-        command_line = '{} {}{}'.format(run_radare[sys.platform], self.server, destination)
-        os.system(command_line)
+        command_line = '{} {} {}'.format(run_radare[sys.platform], self.server, destination)
+        args = shlex.split(command_line)
+        subprocess.Popen(args)
 
     def run(self):
+        super(Radare, self).run()
+        if self.parsed_args is None:
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        def usage():
-            self.log('', "usage: r2 [-h] [-s]")
-
-        def help():
-            usage()
-            self.log('', "")
-            self.log('', "Options:")
-            self.log('', "\t--help (-h)\tShow this help message")
-            self.log('', "\t--webserver (-w)\tStart web-frontend for radare2")
-            self.log('', "")
-
-        try:
-            opts, argv = getopt.getopt(self.args[0:], 'hw', ['help', 'webserver'])
-        except getopt.GetoptError as e:
-            self.log('', e)
-            return
-
-        for opt, value in opts:
-            if opt in ('-h', '--help'):
-                help()
-                return
-            elif opt in ('-w', '--webserver'):
-                self.server = "-c=H "
+        if self.parsed_args.webserver:
+            self.server = "-c=H"
 
         filetype = __sessions__.current.file.type
         if 'x86-64' in filetype:

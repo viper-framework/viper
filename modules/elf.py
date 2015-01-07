@@ -4,17 +4,17 @@
 try:
     from elftools.elf.elffile import ELFFile
     from elftools.elf.sections import SymbolTableSection
-    from elftools.elf.descriptions import describe_sh_flags 
+    from elftools.elf.descriptions import describe_sh_flags
     from elftools.elf.descriptions import describe_p_flags
     from elftools.elf.descriptions import describe_symbol_type
-    from elftools.elf.dynamic import DynamicSection, DynamicSegment
+    from elftools.elf.dynamic import DynamicSection
     HAVE_ELFTOOLS = True
 except ImportError:
     HAVE_ELFTOOLS = False
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+
 
 # Have a look at scripts/readelf.py - pyelftools
 class ELF(Module):
@@ -23,6 +23,12 @@ class ELF(Module):
     authors = ['emdel']
 
     def __init__(self):
+        super(ELF, self).__init__()
+        self.parser.add_argument('sections', action='store_true', help='List ELF sections')
+        self.parser.add_argument('segments', action='store_true', help='List ELF segments')
+        self.parser.add_argument('symbols', action='store_true', help='List ELF symbols')
+        self.parser.add_argument('interpreter', action='store_true', help='Get the program interpreter')
+        self.parser.add_argument('dynamic', action='store_true', help='Show the dynamic section')
         self.elf = None
 
     def __check_session(self):
@@ -43,7 +49,7 @@ class ELF(Module):
     def segments(self):
         if not self.__check_session():
             return
-        
+
         rows = []
         for segment in self.elf.iter_segments():
             rows.append([
@@ -53,8 +59,8 @@ class ELF(Module):
                 hex(segment['p_memsz']),
                 describe_p_flags(segment['p_flags'])
             ])
-                         
-        self.log('info', "ELF Segments:") 
+
+        self.log('info', "ELF Segments:")
         self.log('table', dict(header=['Type', 'VirtAddr', 'FileSize', 'MemSize', 'Flags'], rows=rows))
 
     def sections(self):
@@ -62,11 +68,11 @@ class ELF(Module):
             return
 
         rows = []
-        # TODO: Add get_entropy in pyelftools sections 
+        # TODO: Add get_entropy in pyelftools sections
         for section in self.elf.iter_sections():
             rows.append([
                 section.name,
-                hex(section['sh_addr']), 
+                hex(section['sh_addr']),
                 hex(section['sh_size']),
                 section['sh_type'],
                 describe_sh_flags(section['sh_flags'])
@@ -81,7 +87,8 @@ class ELF(Module):
 
         rows = []
         for section in self.elf.iter_sections():
-            if not isinstance(section, SymbolTableSection): continue
+            if not isinstance(section, SymbolTableSection):
+                continue
 
             for cnt, symbol in enumerate(section.iter_symbols()):
                 rows.append([
@@ -91,11 +98,11 @@ class ELF(Module):
                     describe_symbol_type(symbol['st_info']['type']),
                     symbol.name
                 ])
-        
+
         self.log('info', "ELF Symbols:")
         self.log('table', dict(header=['Num', 'Value', 'Size', 'Type', 'Name'], rows=rows))
 
-    def interp(self):
+    def interpreter(self):
         if not self.__check_session():
             return
 
@@ -117,42 +124,26 @@ class ELF(Module):
             if not isinstance(section, DynamicSection):
                 continue
             for tag in section.iter_tags():
-                if tag.entry.d_tag != "DT_NEEDED": continue
+                if tag.entry.d_tag != "DT_NEEDED":
+                    continue
                 self.log('info', tag.needed)
 
-    def usage(self):
-        self.log('', "usage: elf <command>")
-
-    def help(self):
-        self.usage()
-        self.log('', "")
-        self.log('', "Options:")
-        self.log('', "\thelp\t\tShow this help message")
-        self.log('', "\tsections\tList ELF sections")
-        self.log('', "\tsegments\tList ELF segments")
-        self.log('', "\tsymbols\t\tList ELF symbols")
-        self.log('', "\tinterp\t\tGet the program interpreter")
-        self.log('', "\tdynamic\t\tShow the dynamic section")
-        self.log('', "")
-
     def run(self):
+        super(ELF, self).run()
+        if self.parsed_args is None:
+            return
+
         if not HAVE_ELFTOOLS:
             self.log('error', "Missing dependency, install pyelftools (`pip install pyelftools")
             return
 
-        if len(self.args) == 0:
-            self.help()
-            return
-
-        if self.args[0] == 'help':
-            self.help()
-        elif self.args[0] == 'sections':
+        if self.parsed_args.sections:
             self.sections()
-        elif self.args[0] == 'segments':
+        elif self.parsed_args.segments:
             self.segments()
-        elif self.args[0] == 'symbols':
+        elif self.parsed_args.symbols:
             self.symbols()
-        elif self.args[0] == 'interp':
-            self.interp()
-        elif self.args[0] == 'dynamic':
+        elif self.parsed_args.interpreter:
+            self.interpreter()
+        elif self.parsed_args.dynamic:
             self.dynamic()

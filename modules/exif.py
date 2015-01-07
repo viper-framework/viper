@@ -1,10 +1,7 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
-import getopt
 
-from viper.common.out import *
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -14,12 +11,20 @@ try:
 except ImportError:
     HAVE_EXIF = False
 
+
 class Exif(Module):
     cmd = 'exif'
     description = 'Extract Exif MetaData'
     authors = ['Kevin Breen']
 
+    def __init__(self):
+        super(Exif, self).__init__()
+
     def run(self):
+        super(Exif, self).run()
+        if self.parsed_args is None:
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return

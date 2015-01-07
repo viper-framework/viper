@@ -1,7 +1,7 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
+import re
 import json
 import getpass
 
@@ -17,7 +17,7 @@ try:
 except ImportError:
     HAVE_BS4 = False
 
-from viper.common.out import *
+from viper.common.utils import string_clean
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -27,16 +27,25 @@ MALWR_PASS = None
 MALWR_SEARCH = 'https://malwr.com/analysis/search/'
 MALWR_PREFIX = 'https://malwr.com'
 
-ANUBIS_LOGIN = 'https://anubis.iseclab.org/?action=login' 
+ANUBIS_LOGIN = 'https://anubis.iseclab.org/?action=login'
 ANUBIS_USER = None
 ANUBIS_PASS = None
-ANUBIS_SEARCH = 'https://anubis.iseclab.org/?action=hashquery' 
+ANUBIS_SEARCH = 'https://anubis.iseclab.org/?action=hashquery'
 ANUBIS_PREFIX = 'https://anubis.iseclab.org/'
+
 
 class Reports(Module):
     cmd = 'reports'
     description = 'Online Sandboxes Reports'
     authors = ['emdel', 'nex']
+
+    def __init__(self):
+        super(Reports, self).__init__()
+        self.parser.add_argument('malwr', action='store_true', help='Find reports on Malwr')
+        self.parser.add_argument('anubis', action='store_true', help='Find reports on Anubis')
+        self.parser.add_argument('threat', action='store_true', help='Find reports on ThreatExchange')
+        self.parser.add_argument('joe', action='store_true', help='Find reports on Joe Sandbox')
+        self.parser.add_argument('meta', action='store_true', help='Find reports on metascan')
 
     def authenticate(self):
         username = raw_input('Username: ')
@@ -78,7 +87,7 @@ class Reports(Module):
         sess.get(MALWR_LOGIN, verify=False)
         csrf = sess.cookies['csrftoken']
 
-        res = sess.post(
+        sess.post(
             MALWR_LOGIN,
             {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
             headers=dict(Referer=MALWR_LOGIN),
@@ -96,7 +105,7 @@ class Reports(Module):
             timeout=60,
             verify=False
         )
-        
+
         reports = self.malwr_parse(p.text)
         if not reports:
             self.log('info', "No reports for opened file")
@@ -134,15 +143,15 @@ class Reports(Module):
 
         res = sess.post(
             ANUBIS_LOGIN,
-            {'username' : username, 'password' : password},
+            {'username': username, 'password': password},
             verify=False
         )
         res = sess.post(
             ANUBIS_SEARCH,
-            {'hashlist' : __sessions__.current.file.sha256},
+            {'hashlist': __sessions__.current.file.sha256},
             verify=False
         )
-        
+
         reports = self.anubis_parse(res.text)
         if not reports:
             self.log('info', "No reports for opened file")
@@ -164,7 +173,7 @@ class Reports(Module):
                 self.log('table', dict(header=['Time', 'URL'], rows=reports))
         else:
             self.log('info', "No reports for opened file")
- 
+
     def joe(self):
         url = 'http://www.joesecurity.org/reports/report-{0}.html'.format(__sessions__.current.file.md5)
         page = requests.get(url)
@@ -172,7 +181,7 @@ class Reports(Module):
             self.log('info', "No reports for opened file")
         else:
             self.log('info', "Report found at {0}".format(url))
-            
+
     def meta(self):
         url = 'https://www.metascan-online.com/en/scanresult/file/{0}'.format(__sessions__.current.file.md5)
         page = requests.get(url)
@@ -185,7 +194,7 @@ class Reports(Module):
         match = re.search(pattern, page.text)
         raw_results = match.group(0)[13:-1]
         json_results = json.loads(raw_results)
-        unprocessed =  json_results['scan_results']['scan_details']
+        unprocessed = json_results['scan_results']['scan_details']
         for vendor, results in unprocessed.iteritems():
             if results['scan_result_i'] == 1:
                 reports.append([vendor, string_clean(results['threat_found']), results['def_time']])
@@ -195,19 +204,11 @@ class Reports(Module):
     def usage(self):
         self.log('', "Usage: reports <malwr|anubis|threat|joe|meta>")
 
-    def help(self):
-        self.usage()
-        self.log('', "")
-        self.log('', "Options:")
-        self.log('', "\thelp\tShow this help message")
-        self.log('', "\tmalwr\tFind reports on Malwr")
-        self.log('', "\tanubis\tFind reports on Anubis")
-        self.log('', "\tthreat\tFind reports on ThreatExchange")
-        self.log('', "\tjoe\tFind reports on Joe Sandbox")
-        self.log('', "\tmeta\tFind reports on metascan")
-        self.log('', "") 
-
     def run(self):
+        super(Reports, self).run()
+        if self.parsed_args is None:
+            return
+
         if not HAVE_REQUESTS and not HAVE_BS4:
             self.log('error', "Missing dependencies (`pip install requests beautifulsoup4`)")
             return
@@ -216,19 +217,13 @@ class Reports(Module):
             self.log('error', "No session opened")
             return
 
-        if len(self.args) == 0:
-            self.help()
-            return
-
-        if self.args[0] == 'help':
-            self.help()
-        elif self.args[0] == 'malwr':
+        if self.parsed_args.malwr:
             self.malwr()
-        elif self.args[0] == 'anubis':
+        elif self.parsed_args.anubis:
             self.anubis()
-        elif self.args[0] == 'threat':
+        elif self.parsed_args.threat:
             self.threat()
-        elif self.args[0] == 'joe':
+        elif self.parsed_args.joe:
             self.joe()
-        elif self.args[0] == 'meta':
+        elif self.parsed_args.meta:
             self.meta()
