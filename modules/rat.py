@@ -4,12 +4,15 @@
 import os
 import importlib
 
-import yara
-
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
+try:
+    import yara
+    HAVE_YARA = True
+except ImportError:
+    HAVE_YARA = False
 
 class RAT(Module):
     cmd = 'rat'
@@ -58,6 +61,10 @@ class RAT(Module):
         self.log('table', dict(header=['Key', 'Value'], rows=rows))
 
     def auto(self):
+        if not HAVE_YARA:
+            self.log('error', "Missing dependency, install yara (see http://plusvic.github.io/yara/)")
+            return
+
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
@@ -73,6 +80,7 @@ class RAT(Module):
 
     def run(self):
         super(RAT, self).run()
+
         if self.parsed_args is None:
             return
 
