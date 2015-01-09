@@ -10,6 +10,7 @@ import time
 import bottle
 import shutil
 import logging
+import commands
 import requests
 import argparse
 import tempfile
@@ -25,6 +26,7 @@ from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
 from viper.common import network
+
 ##
 # User Config
 ##
@@ -36,6 +38,33 @@ cuckoo_web = 'http://localhost:9191'
 ##
 # End User Config
 ##
+
+# Module Dicts
+mod_dicts = {}
+mod_dicts['apk'] = {'help':'-h','info':'-i', 'perm':'-p', 'list':'-f', 'all':'-a', 'dump':'-d'}
+mod_dicts['clamav'] = {'run':''}
+mod_dicts['debup'] = {'info':'', 'extract':'-s'}
+mod_dicts['editdistance'] = {'run':''}
+mod_dicts['elf'] = {'sections':'sections', 'segments':'segments', 'symbols':'symbols', 'interp':'interp', 'dynamic':'dynamic'}
+mod_dicts['email'] = {'envelope': '-e', 'attach': '-f', 'header':'-r', 'trace':'-t', 'traceall':'-T', 'spoof':'-s', 'all':'-a'}
+mod_dicts['exif'] = {'run':''}
+mod_dicts['fuzzy'] = {'run':''}
+mod_dicts['html'] = {'scripts':'-s', 'links':'-l', 'iframe':'-f', 'embed':'-e', 'images':'-i', 'dump':'-d'}
+mod_dicts['idx'] = {'run':''}
+mod_dicts['image'] = {'ghiro':'ghiro'}
+mod_dicts['jar'] = {'run':''}
+mod_dicts['office'] = {'meta':'-m', 'oleid':'-o', 'streams':'-s', 'export':'-e'}
+mod_dicts['pdf'] = {'id':'id', 'streams':'streams'}
+mod_dicts['pe'] = {'imports':'imports', 'exports':'exports', 'res':'resources', 'imp':'imphash', 'compile':'compiletime', 'peid':'peid', 'security':'security', 'language':'language', 'sections':'sections', 'pehash':'pehash'}
+mod_dicts['rat'] = {'auto':'-a', 'list': '-l'}
+mod_dicts['reports'] = {'malwr':'malwr', 'anubis':'anubis', 'threat':'threat', 'joe':'joe', 'meta':'meta'}
+mod_dicts['shellcode'] = {'run':''}
+mod_dicts['strings'] = {'all':'-a', 'hosts':'-H'}
+mod_dicts['swf'] = {'decom':'decompress'}
+mod_dicts['virustotal'] = {'scan':'', 'submit':'-s'}
+mod_dicts['xor'] = {'xor':'', 'rot':'-r', 'all':'-a', 'export':'-o'}
+mod_dicts['yara'] = {'scan':'scan -t', 'all': 'scan -a -t'}
+
 
 ##
 # Helper Functions
@@ -477,8 +506,10 @@ def file_notes():
 def run_module():      
     # Get the hash of the file we want to run a command against
     file_hash = request.forms.get('file_hash')
-    # Get the command string - Should match one you would enter in the console.
-    cmd_string = request.forms.get('command_string')
+    # Lot of logic here to decide what command you entered.
+    module_name = request.forms.get('module')
+    command = request.forms.get('command')
+    cmd_string = '{0} {1}'.format(module_name, mod_dicts[module_name][command])
     if file_hash and cmd_string:
         try:
             module_results = module_text(file_hash, cmd_string)
@@ -586,7 +617,40 @@ def cuckoo_submit():
     else:
         return '<span class="alert alert-danger">Unable to Submit File</span>'
     
+# Hex Viewer
+@route('/hex', method='POST')
+def hex_viewer():
+    # get post data
+    file_hash = request.forms.get('file_hash')
+    try:
+        hex_offset = int(request.forms.get('hex_start'))
+    except:
+        return '<p class="text-danger">Error Generating Request</p>'
+    hex_length = 256
     
+    # get file path
+    hex_path = get_sample_path(file_hash)
+    
+    # create the command string
+    hex_cmd = 'hd -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
+    
+    # get the output
+    hex_string = commands.getoutput(hex_cmd)
+    
+    # Format the data
+    html_string = ''
+    hex_rows = hex_string.split('\n')
+    for row in hex_rows:
+        if len(row) > 9:
+            off_str = row[0:8]
+            hex_str = row[9:58]
+            asc_str = row[58:78]
+            asc_str = asc_str.replace('"', '&quot;')
+            asc_str = asc_str.replace('<', '&lt;')
+            asc_str = asc_str.replace('>', '&gt;')
+            html_string += '<div class="row"><span class="text-primary mono">{0}</span> <span class="text-muted mono">{1}</span> <span class="text-success mono">{2}</span></div>'.format(off_str, hex_str, asc_str)
+    # return the data
+    return html_string
    
 # Run The web Server        
 if __name__ == '__main__':
