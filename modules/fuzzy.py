@@ -24,8 +24,6 @@ class Fuzzy(Module):
 
     def run(self):
         super(Fuzzy, self).run()
-        if self.parsed_args is None:
-            return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
@@ -40,8 +38,7 @@ class Fuzzy(Module):
             return
 
         arg_verbose = False
-
-        if self.parsed_args.verbose:
+        if self.parsed_args and self.parsed_args.verbose:
             arg_verbose = True
 
         db = Database()
