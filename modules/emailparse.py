@@ -470,3 +470,6 @@ class EmailParse(Module):
             if ole_flag:
                 msg = ole
             email_attachments(msg, ole_flag)
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()

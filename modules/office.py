@@ -373,3 +373,6 @@ class Office(Module):
                 self.oleid(ole)
             else:
                 self.log('error', "Not an OLE file")
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()

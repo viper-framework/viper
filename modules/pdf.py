@@ -185,3 +185,6 @@ class PDF(Module):
             self.pdf_id()
         elif self.parsed_args.subname == 'streams':
             self.streams()
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()

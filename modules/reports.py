@@ -41,11 +41,11 @@ class Reports(Module):
 
     def __init__(self):
         super(Reports, self).__init__()
-        self.parser.add_argument('malwr', action='store_true', help='Find reports on Malwr')
-        self.parser.add_argument('anubis', action='store_true', help='Find reports on Anubis')
-        self.parser.add_argument('threat', action='store_true', help='Find reports on ThreatExchange')
-        self.parser.add_argument('joe', action='store_true', help='Find reports on Joe Sandbox')
-        self.parser.add_argument('meta', action='store_true', help='Find reports on metascan')
+        self.parser.add_argument('--malwr', action='store_true', help='Find reports on Malwr')
+        self.parser.add_argument('--anubis', action='store_true', help='Find reports on Anubis')
+        self.parser.add_argument('--threat', action='store_true', help='Find reports on ThreatExchange')
+        self.parser.add_argument('--joe', action='store_true', help='Find reports on Joe Sandbox')
+        self.parser.add_argument('--meta', action='store_true', help='Find reports on metascan')
 
     def authenticate(self):
         username = raw_input('Username: ')
@@ -227,3 +227,6 @@ class Reports(Module):
             self.joe()
         elif self.parsed_args.meta:
             self.meta()
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()

@@ -195,3 +195,6 @@ class HTMLParse(Module):
                 if len(flash) > 0:
                     self.log('info', "Embedded Flash Objects")
                     self.log('table', dict(header=['Swf Src'], rows=flash))
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()
