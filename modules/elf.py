@@ -24,11 +24,11 @@ class ELF(Module):
 
     def __init__(self):
         super(ELF, self).__init__()
-        self.parser.add_argument('sections', action='store_true', help='List ELF sections')
-        self.parser.add_argument('segments', action='store_true', help='List ELF segments')
-        self.parser.add_argument('symbols', action='store_true', help='List ELF symbols')
-        self.parser.add_argument('interpreter', action='store_true', help='Get the program interpreter')
-        self.parser.add_argument('dynamic', action='store_true', help='Show the dynamic section')
+        self.parser.add_argument('--sections', action='store_true', help='List ELF sections')
+        self.parser.add_argument('--segments', action='store_true', help='List ELF segments')
+        self.parser.add_argument('--symbols', action='store_true', help='List ELF symbols')
+        self.parser.add_argument('--interpreter', action='store_true', help='Get the program interpreter')
+        self.parser.add_argument('--dynamic', action='store_true', help='Show the dynamic section')
         self.elf = None
 
     def __check_session(self):
@@ -147,3 +147,6 @@ class ELF(Module):
             self.interpreter()
         elif self.parsed_args.dynamic:
             self.dynamic()
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()
