@@ -54,3 +54,6 @@ class Image(Module):
 
         if self.parsed_args.ghiro:
             self.ghiro()
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()

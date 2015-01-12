@@ -189,3 +189,6 @@ class AndroidPackage(Module):
             andro_info(a)
             andro_perm(a)
             andro_file(a)
+        else:
+            self.log('error', 'At least one of the parameter is required')
+            self.usage()

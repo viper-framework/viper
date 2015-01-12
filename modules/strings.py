@@ -120,3 +120,6 @@ class Strings(Module):
                 self.log('', entry)
         elif arg_hosts:
             self.extract_hosts(strings)
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()

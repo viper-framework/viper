@@ -191,3 +191,6 @@ class YaraScan(Module):
             self.scan()
         elif self.parsed_args.subname == 'rules':
             self.rules()
+        else:
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()
