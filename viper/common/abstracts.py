@@ -60,10 +60,7 @@ class Module(object):
 
     def run(self):
         self.parsed_args = None
-        if len(self.args) == 0:
+        try:
+            self.parsed_args = self.parser.parse_args(self.args)
+        except ArgumentErrorCallback as e:
             self.usage()
-        else:
-            try:
-                self.parsed_args = self.parser.parse_args(self.args)
-            except ArgumentErrorCallback as e:
-                self.log(*e.get())
