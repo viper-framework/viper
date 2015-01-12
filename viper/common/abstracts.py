@@ -63,4 +63,4 @@ class Module(object):
         try:
             self.parsed_args = self.parser.parse_args(self.args)
         except ArgumentErrorCallback as e:
-            self.usage()
+            self.log(*e.get())

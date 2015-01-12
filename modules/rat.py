@@ -21,9 +21,10 @@ class RAT(Module):
 
     def __init__(self):
         super(RAT, self).__init__()
-        self.parser.add_argument('-a', '--auto', action='store_true', help='Automatically detect RAT')
-        self.parser.add_argument('-f', '--family', help='Specify which RAT family')
-        self.parser.add_argument('-l', '--list', action='store_true', help='List available RAT modules')
+        group = self.parser.add_mutually_exclusive_group(required=True)
+        group.add_argument('-a', '--auto', action='store_true', help='Automatically detect RAT')
+        group.add_argument('-f', '--family', help='Specify which RAT family')
+        group.add_argument('-l', '--list', action='store_true', help='List available RAT modules')
 
     def list(self):
         self.log('info', "List of available RAT modules:")
