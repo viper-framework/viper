@@ -275,14 +275,14 @@ Launch The Web Application
 
 To launch the web application cd in to the viper directory and run the ``web.py`` file. By default it launches a single threaded bottle web server on localhost:9090::
 
-    root@viper:~/github/viper# python web.py
+    user@localhost:~/viper$ python web.py
     Bottle v0.12.8 server starting up (using WSGIRefServer())...
     Listening on http://localhost:9090/
     Hit Ctrl-C to quit.
 
 You can set the listening IP address and port with options -H and -p ::
     
-    root@viper:~/github/viper# python web.py -H 0.0.0.0 -p 8080
+    user@localhost:~/viper$ python web.py -H 0.0.0.0 -p 8080
     Bottle v0.12.8 server starting up (using WSGIRefServer())...
     Listening on http://0.0.0.0:8080/
     Hit Ctrl-C to quit.
