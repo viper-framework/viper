@@ -6,6 +6,7 @@ requests
 SQLAlchemy
 pycrypto
 OleFileIO_PL
+olefile
 BeautifulSoup4
 bottle
 pylzma
