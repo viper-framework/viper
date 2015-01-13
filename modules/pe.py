@@ -5,6 +5,7 @@ import os
 import re
 import datetime
 import tempfile
+import time
 
 try:
     import pefile
@@ -18,6 +19,13 @@ try:
     HAVE_PEHASH = True
 except ImportError:
     HAVE_PEHASH = False
+
+try:
+    from modules.verifysigs.verifysigs import get_auth_data
+    from verifysigs.asn1 import dn
+    HAVE_VERIFYSIGS= True
+except ImportError:
+    HAVE_VERIFYSIGS = False
 
 from viper.common.out import bold, table
 from viper.common.abstracts import Module
@@ -58,6 +66,7 @@ class PE(Module):
         parser_sec.add_argument('-d', '--dump', metavar='folder', help='Destination directory to store digital signature in')
         parser_sec.add_argument('-a', '--all', action='store_true', help='Find all samples with a digital signature')
         parser_sec.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common certificates')
+        parser_sec.add_argument('-c', '--check', action='store_true', help='Check authenticode information')
 
         parser_lang = subparsers.add_parser('language', help='Guess PE language')
         parser_lang.add_argument('-s', '--scan', action='store_true', help='Scan the repository')
@@ -490,6 +499,7 @@ class PE(Module):
         arg_folder = self.parsed_args.dump
         arg_all = self.parsed_args.all
         arg_scan = self.parsed_args.scan
+        arg_check = self.parsed_args.check
 
         if arg_all:
             self.log('info', "Scanning the repository for all signed samples...")
@@ -535,6 +545,69 @@ class PE(Module):
 
             if len(matches) > 0:
                 self.log('table', dict(header=['Name', 'SHA256'], rows=matches))
+
+        if arg_check:
+            if not HAVE_VERIFYSIGS:
+                print_error("Dependencies missing for authenticode validation. Please install M2Crypto and pyasn1")
+                return
+
+            auth, computed_content_hash = get_auth_data(__sessions__.current.file.path)
+
+            try:
+                auth.ValidateAsn1()
+                auth.ValidateHashes(computed_content_hash)
+                auth.ValidateSignatures()
+                auth.ValidateCertChains(time.gmtime())
+            except Exception, e:
+                print_error(e.message)
+                return
+
+            print(bold('\nSignature metadata:'))
+            print('\tProgram name: {0}'.format(auth.program_name))
+            print('\tURL: {0}'.format(auth.program_url))
+
+            if auth.has_countersignature:
+                print(bold('\nCountersignature is present. Timestamp: {0} UTC'.format(
+                        time.asctime(time.gmtime(auth.counter_timestamp)))))
+            else:
+                print(bold('\nCountersignature is not present.'))
+
+            print(bold('\nBinary is signed with cert issued by:'))
+            print('\t{0}'.format(auth.signing_cert_id[0]))
+
+            print('\t{0}'.format(auth.cert_chain_head[2][0]))
+            print('\tChain not before: {0} UTC'.format(
+                    time.asctime(time.gmtime(auth.cert_chain_head[0]))))
+            print('\tChain not after: {0} UTC'.format(
+                    time.asctime(time.gmtime(auth.cert_chain_head[1]))))
+
+            if auth.has_countersignature:
+                print(bold('\nCountersig chain head issued by:'))
+                print('\t{0}'.format(auth.counter_chain_head[2]))
+                print('\tCountersig not before: {0} UTC'.format(
+                        time.asctime(time.gmtime(auth.counter_chain_head[0]))))
+                print('\tCountersig not after: {0} UTC'.format(
+                        time.asctime(time.gmtime(auth.counter_chain_head[1]))))
+
+            print(bold('\nCertificates:'))
+            for (issuer, serial), cert in auth.certificates.items():
+                print('\tIssuer: {0}'.format(issuer))
+                print('\tSerial: {0}'.format(serial))
+                subject = cert[0][0]['subject']
+                subject_dn = str(dn.DistinguishedName.TraverseRdn(subject[0]))
+                print('\tSubject: {0}'.format(subject_dn))
+                not_before = cert[0][0]['validity']['notBefore']
+                not_after = cert[0][0]['validity']['notAfter']
+                not_before_time = not_before.ToPythonEpochTime()
+                not_after_time = not_after.ToPythonEpochTime()
+                print('\tNot Before: {0} UTC ({1})'.format(
+                        time.asctime(time.gmtime(not_before_time)), not_before[0]))
+                print('\tNot After: {0} UTC ({1})\n'.format(
+                        time.asctime(time.gmtime(not_after_time)), not_after[0]))
+
+            if auth.trailing_data:
+                print('Signature Blob had trailing (unvalidated) data ({0} bytes): {1}'.format(
+                        len(auth.trailing_data), auth.trailing_data.encode('hex')))
 
     def language(self):
 
