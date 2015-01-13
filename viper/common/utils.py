@@ -55,7 +55,10 @@ def get_md5(data):
     return md5.hexdigest()
 
 def string_clean(line):
-    return filter(lambda x: x in string.printable, line)
+    try:
+        return filter(lambda x: x in string.printable, line)
+    except:
+        return line
 
 # Snippet taken from:
 # https://gist.github.com/sbz/1080258
