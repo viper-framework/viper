@@ -372,8 +372,3 @@ To add the first user to the Basic Auth:::
 To add a new user to the Basic Auth use:::
 
 	$ htpasswd -b /etc/apache2/conf/protected.passwd USERNAME2
-
-Missing at the moment:
-^^^^^^^^^^^^^^^^^^^^^^
-
-	Checking for CRL
