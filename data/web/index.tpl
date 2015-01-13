@@ -53,6 +53,11 @@ $(document).ready( function() {
                 <input type="password" class="form-control" name="zip_pass" id="zip_pass" placeholder="Zip Password">
             </div>
 
+            <div class="checkbox">
+                <label>
+                <input type="checkbox" name="gunzip" value="gunzip"> gUnZip
+                </label>
+            </div>
 
             <div class="form-group">
                 <label for="tag_list">Tags</label>
