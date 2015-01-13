@@ -23,6 +23,7 @@ Table of Content
    introduction/index
    installation/index
    usage/index
+   http/index
    customize/index
 
 .. _Viper: https://www.viper.li
