@@ -308,7 +308,6 @@ class VirusTotal(Module):
                 self.log('error', "Data:\n{}".format(response.content))
                 return
 
-        positives = virustotal.get("positives")
         malwarenames = []
         
         if 'scans' in virustotal:
@@ -340,6 +339,14 @@ class VirusTotal(Module):
                 wordCountMap = clusterMalwareNames(names)
             else:
                 wordCountMap = simpleWordFrequency(names)
+            
+            positives = virustotal.get("positives")
+            total = virustotal.get("total")
+            
+            self.log('', '--- detection rate ---')
+            self.log('', 'totalscanner: %d' % total)
+            self.log('', '   positives: %d' % positives)
+            self.log('', "")                
                 
             # Print the Result
             wordFrequencyReport(wordCountMap)
