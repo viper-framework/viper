@@ -2,6 +2,12 @@ Viper 1.2 (TBD)
 ===============
 
 - Added web interface
+- Added option to "pe security" command to identify all signed PEs
+- Added structured logging to modules instead of print
+- Added authenticode check in "pe security" command
+- Transitioned commands and modules to argparse
+- Fixed multiuple bugs in email module
+- Fixed bug in strings module
 
 Viper 1.1 (2014-10-22)
 ======================
