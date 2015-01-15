@@ -101,11 +101,11 @@ class Strings(Module):
 
     def run(self):
         super(Strings, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
-        arg_all = self.parsed_args.all
-        arg_hosts = self.parsed_args.hosts
+        arg_all = self.args.all
+        arg_hosts = self.args.hosts
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")

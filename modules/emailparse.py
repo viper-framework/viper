@@ -411,7 +411,7 @@ class EmailParse(Module):
             return
 
         super(EmailParse, self).run(*args)
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         # see if we can load the dns library for MX lookup spoof detecton
@@ -432,35 +432,35 @@ class EmailParse(Module):
             msg = email.message_from_file(email_handle)
             email_handle.close()
 
-        if self.parsed_args.open is not None:
+        if self.args.open is not None:
             if ole_flag:
                 msg = ole
-            att_session(self.parsed_args.open, msg, ole_flag)
-        elif self.parsed_args.envelope:
+            att_session(self.args.open, msg, ole_flag)
+        elif self.args.envelope:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_envelope(msg)
-        elif self.parsed_args.attach:
+        elif self.args.attach:
             if ole_flag:
                 msg = ole
             email_attachments(msg, ole_flag)
-        elif self.parsed_args.header:
+        elif self.args.header:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_header(msg)
-        elif self.parsed_args.trace:
+        elif self.args.trace:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_trace(msg, False)
-        elif self.parsed_args.traceall:
+        elif self.args.traceall:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_trace(msg, True)
-        elif self.parsed_args.spoofcheck:
+        elif self.args.spoofcheck:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_spoofcheck(msg, dnsenabled)
-        elif self.parsed_args.all:
+        elif self.args.all:
             if ole_flag:
                 msg = parse_ole_msg(ole)
             email_envelope(msg)

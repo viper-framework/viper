@@ -23,7 +23,7 @@ class Cuckoo(Module):
 
     def run(self):
         super(Cuckoo, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
@@ -34,8 +34,8 @@ class Cuckoo(Module):
             self.log('error', "Missing dependency, install requests (`pip install requests`)")
             return
 
-        host = self.parsed_args.host
-        port = self.parsed_args.port
+        host = self.args.host
+        port = self.args.port
 
         url = 'http://{0}:{1}/tasks/create/file'.format(host, port)
 

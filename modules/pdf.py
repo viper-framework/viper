@@ -147,8 +147,8 @@ class PDF(Module):
 
             return results
 
-        arg_open = self.parsed_args.open
-        arg_dump = self.parsed_args.dump
+        arg_open = self.args.open
+        arg_dump = self.args.dump
 
         # Retrieve list of streams.
         streams = get_streams()
@@ -170,7 +170,7 @@ class PDF(Module):
 
     def run(self):
         super(PDF, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
@@ -181,9 +181,9 @@ class PDF(Module):
             self.log('error', "The opened file doesn't appear to be a PDF document")
             return
 
-        if self.parsed_args.subname == 'id':
+        if self.args.subname == 'id':
             self.pdf_id()
-        elif self.parsed_args.subname == 'streams':
+        elif self.args.subname == 'streams':
             self.streams()
         else:
             self.log('error', 'At least one of the parameters is required')

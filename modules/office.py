@@ -391,7 +391,7 @@ class Office(Module):
     # Main starts here
     def run(self):
         super(Office, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
@@ -413,28 +413,28 @@ class Office(Module):
             self.log('error', "Not a valid office document")
             return
 
-        if self.parsed_args.export is not None:
+        if self.args.export is not None:
             if OLE_FILE:
-                self.export(ole, self.parsed_args.export)
+                self.export(ole, self.args.export)
             elif XML_FILE:
-                self.xml_export(zip_xml, self.parsed_args.export)
-        elif self.parsed_args.meta:
+                self.xml_export(zip_xml, self.args.export)
+        elif self.args.meta:
             if OLE_FILE:
                 self.metadata(ole)
             elif XML_FILE:
                 self.xmlmeta(zip_xml)
-        elif self.parsed_args.streams:
+        elif self.args.streams:
             if OLE_FILE:
                 self.metatimes(ole)
             elif XML_FILE:
                 self.xmlstruct(zip_xml)
-        elif self.parsed_args.oleid:
+        elif self.args.oleid:
             if OLE_FILE:
                 self.oleid(ole)
             else:
                 self.log('error', "Not an OLE file")
-        elif self.parsed_args.vba or self.parsed_args.code:
-            self.parse_vba(self.parsed_args.code)
+        elif self.args.vba or self.args.code:
+            self.parse_vba(self.args.code)
         else:
             self.log('error', 'At least one of the parameters is required')
             self.usage()

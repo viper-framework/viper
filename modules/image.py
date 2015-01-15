@@ -45,14 +45,14 @@ class Image(Module):
 
     def run(self):
         super(Image, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        if self.parsed_args.ghiro:
+        if self.args.ghiro:
             self.ghiro()
         else:
             self.log('error', 'At least one of the parameters is required')

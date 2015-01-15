@@ -118,14 +118,14 @@ class SWF(Module):
     def run(self):
 
         super(SWF, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        arg_dump = self.parsed_args.dump
+        arg_dump = self.args.dump
         if arg_dump is None:
             arg_dump = tempfile.gettempdir()
         self.decompress(arg_dump)

@@ -251,7 +251,7 @@ class Console(object):
                         # the module and execute it.
                         elif root in __modules__:
                             module = __modules__[root]['obj']()
-                            module.set_args(args)
+                            module.set_commandline(args)
                             module.run()
 
                             self.print_output(module.output, filename)

@@ -157,7 +157,7 @@ class AndroidPackage(Module):
                 return False, False, False
 
         super(AndroidPackage, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         # Check for session
@@ -175,17 +175,17 @@ class AndroidPackage(Module):
         if not a:
             return
 
-        if self.parsed_args.dump is not None:
+        if self.args.dump is not None:
             self.log('info', "Decompiling Code")
-            andro_dump(vm, vmx, self.parsed_args.dump)
-            self.log('info', "Decompiled code saved to {0}".format(self.parsed_args.dump))
-        elif self.parsed_args.info:
+            andro_dump(vm, vmx, self.args.dump)
+            self.log('info', "Decompiled code saved to {0}".format(self.args.dump))
+        elif self.args.info:
             andro_info(a)
-        elif self.parsed_args.perm:
+        elif self.args.perm:
             andro_perm(a)
-        elif self.parsed_args.file:
+        elif self.args.file:
             andro_file(a)
-        elif self.parsed_args.all:
+        elif self.args.all:
             andro_info(a)
             andro_perm(a)
             andro_file(a)

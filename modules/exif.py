@@ -22,7 +22,7 @@ class Exif(Module):
 
     def run(self):
         super(Exif, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():

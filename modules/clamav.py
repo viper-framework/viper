@@ -22,7 +22,7 @@ class ClamAV(Module):
 
     def run(self):
         super(ClamAV, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not HAVE_CLAMD:
@@ -32,8 +32,8 @@ class ClamAV(Module):
         daemon = None
         socket = None
 
-        if self.parsed_args.socket is not None:
-            socket = self.parsed_args.socket
+        if self.args.socket is not None:
+            socket = self.args.socket
             self.log('info', "Using socket {0} to connect to ClamAV daemon".format(socket))
             try:
                 daemon = pyclamd.ClamdUnixSocket(socket)

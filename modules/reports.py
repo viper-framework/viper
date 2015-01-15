@@ -206,7 +206,7 @@ class Reports(Module):
 
     def run(self):
         super(Reports, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not HAVE_REQUESTS and not HAVE_BS4:
@@ -217,15 +217,15 @@ class Reports(Module):
             self.log('error', "No session opened")
             return
 
-        if self.parsed_args.malwr:
+        if self.args.malwr:
             self.malwr()
-        elif self.parsed_args.anubis:
+        elif self.args.anubis:
             self.anubis()
-        elif self.parsed_args.threat:
+        elif self.args.threat:
             self.threat()
-        elif self.parsed_args.joe:
+        elif self.args.joe:
             self.joe()
-        elif self.parsed_args.meta:
+        elif self.args.meta:
             self.meta()
         else:
             self.log('error', 'At least one of the parameters is required')

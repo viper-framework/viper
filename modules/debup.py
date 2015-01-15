@@ -31,7 +31,7 @@ class Debup(Module):
     def run(self):
 
         super(Debup, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
@@ -76,7 +76,7 @@ class Debup(Module):
                 pass               
                 
         # If we opted to switch session then do that
-        if data and self.parsed_args.session:
+        if data and self.args.session:
             try:
                 tempName = os.path.join('/tmp', filename)
                 with open(tempName, 'w') as temp:

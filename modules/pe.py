@@ -120,8 +120,8 @@ class PE(Module):
         def get_compiletime(pe):
             return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
 
-        arg_scan = self.parsed_args.scan
-        arg_window = self.parsed_args.window
+        arg_scan = self.args.scan
+        arg_window = self.args.window
 
         if not self.__check_session():
             return
@@ -182,7 +182,7 @@ class PE(Module):
             matches = signatures.match_all(pe, ep_only=True)
             return matches
 
-        arg_scan = self.parsed_args.scan
+        arg_scan = self.args.scan
 
         if not self.__check_session():
             return
@@ -288,9 +288,9 @@ class PE(Module):
 
             return resources
 
-        arg_open = self.parsed_args.open
-        arg_dump = self.parsed_args.dump
-        arg_scan = self.parsed_args.scan
+        arg_open = self.args.open
+        arg_dump = self.args.dump
+        arg_scan = self.args.scan
 
         if not self.__check_session():
             return
@@ -364,8 +364,8 @@ class PE(Module):
 
     def imphash(self):
 
-        arg_scan = self.parsed_args.scan
-        arg_cluster = self.parsed_args.cluster
+        arg_scan = self.args.scan
+        arg_cluster = self.args.cluster
 
         if arg_scan and arg_cluster:
             self.log('error', "You selected two exclusive options, pick one")
@@ -496,10 +496,10 @@ class PE(Module):
 
             return results
 
-        arg_folder = self.parsed_args.dump
-        arg_all = self.parsed_args.all
-        arg_scan = self.parsed_args.scan
-        arg_check = self.parsed_args.check
+        arg_folder = self.args.dump
+        arg_all = self.args.all
+        arg_scan = self.args.scan
+        arg_check = self.args.check
 
         if arg_all:
             self.log('info', "Scanning the repository for all signed samples...")
@@ -708,7 +708,7 @@ class PE(Module):
 
             return found
 
-        arg_scan = self.parsed_args.scan
+        arg_scan = self.args.scan
 
         if not self.__check_session():
             return
@@ -789,9 +789,9 @@ class PE(Module):
 
     def pehash(self):
 
-        arg_all = self.parsed_args.all
-        arg_cluster = self.parsed_args.cluster
-        arg_scan = self.parsed_args.scan
+        arg_all = self.args.all
+        arg_cluster = self.args.cluster
+        arg_scan = self.args.scan
 
         if not HAVE_PEHASH:
             self.log('error', "PEhash is missing. Please copy PEhash to the modules directory of Viper")
@@ -847,30 +847,30 @@ class PE(Module):
 
     def run(self):
         super(PE, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not HAVE_PEFILE:
             self.log('error', "Missing dependency, install pefile (`pip install pefile`)")
             return
 
-        if self.parsed_args.subname == 'imports':
+        if self.args.subname == 'imports':
             self.imports()
-        elif self.parsed_args.subname == 'exports':
+        elif self.args.subname == 'exports':
             self.exports()
-        elif self.parsed_args.subname == 'resources':
+        elif self.args.subname == 'resources':
             self.resources()
-        elif self.parsed_args.subname == 'imphash':
+        elif self.args.subname == 'imphash':
             self.imphash()
-        elif self.parsed_args.subname == 'compiletime':
+        elif self.args.subname == 'compiletime':
             self.compiletime()
-        elif self.parsed_args.subname == 'peid':
+        elif self.args.subname == 'peid':
             self.peid()
-        elif self.parsed_args.subname == 'security':
+        elif self.args.subname == 'security':
             self.security()
-        elif self.parsed_args.subname == 'sections':
+        elif self.args.subname == 'sections':
             self.sections()
-        elif self.parsed_args.subname == 'language':
+        elif self.args.subname == 'language':
             self.language()
-        elif self.parsed_args.subname == 'pehash':
+        elif self.args.subname == 'pehash':
             self.pehash()

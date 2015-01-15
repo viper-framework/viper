@@ -31,10 +31,10 @@ class Jar(Module):
             self.log('table', dict(header=['Item', 'Value'], rows=rows))
 
         super(Jar, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
-        arg_dump = self.parsed_args.dump
+        arg_dump = self.args.dump
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
