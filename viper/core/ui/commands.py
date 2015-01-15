@@ -18,7 +18,6 @@ from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
 
-
 class Commands(object):
 
     def __init__(self):
@@ -85,7 +84,6 @@ class Commands(object):
     # While the session is active, every operation and module executed will be
     # run against the file specified.
     def cmd_open(self, *args):
-
         parser = argparse.ArgumentParser(prog="open", description="Open a file", epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-f', '--file', action="store_true", help="target is a file")
@@ -99,18 +97,14 @@ class Commands(object):
         except:
             return
 
-        arg_is_file = args.file
-        arg_is_url = args.url
-        arg_last = args.last
-        arg_use_tor = args.tor
         target = " ".join(args.value)
 
-        if not arg_last and target is None:
+        if not args.last and target is None:
             parser.print_usage()
             return
 
         # If it's a file path, open a session on it.
-        if arg_is_file:
+        if args.file:
             target = os.path.expanduser(target)
 
             if not os.path.exists(target) or not os.path.isfile(target):
@@ -119,8 +113,8 @@ class Commands(object):
 
             __sessions__.new(target)
         # If it's a URL, download it and open a session on the temporary file.
-        elif arg_is_url:
-            data = download(url=target, tor=arg_use_tor)
+        elif args.url:
+            data = download(url=target, tor=args.tor)
 
             if data:
                 tmp = tempfile.NamedTemporaryFile(delete=False)
@@ -130,7 +124,7 @@ class Commands(object):
                 __sessions__.new(tmp.name)
         # Try to open the specified file from the list of results from
         # the last find command.
-        elif arg_last:
+        elif args.last:
             if __sessions__.find:
                 count = 1
                 for item in __sessions__.find:
@@ -204,7 +198,6 @@ class Commands(object):
     # This command allows you to view, add, modify and delete notes associated
     # with the currently opened file.
     def cmd_notes(self, *args):
-
         parser = argparse.ArgumentParser(prog="notes", description="Show information on the opened file")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-l', '--list', action="store_true", help="List all notes available for the current file")
@@ -218,17 +211,11 @@ class Commands(object):
         except:
             return
 
-        arg_list = args.list
-        arg_add = args.add
-        arg_view = args.view
-        arg_edit = args.edit
-        arg_delete = args.delete
-
         if not __sessions__.is_set():
             print_error("No session opened")
             return
 
-        if arg_list:
+        if args.list:
             # Retrieve all notes for the currently opened file.
             malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
             if not malware:
@@ -246,7 +233,7 @@ class Commands(object):
             # Display list of existing notes.
             print(table(header=['ID', 'Title'], rows=rows))
 
-        elif arg_add:
+        elif args.add:
             title = raw_input("Enter a title for the new note: ")
 
             # Create a new temporary file.
@@ -262,19 +249,19 @@ class Commands(object):
 
             print_info("New note with title \"{0}\" added to the current file".format(bold(title)))
 
-        elif arg_view:
+        elif args.view:
             # Retrieve note wth the specified ID and print it.
-            note = Database().get_note(arg_view)
+            note = Database().get_note(args.view)
             if note:
                 print_info(bold('Title: ') + note.title)
                 print_info(bold('Body:'))
                 print(note.body)
             else:
-                print_info("There is no note with ID {0}".format(arg_view))
+                print_info("There is no note with ID {0}".format(args.view))
 
-        elif arg_edit:
+        elif args.edit:
             # Retrieve note with the specified ID.
-            note = Database().get_note(arg_edit)
+            note = Database().get_note(args.edit)
             if note:
                 # Create a new temporary file.
                 tmp = tempfile.NamedTemporaryFile(delete=False)
@@ -286,15 +273,15 @@ class Commands(object):
                 # Read the new body from the temporary file.
                 body = open(tmp.name, 'r').read()
                 # Update the note entry with the new body.
-                Database().edit_note(arg_edit, body)
+                Database().edit_note(args.edit, body)
                 # Remove the temporary file.
                 os.remove(tmp.name)
 
-                print_info("Updated note with ID {0}".format(arg_edit))
+                print_info("Updated note with ID {0}".format(args.edit))
 
-        elif arg_delete:
+        elif args.delete:
             # Delete the note with the specified ID.
-            Database().delete_note(arg_delete)
+            Database().delete_note(args.delete)
         else:
             parser.print_usage()
 
@@ -304,7 +291,6 @@ class Commands(object):
     # This command stores the opened file in the local repository and tries
     # to store details in the database.
     def cmd_store(self, *args):
-
         parser = argparse.ArgumentParser(prog="store", description="Store the opened file to the local repository")
         parser.add_argument('-d', '--delete', action="store_true", help="Delete the original file")
         parser.add_argument('-f', '--folder', type=str, nargs='+', help="Specify a folder to import")
@@ -318,20 +304,13 @@ class Commands(object):
         except:
             return
 
-        arg_delete = args.delete
         if args.folder is not None:
             # Allows to have spaces in the path.
-            arg_folder = " ".join(args.folder)
-        else:
-            arg_folder = None
-        arg_file_size = args.file_size
-        arg_file_type = args.file_type
-        arg_file_name = args.file_name
+            args.folder = " ".join(args.folder)
+
         if args.tags is not None:
             # Remove the spaces in the list of tags
-            arg_tags = "".join(args.tags)
-        else:
-            arg_tags = None
+            args.tags = "".join(args.tags)
 
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
@@ -351,7 +330,7 @@ class Commands(object):
                 return False
 
             # Delete the file if requested to do so.
-            if arg_delete:
+            if args.delete:
                 try:
                     os.unlink(obj.path)
                 except Exception as e:
@@ -363,11 +342,11 @@ class Commands(object):
         # to add all contained files to the local repository.
         # This is note going to open a new session.
         # TODO: perhaps disable or make recursion optional?
-        if arg_folder is not None:
+        if args.folder is not None:
             # Check if the specified folder is valid.
-            if os.path.isdir(arg_folder):
+            if os.path.isdir(args.folder):
                 # Walk through the folder and subfolders.
-                for dir_name, dir_names, file_names in os.walk(arg_folder):
+                for dir_name, dir_names, file_names in os.walk(args.folder):
                     # Add each collected file.
                     for file_name in file_names:
                         file_path = os.path.join(dir_name, file_name)
@@ -379,30 +358,30 @@ class Commands(object):
                             continue
 
                         # Check if the file name matches the provided pattern.
-                        if arg_file_name:
-                            if not fnmatch.fnmatch(file_name, arg_file_name):
+                        if args.file_name:
+                            if not fnmatch.fnmatch(file_name, args.file_name):
                                 # print_warning("Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
                                 continue
 
                         # Check if the file type matches the provided pattern.
-                        if arg_file_type:
-                            if arg_file_type not in File(file_path).type:
+                        if args.file_type:
+                            if args.file_type not in File(file_path).type:
                                 # print_warning("Skip, file \"{0}\" doesn't match the file type".format(file_path))
                                 continue
 
                         # Check if file exceeds maximum size limit.
-                        if arg_file_size:
+                        if args.file_size:
                             # Obtain file size.
-                            if os.path.getsize(file_path) > arg_file_size:
+                            if os.path.getsize(file_path) > args.file_size:
                                 print_warning("Skip, file \"{0}\" is too big".format(file_path))
                                 continue
 
                         file_obj = File(file_path)
 
                         # Add file.
-                        add_file(file_obj, arg_tags)
+                        add_file(file_obj, args.tags)
             else:
-                print_error("You specified an invalid folder: {0}".format(arg_folder))
+                print_error("You specified an invalid folder: {0}".format(args.folder))
         # Otherwise we try to store the currently opened file, if there is any.
         else:
             if __sessions__.is_set():
@@ -411,7 +390,7 @@ class Commands(object):
                     return False
 
                 # Add file.
-                if add_file(__sessions__.current.file, arg_tags):
+                if add_file(__sessions__.current.file, args.tags):
                     # Open session to the new file.
                     self.cmd_open(*[__sessions__.current.file.sha256])
             else:
@@ -449,7 +428,6 @@ class Commands(object):
     #
     # This command is used to search for files in the database.
     def cmd_find(self, *args):
-
         parser = argparse.ArgumentParser(prog="find", description="Find a file")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-t', '--tags', action="store_true", help="List available tags and quit")
@@ -460,14 +438,10 @@ class Commands(object):
         except:
             return
 
-        arg_list_tags = args.tags
-        arg_type = args.type
-        arg_value = args.value
-
         # One of the most useful search terms is by tag. With the --tags
         # argument we first retrieve a list of existing tags and the count
         # of files associated with each of them.
-        if arg_list_tags:
+        if args.tags:
             # Retrieve list of tags.
             tags = self.db.list_tags()
 
@@ -488,15 +462,15 @@ class Commands(object):
             return
 
         # At this point, if there are no search terms specified, return.
-        if arg_type is None:
+        if args.type is None:
             parser.print_usage()
             return
 
-        key = arg_type
+        key = args.type
         if key != 'all' and key != 'latest':
             try:
                 # The second argument is the search value.
-                value = arg_value
+                value = args.value
             except IndexError:
                 print_error("You need to include a search term.")
                 return
@@ -535,7 +509,6 @@ class Commands(object):
     #
     # This command is used to modify the tags of the opened file.
     def cmd_tags(self, *args):
-
         parser = argparse.ArgumentParser(prog="tags", description="Modify tags of the opened file")
         parser.add_argument('-a', '--add', help="Add tags to the opened file (comma separated)")
         parser.add_argument('-d', '--delete', help="Delete a tag from the opened file")
@@ -543,9 +516,6 @@ class Commands(object):
             args = parser.parse_args(args)
         except:
             return
-
-        arg_add = args.add
-        arg_delete = args.delete
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
@@ -556,17 +526,17 @@ class Commands(object):
         # If no arguments are specified, there's not much to do.
         # However, it could make sense to also retrieve a list of existing
         # tags from this command, and not just from the "find" command alone.
-        if arg_add is None and arg_delete is None:
+        if args.add is None and args.delete is None:
             parser.print_usage()
             return
 
         # TODO: handle situation where addition or deletion of a tag fail.
 
-        if arg_add:
+        if args.add:
             # Add specified tags to the database's entry belonging to
             # the opened file.
             db = Database()
-            db.add_tags(__sessions__.current.file.sha256, arg_add)
+            db.add_tags(__sessions__.current.file.sha256, args.add)
             print_info("Tags added to the currently opened file")
 
             # We refresh the opened session to update the attributes.
@@ -576,9 +546,9 @@ class Commands(object):
             print_info("Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
 
-        if arg_delete:
+        if args.delete:
             # Delete the tag from the database.
-            Database().delete_tag(arg_delete)
+            Database().delete_tag(args.delete)
             # Refresh the session so that the attributes of the file are
             # updated.
             print_info("Refreshing session to update attributes...")
@@ -589,7 +559,6 @@ class Commands(object):
     #
     # This command is used to list and switch across all the opened sessions.
     def cmd_sessions(self, *args):
-
         parser = argparse.ArgumentParser(prog="sessions", description="Open a file", epilog="List or switch sessions")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-l', '--list', action="store_true", help="List all existing sessions")
@@ -600,10 +569,7 @@ class Commands(object):
         except:
             return
 
-        arg_list = args.list
-        arg_switch = args.switch
-
-        if arg_list:
+        if args.list:
             if not __sessions__.sessions:
                 print_info("There are no opened sessions")
                 return
@@ -624,9 +590,9 @@ class Commands(object):
 
             print_info("Opened Sessions:")
             print(table(header=['#', 'Name', 'MD5', 'Created At', 'Current'], rows=rows))
-        elif arg_switch:
+        elif args.switch:
             for session in __sessions__.sessions:
-                if arg_switch == session.id:
+                if args.switch == session.id:
                     __sessions__.switch(session)
                     return
 
@@ -640,19 +606,15 @@ class Commands(object):
     # This command retrieves a list of all projects.
     # You can also switch to a different project.
     def cmd_projects(self, *args):
-
         parser = argparse.ArgumentParser(prog="projects", description="Open a file", epilog="List or switch existing projects")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-l', '--list', action="store_true", help="List all existing projects")
-        group.add_argument('-s', '--switch', help="Switch to the specified project")
+        group.add_argument('-s', '--switch', metavar='project_name', help="Switch to the specified project")
 
         try:
             args = parser.parse_args(args)
         except:
             return
-
-        arg_list = args.list
-        arg_switch = args.switch
 
         projects_path = os.path.join(os.getcwd(), 'projects')
 
@@ -660,7 +622,7 @@ class Commands(object):
             print_info("The projects directory does not exist yet")
             return
 
-        if arg_list:
+        if args.list:
             print_info("Projects Available:")
 
             rows = []
@@ -673,13 +635,13 @@ class Commands(object):
                     rows.append([project, time.ctime(os.path.getctime(project_path)), current])
 
             print(table(header=['Project Name', 'Creation Time', 'Current'], rows=rows))
-        elif arg_switch:
+        elif args.switch:
             if __sessions__.is_set():
                 __sessions__.close()
                 print_info("Closed opened session")
 
-            __project__.open(arg_switch)
-            print_info("Switched to project {0}".format(bold(arg_switch)))
+            __project__.open(args.switch)
+            print_info("Switched to project {0}".format(bold(args.switch)))
 
             # Need to re-initialize the Database to open the new SQLite file.
             self.db = Database()
@@ -691,7 +653,6 @@ class Commands(object):
     #
     # This command will export the current session to file or zip.
     def cmd_export(self, *args):
-
         parser = argparse.ArgumentParser(prog="export", description="Export the current session to file or zip")
         parser.add_argument('-z', '--zip', action="store_true", help="Export session in a zip archive")
         parser.add_argument('value', help="path or archive name")
@@ -700,9 +661,6 @@ class Commands(object):
             args = parser.parse_args(args)
         except:
             return
-
-        arg_zip = args.zip
-        arg_value = args.value
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
@@ -719,25 +677,25 @@ class Commands(object):
         # target path can be confusing. We should perhaps standardize this.
 
         # Abort if the specified path already exists.
-        if os.path.isfile(arg_value):
-            print_error("File at path \"{0}\" already exists, abort".format(arg_value))
+        if os.path.isfile(args.value):
+            print_error("File at path \"{0}\" already exists, abort".format(args.value))
             return
 
         # If the argument chosed so, archive the file when exporting it.
         # TODO: perhaps add an option to use a password for the archive
         # and default it to "infected".
-        if arg_zip:
+        if args.zip:
             try:
-                with ZipFile(arg_value, 'w') as export_zip:
+                with ZipFile(args.value, 'w') as export_zip:
                     export_zip.write(__sessions__.current.file.path, arcname=__sessions__.current.file.name)
             except IOError as e:
                 print_error("Unable to export file: {0}".format(e))
             else:
-                print_info("File archived and exported to {0}".format(arg_value))
+                print_info("File archived and exported to {0}".format(args.value))
         # Otherwise just dump it to the given directory.
         else:
             # XXX: Export file with the original file name.
-            store_path = os.path.join(arg_value, __sessions__.current.file.name)
+            store_path = os.path.join(args.value, __sessions__.current.file.name)
 
             try:
                 shutil.copyfile(__sessions__.current.file.path, store_path)
