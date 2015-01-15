@@ -21,7 +21,7 @@ def logo():
    _   _ _ ____  _____  ____ 
   | | | | |  _ \| ___ |/ ___)
    \ V /| | |_| | ____| |    
-    \_/ |_|  __/|_____)_| v1.1
+    \_/ |_|  __/|_____)_| v1.2
           |_|
     """)
 
@@ -251,7 +251,7 @@ class Console(object):
                         # the module and execute it.
                         elif root in __modules__:
                             module = __modules__[root]['obj']()
-                            module.set_args(args)
+                            module.set_commandline(args)
                             module.run()
 
                             self.print_output(module.output, filename)

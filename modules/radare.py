@@ -45,14 +45,14 @@ class Radare(Module):
 
     def run(self):
         super(Radare, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        if self.parsed_args.webserver:
+        if self.args.webserver:
             self.server = "-c=H"
 
         filetype = __sessions__.current.file.type

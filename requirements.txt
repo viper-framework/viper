@@ -6,6 +6,7 @@ requests
 SQLAlchemy
 pycrypto
 OleFileIO_PL
+olefile
 BeautifulSoup4
 bottle
 pylzma
@@ -13,3 +14,5 @@ pyelftools
 bitstring
 dnspython
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
+pyasn1
+M2Crypto

@@ -13,6 +13,7 @@ import struct
 import zipfile
 import xml.etree.ElementTree as ET
 
+from oletools.olevba import VBA_Parser, detect_autoexec, detect_suspicious, detect_patterns
 from viper.common.utils import string_clean
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -35,6 +36,8 @@ class Office(Module):
         self.parser.add_argument('-o', '--oleid', action='store_true', help='Get the OLE information')
         self.parser.add_argument('-s', '--streams', action='store_true', help='Show the document streams')
         self.parser.add_argument('-e', '--export', metavar='dump_path', help='Export all objects')
+        self.parser.add_argument('-v', '--vba', action='store_true', help='Analyse Macro Code')
+        self.parser.add_argument('-c', '--code', metavar="code_path", help='Export Macro Code to File')
 
     ##
     # HELPER FUNCTIONS
@@ -94,10 +97,10 @@ class Office(Module):
     def metadata(self, ole):
         meta = ole.get_metadata()
         for attribs in ['SUMMARY_ATTRIBS', 'DOCSUM_ATTRIBS']:
-            self.log('info', "{0} Metadata".format(attribs))
+            self.log('info', "{0} Metadata".format(string_clean(attribs)))
             rows = []
             for key in getattr(meta, attribs):
-                rows.append([key, getattr(meta, key)])
+                rows.append([key, string_clean(getattr(meta, key))])
 
             self.log('table', dict(header=['Name', 'Value'], rows=rows))
 
@@ -328,10 +331,67 @@ class Office(Module):
             return
         return
 
+    ##
+    # VBA Functions
+    #
+    
+    def parse_vba(self, save_path):
+        vba = VBA_Parser(__sessions__.current.file.path)
+        # Check for Macros
+        if not vba.detect_vba_macros():
+            self.log('error', "No Macro's Detected")
+            return
+        self.log('info', "Macro's Detected")
+        try:
+            for (filename, stream_path, vba_filename, vba_code) in vba.extract_macros():
+                self.log('info', "Stream Details")
+                self.log('item', "OLE Stream: {0}".format(stream_path))
+                self.log('item', "VBA Filename: {0}".format(vba_filename))
+                autoexec_keywords = detect_autoexec(vba_code)
+                if autoexec_keywords:
+                    self.log('info', "AutoRun Macros Found")
+                    rows = []
+                    for keyword, description in autoexec_keywords:
+                        rows.append([keyword, description])
+                    self.log('table', dict(header=['KeyWord', 'Description'], rows=rows))
+                # Match Keyword Types
+                suspicious_keywords = detect_suspicious(vba_code)
+                if suspicious_keywords:
+                    self.log('info', "Suspicious Keywords Found")
+                    rows = []
+                    for keyword, description in suspicious_keywords:
+                        rows.append([keyword, description])
+                    self.log('table', dict(header=['KeyWord', 'Description'], rows=rows))
+                # Match IOCs
+                patterns = detect_patterns(vba_code)
+                if patterns:
+                    self.log('info', "Suspicious Keywords Found")
+                    rows = []
+                    for pattern_type, value in patterns:
+                        rows.append([pattern_type, value])
+                    self.log('table', dict(header=['Pattern', 'Value'], rows=rows))
+                        
+                # Save the code to external File
+                if save_path:
+                    try:
+                        with open(save_path, 'w') as out:
+                            out.write(vba_code)
+                        self.log('info', "Writing VBA Code to {0}".format(save_path))
+                    except:
+                        self.log('Error', "Unable to write to {0}".format(save_path))
+                    return
+        except:
+            self.log('Error', "Unable to Process File")
+        # Close the file
+        vba.close()
+        
+        
+        
+        
     # Main starts here
     def run(self):
         super(Office, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
@@ -353,26 +413,28 @@ class Office(Module):
             self.log('error', "Not a valid office document")
             return
 
-        if self.parsed_args.export is not None:
+        if self.args.export is not None:
             if OLE_FILE:
-                self.export(ole, self.parsed_args.export)
+                self.export(ole, self.args.export)
             elif XML_FILE:
-                self.xml_export(zip_xml, self.parsed_args.export)
-        elif self.parsed_args.meta:
+                self.xml_export(zip_xml, self.args.export)
+        elif self.args.meta:
             if OLE_FILE:
                 self.metadata(ole)
             elif XML_FILE:
                 self.xmlmeta(zip_xml)
-        elif self.parsed_args.streams:
+        elif self.args.streams:
             if OLE_FILE:
                 self.metatimes(ole)
             elif XML_FILE:
                 self.xmlstruct(zip_xml)
-        elif self.parsed_args.oleid:
+        elif self.args.oleid:
             if OLE_FILE:
                 self.oleid(ole)
             else:
                 self.log('error', "Not an OLE file")
+        elif self.args.vba or self.args.code:
+            self.parse_vba(self.args.code)
         else:
             self.log('error', 'At least one of the parameters is required')
             self.usage()

@@ -65,9 +65,9 @@ class YaraScan(Module):
 
             return 'data/yara/index.yara'
 
-        arg_rule = self.parsed_args.rule
-        arg_scan_all = self.parsed_args.all
-        arg_tag = self.parsed_args.tag
+        arg_rule = self.args.rule
+        arg_scan_all = self.args.all
+        arg_tag = self.args.tag
 
         # If no custom ruleset is specified, we use the default one.
         if not arg_rule:
@@ -155,7 +155,7 @@ class YaraScan(Module):
                     __sessions__.new(__sessions__.current.file.path)
 
     def rules(self):
-        arg_edit = self.parsed_args.edit
+        arg_edit = self.args.edit
 
         # Retrieve the list of rules and populatea list.
         rules = []
@@ -180,16 +180,16 @@ class YaraScan(Module):
 
     def run(self):
         super(YaraScan, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not HAVE_YARA:
             self.log('error', "Missing dependency, install yara")
             return
 
-        if self.parsed_args.subname == 'scan':
+        if self.args.subname == 'scan':
             self.scan()
-        elif self.parsed_args.subname == 'rules':
+        elif self.args.subname == 'rules':
             self.rules()
         else:
             self.log('error', 'At least one of the parameters is required')

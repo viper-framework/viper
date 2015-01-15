@@ -130,22 +130,22 @@ class ELF(Module):
 
     def run(self):
         super(ELF, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not HAVE_ELFTOOLS:
             self.log('error', "Missing dependency, install pyelftools (`pip install pyelftools")
             return
 
-        if self.parsed_args.sections:
+        if self.args.sections:
             self.sections()
-        elif self.parsed_args.segments:
+        elif self.args.segments:
             self.segments()
-        elif self.parsed_args.symbols:
+        elif self.args.symbols:
             self.symbols()
-        elif self.parsed_args.interpreter:
+        elif self.args.interpreter:
             self.interpreter()
-        elif self.parsed_args.dynamic:
+        elif self.args.dynamic:
             self.dynamic()
         else:
             self.log('error', 'At least one of the parameters is required')

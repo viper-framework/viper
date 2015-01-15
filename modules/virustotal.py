@@ -29,11 +29,11 @@ class VirusTotal(Module):
     def run(self):
 
         super(VirusTotal, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         arg_submit = False
-        if self.parsed_args.submit:
+        if self.args.submit:
             arg_submit = True
 
         if not HAVE_REQUESTS:

@@ -63,7 +63,20 @@ def main():
 
         # Open the local file, whether it exists or not, and either
         # rewrite or write the new content.
-        new_local = open(local_file_path, 'w')
+        try:
+            new_local = open(local_file_path, 'w')
+        except IOError as e:
+            if e.errno == 21:
+                # It's a new directory.
+                try:
+                    os.mkdir(local_file_path)
+                except Exception as e:
+                    print_error("Uname to create new directory {0}: {1}".format(local_file_path, e))
+                else:
+                    print_success("New directory {0} has been created".format(local_file_path))
+
+                continue
+
         new_local.write(name_data)
         new_local.close()
 

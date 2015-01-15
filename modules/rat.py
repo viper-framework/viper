@@ -82,12 +82,12 @@ class RAT(Module):
     def run(self):
         super(RAT, self).run()
 
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
-        if self.parsed_args.auto:
+        if self.args.auto:
             self.auto()
-        elif self.parsed_args.family:
-            self.get_config(self.parsed_args.family)
-        elif self.parsed_args.list:
+        elif self.args.family:
+            self.get_config(self.args.family)
+        elif self.args.list:
             self.list()

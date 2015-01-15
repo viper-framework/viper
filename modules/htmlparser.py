@@ -124,7 +124,7 @@ class HTMLParse(Module):
 
     def run(self):
         super(HTMLParse, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
@@ -139,9 +139,9 @@ class HTMLParse(Module):
             return
 
         # Set dump path, none if not set.
-        arg_dump = self.parsed_args.dump
+        arg_dump = self.args.dump
 
-        if self.parsed_args.script:
+        if self.args.script:
 
             scripts, script_content = self.parse_scripts()
             if arg_dump:
@@ -152,14 +152,14 @@ class HTMLParse(Module):
                 self.log('info', "Scripts:")
                 self.log('table', dict(header=['Type', 'Source', 'Entropy'], rows=scripts))
 
-        elif self.parsed_args.links:
+        elif self.args.links:
                 links = self.parse_hrefs()
                 self.log('info', "Links")
                 self.log('info', "Target \t Text")
                 for link in links:
                     self.log('item', "{0}\t {1}".format(link[0], self.string_clean(link[1])))
         # iFrames
-        elif self.parsed_args.frame:
+        elif self.args.frame:
             frames, frame_content = self.parse_iframes()
             if arg_dump:
                 self.log('info', "Dumping Output to {0}".format(arg_dump))
@@ -170,7 +170,7 @@ class HTMLParse(Module):
                 self.log('table', dict(header=['Source', 'Size', 'Entropy'], rows=frames))
 
         # Images
-        elif self.parsed_args.images:
+        elif self.args.images:
             images = self.parse_images()
             if arg_dump:
                 self.log('info', "Dumping Images to {0}".format(arg_dump))
@@ -181,7 +181,7 @@ class HTMLParse(Module):
                 self.log('table', dict(header=['Source', 'Alt', ], rows=images))
 
         # Embedded
-        elif self.parsed_args.embed:
+        elif self.args.embed:
             java, flash = self.parse_embedded()
             if arg_dump:
                 self.log('info', "Dumping Embedded Items to {0}".format(arg_dump))

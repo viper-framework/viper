@@ -105,22 +105,22 @@ class XorSearch(Module):
             self.log('info', "Saved Output to {0}".format(save_name))
 
         super(XorSearch, self).run()
-        if self.parsed_args is None:
+        if self.args is None:
             return
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        xor = self.parsed_args.xor
-        rot = self.parsed_args.rot
-        save_path = self.parsed_args.output
+        xor = self.args.xor
+        rot = self.args.rot
+        save_path = self.args.output
 
         if not xor and not rot:
             xor = True
-        if self.parsed_args.search is not None:
-            terms = self.parsed_args.search
-        if self.parsed_args.all:
+        if self.args.search is not None:
+            terms = self.args.search
+        if self.args.all:
             xor = True
             rot = True
 

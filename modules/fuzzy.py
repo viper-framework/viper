@@ -38,7 +38,7 @@ class Fuzzy(Module):
             return
 
         arg_verbose = False
-        if self.parsed_args and self.parsed_args.verbose:
+        if self.args and self.args.verbose:
             arg_verbose = True
 
         db = Database()
