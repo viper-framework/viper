@@ -528,12 +528,18 @@ class PE(Module):
             if len(matches) > 0:
                 self.log('table', dict(header=['Name', 'SHA256'], rows=matches))
 
+        # TODO: this function needs to be better integrated with the rest of the command.
+        # TODO: need to add more error handling and figure out why so many samples are failing.
         if self.args.check:
             if not HAVE_VERIFYSIGS:
                 self.log('error', "Dependencies missing for authenticode validation. Please install M2Crypto and pyasn1 (`pip install pyasn1 M2Crypto`)")
                 return
 
-            auth, computed_content_hash = get_auth_data(__sessions__.current.file.path)
+            try:
+                auth, computed_content_hash = get_auth_data(__sessions__.current.file.path)
+            except Exception as e:
+                self.log('error', "Unable to parse PE certificate: {0}".format(str(e)))
+                return
 
             try:
                 auth.ValidateAsn1()
@@ -541,54 +547,54 @@ class PE(Module):
                 auth.ValidateSignatures()
                 auth.ValidateCertChains(time.gmtime())
             except Exception, e:
-                self.log('error', str(e))
+                self.log('error', "Unable to validate PE certificate: {0}".format(str(e)))
                 return
 
-            print(bold('\nSignature metadata:'))
-            print('\tProgram name: {0}'.format(auth.program_name))
-            print('\tURL: {0}'.format(auth.program_url))
+            self.log('info', bold('Signature metadata:'))
+            self.log('info', 'Program name: {0}'.format(auth.program_name))
+            self.log('info', 'URL: {0}'.format(auth.program_url))
 
             if auth.has_countersignature:
-                print(bold('\nCountersignature is present. Timestamp: {0} UTC'.format(
+                self.log('info', bold('Countersignature is present. Timestamp: {0} UTC'.format(
                         time.asctime(time.gmtime(auth.counter_timestamp)))))
             else:
-                print(bold('\nCountersignature is not present.'))
+                self.log('info', bold('Countersignature is not present.'))
 
-            print(bold('\nBinary is signed with cert issued by:'))
-            print('\t{0}'.format(auth.signing_cert_id[0]))
+            self.log('info', bold('Binary is signed with cert issued by:'))
+            self.log('info', '{0}'.format(auth.signing_cert_id[0]))
 
-            print('\t{0}'.format(auth.cert_chain_head[2][0]))
-            print('\tChain not before: {0} UTC'.format(
+            self.log('info', '{0}'.format(auth.cert_chain_head[2][0]))
+            self.log('info', 'Chain not before: {0} UTC'.format(
                     time.asctime(time.gmtime(auth.cert_chain_head[0]))))
-            print('\tChain not after: {0} UTC'.format(
+            self.log('info', 'Chain not after: {0} UTC'.format(
                     time.asctime(time.gmtime(auth.cert_chain_head[1]))))
 
             if auth.has_countersignature:
-                print(bold('\nCountersig chain head issued by:'))
-                print('\t{0}'.format(auth.counter_chain_head[2]))
-                print('\tCountersig not before: {0} UTC'.format(
+                self.log('info', bold('Countersig chain head issued by:'))
+                self.log('info', '{0}'.format(auth.counter_chain_head[2]))
+                self.log('info', 'Countersig not before: {0} UTC'.format(
                         time.asctime(time.gmtime(auth.counter_chain_head[0]))))
-                print('\tCountersig not after: {0} UTC'.format(
+                self.log('info', 'Countersig not after: {0} UTC'.format(
                         time.asctime(time.gmtime(auth.counter_chain_head[1]))))
 
-            print(bold('\nCertificates:'))
+            self.log('info', bold('Certificates:'))
             for (issuer, serial), cert in auth.certificates.items():
-                print('\tIssuer: {0}'.format(issuer))
-                print('\tSerial: {0}'.format(serial))
+                self.log('info', 'Issuer: {0}'.format(issuer))
+                self.log('info', 'Serial: {0}'.format(serial))
                 subject = cert[0][0]['subject']
                 subject_dn = str(dn.DistinguishedName.TraverseRdn(subject[0]))
-                print('\tSubject: {0}'.format(subject_dn))
+                self.log('info', 'Subject: {0}'.format(subject_dn))
                 not_before = cert[0][0]['validity']['notBefore']
                 not_after = cert[0][0]['validity']['notAfter']
                 not_before_time = not_before.ToPythonEpochTime()
                 not_after_time = not_after.ToPythonEpochTime()
-                print('\tNot Before: {0} UTC ({1})'.format(
+                self.log('info', 'Not Before: {0} UTC ({1})'.format(
                         time.asctime(time.gmtime(not_before_time)), not_before[0]))
-                print('\tNot After: {0} UTC ({1})\n'.format(
+                self.log('info', 'Not After: {0} UTC ({1})'.format(
                         time.asctime(time.gmtime(not_after_time)), not_after[0]))
 
             if auth.trailing_data:
-                print('Signature Blob had trailing (unvalidated) data ({0} bytes): {1}'.format(
+                self.log('info', 'Signature Blob had trailing (unvalidated) data ({0} bytes): {1}'.format(
                         len(auth.trailing_data), auth.trailing_data.encode('hex')))
 
     def language(self):
