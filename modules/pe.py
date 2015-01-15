@@ -120,16 +120,13 @@ class PE(Module):
         def get_compiletime(pe):
             return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
 
-        arg_scan = self.args.scan
-        arg_window = self.args.window
-
         if not self.__check_session():
             return
 
         compile_time = get_compiletime(self.pe)
         self.log('info', "Compile Time: {0}".format(bold(compile_time)))
 
-        if arg_scan:
+        if self.args.scan:
             self.log('info', "Scanning the repository for matching samples...")
 
             db = Database()
@@ -153,14 +150,14 @@ class PE(Module):
                 if compile_time == cur_compile_time:
                     matches.append([sample.name, sample.md5, cur_compile_time])
                 else:
-                    if arg_window:
+                    if self.args.window:
                         if cur_compile_time > compile_time:
                             delta = (cur_compile_time - compile_time)
                         elif cur_compile_time < compile_time:
                             delta = (compile_time - cur_compile_time)
 
                         delta_minutes = int(delta.total_seconds()) / 60
-                        if delta_minutes <= arg_window:
+                        if delta_minutes <= self.args.window:
                             matches.append([sample.name, sample.md5, cur_compile_time])
 
             self.log('info', "{0} relevant matches found".format(bold(len(matches))))
@@ -182,8 +179,6 @@ class PE(Module):
             matches = signatures.match_all(pe, ep_only=True)
             return matches
 
-        arg_scan = self.args.scan
-
         if not self.__check_session():
             return
 
@@ -200,7 +195,7 @@ class PE(Module):
         else:
             self.log('info', "No PEiD signatures matched.")
 
-        if arg_scan and peid_matches:
+        if self.args.scan and peid_matches:
             self.log('info', "Scanning the repository for matching samples...")
 
             db = Database()
@@ -267,9 +262,9 @@ class PE(Module):
                                         # processed is the opened session file.
                                         # This is to avoid that during a --scan all the resources being
                                         # scanned are dumped as well.
-                                        if (arg_open or arg_dump) and pe == self.pe:
-                                            if arg_dump:
-                                                folder = arg_dump
+                                        if (self.args.open or self.args.dump) and pe == self.pe:
+                                            if self.args.dump:
+                                                folder = self.args.dump
                                             else:
                                                 folder = tempfile.mkdtemp()
 
@@ -288,10 +283,6 @@ class PE(Module):
 
             return resources
 
-        arg_open = self.args.open
-        arg_dump = self.args.dump
-        arg_scan = self.args.scan
-
         if not self.__check_session():
             return
 
@@ -303,20 +294,20 @@ class PE(Module):
             return
 
         headers = ['#', 'Name', 'Offset', 'MD5', 'Size', 'File Type', 'Language', 'Sublanguage']
-        if arg_dump or arg_open:
+        if self.args.dump or self.args.open:
             headers.append('Dumped To')
 
         print table(headers, resources)
 
         # If instructed, open a session on the given resource.
-        if arg_open:
+        if self.args.open:
             for resource in resources:
-                if resource[0] == arg_open:
+                if resource[0] == self.args.open:
                     __sessions__.new(resource[8])
                     return
         # If instructed to perform a scan across the repository, start looping
         # through all available files.
-        elif arg_scan:
+        elif self.args.scan:
             self.log('info', "Scanning the repository for matching samples...")
 
             # Retrieve list of samples stored locally and available in the
@@ -363,15 +354,11 @@ class PE(Module):
                 self.log('table', dict(header=['Name', 'MD5', 'Resource MD5'], rows=matches))
 
     def imphash(self):
-
-        arg_scan = self.args.scan
-        arg_cluster = self.args.cluster
-
-        if arg_scan and arg_cluster:
+        if self.args.scan and self.args.cluster:
             self.log('error', "You selected two exclusive options, pick one")
             return
 
-        if arg_cluster:
+        if self.args.cluster:
             self.log('info', "Clustering all samples by imphash...")
 
             db = Database()
@@ -416,7 +403,7 @@ class PE(Module):
 
             self.log('info', "Imphash: {0}".format(bold(imphash)))
 
-            if arg_scan:
+            if self.args.scan:
                 self.log('info', "Scanning the repository for matching samples...")
 
                 db = Database()
@@ -496,12 +483,7 @@ class PE(Module):
 
             return results
 
-        arg_folder = self.args.dump
-        arg_all = self.args.all
-        arg_scan = self.args.scan
-        arg_check = self.args.check
-
-        if arg_all:
+        if self.args.all:
             self.log('info', "Scanning the repository for all signed samples...")
 
             all_of_them = get_signed_samples()
@@ -526,8 +508,8 @@ class PE(Module):
 
         self.log('info', "Found certificate with MD5 {0}".format(bold(cert_md5)))
 
-        if arg_folder:
-            cert_path = os.path.join(arg_folder, '{0}.crt'.format(__sessions__.current.file.sha256))
+        if self.args.dump:
+            cert_path = os.path.join(self.args.dump, '{0}.crt'.format(__sessions__.current.file.sha256))
             with open(cert_path, 'wb+') as cert_handle:
                 cert_handle.write(cert_data)
 
@@ -536,7 +518,7 @@ class PE(Module):
                      bold("openssl pkcs7 -inform DER -print_certs -text -in {0}".format(cert_path)))
 
         # TODO: do scan for certificate's serial number.
-        if arg_scan:
+        if self.args.scan:
             self.log('info', "Scanning the repository for matching signed samples...")
 
             matches = get_signed_samples(current=__sessions__.current.file.sha256, cert_filter=cert_md5)
@@ -546,7 +528,7 @@ class PE(Module):
             if len(matches) > 0:
                 self.log('table', dict(header=['Name', 'SHA256'], rows=matches))
 
-        if arg_check:
+        if self.args.check:
             if not HAVE_VERIFYSIGS:
                 self.log('error', "Dependencies missing for authenticode validation. Please install M2Crypto and pyasn1 (`pip install pyasn1 M2Crypto`)")
                 return
@@ -708,8 +690,6 @@ class PE(Module):
 
             return found
 
-        arg_scan = self.args.scan
-
         if not self.__check_session():
             return
 
@@ -728,7 +708,7 @@ class PE(Module):
             self.log('error', "Programming language not identified")
             return
 
-        if arg_scan:
+        if self.args.scan:
             self.log('info', "Scanning the repository for matching samples...")
 
             db = Database()
@@ -788,11 +768,6 @@ class PE(Module):
         self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
 
     def pehash(self):
-
-        arg_all = self.args.all
-        arg_cluster = self.args.cluster
-        arg_scan = self.args.scan
-
         if not HAVE_PEHASH:
             self.log('error', "PEhash is missing. Please copy PEhash to the modules directory of Viper")
             return
@@ -802,7 +777,7 @@ class PE(Module):
             current_pehash = calculate_pehash(__sessions__.current.file.path)
             self.log('info', "PEhash: {0}".format(bold(current_pehash)))
 
-        if arg_all or arg_cluster or arg_scan:
+        if self.args.all or self.args.cluster or self.args.scan:
             db = Database()
             samples = db.find(key='all')
 
@@ -813,11 +788,11 @@ class PE(Module):
                 if pe_hash:
                     rows.append((sample.name, sample.md5, pe_hash))
 
-        if arg_all:
+        if self.args.all:
             self.log('info', "PEhash for all files:")
             header = ['Name', 'MD5', 'PEhash']
             self.log('table', dict(header=header, rows=rows))
-        elif arg_cluster:
+        elif self.args.cluster:
             self.log('info', "Clustering files by PEhash...")
 
             cluster = {}
@@ -828,7 +803,7 @@ class PE(Module):
                 if len(item[1]) > 1:
                     self.log('info', "PEhash {0} was calculated on files:".format(bold(item[0])))
                     self.log('table', dict(header=['Name', 'MD5'], rows=item[1]))
-        elif arg_scan:
+        elif self.args.scan:
             if __sessions__.is_set() and current_pehash:
                 self.log('info', "Finding matching samples...")
 
