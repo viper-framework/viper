@@ -548,7 +548,7 @@ class PE(Module):
 
         if arg_check:
             if not HAVE_VERIFYSIGS:
-                print_error("Dependencies missing for authenticode validation. Please install M2Crypto and pyasn1")
+                self.log('error', "Dependencies missing for authenticode validation. Please install M2Crypto and pyasn1 (`pip install pyasn1 M2Crypto`)")
                 return
 
             auth, computed_content_hash = get_auth_data(__sessions__.current.file.path)
@@ -559,7 +559,7 @@ class PE(Module):
                 auth.ValidateSignatures()
                 auth.ValidateCertChains(time.gmtime())
             except Exception, e:
-                print_error(e.message)
+                self.log('error', str(e))
                 return
 
             print(bold('\nSignature metadata:'))
