@@ -157,7 +157,7 @@ def module_text(file_hash, cmd_string):
         root, args = parse(cmd_string)
         if root in __modules__:
             module = __modules__[root]['obj']()
-            module.set_args(args)
+            module.set_commandline(args)
             module.run()
             html = print_output(module.output)
             del(module.output[:])
