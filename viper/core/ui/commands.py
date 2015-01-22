@@ -669,7 +669,7 @@ class Commands(object):
             return
 
         # Check for valid export path.
-        if args.path is None:
+        if args.value is None:
             parser.print_usage()
             return
 
