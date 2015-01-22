@@ -28,7 +28,7 @@ class VirusTotal(Module):
 
     def __init__(self):
         super(VirusTotal, self).__init__()
-        self.parser.add_argument('-s','--submit', action='store_true')
+        self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file to VirusTotal (by default it only looks up the hash)')
         self.parser.add_argument('-d','--download', action='store', dest='hash')
         self.parser.add_argument('-c','--comment',nargs='+', action='store', dest='comment')
 
@@ -68,80 +68,80 @@ class VirusTotal(Module):
             return
 
 
-        if self.args.submit:
-            data = {'resource': __sessions__.current.file.md5, 'apikey': KEY}
 
-            try:
-                response = requests.post(VIRUSTOTAL_URL, data=data)
-            except Exception as e:
-                self.log('error', "Failed performing request: {0}".format(e))
-                return
+        data = {'resource': __sessions__.current.file.md5, 'apikey': KEY}
 
-            try:
-                virustotal = response.json()
-                # since python 2.7 the above line causes the Error dict object not callable
-            except Exception as e:
-                # workaround in case of python 2.7
-                if str(e) == "'dict' object is not callable":
-                    try:
-                        virustotal = response.json
-                    except Exception as e:
-                        self.log('error', "Failed parsing the response: {0}".format(e))
-                        self.log('error', "Data:\n{}".format(response.content))
-                        return
-                else:
+        try:
+            response = requests.post(VIRUSTOTAL_URL, data=data)
+        except Exception as e:
+            self.log('error', "Failed performing request: {0}".format(e))
+            return
+
+        try:
+            virustotal = response.json()
+            # since python 2.7 the above line causes the Error dict object not callable
+        except Exception as e:
+            # workaround in case of python 2.7
+            if str(e) == "'dict' object is not callable":
+                try:
+                    virustotal = response.json
+                except Exception as e:
                     self.log('error', "Failed parsing the response: {0}".format(e))
                     self.log('error', "Data:\n{}".format(response.content))
                     return
-
-            rows = []
-            if 'scans' in virustotal:
-                for engine, signature in virustotal['scans'].items():
-                    if signature['detected']:
-                        signature = signature['result']
-                    else:
-                        signature = ''
-                    rows.append([engine, signature])
-
-            rows.sort()
-            if rows:
-                self.log('info', "VirusTotal Report:")
-                self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
-
-                if self.args.submit:
-                    self.log('', "")
-                    self.log('info', "The file is already available on VirusTotal, no need to submit")
             else:
-                self.log('info', "The file does not appear to be on VirusTotal yet")
+                self.log('error', "Failed parsing the response: {0}".format(e))
+                self.log('error', "Data:\n{}".format(response.content))
+                return
 
-                if self.args.submit:
-                    try:
-                        data = {'apikey': KEY}
-                        files = {'file': open(__sessions__.current.file.path, 'rb').read()}
-                        response = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
-                    except Exception as e:
-                        self.log('error', "Failed Submit: {0}".format(e))
-                        return
+        rows = []
+        if 'scans' in virustotal:
+            for engine, signature in virustotal['scans'].items():
+                if signature['detected']:
+                    signature = signature['result']
+                else:
+                    signature = ''
+                rows.append([engine, signature])
 
-                    try:
-                        virustotal = response.json()
-                        # since python 2.7 the above line causes the Error dict object not callable
-                    except Exception as e:
-                        # workaround in case of python 2.7
-                        if str(e) == "'dict' object is not callable":
-                            try:
-                                virustotal = response.json
-                            except Exception as e:
-                                self.log('error', "Failed parsing the response: {0}".format(e))
-                                self.log('error', "Data:\n{}".format(response.content))
-                                return
-                        else:
+        rows.sort()
+        if rows:
+            self.log('info', "VirusTotal Report:")
+            self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
+
+            if self.args.submit:
+                self.log('', "")
+                self.log('info', "The file is already available on VirusTotal, no need to submit")
+        else:
+            self.log('info', "The file does not appear to be on VirusTotal yet")
+
+            if self.args.submit:
+                try:
+                    data = {'apikey': KEY}
+                    files = {'file': open(__sessions__.current.file.path, 'rb').read()}
+                    response = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
+                except Exception as e:
+                    self.log('error', "Failed Submit: {0}".format(e))
+                    return
+
+                try:
+                    virustotal = response.json()
+                    # since python 2.7 the above line causes the Error dict object not callable
+                except Exception as e:
+                    # workaround in case of python 2.7
+                    if str(e) == "'dict' object is not callable":
+                        try:
+                            virustotal = response.json
+                        except Exception as e:
                             self.log('error', "Failed parsing the response: {0}".format(e))
                             self.log('error', "Data:\n{}".format(response.content))
                             return
+                    else:
+                        self.log('error', "Failed parsing the response: {0}".format(e))
+                        self.log('error', "Data:\n{}".format(response.content))
+                        return
 
-                    if 'verbose_msg' in virustotal:
-                        self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
+                if 'verbose_msg' in virustotal:
+                    self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
 
 
         if self.args.comment:
