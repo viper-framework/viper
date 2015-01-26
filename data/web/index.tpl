@@ -1,29 +1,5 @@
 % include("header.tpl", title="Viper Web Interface")
 
-<!-- File Uploader -->
-<script type="text/javascript">
-$(document).on('change', '.btn-file :file', function() {
-  var input = $(this),
-      numFiles = input.get(0).files ? input.get(0).files.length : 1,
-      label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
-  input.trigger('fileselect', [numFiles, label]);
-});
-
-$(document).ready( function() {
-    $('.btn-file :file').on('fileselect', function(event, numFiles, label) {
-        
-        var input = $(this).parents('.input-group').find(':text'),
-            log = numFiles > 1 ? numFiles + ' files selected' : label;
-        
-        if( input.length ) {
-            input.val(log);
-        } else {
-            if( log ) alert(log);
-        }
-        
-    });
-});
-</script>
 
 <div class="panel panel-default">
     <div class="panel-heading">
@@ -31,15 +7,9 @@ $(document).ready( function() {
     </div>
     <div class="panel-body">
         <form class="form-inline" role="form" action="/add" enctype="multipart/form-data" method="post" name="submit">
+
             <div class="form-group">
-                    <div class="input-group">
-                        <span class="input-group-btn">
-                            <span class="btn btn-default btn-file">
-                                Browse&hellip; <input type="file" name="file" multiple>
-                            </span>
-                        </span>
-                        <input type="text" class="form-control" readonly>
-                    </div>
+                <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
             </div>
 
             <div class="checkbox">
