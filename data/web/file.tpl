@@ -1,4 +1,11 @@
 % include("header.tpl", title=file_info[6])
+
+<ol class="breadcrumb">
+    <li><a href="/">Home</a></li>
+    <li><a href="/project/{{project}}">{{project}}</a></li>
+    <li><a href="/file/{{project}}/{{file_info[8]}}">{{file_info[8]}}</a></li>
+</ol>
+
 <ul id="navTabs" class="nav nav-tabs">
     <li class="active"><a href="#static" data-toggle="tab">Static</a></li>
     <li><a href="#notes" data-toggle="tab">Notes</a></li>

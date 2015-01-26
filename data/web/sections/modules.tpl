@@ -19,7 +19,7 @@
                           <option value="image">Image - Perfome Analysis On Images</option>
                           <option value="jar">JAR - Parse Java Archives</option>
                           <option value="office">Office - Office Document Parser</option>
-                          <option value="pdf">PDF - EPDF Document Parser</option>
+                          <option value="pdf">PDF - PDF Document Parser</option>
                           <option value="pe">PE - Parse PE32 Files</option>
                           <option value="rat">RAT - Extract Config From Common Rats</option>
                           <option value="reports">Reports - Online Sandbox Reports</option>
