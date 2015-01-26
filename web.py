@@ -26,6 +26,7 @@ from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
 from viper.common import network
+from viper.core.ui.commands import Commands
 
 ##
 # User Config
@@ -147,6 +148,42 @@ def project_list():
                 p_list.append(project)
     return p_list
 
+# this will allow complex command line parameters to be passed in via the web gui    
+def module_cmdline(file_hash, cmd_line):
+    html = ""
+    cmd = Commands()
+    split_commands = cmd_line.split(';')
+    print file_hash
+    for split_command in split_commands:
+        split_command = split_command.strip()
+        if not split_command:
+            continue
+        root, args = parse(split_command)
+        try:
+            if root in cmd.commands:
+                cmd.commands[root]['obj'](*args)
+                html += print_output(cmd.output)
+                del(cmd.output[:])
+
+            elif root in __modules__:
+                # if prev commands did not open a session open one on the current file
+                if not __sessions__.is_set():
+                    path = get_sample_path(file_hash)
+                    __sessions__.new(path)
+                module = __modules__[root]['obj']()
+                module.set_commandline(args)
+                module.run()
+
+                html += print_output(module.output)
+                del(module.output[:])
+            else:
+                html += '<p class="text-danger">{0} is not a valid command</p>'.format(cmd_line)
+        except:
+            html += '<p class="text-danger">We were unable to complete the command {0}</p>'.format(cmd_line)
+    __sessions__.close()
+    return html        
+        
+    
 def module_text(file_hash, cmd_string):
     # A lot of commands rely on an open session
     # open a session on the file hash
@@ -506,17 +543,24 @@ def file_notes():
 def run_module():      
     # Get the hash of the file we want to run a command against
     file_hash = request.forms.get('file_hash')
+    if len(file_hash) != 64:
+        file_hash = "None"
     # Lot of logic here to decide what command you entered.
     module_name = request.forms.get('module')
     command = request.forms.get('command')
-    cmd_string = '{0} {1}'.format(module_name, mod_dicts[module_name][command])
-    if file_hash and cmd_string:
+    cmd_line = request.forms.get('cmdline')
+    # cmd_line will override any other requests.
+    if file_hash and cmd_line:
+        module_results = module_cmdline(file_hash, cmd_line)
+    elif command:
+        cmd_string = '{0} {1}'.format(module_name, mod_dicts[module_name][command])
         try:
             module_results = module_text(file_hash, cmd_string)
         except Exception as e:
             module_results = "The Command '{0}' generated an error. \n{1}".format(cmd_string, e)
     else:
         module_results = "You Didn't Enter A Command!"
+    
     return '<pre>{0}</pre>'.format(str(module_results))
     
 
@@ -651,7 +695,12 @@ def hex_viewer():
             html_string += '<div class="row"><span class="text-primary mono">{0}</span> <span class="text-muted mono">{1}</span> <span class="text-success mono">{2}</span></div>'.format(off_str, hex_str, asc_str)
     # return the data
     return html_string
-   
+
+# Cli Commands
+@route('/cli')
+def cli_viewer():
+    return template('cli.tpl')
+    
 # Run The web Server        
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -34,6 +34,7 @@
                         <select class="form-control" name="command">
                             <option value=" ">Select a Module First</option>
                         </select>
+                        <input type="text" class="form-control" name="cmdline" placeholder="Enter CLI Commands">
                 <button type="submit" class="btn btn-default" name="submit" >Run</button>
                 <input type="hidden" name="file_hash" value="{{file_info[8]}}"/>
             </form>
