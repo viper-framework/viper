@@ -8,6 +8,7 @@ Viper 1.2 (TBD)
 - Transitioned commands and modules to argparse
 - Fixed multiuple bugs in email module
 - Fixed bug in strings module
+- Added clustering in virustotal module
 
 Viper 1.1 (2014-10-22)
 ======================
