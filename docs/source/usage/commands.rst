@@ -1,7 +1,7 @@
 Commands
 ========
 
-Viper provides a set of core command used to interact repositories of files you want to collect. In order to see which commands are available, type ``help``::
+Viper provides a set of core commands used to interact repositories of files you want to collect. In order to see which commands are available, type ``help``::
 
     shell > help
     Commands:
