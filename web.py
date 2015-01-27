@@ -149,8 +149,8 @@ def project_list():
     return p_list
 
 # this will allow complex command line parameters to be passed in via the web gui    
-def module_cmdline(cmd_line, file_hash=False):
-
+def module_cmdline(cmd_line, file_hash):
+    print file_hash
     html = ""
     cmd = Commands()
     split_commands = cmd_line.split(';')
@@ -184,7 +184,7 @@ def module_cmdline(cmd_line, file_hash=False):
     return html        
         
     
-def module_text(file_hash, cmd_string):
+def module_text(cmd_string, file_hash):
     # A lot of commands rely on an open session
     # open a session on the file hash
     path = get_sample_path(file_hash)
@@ -544,14 +544,14 @@ def run_module():
     # Get the hash of the file we want to run a command against
     file_hash = request.forms.get('file_hash')
     if len(file_hash) != 64:
-        file_hash = "None"
+        file_hash = False
     # Lot of logic here to decide what command you entered.
     module_name = request.forms.get('module')
     command = request.forms.get('command')
     cmd_line = request.forms.get('cmdline')
     # cmd_line will override any other requests.
     if cmd_line:
-        module_results = module_cmdline(cmd_line)
+        module_results = module_cmdline(cmd_line, file_hash)
     elif command:
         cmd_string = '{0} {1}'.format(module_name, mod_dicts[module_name][command])
         try:
