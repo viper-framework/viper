@@ -2,6 +2,9 @@ Viper 1.2 (TBD)
 ===============
 
 - Added web interface
+- Web: Breadcrumbs added to file view so you can see the project / session you are in
+- Web: New file browse input that correctly displays selected files
+- Web: CLI-like view in web.py
 - Added option to "pe security" command to identify all signed PEs
 - Added structured logging to modules instead of print
 - Added authenticode check in "pe security" command
