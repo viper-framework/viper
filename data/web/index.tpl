@@ -61,6 +61,29 @@
     </div>
 </div>
 
+<!-- Download from VirusTotal -->
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">VT Download</h3>
+    </div>
+    <div class="panel-body">
+        <form class="form-inline" role="form" action="/virustotal" enctype="multipart/form-data" method="post" name="submit">
+            <div class="form-group">
+                <label class="sr-only" for="hash">HASH</label>
+                <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="VT HASH">
+                <input type="hidden" name="project" value="{{p}}" />
+            </div>
+            <div class="form-group">
+                <label for="tag_list">Tags</label>
+                <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
+            </div>
+
+            <button type="submit" class="btn btn-default">Run</button>
+        </form>
+    </div>
+</div>
+
+
 <!-- Search -->
 <div class="panel panel-default">
     <div class="panel-heading">
