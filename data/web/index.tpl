@@ -91,6 +91,30 @@ $(document).ready( function() {
     </div>
 </div>
 
+<!-- Download from Virustotal -->
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">VirusTotal Download</h3>
+    </div>
+    <div class="panel-body">
+        <form class="form-inline" role="form" action="/VTDownload" enctype="multipart/form-data" method="post" name="submit">
+            <div class="form-group">
+                <label class="sr-only" for="HASH">hash</label>
+                <input type="search" class="form-control" name="hash" id="hash" placeholder="HASH">
+            </div>
+
+            <div class="form-group">
+                <label for="tag_list">Tags</label>
+                <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
+            </div>
+
+            <button type="submit" class="btn btn-default">Run</button>
+        </form>
+    </div>
+</div>
+
+
+
 <!-- Search -->
 <div class="panel panel-default">
     <div class="panel-heading">

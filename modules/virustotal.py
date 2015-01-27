@@ -1,7 +1,6 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-
 import tempfile
 
 try:
@@ -20,22 +19,19 @@ VIRUSTOTAL_URL_DOWNLOAD = 'https://www.virustotal.com/vtapi/v2/file/download'
 VIRUSTOTAL_URL_COMMENT = 'https://www.virustotal.com/vtapi/v2/comments/put'
 KEY = 'a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088'
 
-
 class VirusTotal(Module):
     cmd = 'virustotal'
     description = 'Lookup the file on VirusTotal'
-    authors = ['nex']
+    authors = ['nex','gelos']
 
     def __init__(self):
         super(VirusTotal, self).__init__()
         self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file to VirusTotal (by default it only looks up the hash)')
         self.parser.add_argument('-d','--download', action='store', dest='hash')
+        self.parser.add_argument('-w', '--web', action='store_true', help='distinguish between calls from web or console')
         self.parser.add_argument('-c','--comment',nargs='+', action='store', dest='comment')
 
-
-
     def run(self):
-
         super(VirusTotal, self).run()
         if self.args is None:
             return
@@ -44,16 +40,18 @@ class VirusTotal(Module):
             try:
                 params = {'apikey': KEY,'hash':self.args.hash}
                 response = requests.get(VIRUSTOTAL_URL_DOWNLOAD, params=params)
-
                 if response.status_code == 403:
                     self.log('error','This command requires virustotal private API key')
-                    self.log('error','Please check that your key have the right permissions')
-                    return
+                    return response.status_code
                 if response.status_code == 200:
                     response = response.content
                     tmp = tempfile.NamedTemporaryFile(delete=False)
                     tmp.write(response)
                     tmp.close()
+                    #A quick and dirty way to distinguise between calls from web or console
+                    #console returns session, web returns raw binary.
+                    if self.args.web:
+                        return response
                     return __sessions__.new(tmp.name)
 
             except Exception as e:
@@ -66,7 +64,6 @@ class VirusTotal(Module):
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
-
 
 
         data = {'resource': __sessions__.current.file.md5, 'apikey': KEY}

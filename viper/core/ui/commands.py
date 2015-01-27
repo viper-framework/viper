@@ -88,6 +88,7 @@ class Commands(object):
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-f', '--file', action="store_true", help="target is a file")
         group.add_argument('-u', '--url', action="store_true", help="target is a URL")
+        group.add_argument('-v', '--virustotal', action="store_true", help="target is an hash")
         group.add_argument('-l', '--last', action="store_true", help="target is the entry number from the last find command's results")
         parser.add_argument('-t', '--tor', action="store_true", help="Download the file through Tor")
         parser.add_argument("value", metavar='Path, URL, hash or ID', nargs='*', help="Target to open. Hash can be md5 or sha256. ID has to be from the last search.")
@@ -122,6 +123,13 @@ class Commands(object):
                 tmp.close()
 
                 __sessions__.new(tmp.name)
+
+        elif args.virustotal:
+            args = ('-d',target)
+            module = __modules__['virustotal']['obj']()
+            module.set_commandline(args)
+            module.run()
+
         # Try to open the specified file from the list of results from
         # the last find command.
         elif args.last:
