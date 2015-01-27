@@ -65,7 +65,6 @@ mod_dicts['virustotal'] = {'scan':'', 'submit':'-s'}
 mod_dicts['xor'] = {'xor':'', 'rot':'-r', 'all':'-a', 'export':'-o'}
 mod_dicts['yara'] = {'scan':'scan -t', 'all': 'scan -a -t'}
 
-
 ##
 # Helper Functions
 #
@@ -348,14 +347,43 @@ def url_download():
     if new_path:
         # Add file to the database.
         success = db.add(obj=tf_obj, tags=tags)
-
     if success:
         #redirect("/project/{0}".format(project))
         redirect("/file/Main/"+tf_obj.sha256)
     else:
         return template('error.tpl', error="Unable to Store The File,already in database")
-
-
+#download files from virustotal
+@route('/VTDownload', method='POST')
+def vt_download():
+    hash = request.forms.get('hash')
+    tags = request.forms.get('tag_list')
+    tags = "virustotal,"+tags
+    args = ('-d', hash ,'-w')
+    module = __modules__['virustotal']['obj']()
+    module.set_commandline(args)
+    response = module.run()
+    if response == 403:
+        return template('error.tpl', error="This option requires Virustotal Private API key")
+    if response == None:
+        return template('error.tpl', error="server can't download from VirusTotal")
+    db = Database()
+    tf = tempfile.NamedTemporaryFile()
+    tf.write(str(response))
+    if tf == None:
+        return template('error.tpl', error="server can't download from VirusTotal")
+    tf.flush()
+    tf_obj = File(tf.name)
+    tf_obj.name = tf_obj.sha256
+    new_path = store_sample(tf_obj)
+    success = False
+    if new_path:
+        # Add file to the database.
+        success = db.add(obj=tf_obj, tags=tags)
+    if success:
+        #redirect("/project/{0}".format(project))
+        redirect("/file/Main/"+tf_obj.sha256)
+    else:
+        return template('error.tpl', error="Unable to Store The File,already in database")
 
 # File Download
 @route("/get/<file_hash>", method="GET")

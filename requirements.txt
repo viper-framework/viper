@@ -16,3 +16,4 @@ dnspython
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 pyasn1
 M2Crypto
+
