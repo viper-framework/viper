@@ -275,16 +275,21 @@ class EmailParse(Module):
                     domains.append(['From', fromdomain])
 
                 bymatch = False
-                mx = dns.resolver.query(fromdomain, 'MX')
-                for rdata in mx:
-                    m = re.search("(\w+\.\w+).$", str(rdata.exchange))
-                    if not m:
-                        self.log('error', "MX domain regex didn't match")
-                        continue
-                    domains.append(['MX for ' + fromdomain, m.group(1)])
-                    if bydomain == m.group(1):
-                        bymatch = True
-                self.log('table', dict(header=['Key', 'Value'], rows=domains))
+                try:
+                    mx = dns.resolver.query(fromdomain, 'MX')
+                    if mx :
+                        for rdata in mx:
+                            m = re.search("(\w+\.\w+).$", str(rdata.exchange))
+                            if not m:
+                                self.log('error', "MX domain regex didn't match")
+                                continue
+                            domains.append(['MX for ' + fromdomain, m.group(1)])
+                            if bydomain == m.group(1):
+                                bymatch = True
+                    self.log('table', dict(header=['Key', 'Value'], rows=domains))
+                except:
+                    domains.append(['MX for ' + fromdomain, "not registered in DNS"])
+                    self.log('table', dict(header=['Key', 'Value'], rows=domains))
                 if bymatch:
                     self.log('success', "Email PASSED: Received by domain found in Sender/From MX domains")
                 else:
