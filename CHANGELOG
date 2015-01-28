@@ -9,6 +9,7 @@ Viper 1.2 (TBD)
 - Fixed multiuple bugs in email module
 - Fixed bug in strings module
 - Added clustering in virustotal module
+- Added known issues to installation readme
 
 Viper 1.1 (2014-10-22)
 ======================
