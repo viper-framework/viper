@@ -46,7 +46,7 @@ def calculate_pehash(file_path=None):
         sub_chars = bitstring.BitArray(hex(exe.FILE_HEADER.Machine))
         #pad to 16 bits
         sub_chars = bitstring.BitArray(bytes=sub_chars.tobytes())
-        sub_chars_xor = sub_chars[0:6] ^ sub_chars[8:16]
+        sub_chars_xor = sub_chars[0:8] ^ sub_chars[8:16]
         pehash_bin.append(sub_chars_xor)
     
         #Stack Commit Size
