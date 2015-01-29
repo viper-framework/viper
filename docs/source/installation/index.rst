@@ -5,7 +5,7 @@ Viper is written in Python and **it requires Python 2.7** to function properly. 
 
 Before proceeding, you should make sure you have the basic tools installed to be able to compile additional Python extensions::
 
-    $ sudo apt-get install gcc python-dev python-pip
+    $ sudo apt-get install gcc python-dev python-pip python-m2crypto
 
 Core dependencies
 -----------------
@@ -56,3 +56,41 @@ If everything worked out fine, you should be able to launch Viper's shell withou
 
 .. _official website: http://ssdeep.sourceforge.net
 .. _Tor: https://www.torproject.org
+
+Known issues
+============
+
+Python.h
+--------
+Error::
+
+    pip install -r requirements.txt<br/>
+    (...)<br/>
+    src/MD2.c:31:20: fatal error: Python.h: (...)<br/>
+    
+You are likely missing python-dev this can be solved::
+
+    sudo apt-get install python-dev
+
+Swig Error
+----------
+
+Error::
+
+    unable to execute swig: No such file or directory
+
+can be solved::
+
+    sudo apt-get install python-m2crypto
+    
+No module named...
+------------------
+    
+Error::
+
+    Something wrong happened while importing the module modules.$FOO: No module named $FOO
+    
+You are likely missing a dependency, try::
+
+    sudo pip install $FOO
+    
