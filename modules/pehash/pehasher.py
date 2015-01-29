@@ -38,13 +38,6 @@ def calculate_pehash(file_path=None):
         #image characteristics
         img_chars = bitstring.BitArray(hex(exe.FILE_HEADER.Characteristics))
         #pad to 16 bits
-        """
-        img_chars = bitstring.BitArray(bytes=img_chars.tobytes())
-        if img_chars.len == 16:
-            img_chars_xor = img_chars[0:7] ^ img_chars[8:15]
-        else:
-            img_chars_xor = img_chars[0:7]
-        """
         img_chars_xor = img_chars[0:8] ^ img_chars[8:16]
         #start to build pehash
         pehash_bin = bitstring.BitArray(img_chars_xor)
@@ -78,7 +71,7 @@ def calculate_pehash(file_path=None):
     
         #Section chars
         for section in exe.sections:
-            #virutal address
+            #virtual address
             sect_va = bitstring.BitArray(hex(section.VirtualAddress))
             sect_va = bitstring.BitArray(bytes=sect_va.tobytes())[8:32]
             pehash_bin.append(sect_va)
