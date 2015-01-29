@@ -10,6 +10,7 @@ Viper 1.2 (TBD)
 - Fixed bug in strings module
 - Added clustering in virustotal module
 - Added known issues to installation readme
+- Added macho command to get Mach-O header, sections, and others
 
 Viper 1.1 (2014-10-22)
 ======================
