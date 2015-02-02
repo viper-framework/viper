@@ -150,36 +150,34 @@ def project_list():
 
 # this will allow complex command line parameters to be passed in via the web gui    
 def module_cmdline(cmd_line, file_hash):
-    print file_hash
     html = ""
     cmd = Commands()
     split_commands = cmd_line.split(';')
-    print split_commands
     for split_command in split_commands:
         split_command = split_command.strip()
         if not split_command:
             continue
         root, args = parse(split_command)
-        #try:
-        if root in cmd.commands:
-            cmd.commands[root]['obj'](*args)
-            html += print_output(cmd.output)
-            del(cmd.output[:])
-        elif root in __modules__:
-            # if prev commands did not open a session open one on the current file
-            if file_hash:
-                path = get_sample_path(file_hash)
-                __sessions__.new(path)
-            module = __modules__[root]['obj']()
-            module.set_commandline(args)
-            module.run()
+        try:
+            if root in cmd.commands:
+                cmd.commands[root]['obj'](*args)
+                html += print_output(cmd.output)
+                del(cmd.output[:])
+            elif root in __modules__:
+                # if prev commands did not open a session open one on the current file
+                if file_hash:
+                    path = get_sample_path(file_hash)
+                    __sessions__.new(path)
+                module = __modules__[root]['obj']()
+                module.set_commandline(args)
+                module.run()
 
-            html += print_output(module.output)
-            del(module.output[:])
-        else:
-            html += '<p class="text-danger">{0} is not a valid command</p>'.format(cmd_line)
-        #except:
-            #html += '<p class="text-danger">We were unable to complete the command {0}</p>'.format(cmd_line)
+                html += print_output(module.output)
+                del(module.output[:])
+            else:
+                html += '<p class="text-danger">{0} is not a valid command</p>'.format(cmd_line)
+        except:
+            html += '<p class="text-danger">We were unable to complete the command {0}</p>'.format(cmd_line)
     __sessions__.close()
     return html        
         
@@ -706,8 +704,9 @@ def cli_viewer():
 def vt_download():
     vt_hash = request.forms.get('vt_hash')
     project = request.forms.get('project')
-    cmd_line = 'virustotal -d {0}; store'.format(vt_hash)
-    module_results = module_cmdline(cmd_line)
+    tags = request.forms.get('tag_list')
+    cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
+    module_results = module_cmdline(cmd_line, False)
     if 'Stored' in module_results:
         redirect('/file/{0}/{1}'.format(project, vt_hash))
     else:
