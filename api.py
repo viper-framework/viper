@@ -7,6 +7,7 @@ import json
 import copy
 import argparse
 import tempfile
+import time
 
 from bottle import route, request, response, run
 from bottle import HTTPError
@@ -172,6 +173,20 @@ def run_module():
 
         if module_output:
             return jsonize(dict(project=project, module=module_name, sha256=sha256, output=module_output))
+
+@route('/projects/list', method='GET')
+def list_projects():
+    projects_path = os.path.join(os.getcwd(), 'projects')
+    if not os.path.exists(projects_path):
+            raise HTTPError(404, 'No projects found')
+            
+    rows = []
+    for project in os.listdir(projects_path):
+        project_path = os.path.join(projects_path, project)
+        rows.append([project, time.ctime(os.path.getctime(project_path))])
+
+
+    return jsonize(rows)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
