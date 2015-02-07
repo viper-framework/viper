@@ -79,8 +79,7 @@ def get_file(file_hash):
 
     return data
 
-#Delete funtion
-#TODO check for notes to be deleted as well
+# TODO: delete notes as well.
 @route('/file/delete/<file_hash>', method='GET')
 def delete_file(file_hash):
     success = False
@@ -116,10 +115,6 @@ def delete_file(file_hash):
         return jsonize({'message' : 'deleted'})
     else:
         return HTTPError(500, 'Unable to delete file')
-
-
-
-
 
 @route('/file/find', method='POST')
 def find_file():
