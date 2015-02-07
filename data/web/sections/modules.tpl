@@ -19,7 +19,7 @@
                           <option value="image">Image - Perfome Analysis On Images</option>
                           <option value="jar">JAR - Parse Java Archives</option>
                           <option value="office">Office - Office Document Parser</option>
-                          <option value="pdf">PDF - EPDF Document Parser</option>
+                          <option value="pdf">PDF - PDF Document Parser</option>
                           <option value="pe">PE - Parse PE32 Files</option>
                           <option value="rat">RAT - Extract Config From Common Rats</option>
                           <option value="reports">Reports - Online Sandbox Reports</option>
@@ -34,6 +34,7 @@
                         <select class="form-control" name="command">
                             <option value=" ">Select a Module First</option>
                         </select>
+                        <input type="text" class="form-control" name="cmdline" placeholder="Enter CLI Commands">
                 <button type="submit" class="btn btn-default" name="submit" >Run</button>
                 <input type="hidden" name="file_hash" value="{{file_info[8]}}"/>
             </form>

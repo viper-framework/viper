@@ -247,6 +247,8 @@ class Console(object):
                         # execute it.
                         if root in self.cmd.commands:
                             self.cmd.commands[root]['obj'](*args)
+                            self.print_output(self.cmd.output, filename)
+                            del(self.cmd.output[:])
                         # If the root command is part of loaded modules, we initialize
                         # the module and execute it.
                         elif root in __modules__:

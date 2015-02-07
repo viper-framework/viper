@@ -1,29 +1,5 @@
 % include("header.tpl", title="Viper Web Interface")
 
-<!-- File Uploader -->
-<script type="text/javascript">
-$(document).on('change', '.btn-file :file', function() {
-  var input = $(this),
-      numFiles = input.get(0).files ? input.get(0).files.length : 1,
-      label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
-  input.trigger('fileselect', [numFiles, label]);
-});
-
-$(document).ready( function() {
-    $('.btn-file :file').on('fileselect', function(event, numFiles, label) {
-        
-        var input = $(this).parents('.input-group').find(':text'),
-            log = numFiles > 1 ? numFiles + ' files selected' : label;
-        
-        if( input.length ) {
-            input.val(log);
-        } else {
-            if( log ) alert(log);
-        }
-        
-    });
-});
-</script>
 
 <div class="panel panel-default">
     <div class="panel-heading">
@@ -31,15 +7,9 @@ $(document).ready( function() {
     </div>
     <div class="panel-body">
         <form class="form-inline" role="form" action="/add" enctype="multipart/form-data" method="post" name="submit">
+
             <div class="form-group">
-                    <div class="input-group">
-                        <span class="input-group-btn">
-                            <span class="btn btn-default btn-file">
-                                Browse&hellip; <input type="file" name="file" multiple>
-                            </span>
-                        </span>
-                        <input type="text" class="form-control" readonly>
-                    </div>
+                <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
             </div>
 
             <div class="checkbox">
@@ -90,6 +60,29 @@ $(document).ready( function() {
         </form>
     </div>
 </div>
+
+<!-- Download from VirusTotal -->
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">VT Download</h3>
+    </div>
+    <div class="panel-body">
+        <form class="form-inline" role="form" action="/virustotal" enctype="multipart/form-data" method="post" name="submit">
+            <div class="form-group">
+                <label class="sr-only" for="hash">HASH</label>
+                <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="VT HASH">
+                <input type="hidden" name="project" value="{{p}}" />
+            </div>
+            <div class="form-group">
+                <label for="tag_list">Tags</label>
+                <input type="text" class="form-control" name="tag_list" id="tag_list" placeholder="List of Tags">
+            </div>
+
+            <button type="submit" class="btn btn-default">Run</button>
+        </form>
+    </div>
+</div>
+
 
 <!-- Search -->
 <div class="panel panel-default">
