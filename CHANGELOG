@@ -2,9 +2,6 @@ Viper 1.2 (TBD)
 ===============
 
 - Added web interface
-- Web: Breadcrumbs added to file view so you can see the project / session you are in
-- Web: New file browse input that correctly displays selected files
-- Web: CLI-like view in web.py
 - Added option to "pe security" command to identify all signed PEs
 - Added structured logging to modules instead of print
 - Added authenticode check in "pe security" command
@@ -12,7 +9,7 @@ Viper 1.2 (TBD)
 - Fixed multiuple bugs in email module
 - Fixed bug in strings module
 - Added clustering in virustotal module
-- Fixed "latest"-database method to return latest file based on id rather then created_at
+- Added macho command to get Mach-O header, sections, and others
 
 Viper 1.1 (2014-10-22)
 ======================

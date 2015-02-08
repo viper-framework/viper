@@ -20,8 +20,6 @@ from viper.core.storage import store_sample, get_sample_path
 
 class Commands(object):
 
-    output = []
-    
     def __init__(self):
         # Open connection to the database.
         self.db = Database()
@@ -42,14 +40,7 @@ class Commands(object):
             projects=dict(obj=self.cmd_projects, description="List or switch existing projects"),
             export=dict(obj=self.cmd_export, description="Export the current session to file or zip"),
         )
-        
-    # Output Logging
-    def log(self, event_type, event_data):
-        self.output.append(dict(
-            type=event_type,
-            data=event_data
-        ))
-        
+
     ##
     # CLEAR
     #
@@ -63,7 +54,7 @@ class Commands(object):
     # This command simply prints the help message.
     # It lists both embedded commands and loaded modules.
     def cmd_help(self, *args):
-        self.log("info", "Commands")
+        print(bold("Commands:"))
 
         rows = []
         for command_name, command_item in self.commands.items():
@@ -72,8 +63,9 @@ class Commands(object):
         rows.append(["exit, quit", "Exit Viper"])
         rows = sorted(rows, key=lambda entry: entry[0])
 
-        self.log('table', dict(header=['Command', 'Description'], rows=rows))
-        self.log("info", "Modules")
+        print(table(['Command', 'Description'], rows))
+        print("")
+        print(bold("Modules:"))
 
         rows = []
         for module_name, module_item in __modules__.items():
@@ -81,7 +73,7 @@ class Commands(object):
 
         rows = sorted(rows, key=lambda entry: entry[0])
 
-        self.log('table', dict(header=['Command', 'Description'], rows=rows))
+        print(table(['Command', 'Description'], rows))
 
     ##
     # OPEN
@@ -116,7 +108,7 @@ class Commands(object):
             target = os.path.expanduser(target)
 
             if not os.path.exists(target) or not os.path.isfile(target):
-                self.log("error", "File not found: {0}".format(target))
+                print_error("File not found: {0}".format(target))
                 return
 
             __sessions__.new(target)
@@ -142,7 +134,7 @@ class Commands(object):
 
                     count += 1
             else:
-                self.log("warning", "You haven't performed a find yet")
+                print_warning("You haven't performed a find yet")
         # Otherwise we assume it's an hash of an previously stored sample.
         else:
             target = target.strip().lower()
@@ -158,7 +150,7 @@ class Commands(object):
             rows = self.db.find(key=key, value=target)
 
             if not rows:
-                self.log("warning", "No file found with the given hash {0}".format(target))
+                print_warning("No file found with the given hash {0}".format(target))
                 return
 
             path = get_sample_path(rows[0].sha256)
@@ -182,21 +174,21 @@ class Commands(object):
     # the database.
     def cmd_info(self, *args):
         if __sessions__.is_set():
-            self.log('table', dict(
-                header=['Key', 'Value'],
-                rows=[
-                    ['Name', __sessions__.current.file.name],
-                    ['Tags', __sessions__.current.file.tags],
-                    ['Path', __sessions__.current.file.path],
-                    ['Size', __sessions__.current.file.size],
-                    ['Type', __sessions__.current.file.type],
-                    ['Mime', __sessions__.current.file.mime],
-                    ['MD5', __sessions__.current.file.md5],
-                    ['SHA1', __sessions__.current.file.sha1],
-                    ['SHA256', __sessions__.current.file.sha256],
-                    ['SHA512', __sessions__.current.file.sha512],
-                    ['SSdeep', __sessions__.current.file.ssdeep],
-                    ['CRC32', __sessions__.current.file.crc32]
+            print(table(
+                ['Key', 'Value'],
+                [
+                    ('Name', __sessions__.current.file.name),
+                    ('Tags', __sessions__.current.file.tags),
+                    ('Path', __sessions__.current.file.path),
+                    ('Size', __sessions__.current.file.size),
+                    ('Type', __sessions__.current.file.type),
+                    ('Mime', __sessions__.current.file.mime),
+                    ('MD5', __sessions__.current.file.md5),
+                    ('SHA1', __sessions__.current.file.sha1),
+                    ('SHA256', __sessions__.current.file.sha256),
+                    ('SHA512', __sessions__.current.file.sha512),
+                    ('SSdeep', __sessions__.current.file.ssdeep),
+                    ('CRC32', __sessions__.current.file.crc32)
                 ]
             ))
 
@@ -220,26 +212,26 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log("error", "No session opened")
+            print_error("No session opened")
             return
 
         if args.list:
             # Retrieve all notes for the currently opened file.
             malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
             if not malware:
-                self.log("error", "The opened file doesn't appear to be in the database, have you stored it yet?")
+                print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
                 return
 
             notes = malware[0].note
             if not notes:
-                self.log("info", "No notes available for this file yet")
+                print_info("No notes available for this file yet")
                 return
 
             # Populate table rows.
             rows = [[note.id, note.title] for note in notes]
 
             # Display list of existing notes.
-            self.log('table', dict(header=['ID', 'Title'], rows=rows))
+            print(table(header=['ID', 'Title'], rows=rows))
 
         elif args.add:
             title = raw_input("Enter a title for the new note: ")
@@ -255,17 +247,17 @@ class Commands(object):
             # Finally, remove the temporary file.
             os.remove(tmp.name)
 
-            self.log("info", "New note with title \"{0}\" added to the current file".format(bold(title)))
+            print_info("New note with title \"{0}\" added to the current file".format(bold(title)))
 
         elif args.view:
             # Retrieve note wth the specified ID and print it.
             note = Database().get_note(args.view)
             if note:
-                self.log("info", bold('Title: ') + note.title)
-                self.log("info", bold('Body:'))
+                print_info(bold('Title: ') + note.title)
+                print_info(bold('Body:'))
                 print(note.body)
             else:
-                self.log("info", "There is no note with ID {0}".format(args.view))
+                print_info("There is no note with ID {0}".format(args.view))
 
         elif args.edit:
             # Retrieve note with the specified ID.
@@ -285,7 +277,7 @@ class Commands(object):
                 # Remove the temporary file.
                 os.remove(tmp.name)
 
-                self.log("info", "Updated note with ID {0}".format(args.edit))
+                print_info("Updated note with ID {0}".format(args.edit))
 
         elif args.delete:
             # Delete the note with the specified ID.
@@ -322,7 +314,7 @@ class Commands(object):
 
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
-                self.log("warning", "Skip, file \"{0}\" appears to be already stored".format(obj.name))
+                print_warning("Skip, file \"{0}\" appears to be already stored".format(obj.name))
                 return False
 
             # Try to store file object into database.
@@ -333,7 +325,7 @@ class Commands(object):
                 # we don't want to have the binary lying in the repository with no
                 # associated database record.
                 new_path = store_sample(obj)
-                self.log("success", "Stored file \"{0}\" to {1}".format(obj.name, new_path))
+                print_success("Stored file \"{0}\" to {1}".format(obj.name, new_path))
             else:
                 return False
 
@@ -342,7 +334,7 @@ class Commands(object):
                 try:
                     os.unlink(obj.path)
                 except Exception as e:
-                    self.log("warning", "Failed deleting file: {0}".format(e))
+                    print_warning("Failed deleting file: {0}".format(e))
 
             return True
 
@@ -368,20 +360,20 @@ class Commands(object):
                         # Check if the file name matches the provided pattern.
                         if args.file_name:
                             if not fnmatch.fnmatch(file_name, args.file_name):
-                                # self.log("warning", "Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
+                                # print_warning("Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
                                 continue
 
                         # Check if the file type matches the provided pattern.
                         if args.file_type:
                             if args.file_type not in File(file_path).type:
-                                # self.log("warning", "Skip, file \"{0}\" doesn't match the file type".format(file_path))
+                                # print_warning("Skip, file \"{0}\" doesn't match the file type".format(file_path))
                                 continue
 
                         # Check if file exceeds maximum size limit.
                         if args.file_size:
                             # Obtain file size.
                             if os.path.getsize(file_path) > args.file_size:
-                                self.log("warning", "Skip, file \"{0}\" is too big".format(file_path))
+                                print_warning("Skip, file \"{0}\" is too big".format(file_path))
                                 continue
 
                         file_obj = File(file_path)
@@ -389,12 +381,12 @@ class Commands(object):
                         # Add file.
                         add_file(file_obj, args.tags)
             else:
-                self.log("error", "You specified an invalid folder: {0}".format(args.folder))
+                print_error("You specified an invalid folder: {0}".format(args.folder))
         # Otherwise we try to store the currently opened file, if there is any.
         else:
             if __sessions__.is_set():
                 if __sessions__.current.file.size == 0:
-                    self.log("warning", "Skip, file \"{0}\" appears to be empty".format(__sessions__.current.file.name))
+                    print_warning("Skip, file \"{0}\" appears to be empty".format(__sessions__.current.file.name))
                     return False
 
                 # Add file.
@@ -402,7 +394,7 @@ class Commands(object):
                     # Open session to the new file.
                     self.cmd_open(*[__sessions__.current.file.sha256])
             else:
-                self.log("error", "No session opened")
+                print_error("No session opened")
 
     ##
     # DELETE
@@ -422,14 +414,14 @@ class Commands(object):
             if rows:
                 malware_id = rows[0].id
                 if self.db.delete(malware_id):
-                    self.log("success", "File deleted")
+                    print_success("File deleted")
                 else:
-                    self.log("error", "Unable to delete file")
+                    print_error("Unable to delete file")
 
             os.remove(__sessions__.current.file.path)
             __sessions__.close()
         else:
-            self.log("error", "No session opened")
+            print_error("No session opened")
 
     ##
     # FIND
@@ -463,9 +455,9 @@ class Commands(object):
                 # Generate the table with the results.
                 header = ['Tag', '# Entries']
                 rows.sort(key=lambda x: x[1], reverse=True)
-                self.log('table', dict(header=header, rows=rows))
+                print(table(header=header, rows=rows))
             else:
-                self.log("warning", "No tags available")
+                print("No tags available")
 
             return
 
@@ -480,7 +472,7 @@ class Commands(object):
                 # The second argument is the search value.
                 value = args.value
             except IndexError:
-                self.log("error", "You need to include a search term.")
+                print_error("You need to include a search term.")
                 return
         else:
             value = None
@@ -510,7 +502,7 @@ class Commands(object):
         if key == 'latest':
             header.append('Created At')
 
-        self.log("table", dict(header=header, rows=rows))
+        print(table(header=header, rows=rows))
 
     ##
     # TAGS
@@ -527,7 +519,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log("error", "No session opened")
+            print_error("No session opened")
             parser.print_usage()
             return
 
@@ -545,13 +537,13 @@ class Commands(object):
             # the opened file.
             db = Database()
             db.add_tags(__sessions__.current.file.sha256, args.add)
-            self.log("info", "Tags added to the currently opened file")
+            print_info("Tags added to the currently opened file")
 
             # We refresh the opened session to update the attributes.
             # Namely, the list of tags returned by the "info" command
             # needs to be re-generated, or it wouldn't show the new tags
             # until the existing session is closed a new one is opened.
-            self.log("info", "Refreshing session to update attributes...")
+            print_info("Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
 
         if args.delete:
@@ -559,7 +551,7 @@ class Commands(object):
             Database().delete_tag(args.delete)
             # Refresh the session so that the attributes of the file are
             # updated.
-            self.log("info", "Refreshing session to update attributes...")
+            print_info("Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
 
     ###
@@ -579,7 +571,7 @@ class Commands(object):
 
         if args.list:
             if not __sessions__.sessions:
-                self.log("info", "There are no opened sessions")
+                print_info("There are no opened sessions")
                 return
 
             rows = []
@@ -596,15 +588,15 @@ class Commands(object):
                     current
                 ])
 
-            self.log("info", "Opened Sessions:")
-            self.log("table", dict(header=['#', 'Name', 'MD5', 'Created At', 'Current'], rows=rows))
+            print_info("Opened Sessions:")
+            print(table(header=['#', 'Name', 'MD5', 'Created At', 'Current'], rows=rows))
         elif args.switch:
             for session in __sessions__.sessions:
                 if args.switch == session.id:
                     __sessions__.switch(session)
                     return
 
-            self.log("warning", "The specified session ID doesn't seem to exist")
+            print_warning("The specified session ID doesn't seem to exist")
         else:
             parser.print_usage()
 
@@ -627,11 +619,11 @@ class Commands(object):
         projects_path = os.path.join(os.getcwd(), 'projects')
 
         if not os.path.exists(projects_path):
-            self.log("info", "The projects directory does not exist yet")
+            print_info("The projects directory does not exist yet")
             return
 
         if args.list:
-            self.log("info", "Projects Available:")
+            print_info("Projects Available:")
 
             rows = []
             for project in os.listdir(projects_path):
@@ -642,19 +634,19 @@ class Commands(object):
                         current = 'Yes'
                     rows.append([project, time.ctime(os.path.getctime(project_path)), current])
 
-            self.log('table', dict(header=['Project Name', 'Creation Time', 'Current'], rows=rows))
+            print(table(header=['Project Name', 'Creation Time', 'Current'], rows=rows))
         elif args.switch:
             if __sessions__.is_set():
                 __sessions__.close()
-                self.log("info", "Closed opened session")
+                print_info("Closed opened session")
 
             __project__.open(args.switch)
-            self.log("info", "Switched to project {0}".format(bold(args.switch)))
+            print_info("Switched to project {0}".format(bold(args.switch)))
 
             # Need to re-initialize the Database to open the new SQLite file.
             self.db = Database()
         else:
-            self.log('info', parser.print_usage())
+            parser.print_usage()
 
     ##
     # EXPORT
@@ -672,7 +664,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log("error", "No session opened")
+            print_error("No session opened")
             parser.print_usage()
             return
 
@@ -686,7 +678,7 @@ class Commands(object):
 
         # Abort if the specified path already exists.
         if os.path.isfile(args.value):
-            self.log("error", "File at path \"{0}\" already exists, abort".format(args.value))
+            print_error("File at path \"{0}\" already exists, abort".format(args.value))
             return
 
         # If the argument chosed so, archive the file when exporting it.
@@ -697,9 +689,9 @@ class Commands(object):
                 with ZipFile(args.value, 'w') as export_zip:
                     export_zip.write(__sessions__.current.file.path, arcname=__sessions__.current.file.name)
             except IOError as e:
-                self.log("error", "Unable to export file: {0}".format(e))
+                print_error("Unable to export file: {0}".format(e))
             else:
-                self.log("info", "File archived and exported to {0}".format(args.value))
+                print_info("File archived and exported to {0}".format(args.value))
         # Otherwise just dump it to the given directory.
         else:
             # XXX: Export file with the original file name.
@@ -708,6 +700,6 @@ class Commands(object):
             try:
                 shutil.copyfile(__sessions__.current.file.path, store_path)
             except IOError as e:
-                self.log("error", "Unable to export file: {0}".format(e))
+                print_error("Unable to export file: {0}".format(e))
             else:
-                self.log("info", "File exported to {0}".format(store_path))
+                print_info("File exported to {0}".format(store_path))
