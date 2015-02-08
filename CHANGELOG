@@ -13,6 +13,7 @@ Viper 1.2 (TBD)
 - Fixed bug in strings module
 - Added clustering in virustotal module
 - Fixed "latest"-database method to return latest file based on id rather then created_at
+- API: Fixed "delete note" when removing sample 
 
 Viper 1.1 (2014-10-22)
 ======================
