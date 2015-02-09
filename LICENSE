@@ -30,3 +30,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Individual Licenses for modules
 
 IDX Module Licensed under the Apache License, Version 2.0. Original Copyright @bbaskin
+pymacho Licensed under the GNU License Copyright 2013 Jérémie BOUTOILLE
+
