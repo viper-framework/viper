@@ -156,7 +156,8 @@ def find_file():
             break
 
     if not value:
-        raise HTTPError(400, 'Invalid search term')
+        response.code = 400
+        raise jsonize({'message':'Invalid search term'})
 
     rows = db.find(key=key, value=value)
 
