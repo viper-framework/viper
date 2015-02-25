@@ -93,32 +93,37 @@ def delete_file(file_hash):
     elif len(file_hash) == 64:
         key = 'sha256'
     else:
-        return HTTPError(400, 'Invalid hash format (use md5 or sha256)')
+        response.code = 400
+        return jsonize({'message':'Invalid hash format (use md5 or sha256)'})
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
-        raise HTTPError(404, 'File not found in the database')
+        response.code = 404
+        return jsonize({'message':'File not found in the database'})
 	
     if rows:
-		malware_id = rows[0].id
-		path = get_sample_path(rows[0].sha256)
-		if db.delete(malware_id):
-			success = True
-		else:
-			raise HTTPError(404, 'File not found in repository')
+        malware_id = rows[0].id
+        path = get_sample_path(rows[0].sha256)
+        if db.delete(malware_id):
+            success = True
+        else:
+            response.code = 404
+            return jsonize({'message':'File not found in repository'})
 
     path = get_sample_path(rows[0].sha256)
     if not path:
-        raise HTTPError(404, 'File not found in file system')
-    else:	
+        response.code = 404
+        return jsonize({'message':'File not found in file system'})
+    else:
         success=os.remove(path)
     
     if success:
         return jsonize({'message' : 'deleted'})
     else:
-        return HTTPError(500, 'Unable to delete file')
+        response.code = 500
+        return jsonize({'message':'Unable to delete file'})
 
 @route('/file/find', method='POST')
 def find_file():
