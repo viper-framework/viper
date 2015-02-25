@@ -60,17 +60,20 @@ def get_file(file_hash):
     elif len(file_hash) == 64:
         key = 'sha256'
     else:
-        return HTTPError(400, 'Invalid hash format (use md5 or sha256)')
+        response.code = 400
+        return jsonize({'message':'Invalid hash format (use md5 or sha256)'})
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
-        raise HTTPError(404, 'File not found in the database')
+        response.code = 404
+        return jsonize({'message':'File not found in the database'})
 
     path = get_sample_path(rows[0].sha256)
     if not path:
-        raise HTTPError(404, 'File not found in the repository')
+        response.code = 404
+        return jsonize({'message':'File not found in the repository'})
 
     response.content_length = os.path.getsize(path)
     response.content_type = 'application/octet-stream; charset=UTF-8'
