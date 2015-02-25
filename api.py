@@ -190,7 +190,8 @@ def add_tags():
     rows = db.find(key=key, value=value)
     
     if not rows:
-        raise HTTPError(404, 'File not found in the database')
+        response.code = 404
+        raise jsonize({'message':'File not found in the database'})
           
     for row in rows:
         malware_sha256=row.sha256
