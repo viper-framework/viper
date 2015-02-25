@@ -49,7 +49,8 @@ def add_file():
     if success:
         return jsonize({'message' : 'added'})
     else:
-        return HTTPError(500, 'Unable to store file')
+        response.status = 500
+        return jsonize({'message':'Unable to store file'})
 
 @route('/file/get/<file_hash>', method='GET')
 def get_file(file_hash):
