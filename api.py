@@ -226,7 +226,8 @@ def run_module():
 def list_projects():
     projects_path = os.path.join(os.getcwd(), 'projects')
     if not os.path.exists(projects_path):
-            raise HTTPError(404, 'No projects found')
+        response.code = 404
+        return jsonize({'message':'No projects found'})
             
     rows = []
     for project in os.listdir(projects_path):
