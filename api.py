@@ -108,13 +108,13 @@ def delete_file(file_hash):
     path = get_sample_path(rows[0].sha256)
     if not path:
         raise HTTPError(404, 'File not found in file system')
-    else:	
-        success=os.remove(path)
-    
-    if success:
-        return jsonize({'message' : 'deleted'})
     else:
-        return HTTPError(500, 'Unable to delete file')
+         try:
+             os.remove(path)
+         except OSError:
+             response.code = 500
+             return jsonize({'message':'Unable to delete file'})
+         return jsonize({'message' : 'deleted'})
 
 @route('/file/find', method='POST')
 def find_file():
