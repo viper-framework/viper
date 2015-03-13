@@ -19,7 +19,7 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 try:
-    import OleFileIO_PL
+    import olefile
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
@@ -343,43 +343,48 @@ class Office(Module):
             return
         self.log('info', "Macro's Detected")
         try:
+            run_rows = []
+            word_rows = []
+            pattern_rows = []
             for (filename, stream_path, vba_filename, vba_code) in vba.extract_macros():
                 self.log('info', "Stream Details")
-                self.log('item', "OLE Stream: {0}".format(stream_path))
-                self.log('item', "VBA Filename: {0}".format(vba_filename))
+                self.log('item', "OLE Stream: {0}".format(string_clean(stream_path)))
+                self.log('item', "VBA Filename: {0}".format(string_clean(vba_filename)))
                 autoexec_keywords = detect_autoexec(vba_code)
                 if autoexec_keywords:
-                    self.log('info', "AutoRun Macros Found")
-                    rows = []
                     for keyword, description in autoexec_keywords:
-                        rows.append([keyword, description])
-                    self.log('table', dict(header=['KeyWord', 'Description'], rows=rows))
+                        run_rows.append([keyword, description])
+                    
                 # Match Keyword Types
                 suspicious_keywords = detect_suspicious(vba_code)
                 if suspicious_keywords:
-                    self.log('info', "Suspicious Keywords Found")
-                    rows = []
                     for keyword, description in suspicious_keywords:
-                        rows.append([keyword, description])
-                    self.log('table', dict(header=['KeyWord', 'Description'], rows=rows))
+                        word_rows.append([keyword, description])
+                    
                 # Match IOCs
                 patterns = detect_patterns(vba_code)
                 if patterns:
-                    self.log('info', "Suspicious Keywords Found")
-                    rows = []
                     for pattern_type, value in patterns:
-                        rows.append([pattern_type, value])
-                    self.log('table', dict(header=['Pattern', 'Value'], rows=rows))
-                        
+                        pattern_rows.append([pattern_type, value])
+                    
                 # Save the code to external File
                 if save_path:
                     try:
-                        with open(save_path, 'w') as out:
+                        with open(save_path, 'a') as out:
                             out.write(vba_code)
-                        self.log('info', "Writing VBA Code to {0}".format(save_path))
+                        save = True
                     except:
                         self.log('Error', "Unable to write to {0}".format(save_path))
-                    return
+                        return
+            # Print all Tables together
+            self.log('info', "AutoRun Macros Found")
+            self.log('table', dict(header=['KeyWord', 'Description'], rows=run_rows))
+            self.log('info', "Suspicious Keywords Found")
+            self.log('table', dict(header=['KeyWord', 'Description'], rows=word_rows))
+            self.log('info', "Suspicious Patterns Found")
+            self.log('table', dict(header=['Pattern', 'Value'], rows=pattern_rows))
+            if save:
+                self.log('success', "Writing VBA Code to {0}".format(save_path))
         except:
             self.log('Error', "Unable to Process File")
         # Close the file
@@ -399,14 +404,14 @@ class Office(Module):
             return
 
         if not HAVE_OLE:
-            self.log('error', "Missing dependency, install OleFileIO (`pip install OleFileIO_PL`)")
+            self.log('error', "Missing dependency, install OleFileIO (`pip install olefile`)")
             return
 
         # Tests to check for valid Office structures.
-        OLE_FILE = OleFileIO_PL.isOleFile(__sessions__.current.file.path)
+        OLE_FILE = olefile.isOleFile(__sessions__.current.file.path)
         XML_FILE = zipfile.is_zipfile(__sessions__.current.file.path)
         if OLE_FILE:
-            ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
+            ole = olefile.OleFileIO(__sessions__.current.file.path)
         elif XML_FILE:
             zip_xml = zipfile.ZipFile(__sessions__.current.file.path, 'r')
         else:
