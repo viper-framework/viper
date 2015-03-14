@@ -101,6 +101,7 @@ class YaraScan(Module):
         for entry in files:
             if entry.size == 0:
                 continue
+
             self.log('info', "Scanning {0} ({1})".format(entry.name, entry.sha256))
 
             # Check if the entry has a path attribute. This happens when
@@ -112,6 +113,11 @@ class YaraScan(Module):
             # This should be triggered only when scanning the full repository.
             else:
                 entry_path = get_sample_path(entry.sha256)
+
+            # Check if the file exists before running the yara scan.
+            if not os.path.exists(entry_path):
+                self.log('error', "The file does not exist at path {0}".format(entry_path))
+                return
 
             rows = []
             tag_list = []
