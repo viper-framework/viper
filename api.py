@@ -156,7 +156,7 @@ def find_file():
 
     if not value:
         response.code = 400
-        raise jsonize({'message':'Invalid search term'})
+        return jsonize({'message':'Invalid search term'})
 
     rows = db.find(key=key, value=value)
 
@@ -190,7 +190,7 @@ def add_tags():
     
     if not rows:
         response.code = 404
-        raise jsonize({'message':'File not found in the database'})
+        return jsonize({'message':'File not found in the database'})
           
     for row in rows:
         malware_sha256=row.sha256
