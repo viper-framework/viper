@@ -49,7 +49,8 @@ def add_file():
     if success:
         return jsonize({'message' : 'added'})
     else:
-        return HTTPError(500, 'Unable to store file')
+        response.status = 500
+        return jsonize({'message':'Unable to store file'})
 
 @route('/file/get/<file_hash>', method='GET')
 def get_file(file_hash):
@@ -59,17 +60,20 @@ def get_file(file_hash):
     elif len(file_hash) == 64:
         key = 'sha256'
     else:
-        return HTTPError(400, 'Invalid hash format (use md5 or sha256)')
+        response.code = 400
+        return jsonize({'message':'Invalid hash format (use md5 or sha256)'})
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
-        raise HTTPError(404, 'File not found in the database')
+        response.code = 404
+        return jsonize({'message':'File not found in the database'})
 
     path = get_sample_path(rows[0].sha256)
     if not path:
-        raise HTTPError(404, 'File not found in the repository')
+        response.code = 404
+        return jsonize({'message':'File not found in the repository'})
 
     response.content_length = os.path.getsize(path)
     response.content_type = 'application/octet-stream; charset=UTF-8'
@@ -89,32 +93,37 @@ def delete_file(file_hash):
     elif len(file_hash) == 64:
         key = 'sha256'
     else:
-        return HTTPError(400, 'Invalid hash format (use md5 or sha256)')
+        response.code = 400
+        return jsonize({'message':'Invalid hash format (use md5 or sha256)'})
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
-        raise HTTPError(404, 'File not found in the database')
+        response.code = 404
+        return jsonize({'message':'File not found in the database'})
 	
     if rows:
-		malware_id = rows[0].id
-		path = get_sample_path(rows[0].sha256)
-		if db.delete(malware_id):
-			success = True
-		else:
-			raise HTTPError(404, 'File not found in repository')
+        malware_id = rows[0].id
+        path = get_sample_path(rows[0].sha256)
+        if db.delete(malware_id):
+            success = True
+        else:
+            response.code = 404
+            return jsonize({'message':'File not found in repository'})
 
     path = get_sample_path(rows[0].sha256)
     if not path:
-        raise HTTPError(404, 'File not found in file system')
+        response.code = 404
+        return jsonize({'message':'File not found in file system'})
     else:
-         try:
-             os.remove(path)
-         except OSError:
-             response.code = 500
-             return jsonize({'message':'Unable to delete file'})
-         return jsonize({'message' : 'deleted'})
+        success=os.remove(path)
+    
+    if success:
+        return jsonize({'message' : 'deleted'})
+    else:
+        response.code = 500
+        return jsonize({'message':'Unable to delete file'})
 
 @route('/file/find', method='POST')
 def find_file():
@@ -147,7 +156,8 @@ def find_file():
             break
 
     if not value:
-        raise HTTPError(400, 'Invalid search term')
+        response.code = 400
+        raise jsonize({'message':'Invalid search term'})
 
     rows = db.find(key=key, value=value)
 
@@ -180,7 +190,8 @@ def add_tags():
     rows = db.find(key=key, value=value)
     
     if not rows:
-        raise HTTPError(404, 'File not found in the database')
+        response.code = 404
+        raise jsonize({'message':'File not found in the database'})
           
     for row in rows:
         malware_sha256=row.sha256
@@ -215,7 +226,8 @@ def run_module():
 def list_projects():
     projects_path = os.path.join(os.getcwd(), 'projects')
     if not os.path.exists(projects_path):
-            raise HTTPError(404, 'No projects found')
+        response.code = 404
+        return jsonize({'message':'No projects found'})
             
     rows = []
     for project in os.listdir(projects_path):
