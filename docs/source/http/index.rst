@@ -12,7 +12,7 @@ API
 
 Viper provides a set of core command API:::
 
-  test
+  	test
 	file/add
 	file/get/<file_hash>
 	file/find
@@ -97,7 +97,13 @@ Success Response::
 		{
     		"message": "added"
 		}
+	
+Error Response
 	Code: 500 
+	Content: 
+		{
+    		"message": "Unable to store file"
+		}	
 
 Example::
 
@@ -107,25 +113,9 @@ Example::
 	}
 
 	user@system:~/scripts/viper$ curl -F file=@FILE -F tags='foo bar' -X POST --noproxy 127.0.0.1 127.0.0.1:8080/file/add::
-
-    	<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-    	<html>
-        	<head>
-		    <title>Error 500: Internal Server Error</title>
-		    <style type="text/css">
-		      html {background-color: #eee; font-family: sans;}
-		      body {background-color: #fff; border: 1px solid #ddd;
-		            padding: 15px; margin: 15px;}
-		      pre {background-color: #eee; border: 1px solid #ddd; padding: 5px;}
-		    </style>
-		</head>
-		<body>
-		    <h1>Error 500: Internal Server Error</h1>
-		    <p>Sorry, the requested URL <tt>&#039;http://127.0.0.1:8080/file/add&#039;</tt>
-		       caused an error:</p>
-		    <pre>Unable to store file</pre>
-		</body>
-	    </html>
+	{
+    	"message": "Unable to store file"
+	}
 
 Notes
 
@@ -153,6 +143,24 @@ Success Response
 	
 	* Code: 200
 
+Error Response
+	Code: 404 
+	Content: 
+		{
+    		"message": "File not found in the database"
+		}
+	Code: 404 
+	Content: 
+		{
+    		"message": "File not found in repository"
+		}
+	Code: 500 
+	Content: 
+		{
+    		"message": "Unable to delete file"
+		}	
+		
+		
 Example::
 
 	user@system:~/scripts/viper$ curl -X GET 127.0.0.1:8080/file/get/9ce49435b67d531bbd966186920c90ecf0752e88b79af246886b077c8ec9b649
@@ -187,6 +195,14 @@ URL Params
 Success Response
 	
 	* Code: 200
+
+Error Response
+	Code: 400 
+	Content: 
+		{
+    		"message": "Invalid search term"
+		}
+
 
 Example::
 
@@ -265,10 +281,12 @@ The web interface is project aware and can search across all projects when searc
     * Multiple File Upload
     * File Download
     * Unpack Compressed uploads
-    * Full Search
+    * Full Search (including tag, name, mime, note, type)
     * Hex Viewer
     * Run Modules
     * Enter Notes
+    * Add / Delete / Modify Yara rules
+    * Add / Delete / Modify Tags
     
 Launch The Web Application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
