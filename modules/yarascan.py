@@ -121,24 +121,28 @@ class YaraScan(Module):
 
             rows = []
             tag_list = []
-            for match in rules.match(entry_path):
-                # Add a row for each string matched by the rule.
-                for string in match.strings:
-                    rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
+            try:
+                for match in rules.match(entry_path):
+                    # Add a row for each string matched by the rule.
+                    for string in match.strings:
+                        rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
 
-                # Add matching rules to our list of tags.
-                # First it checks if there are tags specified in the metadata
-                # of the Yara rule.
-                match_tags = match.meta.get('tags')
-                # If not, use the rule name.
-                # TODO: as we add more and more yara rules, we might remove
-                # this option and only tag the file with rules that had
-                # tags specified in them.
-                if not match_tags:
-                    match_tags = match.rule
+                    # Add matching rules to our list of tags.
+                    # First it checks if there are tags specified in the metadata
+                    # of the Yara rule.
+                    match_tags = match.meta.get('tags')
+                    # If not, use the rule name.
+                    # TODO: as we add more and more yara rules, we might remove
+                    # this option and only tag the file with rules that had
+                    # tags specified in them.
+                    if not match_tags:
+                        match_tags = match.rule
 
-                # Add the tags to the list.
-                tag_list.append([entry.sha256, match_tags])
+                    # Add the tags to the list.
+                    tag_list.append([entry.sha256, match_tags])
+            except:
+                self.log('error',"can't run yara on sample")
+
 
             if rows:
                 header = [
