@@ -15,8 +15,11 @@ import requests
 import argparse
 import tempfile
 import contextlib
+import tarfile
 
 from zipfile import ZipFile
+from gzip import GzipFile
+from bz2 import BZ2File
 from bottle import route, request, response, run, get, template, static_file, redirect
 
 from viper.core.session import __sessions__
@@ -328,7 +331,7 @@ def add_file():
             with open(file_path, 'w') as tmp_file:
                 tmp_file.write(upload.file.read())
             # Zip Files
-            if request.forms.get('unzip'):
+            if request.forms.get('compression') == 'zip':
                 zip_pass = request.forms.get('zip_pass')
                 try:
                     with ZipFile(file_path) as zf:
@@ -339,8 +342,43 @@ def add_file():
                                 file_list.append(os.path.join(root, name))
                 except Exception as e:
                     return template('error.tpl', error="Error with zipfile - {0}".format(e))
+            # GZip Files
+            elif request.forms.get('compression') == 'gz':
+                try:
+                    gzf = GzipFile(file_path, 'rb')
+                    decompress = gzf.read()
+                    gzf.close()
+                    with open(file_path[:-3],"wb") as df:
+                        df.write(decompress)
+                    file_list.append(file_path[:-3])
+                except Exception as e:
+                    return template('error.tpl', error="Error with gzipfile - {0}".format(e))
+            # BZip2 Files
+            elif request.forms.get('compression') == 'bz2':
+                try:
+                    bz2f = BZ2File(file_path, 'rb')
+                    decompress = bz2f.read()
+                    bz2f.close()
+                    with open(file_path[:-3],"wb") as df:
+                        df.write(decompress)
+                    file_list.append(file_path[:-3])
+                except Exception as e:
+                    return template('error.tpl', error="Error with bzip2file - {0}".format(e))
+            # Tar Files (any, including tar.gz tar.bz2)
+            elif request.forms.get('compression') == 'tar':
+                try:
+                    if not tarfile.is_tarfile(file_path):
+                        return template('error.tpl', error="This is not a tar file")
+                    with tarfile.open(file_path,'r:*') as tarf:
+                        tarf.extractall(temp_dir)
+                    for root, dirs, files in os.walk(temp_dir, topdown=False):
+                        for name in files:
+                            if not name == upload.filename:
+                                file_list.append(os.path.join(root, name))
+                except Exception as e:
+                    return template('error.tpl', error="Error with tarfile - {0}".format(e))
             # Non zip files
-            else:
+            elif request.forms.get('compression') == 'none':
                 file_list.append(file_path)
             
         # Add each file
