@@ -30,6 +30,7 @@ class Commands(object):
         self.commands = dict(
             help=dict(obj=self.cmd_help, description="Show this help message"),
             open=dict(obj=self.cmd_open, description="Open a file"),
+            new=dict(obj=self.cmd_new, description="Create new file"),
             close=dict(obj=self.cmd_close, description="Close the current session"),
             info=dict(obj=self.cmd_info, description="Show information on the opened file"),
             notes=dict(obj=self.cmd_notes, description="View, add and edit notes on the opened file"),
@@ -82,6 +83,22 @@ class Commands(object):
         rows = sorted(rows, key=lambda entry: entry[0])
 
         self.log('table', dict(header=['Command', 'Description'], rows=rows))
+
+    ##
+    # NEW
+    #
+    # This command is used to create a new session on a new file,
+    # useful for copy & paste of content like Email headers
+
+    def cmd_new(self, *args):
+        title = raw_input("Enter a title for the new file: ")
+        # Create a new temporary file.
+        tmp = tempfile.NamedTemporaryFile(delete=False)
+        # Open the temporary file with the default editor, or with nano.
+        os.system('"${EDITOR:-nano}" ' + tmp.name)
+        __sessions__.new(tmp.name)
+        __sessions__.current.file.name = title
+        print_info("New file with title \"{0}\" added to the current session".format(bold(title)))
 
     ##
     # OPEN
