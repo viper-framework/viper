@@ -280,6 +280,18 @@ class Database:
 
         try:
             malware = session.query(Malware).get(id)
+            if not malware:
+                print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
+                return
+            notes = malware.note
+            if not notes:
+                print_error("No notes available for this file yet")
+            else:
+                print_error("The file has notes that will be deleted as well")
+                for note in notes:
+                    print_error("Node: {0}".format(note.title)) 
+                    self.delete_note(note.id)
+            
             session.delete(malware)
             session.commit()
         except SQLAlchemyError:

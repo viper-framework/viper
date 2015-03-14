@@ -83,7 +83,6 @@ def get_file(file_hash):
 
     return data
 
-# TODO: delete notes as well.
 @route('/file/delete/<file_hash>', method='GET')
 def delete_file(file_hash):
     success = False
