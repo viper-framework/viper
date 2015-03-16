@@ -297,7 +297,7 @@ class PE(Module):
         if self.args.dump or self.args.open:
             headers.append('Dumped To')
 
-        print table(headers, resources)
+        self.log('table', dict(header=headers, rows=resources))
 
         # If instructed, open a session on the given resource.
         if self.args.open:
