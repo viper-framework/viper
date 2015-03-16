@@ -2,7 +2,7 @@
 # This gets a list of Projects for the nav bar
 import os
 projects_path = os.path.join(os.getcwd(), 'projects')
-projects = []
+projects = ['Main']
 if os.path.exists(projects_path):
     for project in os.listdir(projects_path):
         project_path = os.path.join(projects_path, project)
@@ -34,7 +34,7 @@ end
 
 <!-- Nav Bar -->
 
-<nav class="navbar navbar-inverse" role="navigation">
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
