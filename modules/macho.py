@@ -81,7 +81,11 @@ class Macho(Module):
                 segment.display(before="\t")
         
         
-        m = MachO(__sessions__.current.file.path)
+        try:
+            m = MachO(__sessions__.current.file.path)
+        except Exception as e:
+            self.log('error', "No Mach0 file, {0}".format(e))
+            return
                 
         if self.args is None:
             return
