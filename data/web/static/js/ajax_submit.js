@@ -48,7 +48,33 @@ $('#hexsubmit').submit(function(event){
  });
  }); 
  
- 
+  
+$('#scriptsubmit').submit(function(event){
+  $.ajax({
+    url: '/script',
+    type: 'post',
+    dataType:'html', 
+    data: $('#scriptsubmit').serialize(),
+    beforeSend: function() {
+        var target = document.getElementById('spin_loader');
+        var spinner = new Spinner(opts).spin(target);
+        $(target).data('spinner', spinner);
+    },
+    complete: function() {
+        $('#spin_loader').data('spinner').stop();
+    },
+    success: function(response, textStatus, jqXHR){
+        $('#scriptview').empty().append(response);
+	$('pre code').each(function(i, block) {
+          hljs.highlightBlock(block);
+        });
+    },
+    error: function(jqXHR, textStatus, errorThrown){
+        console.log('error(s):'+textStatus, errorThrown);
+    }
+  });
+}); 
+
  
 function clear_div() {
     document.getElementById("ajaxresponse").innerHTML = "";

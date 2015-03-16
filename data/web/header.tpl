@@ -29,6 +29,8 @@ end
         activeTab && activeTab.tab('show');
         });
     </script>
+    <script type="text/javascript" src="/static/js/highlight.pack.js"></script>
+    <link href="/static/css/default.css" rel="stylesheet">
 </head>
 <body>
 
