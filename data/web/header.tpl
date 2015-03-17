@@ -20,15 +20,8 @@ end
     <meta charset="UTF-8">
     <meta name="description" content="Viper Web Interface">
     <meta name="keywords" content="viper,malware,analysis">
-    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
-    <script type="text/javascript" src="/static/js/jquery-1.11.1.min.js"></script>
-    <script>
-        $(function () {
-        var activeTab = $('[href=' + location.hash + ']');
-        activeTab && activeTab.tab('show');
-        });
-    </script>
 </head>
 <body>
 
