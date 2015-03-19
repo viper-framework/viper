@@ -30,7 +30,7 @@ end
         });
     </script>
     <script type="text/javascript" src="/static/js/highlight.pack.js"></script>
-    <link href="/static/css/default.css" rel="stylesheet">
+    <link href="/static/css/highlight.css" rel="stylesheet">
 </head>
 <body>
 
