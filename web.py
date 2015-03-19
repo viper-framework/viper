@@ -741,11 +741,11 @@ def script_viewer():
     # get file path
     script_path = get_sample_path(file_hash)
     
-    # create the command string
-    script_cmd = 'cat {0}'.format(script_path)
-    
+    with open(script_path, "r") as script_file:
+      script_string = script_file.read()
+      script_file.close()
     # get the output
-    script_string = commands.getoutput(script_cmd)
+    #script_string = commands.getoutput(script_cmd)
     
     # Format the data
     html_string = ''
