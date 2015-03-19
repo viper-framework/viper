@@ -336,6 +336,7 @@ class Office(Module):
     #
     
     def parse_vba(self, save_path):
+        save = False
         vba = VBA_Parser(__sessions__.current.file.path)
         # Check for Macros
         if not vba.detect_vba_macros():
