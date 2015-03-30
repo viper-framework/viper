@@ -40,9 +40,8 @@ class Malware(Base):
     created_at = Column(DateTime(timezone=False), default=datetime.now(), nullable=False)
     tag = relationship(
         'Tag',
-        cascade='all, delete',
         secondary=association_table,
-        backref=backref('malware', cascade='all')
+        backref=backref('malware')
     )
     note = relationship(
         'Note',
