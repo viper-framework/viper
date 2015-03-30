@@ -44,5 +44,30 @@ class Cuckoo(Module):
         try:
             response = requests.post(url, files=files)
         except requests.ConnectionError:
-            self.log('error', "Unable to connect to Cuckoo API at {0}:{1}".format(host, port))
+            self.log('error', "Unable to connect to Cuckoo API at '{0}'.".format(url))
             return
+        except Exception as e:
+            self.log('error', "Failed performing request at '{0}': {1}".format(url, e))
+            return
+
+        try:
+            cuckoo = response.json()
+            # since python 2.7 the above line causes the Error dict object not callable
+        except Exception as e:
+            # workaround in case of python 2.7
+            if str(e) == "'dict' object is not callable":
+                try:
+                    cuckoo = response.json
+                except Exception as e:
+                    self.log('error', "Failed parsing the response: {0}".format(e))
+                    self.log('error', "Data:\n{}".format(response.content))
+                    return
+            else:
+                self.log('error', "Failed parsing the response: {0}".format(e))
+                self.log('error', "Data:\n{}".format(response.content))
+                return
+
+    if 'task_id' in cuckoo:
+		self.log('info', "Task ID: {0}".format(cuckoo['task_id']))
+    else:
+		self.log('error', "Failed to parse the task id from the returned JSON ('{0}'): {1}".format(cuckoo, e))
