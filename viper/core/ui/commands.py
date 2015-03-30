@@ -64,7 +64,7 @@ class Commands(object):
     # This command simply prints the help message.
     # It lists both embedded commands and loaded modules.
     def cmd_help(self, *args):
-        self.log("info", "Commands")
+        self.log('info', "Commands")
 
         rows = []
         for command_name, command_item in self.commands.items():
@@ -74,7 +74,7 @@ class Commands(object):
         rows = sorted(rows, key=lambda entry: entry[0])
 
         self.log('table', dict(header=['Command', 'Description'], rows=rows))
-        self.log("info", "Modules")
+        self.log('info', "Modules")
 
         rows = []
         for module_name, module_item in __modules__.items():
@@ -133,7 +133,7 @@ class Commands(object):
             target = os.path.expanduser(target)
 
             if not os.path.exists(target) or not os.path.isfile(target):
-                self.log("error", "File not found: {0}".format(target))
+                self.log('error', "File not found: {0}".format(target))
                 return
 
             __sessions__.new(target)
@@ -159,7 +159,7 @@ class Commands(object):
 
                     count += 1
             else:
-                self.log("warning", "You haven't performed a find yet")
+                self.log('warning', "You haven't performed a find yet")
         # Otherwise we assume it's an hash of an previously stored sample.
         else:
             target = target.strip().lower()
@@ -175,7 +175,7 @@ class Commands(object):
             rows = self.db.find(key=key, value=target)
 
             if not rows:
-                self.log("warning", "No file found with the given hash {0}".format(target))
+                self.log('warning', "No file found with the given hash {0}".format(target))
                 return
 
             path = get_sample_path(rows[0].sha256)
@@ -237,19 +237,19 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log("error", "No session opened")
+            self.log('error', "No session opened")
             return
 
         if args.list:
             # Retrieve all notes for the currently opened file.
             malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
             if not malware:
-                self.log("error", "The opened file doesn't appear to be in the database, have you stored it yet?")
+                self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
                 return
 
             notes = malware[0].note
             if not notes:
-                self.log("info", "No notes available for this file yet")
+                self.log('info', "No notes available for this file yet")
                 return
 
             # Populate table rows.
@@ -272,17 +272,16 @@ class Commands(object):
             # Finally, remove the temporary file.
             os.remove(tmp.name)
 
-            self.log("info", "New note with title \"{0}\" added to the current file".format(bold(title)))
+            self.log('info', "New note with title \"{0}\" added to the current file".format(bold(title)))
 
         elif args.view:
             # Retrieve note wth the specified ID and print it.
             note = Database().get_note(args.view)
             if note:
-                self.log("info", bold('Title: ') + note.title)
-                self.log("info", bold('Body:'))
-                print(note.body)
+                self.log('info', bold('Title: ') + note.title)
+                self.log('info', bold('Body:') + '\n' + note.body)
             else:
-                self.log("info", "There is no note with ID {0}".format(args.view))
+                self.log('info', "There is no note with ID {0}".format(args.view))
 
         elif args.edit:
             # Retrieve note with the specified ID.
@@ -302,7 +301,7 @@ class Commands(object):
                 # Remove the temporary file.
                 os.remove(tmp.name)
 
-                self.log("info", "Updated note with ID {0}".format(args.edit))
+                self.log('info', "Updated note with ID {0}".format(args.edit))
 
         elif args.delete:
             # Delete the note with the specified ID.
@@ -339,7 +338,7 @@ class Commands(object):
 
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
-                self.log("warning", "Skip, file \"{0}\" appears to be already stored".format(obj.name))
+                self.log('warning', "Skip, file \"{0}\" appears to be already stored".format(obj.name))
                 return False
 
             # Try to store file object into database.
@@ -359,7 +358,7 @@ class Commands(object):
                 try:
                     os.unlink(obj.path)
                 except Exception as e:
-                    self.log("warning", "Failed deleting file: {0}".format(e))
+                    self.log('warning', "Failed deleting file: {0}".format(e))
 
             return True
 
@@ -385,20 +384,20 @@ class Commands(object):
                         # Check if the file name matches the provided pattern.
                         if args.file_name:
                             if not fnmatch.fnmatch(file_name, args.file_name):
-                                # self.log("warning", "Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
+                                # self.log('warning', "Skip, file \"{0}\" doesn't match the file name pattern".format(file_path))
                                 continue
 
                         # Check if the file type matches the provided pattern.
                         if args.file_type:
                             if args.file_type not in File(file_path).type:
-                                # self.log("warning", "Skip, file \"{0}\" doesn't match the file type".format(file_path))
+                                # self.log('warning', "Skip, file \"{0}\" doesn't match the file type".format(file_path))
                                 continue
 
                         # Check if file exceeds maximum size limit.
                         if args.file_size:
                             # Obtain file size.
                             if os.path.getsize(file_path) > args.file_size:
-                                self.log("warning", "Skip, file \"{0}\" is too big".format(file_path))
+                                self.log('warning', "Skip, file \"{0}\" is too big".format(file_path))
                                 continue
 
                         file_obj = File(file_path)
@@ -406,12 +405,12 @@ class Commands(object):
                         # Add file.
                         add_file(file_obj, args.tags)
             else:
-                self.log("error", "You specified an invalid folder: {0}".format(args.folder))
+                self.log('error', "You specified an invalid folder: {0}".format(args.folder))
         # Otherwise we try to store the currently opened file, if there is any.
         else:
             if __sessions__.is_set():
                 if __sessions__.current.file.size == 0:
-                    self.log("warning", "Skip, file \"{0}\" appears to be empty".format(__sessions__.current.file.name))
+                    self.log('warning', "Skip, file \"{0}\" appears to be empty".format(__sessions__.current.file.name))
                     return False
 
                 # Add file.
@@ -419,7 +418,7 @@ class Commands(object):
                     # Open session to the new file.
                     self.cmd_open(*[__sessions__.current.file.sha256])
             else:
-                self.log("error", "No session opened")
+                self.log('error', "No session opened")
 
     ##
     # DELETE
@@ -441,12 +440,12 @@ class Commands(object):
                 if self.db.delete(malware_id):
                     self.log("success", "File deleted")
                 else:
-                    self.log("error", "Unable to delete file")
+                    self.log('error', "Unable to delete file")
 
             os.remove(__sessions__.current.file.path)
             __sessions__.close()
         else:
-            self.log("error", "No session opened")
+            self.log('error', "No session opened")
 
     ##
     # FIND
@@ -482,7 +481,7 @@ class Commands(object):
                 rows.sort(key=lambda x: x[1], reverse=True)
                 self.log('table', dict(header=header, rows=rows))
             else:
-                self.log("warning", "No tags available")
+                self.log('warning', "No tags available")
 
             return
 
@@ -497,7 +496,7 @@ class Commands(object):
                 # The second argument is the search value.
                 value = args.value
             except IndexError:
-                self.log("error", "You need to include a search term.")
+                self.log('error', "You need to include a search term.")
                 return
         else:
             value = None
@@ -544,7 +543,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log("error", "No session opened")
+            self.log('error', "No session opened")
             parser.print_usage()
             return
 
@@ -562,13 +561,13 @@ class Commands(object):
             # the opened file.
             db = Database()
             db.add_tags(__sessions__.current.file.sha256, args.add)
-            self.log("info", "Tags added to the currently opened file")
+            self.log('info', "Tags added to the currently opened file")
 
             # We refresh the opened session to update the attributes.
-            # Namely, the list of tags returned by the "info" command
+            # Namely, the list of tags returned by the 'info' command
             # needs to be re-generated, or it wouldn't show the new tags
             # until the existing session is closed a new one is opened.
-            self.log("info", "Refreshing session to update attributes...")
+            self.log('info', "Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
 
         if args.delete:
@@ -576,7 +575,7 @@ class Commands(object):
             Database().delete_tag(args.delete)
             # Refresh the session so that the attributes of the file are
             # updated.
-            self.log("info", "Refreshing session to update attributes...")
+            self.log('info', "Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
 
     ###
@@ -596,7 +595,7 @@ class Commands(object):
 
         if args.list:
             if not __sessions__.sessions:
-                self.log("info", "There are no opened sessions")
+                self.log('info', "There are no opened sessions")
                 return
 
             rows = []
@@ -613,7 +612,7 @@ class Commands(object):
                     current
                 ])
 
-            self.log("info", "Opened Sessions:")
+            self.log('info', "Opened Sessions:")
             self.log("table", dict(header=['#', 'Name', 'MD5', 'Created At', 'Current'], rows=rows))
         elif args.switch:
             for session in __sessions__.sessions:
@@ -621,7 +620,7 @@ class Commands(object):
                     __sessions__.switch(session)
                     return
 
-            self.log("warning", "The specified session ID doesn't seem to exist")
+            self.log('warning', "The specified session ID doesn't seem to exist")
         else:
             parser.print_usage()
 
@@ -644,11 +643,11 @@ class Commands(object):
         projects_path = os.path.join(os.getcwd(), 'projects')
 
         if not os.path.exists(projects_path):
-            self.log("info", "The projects directory does not exist yet")
+            self.log('info', "The projects directory does not exist yet")
             return
 
         if args.list:
-            self.log("info", "Projects Available:")
+            self.log('info', "Projects Available:")
 
             rows = []
             for project in os.listdir(projects_path):
@@ -663,10 +662,10 @@ class Commands(object):
         elif args.switch:
             if __sessions__.is_set():
                 __sessions__.close()
-                self.log("info", "Closed opened session")
+                self.log('info', "Closed opened session")
 
             __project__.open(args.switch)
-            self.log("info", "Switched to project {0}".format(bold(args.switch)))
+            self.log('info', "Switched to project {0}".format(bold(args.switch)))
 
             # Need to re-initialize the Database to open the new SQLite file.
             self.db = Database()
@@ -689,7 +688,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log("error", "No session opened")
+            self.log('error', "No session opened")
             parser.print_usage()
             return
 
@@ -703,7 +702,7 @@ class Commands(object):
 
         # Abort if the specified path already exists.
         if os.path.isfile(args.value):
-            self.log("error", "File at path \"{0}\" already exists, abort".format(args.value))
+            self.log('error', "File at path \"{0}\" already exists, abort".format(args.value))
             return
 
         # If the argument chosed so, archive the file when exporting it.
@@ -714,9 +713,9 @@ class Commands(object):
                 with ZipFile(args.value, 'w') as export_zip:
                     export_zip.write(__sessions__.current.file.path, arcname=__sessions__.current.file.name)
             except IOError as e:
-                self.log("error", "Unable to export file: {0}".format(e))
+                self.log('error', "Unable to export file: {0}".format(e))
             else:
-                self.log("info", "File archived and exported to {0}".format(args.value))
+                self.log('info', "File archived and exported to {0}".format(args.value))
         # Otherwise just dump it to the given directory.
         else:
             # XXX: Export file with the original file name.
@@ -725,6 +724,6 @@ class Commands(object):
             try:
                 shutil.copyfile(__sessions__.current.file.path, store_path)
             except IOError as e:
-                self.log("error", "Unable to export file: {0}".format(e))
+                self.log('error', "Unable to export file: {0}".format(e))
             else:
-                self.log("info", "File exported to {0}".format(store_path))
+                self.log('info', "File exported to {0}".format(store_path))
