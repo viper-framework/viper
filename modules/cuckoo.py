@@ -51,23 +51,16 @@ class Cuckoo(Module):
             return
 
         try:
-            cuckoo = response.json()
-            # since python 2.7 the above line causes the Error dict object not callable
+            parsed_response = response.json()
         except Exception as e:
-            # workaround in case of python 2.7
-            if str(e) == "'dict' object is not callable":
-                try:
-                    cuckoo = response.json
-                except Exception as e:
-                    self.log('error', "Failed parsing the response: {0}".format(e))
-                    self.log('error', "Data:\n{}".format(response.content))
-                    return
-            else:
+            try:
+                parsed_response = response.json
+            except Exception as e:
                 self.log('error', "Failed parsing the response: {0}".format(e))
                 self.log('error', "Data:\n{}".format(response.content))
                 return
 
-    if 'task_id' in cuckoo:
-		self.log('info', "Task ID: {0}".format(cuckoo['task_id']))
-    else:
-		self.log('error', "Failed to parse the task id from the returned JSON ('{0}'): {1}".format(cuckoo, e))
+        if 'task_id' in parsed_response:
+            self.log('info', "Task ID: {0}".format(parsed_response['task_id']))
+        else:
+            self.log('error', "Failed to parse the task id from the returned JSON ('{0}'): {1}".format(parsed_response, e))
