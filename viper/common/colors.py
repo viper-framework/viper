@@ -15,6 +15,8 @@ def color(text, color_code, readline=False):
     # cygwin -> "cygwin" (should support colors, but doesn't work somehow)
     # mintty -> "xterm" (supports colors)
     if sys.platform == "win32" and os.getenv("TERM") != "xterm":
+        if type(text) != str:
+            text = str(text)
         return text
     if readline:
         # special readline escapes to fix colored input promps
