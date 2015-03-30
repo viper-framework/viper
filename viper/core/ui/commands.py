@@ -437,7 +437,7 @@ class Commands(object):
             rows = self.db.find('sha256', __sessions__.current.file.sha256)
             if rows:
                 malware_id = rows[0].id
-                if self.db.delete(malware_id):
+                if self.db.delete_file(malware_id):
                     self.log("success", "File deleted")
                 else:
                     self.log('error', "Unable to delete file")

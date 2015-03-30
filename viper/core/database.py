@@ -276,7 +276,7 @@ class Database:
 
         return True
 
-    def delete(self, id):
+    def delete_file(self, id):
         session = self.Session()
 
         try:
