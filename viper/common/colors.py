@@ -15,13 +15,13 @@ def color(text, color_code, readline=False):
     # cygwin -> "cygwin" (should support colors, but doesn't work somehow)
     # mintty -> "xterm" (supports colors)
     if sys.platform == "win32" and os.getenv("TERM") != "xterm":
-        if type(text) != str:
-            text = str(text)
-        return text
+        return str(text)
+
     if readline:
         # special readline escapes to fix colored input promps
         # http://bugs.python.org/issue17337
         return "\x01\x1b[%dm\x02%s\x01\x1b[0m\x02" % (color_code, text)
+
     return "\x1b[%dm%s\x1b[0m" % (color_code, text)
 
 def black(text, readline=False):
