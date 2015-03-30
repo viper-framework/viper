@@ -40,13 +40,15 @@ class Malware(Base):
     created_at = Column(DateTime(timezone=False), default=datetime.now(), nullable=False)
     tag = relationship(
         'Tag',
+        cascade='all, delete',
         secondary=association_table,
-        backref=backref('malware')
+        backref=backref('malware', cascade='all')
     )
     note = relationship(
         'Note',
+        cascade='all, delete',
         secondary=association_table,
-        backref=backref('malware')
+        backref=backref('malware', cascade='all')
     )
     __table_args__ = (Index(
         'hash_index',
@@ -283,15 +285,7 @@ class Database:
             if not malware:
                 print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
                 return
-            notes = malware.note
-            if not notes:
-                print_error("No notes to be deleted")
-            else:
-                print_error("The file has notes that will be deleted as well")
-                for note in notes:
-                    print_error("Node: {0} {1}".format(note.id,note.title)) 
-                    #self.delete_note(note.id) # deleted because of https://github.com/botherder/viper/issues/248
-            print_error("No Notes left")
+
             session.delete(malware)
             session.commit()
         except SQLAlchemyError as e:
