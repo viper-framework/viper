@@ -66,10 +66,8 @@ class Cuckoo(Module):
                 self.log('error', "Failed parsing the response: {0}".format(e))
                 self.log('error', "Data:\n{}".format(response.content))
                 return
-	try:
-		task_id = cuckoo["task_id"]
-		self.log('info', "Task ID: {0}".format(task_id))
-		return
-	except Excetpion as e:
+
+    if 'task_id' in cuckoo:
+		self.log('info', "Task ID: {0}".format(cuckoo['task_id']))
+    else:
 		self.log('error', "Failed to parse the task id from the returned JSON ('{0}'): {1}".format(cuckoo, e))
-		return
