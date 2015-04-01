@@ -7,6 +7,10 @@ Before proceeding, you should make sure you have the basic tools installed to be
 
     $ sudo apt-get install gcc python-dev python-pip
 
+In order to have support for certain modules, you will need to install the following dependencies too before proceeding:
+
+    $ sudo apt-get install libssl-dev swig
+
 Core dependencies
 -----------------
 
@@ -48,7 +52,7 @@ If everything worked out fine, you should be able to launch Viper's shell withou
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v1.1
+        \_/ |_|  __/|_____)_| v1.2
               |_|
         
     You have 0 files in your default repository

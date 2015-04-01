@@ -5,23 +5,25 @@ Viper provides a set of core commands used to interact repositories of files you
 
     shell > help
     Commands:
-    +----------+-----------------------------------------------+
-    | Command  | Description                                   |
-    +----------+-----------------------------------------------+
-    | clear    | Clear the console                             |
-    | close    | Close the current session                     |
-    | delete   | Delete the opened file                        |
-    | export   | Export the current session to file or zip     |
-    | find     | Find a file                                   |
-    | help     | Show this help message                        |
-    | info     | Show information on the opened file           |
-    | notes    | View, add and edit notes on the opened file   |
-    | open     | Open a file                                   |
-    | projects | List or switch existing projects              |
-    | sessions | List or switch sessions                       |
-    | store    | Store the opened file to the local repository |
-    | tags     | Modify tags of the opened file                |
-    +----------+-----------------------------------------------+
+    +------------+-----------------------------------------------+
+    | Command    | Description                                   |
+    +------------+-----------------------------------------------+
+    | clear      | Clear the console                             |
+    | close      | Close the current session                     |
+    | delete     | Delete the opened file                        |
+    | exit, quit | Exit Viper                                    |
+    | export     | Export the current session to file or zip     |
+    | find       | Find a file                                   |
+    | help       | Show this help message                        |
+    | info       | Show information on the opened file           |
+    | new        | Create new file                               |
+    | notes      | View, add and edit notes on the opened file   |
+    | open       | Open a file                                   |
+    | projects   | List or switch existing projects              |
+    | sessions   | List or switch sessions                       |
+    | store      | Store the opened file to the local repository |
+    | tags       | Modify tags of the opened file                |
+    +----------+-------------------------------------------------+
 
 Following are details for all the currently available commands.
 
