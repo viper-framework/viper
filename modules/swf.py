@@ -93,7 +93,12 @@ class SWF(Module):
             # Skip the header.
             compressed.read(3)
             # Decompress with pylzma and reconstruct the Flash object.
-            decompressed = 'FWS' + compressed.read(5) + pylzma.decompress(compressed.read())
+            ## ZWS(LZMA)
+            ## | 4 bytes       | 4 bytes    | 4 bytes       | 5 bytes    | n bytes    | 6 bytes         |
+            ## | 'ZWS'+version | scriptLen  | compressedLen | LZMA props | LZMA data  | LZMA end marker |
+            decompressed = 'FWS' + compressed.read(5)
+            compressed.read(4) # skip compressedLen
+            decompressed += pylzma.decompress(compressed.read())
 
         # If we obtained some decompressed data, we print it and eventually
         # dump it to file.
