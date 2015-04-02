@@ -19,6 +19,8 @@ VIRUSTOTAL_URL_DOWNLOAD = 'https://www.virustotal.com/vtapi/v2/file/download'
 VIRUSTOTAL_URL_COMMENT = 'https://www.virustotal.com/vtapi/v2/comments/put'
 KEY = 'a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088'
 
+# TODO: All that JSON exception handling is REALLY ugly. Needs to be fixed.
+
 class VirusTotal(Module):
     cmd = 'virustotal'
     description = 'Lookup the file on VirusTotal'
@@ -52,7 +54,7 @@ class VirusTotal(Module):
                     return __sessions__.new(tmp.name)
 
             except Exception as e:
-                    self.log('error', "Failed Download: {0}".format(e))
+                    self.log('error', "Failed to download file: {0}".format(e))
 
         if not HAVE_REQUESTS:
             self.log('error', "Missing dependency, install requests (`pip install requests`)")
