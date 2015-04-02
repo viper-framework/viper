@@ -4,13 +4,30 @@ HTTP Interface
 Viper has two HTTP Components that can optionally be enabled alongside the console access. 
 
     * REST based API
-    * HTML Browser Interface.
+    * HTML Browser Interface
+
+
+Security
+--------
+
+Ports
+^^^^^
+
+per default viper http interface is running on these ports (default localhost)::
+
+     tcp 8080 api
+     tcp 9090 web
+
+Important Considerations
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Viper is providing NO security, so use iptables to restrict access to the repository or an apache with encryption + access control 
 
 
 API
 ---
 
-Viper provides a set of core command API:::
+Viper provides a set of core command API::
 
   	test
 	file/add
@@ -23,14 +40,14 @@ Viper provides a set of core command API:::
 Running API
 ^^^^^^^^^^^
 
-To start the API:::
+To start the API::
     
 	user@system:~/scripts/viper$ python api.py -H 127.0.0.1 -p 8080
 	Bottle server starting up (using WSGIRefServer())...
 	Listening on http://127.0.0.1:8080/
 	Hit Ctrl-C to quit.
 
-API Console:::
+API Console::
     
 	localhost - - [22/Jul/2014 17:44:27] "GET /tags/list HTTP/1.1" 200 142
 	localhost - - [22/Jul/2014 17:44:30] "POST /file/find HTTP/1.1" 200 637
@@ -67,7 +84,7 @@ Example::
 	user@system:~/scripts/viper$ curl -X GET 127.0.0.1:8080/test
 	{"message": "test"}
 
-Notes
+Notes::
 
 none
 
@@ -98,7 +115,8 @@ Success Response::
     		"message": "added"
 		}
 	
-Error Response
+Error Response::
+
 	Code: 500 
 	Content: 
 		{
@@ -117,9 +135,9 @@ Example::
     	"message": "Unable to store file"
 	}
 
-Notes
+Notes::
 
-none
+    none
 
 
 /file/get
@@ -139,11 +157,11 @@ URL Params
 
 	* file_hash
 
-Success Response
+Success Response::
 	
 	* Code: 200
 
-Error Response
+Error Response::
 	Code: 404 
 	Content: 
 		{
@@ -165,9 +183,9 @@ Example::
 
 	user@system:~/scripts/viper$ curl -X GET 127.0.0.1:8080/file/get/9ce49435b67d531bbd966186920c90ecf0752e88b79af246886b077c8ec9b649
 
-Notes
+Notes::
 
-file_hash is not a POST var - it is a get Param
+    file_hash is not a POST var - it is a get Param
 
 
 /file/find
@@ -192,11 +210,11 @@ URL Params
 	* name
 	* all
 
-Success Response
+Success Response::
 	
 	* Code: 200
 
-Error Response
+Error Response::
 	Code: 400 
 	Content: 
 		{
@@ -227,7 +245,7 @@ Example::
 	    }
 	]
 
-Notes
+Notes::
 
 None
 
@@ -249,7 +267,7 @@ URL Params
 
 	* 
 
-Success Response
+Success Response::
 	
 	* Code: 200
 
@@ -265,7 +283,7 @@ Example::
 	    "bar"
 	]
 
-Notes
+Notes::
 
 None    
     
@@ -338,6 +356,7 @@ Update site config
 ^^^^^^^^^^^^^^^^^^
 
 The following apache site config does several things:
+
 	- proxy your port 80 of apache to 9090 of viper web interface:
 	- adding SSl Server key
 	- Adding Basic Authentication
@@ -383,10 +402,10 @@ Example::
 		</Location>
 	</VirtualHost>
 
-To add the first user to the Basic Auth:::
+To add the first user to the Basic Auth::
 
 	$ htpasswd -c /etc/apache2/conf/protected.passwd USERNAME
 	
-To add a new user to the Basic Auth use:::
+To add a new user to the Basic Auth use::
 
 	$ htpasswd -b /etc/apache2/conf/protected.passwd USERNAME2
