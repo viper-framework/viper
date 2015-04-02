@@ -8,11 +8,14 @@ Viper 1.2 (TBD)
 - Added operator to redirect a command output to a file
 - Added option to VirusTotal module to download a file
 - Added option to VirusTotal module to submit a comment
+- Added projects list to API
+- Added modules execution to API
 - Transitioned commands and modules to argparse
 - Fixed multiuple bugs in email module
 - Fixed bug in strings module
 - Fixed "latest"-database method to return latest file based on id rather then created_at
 - Fixed bug in deletion of files and notes
+- Fixed bug in update.py utility when dealing with new directories
 
 Viper 1.1 (2014-10-22)
 ======================
