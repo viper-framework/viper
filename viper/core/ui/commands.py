@@ -572,7 +572,7 @@ class Commands(object):
 
         if args.delete:
             # Delete the tag from the database.
-            Database().delete_tag(args.delete)
+            Database().delete_tag(args.delete, __sessions__.current.file.sha256)
             # Refresh the session so that the attributes of the file are
             # updated.
             self.log('info', "Refreshing session to update attributes...")

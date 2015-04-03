@@ -184,13 +184,26 @@ class Database:
         rows = session.query(Tag).all()
         return rows
 
-    def delete_tag(self, tag_name):
+    def delete_tag(self, tag_name, sha256):
         session = self.Session()
-
+        
         try:
+            # First remove the tag from the sample
+            malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
             tag = session.query(Tag).filter(Tag.tag==tag_name).first()
-            session.delete(tag)
-            session.commit()
+            try:
+                malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
+                malware_entry.tag.remove(tag)
+                session.commit()
+            except:
+                print_error("Tag {0} does not exist for this sample".format(tag_name))
+            
+            # If tag has no entries drop it
+            count = len(self.find('tag', tag_name))
+            if count == 0:
+                session.delete(tag)
+                session.commit()
+                print_warning("Tag {0} has no additional entries dropping from Database".format(tag_name))
         except SQLAlchemyError as e:
             print_error("Unable to delete tag: {0}".format(e))
             session.rollback()
