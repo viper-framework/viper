@@ -499,8 +499,8 @@ def find_file():
 
 # Tags
 @route('/tags', method='GET')
-@route('/tags/add', method='POST')    
-def tags():
+@route('/tags/<tag_action>', method='POST')    
+def tags(tag_action=False):
     # Set DB
     db = Database()
     
@@ -510,10 +510,7 @@ def tags():
         value = request.query.value.strip()
         
         if value:
-            if action == 'delete':
-                # Delete individual tags is not in viper yet
-                pass
-            elif action == 'search':
+            if action == 'search':
                 # This will search all projects
                 # Get project list
                 projects = project_list()
@@ -540,15 +537,19 @@ def tags():
             else:
                 return template('error.tpl', error="'{0}' Is not a valid tag action".format(action))
                              
-    # Add New Tags
+    # Add / Delete                        
     if request.method == 'POST':
         file_hash = request.forms.get('sha256')
         project = request.forms.get('project')
-        if file_hash and project:
-            tags = request.forms.get('tags')
-            db.add_tags(file_hash, tags)
-            redirect('/file/{0}/{1}'.format(project, file_hash))
-    
+        tag_name = request.forms.get('tag')
+        if tag_action == 'add':
+            if file_hash and project:
+                tags = request.forms.get('tags')
+                db.add_tags(file_hash, tags)
+        if tag_action == 'del':
+            if file_hash and tag_name:
+                db.delete_tag(tag_name, file_hash)
+        redirect('/file/{0}/{1}'.format(project, file_hash))
 
 # Notes Add, Update, Delete
 @route('/file/notes', method='POST')

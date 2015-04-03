@@ -51,7 +51,7 @@
         % for tag in file_info[1].split(','):
             % if len(tag) > 0:
                 % tag = tag.strip()
-                <span><a href="/tags?action=search&amp;value={{tag}}" class="alert-link">{{tag}}</a> <a href="/tags?action=delete&amp;value={{tag}}" class="alert-link"><span class="glyphicon glyphicon-remove"></span></a></span>
+                <span><a href="/tags?action=search&amp;value={{tag}}" class="alert-link">{{tag}}</a> <a onclick="delTag('{{tag}}')" href="#" class="alert-link" ><span class="glyphicon glyphicon-remove"></span></a></span>
             % end
         % end
         <a href="#newTag"><span class="glyphicon glyphicon-pencil" data-toggle="modal" data-target="#newTag"></span></a>
@@ -77,4 +77,35 @@
             </div>
         </div>
     </div>
+    
+    
+    <script>
+    function delTag(tagName) {
+    path = "/tags/del";
+    
+    var form = document.createElement("form");
+    form.setAttribute("method", "post");
+    form.setAttribute("action", path);
+    
+    // SHA256
+    var shaField = document.createElement("input");
+    shaField.setAttribute("type", "hidden");
+    shaField.setAttribute("name", "sha256");
+    shaField.setAttribute("value", "{{file_info[8]}}");
+    form.appendChild(shaField);
+    
+    // Tag Name
+    var tagField = document.createElement("input");
+    tagField.setAttribute("type", "hidden");
+    tagField.setAttribute("name", "tag");
+    tagField.setAttribute("value", tagName);
+    form.appendChild(tagField);
+    
+    document.body.appendChild(form);
+    form.submit();
+    alert(form.tagField.value);
+    window.location.reload();
+    }
+    
+    </script>
 </div>
