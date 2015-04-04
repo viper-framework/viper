@@ -188,7 +188,7 @@ def find_file():
         rows = db.find(key=key, value=value)
         for row in rows:
             if project == '../':
-                project = 'Main'
+                project = 'default'
             proj_results.append(details(row))
         results[project] = proj_results
     return jsonize(results)
@@ -242,7 +242,7 @@ def run_module():
             __sessions__.new(file_path)
     if not cmd_line:
         response.code = 404
-        return jsonize({'message':'Invalid Command Line Options'})
+        return jsonize({'message':'Invalid command line'})
     results = module_cmdline(cmd_line, sha256)  
     __sessions__.close()
     return jsonize(results)

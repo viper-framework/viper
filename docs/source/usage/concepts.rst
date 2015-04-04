@@ -1,10 +1,11 @@
+========
 Concepts
 ========
 
 Before proceeding in learning the functioning of each available command and module, you need to understand some fundamental design concept that represent the foundation of Viper itself.
 
 Projects
---------
+========
 
 Viper allows you to create and operate on a collection of files. One collection represent one **project**.
 
@@ -56,7 +57,7 @@ From within the terminal, you can see which projects exist and eventually you ca
 More details on the ``projects`` command are available in the :doc:`commands` chapter.
 
 Sessions
---------
+========
 
 Most of commands and especially modules provided by Viper, are designed to operate on a single file, being a Windows executable or a PDF or whatever else.
 
@@ -96,7 +97,7 @@ A session will also keep track of the results of the last ``find`` command so th
 Please note that if you switch to a whole different project, you'll lose the opened sessions.
 
 Commands & Modules
--------------------
+==================
 
 The operations you can execute within Viper are fundamentally distinguished between **commands** and **modules**. Commands are functions that are provided by the Viper's core and enable you to interact with the file repository (by adding, searching, tagging and removing files), with projects and with sessions. They are static and they should not be modified.
 
