@@ -10,6 +10,8 @@ Viper 1.2 (TBD)
 - Added option to VirusTotal module to submit a comment
 - Added projects list to API
 - Added modules execution to API
+- Added module to submit files to LastLine sandbox
+- Added command to create and add new files
 - Transitioned commands and modules to argparse
 - Fixed multiple bugs in email module
 - Fixed bug in strings module
