@@ -556,10 +556,15 @@ class Commands(object):
 
         # TODO: handle situation where addition or deletion of a tag fail.
 
+        db = Database()
+        if not db.find(key='sha256', value=__sessions__.current.file.sha256):
+            self.log('error', "The opened file is not stored in the database. "
+                "If you want to add it use the `store` command.")
+            return
+
         if args.add:
             # Add specified tags to the database's entry belonging to
             # the opened file.
-            db = Database()
             db.add_tags(__sessions__.current.file.sha256, args.add)
             self.log('info', "Tags added to the currently opened file")
 
@@ -572,7 +577,7 @@ class Commands(object):
 
         if args.delete:
             # Delete the tag from the database.
-            Database().delete_tag(args.delete, __sessions__.current.file.sha256)
+            db.delete_tag(args.delete, __sessions__.current.file.sha256)
             # Refresh the session so that the attributes of the file are
             # updated.
             self.log('info', "Refreshing session to update attributes...")
