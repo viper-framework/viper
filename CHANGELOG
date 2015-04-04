@@ -11,10 +11,11 @@ Viper 1.2 (TBD)
 - Added projects list to API
 - Added modules execution to API
 - Transitioned commands and modules to argparse
-- Fixed multiuple bugs in email module
+- Fixed multiple bugs in email module
 - Fixed bug in strings module
 - Fixed "latest"-database method to return latest file based on id rather then created_at
 - Fixed bug in deletion of files and notes
+- Fixed bug in deletion of tags
 - Fixed bug in update.py utility when dealing with new directories
 
 Viper 1.1 (2014-10-22)
