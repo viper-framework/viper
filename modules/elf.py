@@ -134,7 +134,7 @@ class ELF(Module):
             return
 
         if not HAVE_ELFTOOLS:
-            self.log('error', "Missing dependency, install pyelftools (`pip install pyelftools")
+            self.log('error', "Missing dependency, install pyelftools (`pip install pyelftools`)")
             return
 
         if self.args.sections:
