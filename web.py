@@ -694,7 +694,7 @@ def cuckoo_submit():
         cuckoo_response = requests.post(uri, files=options)
         if cuckoo_response.status_code == 200:
             cuckoo_id = dict(cuckoo_response.json())['task_id']
-            return '<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cuckoo_web, str(cuckoo_id))
+            return '<a href="{0}/view/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cuckoo_web, str(cuckoo_id))
     else:
         return '<span class="alert alert-danger">Unable to Submit File</span>'
     
