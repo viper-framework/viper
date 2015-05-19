@@ -408,6 +408,17 @@ class Office(Module):
             self.log('error', "Missing dependency, install OleFileIO (`pip install olefile`)")
             return
 
+        file_data = __sessions__.current.file.data
+        if file_data.startswith('<?xml'):
+            OLD_XML = file_data
+        else:
+            OLD_XML = False
+
+        if file_data.startswith('MIME-Version:') and 'application/x-mso' in file_data:
+            MHT_FILE = file_data
+        else:
+            MHT_FILE = False
+
         # Tests to check for valid Office structures.
         OLE_FILE = olefile.isOleFile(__sessions__.current.file.path)
         XML_FILE = zipfile.is_zipfile(__sessions__.current.file.path)
@@ -415,6 +426,10 @@ class Office(Module):
             ole = olefile.OleFileIO(__sessions__.current.file.path)
         elif XML_FILE:
             zip_xml = zipfile.ZipFile(__sessions__.current.file.path, 'r')
+        elif OLD_XML:
+            pass
+        elif MHT_FILE:
+            pass
         else:
             self.log('error', "Not a valid office document")
             return
