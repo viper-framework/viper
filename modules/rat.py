@@ -7,6 +7,7 @@ import importlib
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.common.constants import VIPER_ROOT
 
 try:
     import yara
@@ -29,7 +30,7 @@ class RAT(Module):
     def list(self):
         self.log('info', "List of available RAT modules:")
 
-        for folder, folders, files in os.walk('modules/rats/'):
+        for folder, folders, files in os.walk(os.path.join(VIPER_ROOT, 'modules/rats/')):
             for file_name in files:
                 if not file_name.endswith('.py') or file_name.startswith('__init__'):
                     continue
@@ -70,7 +71,7 @@ class RAT(Module):
             self.log('error', "No session opened")
             return
 
-        rules = yara.compile('data/yara/rats.yara')
+        rules = yara.compile(os.path.join(VIPER_ROOT, 'data/yara/rats.yara'))
         for match in rules.match(__sessions__.current.file.path):
             if 'family' in match.meta:
                 self.log('info', "Automatically detected supported RAT {0}".format(match.rule))
