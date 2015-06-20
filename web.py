@@ -30,6 +30,7 @@ from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
 from viper.common import network
 from viper.core.ui.commands import Commands
+from viper.common.constants import VIPER_ROOT
 
 ##
 # User Config
@@ -221,7 +222,7 @@ def upload_temp():
 #Returns Static files e.g. CSS / JS
 @get('/static/:path#.+#')
 def server_static(path):
-    return static_file(path, root='data/web/static')    
+    return static_file(path, root=os.path.join(VIPER_ROOT, 'data/web/static'))
 
 # Index Page
 @route("/")
@@ -607,7 +608,7 @@ def run_module():
 def yara_rules():
     
     # Get list of Rules
-    rule_path = 'data/yara'
+    rule_path = os.path.join(VIPER_ROOT, 'data/yara')
     rule_list = os.listdir(rule_path)
     
     # GET is for listing Rules
@@ -771,5 +772,5 @@ if __name__ == '__main__':
         os.mkdir('projects')
     
     # Set template dir
-    bottle.TEMPLATE_PATH.insert(0,'data/web')
+    bottle.TEMPLATE_PATH.insert(0,os.path.join(VIPER_ROOT, 'data/web'))
     run(host=args.host, port=web_port, reloader=True)
