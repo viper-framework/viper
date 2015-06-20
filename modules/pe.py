@@ -7,6 +7,8 @@ import datetime
 import tempfile
 import time
 
+from viper.common.constants import VIPER_ROOT
+
 try:
     import pefile
     import peutils
@@ -168,7 +170,7 @@ class PE(Module):
     def peid(self):
 
         def get_signatures():
-            with file('data/peid/UserDB.TXT', 'rt') as f:
+            with file(os.path.join(VIPER_ROOT, 'data/peid/UserDB.TXT'), 'rt') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
