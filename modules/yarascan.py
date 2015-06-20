@@ -2,12 +2,14 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import tempfile
 import string as printstring  # string is being used as a var - easier to replace here
 
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
 from viper.core.storage import get_sample_path
+from viper.common.constants import VIPER_ROOT
 
 try:
     import yara
@@ -25,12 +27,14 @@ class YaraScan(Module):
         super(YaraScan, self).__init__()
         subparsers = self.parser.add_subparsers(dest='subname')
         parser_scan = subparsers.add_parser('scan', help='Scan files with Yara signatures')
-        parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (default will run data/yara/index.yara)')
+        parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (default will run VIPER_ROOT/data/yara/index.yara)')
         parser_scan.add_argument('-a', '--all', action='store_true', help='Scan all stored files (default if no session is open)')
         parser_scan.add_argument('-t', '--tag', action='store_true', help='Tag Files with Rule Name (default is not to)')
 
         parser_rules = subparsers.add_parser('rules', help='Operate on Yara rules')
         parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
+
+        self.rule_path = os.path.join(VIPER_ROOT, 'data/yara')
 
     def scan(self):
 
@@ -50,8 +54,9 @@ class YaraScan(Module):
         # TODO: this regenerates the file at every run, perhaps we
         # could find a way to optimize this.
         def rule_index():
-            with open('data/yara/index.yara', 'w') as rules_index:
-                for rule_file in os.listdir('data/yara'):
+            tmp_path = os.path.join(tempfile.gettempdir(), 'index.yara')
+            with open(tmp_path, 'w') as rules_index:
+                for rule_file in os.listdir(self.rule_path):
                     # Skip if the extension is not right, could cause problems.
                     if not rule_file.endswith('.yar') and not rule_file.endswith('.yara'):
                         continue
@@ -63,7 +68,7 @@ class YaraScan(Module):
                     line = 'include "{0}"\n'.format(rule_file)
                     rules_index.write(line)
 
-            return 'data/yara/index.yara'
+            return temp_path
 
         arg_rule = self.args.rule
         arg_scan_all = self.args.all
@@ -163,15 +168,15 @@ class YaraScan(Module):
     def rules(self):
         arg_edit = self.args.edit
 
-        # Retrieve the list of rules and populatea list.
+        # Retrieve the list of rules and populate a list.
         rules = []
         count = 1
-        for folder, folders, files in os.walk('data/yara/'):
+        for folder, folders, files in os.walk(self.rule_path):
             for file_name in files:
                 rules.append([count, os.path.join(folder, file_name)])
                 count += 1
 
-        # If the user wnats to edit a specific rule, loop through all of them
+        # If the user wants to edit a specific rule, loop through all of them
         # identify which one to open, and launch the default editor.
         if arg_edit:
             for rule in rules:
