@@ -65,10 +65,10 @@ class YaraScan(Module):
                         continue
 
                     # Add the rule to the index.
-                    line = 'include "{0}"\n'.format(rule_file)
+                    line = 'include "{0}"\n'.format(os.path.join(self.rule_path, rule_file))
                     rules_index.write(line)
 
-            return temp_path
+            return tmp_path
 
         arg_rule = self.args.rule
         arg_scan_all = self.args.all
