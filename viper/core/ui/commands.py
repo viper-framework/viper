@@ -239,13 +239,16 @@ class Commands(object):
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
+        
+        # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
+        malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
+        if not malware:
+            self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
+            return
 
         if args.list:
             # Retrieve all notes for the currently opened file.
-            malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
-            if not malware:
-                self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
-                return
+            
 
             notes = malware[0].note
             if not notes:
