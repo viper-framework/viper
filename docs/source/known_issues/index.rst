@@ -2,6 +2,11 @@
 Known issues
 ============
 
+Various errors when using unicode characters
+============================================
+
+unicode and python is a not easy and using unicode in notes, tags or filenames (or other modules where userinput is allowed) might result in unhandled exceptions.
+
 Error storing file names containing unicode characters in database
 ==================================================================
 
