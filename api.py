@@ -106,7 +106,7 @@ def delete_file(file_hash):
     if rows:
         malware_id = rows[0].id
         path = get_sample_path(rows[0].sha256)
-        if db.delete(malware_id):
+        if db.delete_file(malware_id):
             success = True
         else:
             response.code = 404
