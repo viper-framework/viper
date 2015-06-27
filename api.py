@@ -302,6 +302,53 @@ def list_projects():
         rows.append([project, time.ctime(os.path.getctime(project_path))])
     return jsonize(rows)
 
+
+  
+@route('/file/notes/<action>', method='POST')
+def add_notes(action):
+    note_title = request.forms.get('title')
+    note_body = request.forms.get('body')
+    note_sha = request.forms.get('sha256')
+    note_id = request.forms.get('id')
+    # Create New
+    if action == 'add':
+        if note_title and note_body:
+
+            db.add_note(note_sha, note_title, note_body)
+            return jsonize({'message' : 'Note added'})
+        else:
+            return jsonize({'message':'Missing note_title and / or note_body'})
+    # Delete 
+    elif action == 'delete':
+        if note_id:
+            db.delete_note(note_id)
+            return jsonize({'message' : 'deleted'})
+        else:
+            return jsonize({'message' : 'missing note_id'})
+    # Update
+    elif action == 'update':
+        if note_id and note_body:
+            db.edit_note(note_id, note_body)
+            return jsonize({'message' : 'Note updated'})
+    # List
+    elif action == 'view':
+        note_list = {}
+        malware = db.find(key='sha256', value=note_sha)
+        if malware:
+            notes = malware[0].note
+            if notes:
+                rows = []
+                for note in notes:
+                    note_list[note.id] = {'title':note.title, 'body':note.body}
+            return jsonize({'message' : note_list})
+        else:
+            return jsonize({'message' : 'no sample found'})
+    else:
+        return jsonize({'message':'no action given'})    
+        
+    return jsonize({'message':'Unable to complete action'})
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-H', '--host', help='Host to bind the API server on', default='localhost', action='store', required=False)

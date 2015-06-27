@@ -280,6 +280,114 @@ available.
 
         **Status codes**:
 
+            * ``200`` - no error#
+
+/file/notes/add
+----------------
+
+    **POST /file/notes/add**
+
+        Add a note to a sample
+
+        **Parameters**:
+
+            * ``sha256``: select by SHA256
+            * ``title``: title of the note
+            * ``body``: body of the note
+
+        **Example request**::
+
+            curl http://127.0.0.1 -F sha256="2e766eabed666510a385544b79a5d344b48a2de2040c62fee9addb19c554ed4c" -F title="asd"  -F body="bodddy" http://127.0.0.1:8080/file/notes/add
+
+        **Example response**::
+
+            {
+                "message": "Note added"
+            }
+
+        **Status codes**:
+
+            * ``200`` - no error
+
+
+/file/notes/view
+----------------
+
+    **POST /file/notes/view**
+
+        Retrieve a list of all notes
+
+        **Example request**::
+
+            curl -F sha256="2e766eabed666510a385544b79a5d344b48a2de2040c62fee9addb19c554ed4c" http://127.0.0.1:8080/file/notes/view
+
+        **Example response**::
+
+            {
+                "message": {
+                    "1": {
+                        "body": "bodddy", 
+                        "title": "asd"
+                    }
+                }
+            }
+
+        **Status codes**:
+
+            * ``200`` - no error
+
+/file/notes/update
+------------------
+
+    **POST /file/notes/update**
+
+        Updates a note from a sample
+
+        **Parameters**:
+
+            * ``sha256``: select by SHA256
+            * ``title``: title of the note
+            * ``body``: body of the note
+            * ``id``: id of the note
+
+        **Example request**::
+
+            curl http://127.0.0.1 -F sha256="2e766eabed666510a385544b79a5d344b48a2de2040c62fee9addb19c554ed4c" -F title="asd" -F id="1" -F body="bodddy" http://127.0.0.1:8080/file/notes/update
+
+        **Example response**::
+
+            {
+                "message": "Note updated"
+            }
+
+        **Status codes**:
+
+            * ``200`` - no error
+
+/file/notes/delete
+------------------
+
+    **POST /file/notes/delete**
+
+        Delete a note from a sample
+
+        **Parameters**:
+
+            * ``sha256``: select by SHA256
+            * ``id``: id of the note
+
+        **Example request**::
+
+            curl http://127.0.0.1 -F sha256="2e766eabed666510a385544b79a5d344b48a2de2040c62fee9addb19c554ed4c" -F id="1" http://127.0.0.1:8080/file/notes/delete
+
+        **Example response**::
+
+            {
+                "message": "Note deleted"
+            }
+
+        **Status codes**:
+
             * ``200`` - no error
 
 
