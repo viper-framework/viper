@@ -105,4 +105,4 @@ Modules are instead plugins that are dynamically loaded by Viper at startup and 
 
 Modules are the most actively developed portion of Viper and they represent the most important avenue for contributions from the community: if you have an idea or you want to re-implement a script that you have lying around, make sure you `submit it`_ to Viper.
 
-.. _submit it: https://github.com/botherder/viper
+.. _submit it: https://github.com/viper-framework/viper

@@ -49,6 +49,6 @@ and that you thoroughly tested it.
 You can also join our conversions by getting on IRC on `FreeNode`_
 on channel ``###viper``.
 
-.. _GitHub: https://github.com/botherder/viper/issues
-.. _Contribution Guidelines: https://github.com/botherder/viper/blob/master/CONTRIBUTING.md
+.. _GitHub: https://github.com/viper-framework/viper/issues
+.. _Contribution Guidelines: https://github.com/viper-framework/viper/blob/master/CONTRIBUTING.md
 .. _FreeNode: http://www.freenode.net

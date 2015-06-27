@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# This file is part of Viper - https://github.com/botherder/viper
+# This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import os
@@ -12,7 +12,7 @@ from viper.common.network import download
 from viper.common.objects import File
 from viper.common.utils import path_split_all
 
-url = 'https://github.com/botherder/viper/archive/master.zip'
+url = 'https://github.com/viper-framework/viper/archive/master.zip'
 
 # TODO: this is a first draft, needs more work.
 # - Add a check for current working directory.

@@ -28,5 +28,5 @@ Table of Content
 .. _BSD 3-Clause: http://opensource.org/licenses/BSD-3-Clause
 .. _Claudio Guarnieri: https://twitter.com/botherder
 .. _VxCage: https://github.com/botherder/vxcage
-.. _GitHub: https://github.com/botherder/viper
+.. _GitHub: https://github.com/viper-framework/viper
 .. _here: https://nex.sx
