@@ -1,7 +1,9 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-from viper.common.out import bold
+import collections
+
+from viper.common.out import bold, print_info
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
@@ -15,51 +17,115 @@ except ImportError:
 
 class Fuzzy(Module):
     cmd = 'fuzzy'
-    description = 'Search for similar files through fuzzy hashing'
+    description = "Search for similar files through fuzzy hashing"
     authors = ['nex']
 
     def __init__(self):
         super(Fuzzy, self).__init__()
-        self.parser.add_argument('-v', '--verbose', action='store_true', help='Prints verbose logging')
+        self.parser.add_argument('-v', '--verbose', action='store_true',
+            help="Prints verbose logging")
+        self.parser.add_argument('-c', '--cluster', action='store_true',
+            help="Cluster all available samples by ssdeep")
 
     def run(self):
         super(Fuzzy, self).run()
-
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return
 
         if not HAVE_PYDEEP:
             self.log('error', "Missing dependency, install pydeep (`pip install pydeep`)")
             return
 
-        if not __sessions__.current.file.ssdeep:
-            self.log('error', "No ssdeep hash available for opened file")
-            return
-
         arg_verbose = False
-        if self.args and self.args.verbose:
-            arg_verbose = True
+        arg_cluster = False
+        if self.args:
+            if self.args.verbose:
+                arg_verbose = self.args.verbose
+            if self.args.cluster:
+                arg_cluster = self.args.cluster
 
         db = Database()
         samples = db.find(key='all')
 
-        matches = []
-        for sample in samples:
-            if sample.sha256 == __sessions__.current.file.sha256:
-                continue
+        # Check if we're operating in cluster mode, otherwise we run on the
+        # currently opened file.
+        if arg_cluster:
+            print_info("Generating clusters, this might take a while...")
 
-            if not sample.ssdeep:
-                continue
+            clusters = dict()
+            for sample in samples:
+                if not sample.ssdeep:
+                    continue
 
-            score = pydeep.compare(__sessions__.current.file.ssdeep, sample.ssdeep)
-            if score > 40:
-                matches.append(['{0}%'.format(score), sample.name, sample.sha256])
+                if arg_verbose:
+                    self.log('info', "Testing file {0} with ssdeep {1}".format(
+                        sample.md5, sample.ssdeep))
 
-            if arg_verbose:
-                self.log('info', "Match {0}%: {2} [{1}]".format(score, sample.name, sample.sha256))
+                clustered = False
+                for cluster_name, cluster_members in clusters.items():
+                    # Check if sample is already in the cluster.
+                    if sample.md5 in cluster_members:
+                        continue
 
-        self.log('info', "{0} relevant matches found".format(bold(len(matches))))
+                    if arg_verbose:
+                        self.log('info', "Testing {0} in cluser {1}".format(
+                            sample.md5, cluster_name))
+                    
+                    for member in cluster_members:
+                        if sample.md5 == member:
+                            continue
 
-        if len(matches) > 0:
-            self.log('table', dict(header=['Score', 'Name', 'SHA256'], rows=matches))
+                        member_ssdeep = db.find(key='md5', value=member)[0].ssdeep
+                        if pydeep.compare(sample.ssdeep, member_ssdeep) > 40:
+                            if arg_verbose:
+                                self.log('info', "Found home for {0} in cluster {1}".format(
+                                    sample.md5, cluster_name))
+
+                            clusters[cluster_name].append(sample.md5)
+                            clustered = True
+                            break
+
+                if not clustered:
+                    cluster_id = len(clusters) + 1
+                    clusters[cluster_id] = [sample.md5,]
+
+            ordered_clusters = collections.OrderedDict(sorted(clusters.items()))
+
+            rows = []
+            for cluster_name, cluster_members in ordered_clusters.items():
+                rows.append([cluster_name, '\n'.join(cluster_members)])
+
+            self.log('table', dict(header=['Cluster', 'Members'], rows=rows))           
+
+        # We're running against the already opened file.
+        else:
+            if not __sessions__.is_set():
+                self.log('error', "No session opened")
+                return
+
+            if not __sessions__.current.file.ssdeep:
+                self.log('error', "No ssdeep hash available for opened file")
+                return
+
+            matches = []
+            for sample in samples:
+                if sample.sha256 == __sessions__.current.file.sha256:
+                    continue
+
+                if not sample.ssdeep:
+                    continue
+
+                score = pydeep.compare(__sessions__.current.file.ssdeep,
+                    sample.ssdeep)
+
+                if score > 40:
+                    matches.append(['{0}%'.format(score), sample.name,
+                        sample.sha256])
+
+                if arg_verbose:
+                    self.log('info', "Match {0}%: {2} [{1}]".format(score,
+                        sample.name, sample.sha256))
+
+            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
+
+            if len(matches) > 0:
+                self.log('table',dict(header=['Score', 'Name', 'SHA256'],
+                    rows=matches))
