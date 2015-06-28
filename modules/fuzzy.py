@@ -70,37 +70,40 @@ class Fuzzy(Module):
                             sample.md5, cluster_name))
                     
                     for member in cluster_members:
-                        if sample.md5 == member:
+                        if sample.md5 == member[0]:
                             continue
 
-                        member_ssdeep = db.find(key='md5', value=member)[0].ssdeep
+                        member_hash = member[0]
+                        member_name = member[1]
+
+                        member_ssdeep = db.find(key='md5', value=member_hash)[0].ssdeep
                         if pydeep.compare(sample.ssdeep, member_ssdeep) > 40:
                             if arg_verbose:
                                 self.log('info', "Found home for {0} in cluster {1}".format(
                                     sample.md5, cluster_name))
 
-                            clusters[cluster_name].append(sample.md5)
+                            clusters[cluster_name].append([sample.md5, sample.name])
                             clustered = True
                             break
 
                 if not clustered:
                     cluster_id = len(clusters) + 1
-                    clusters[cluster_id] = [sample.md5,]
+                    clusters[cluster_id] = [[sample.md5, sample.name],]
 
             ordered_clusters = collections.OrderedDict(sorted(clusters.items()))
 
-            self.log('info', "Following are the identified clusters with more than one member")
-
-            rows = []
             for cluster_name, cluster_members in ordered_clusters.items():
                 # We include in the results only clusters with more than just
                 # one member.
                 if len(cluster_members) <= 1:
                     continue
-                
-                rows.append([cluster_name, '\n'.join(cluster_members)])
 
-            self.log('table', dict(header=['Cluster', 'Members'], rows=rows))           
+                self.log('info', "Ssdeep cluster #{0}".format(bold(cluster_name)))
+
+                for member in cluster_members:
+                    self.log('item', "{0} [{1}]".format(member[0], member[1]))
+
+                self.log('', "")  
 
         # We're running against the already opened file.
         else:
