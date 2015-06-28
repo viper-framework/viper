@@ -2,6 +2,7 @@ Viper 1.3 (TBD)
 ===============
 
 - Added clustering to ssdeep fuzzy module
+- Added submodule to pe command to scan and cluster by AddressOfEntryPoint
 
 Viper 1.2 (2015-04-04)
 ======================
