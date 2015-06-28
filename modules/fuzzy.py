@@ -89,8 +89,15 @@ class Fuzzy(Module):
 
             ordered_clusters = collections.OrderedDict(sorted(clusters.items()))
 
+            self.log('info', "Following are the identified clusters with more than one member")
+
             rows = []
             for cluster_name, cluster_members in ordered_clusters.items():
+                # We include in the results only clusters with more than just
+                # one member.
+                if len(cluster_members) <= 1:
+                    continue
+                
                 rows.append([cluster_name, '\n'.join(cluster_members)])
 
             self.log('table', dict(header=['Cluster', 'Members'], rows=rows))           
