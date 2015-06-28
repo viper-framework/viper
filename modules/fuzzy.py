@@ -92,18 +92,18 @@ class Fuzzy(Module):
 
             ordered_clusters = collections.OrderedDict(sorted(clusters.items()))
 
+            self.log('info', "Following are the identified clusters with more than one member")
+
             for cluster_name, cluster_members in ordered_clusters.items():
                 # We include in the results only clusters with more than just
                 # one member.
                 if len(cluster_members) <= 1:
                     continue
 
-                self.log('info', "Ssdeep cluster #{0}".format(bold(cluster_name)))
+                self.log('info', "Ssdeep cluster {0}".format(bold(cluster_name)))
 
-                for member in cluster_members:
-                    self.log('item', "{0} [{1}]".format(member[0], member[1]))
-
-                self.log('', "")  
+                self.log('table', dict(header=['MD5', 'Name'],
+                    rows=cluster_members))
 
         # We're running against the already opened file.
         else:
@@ -137,5 +137,5 @@ class Fuzzy(Module):
             self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
             if len(matches) > 0:
-                self.log('table',dict(header=['Score', 'Name', 'SHA256'],
+                self.log('table', dict(header=['Score', 'Name', 'SHA256'],
                     rows=matches))
