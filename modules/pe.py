@@ -798,6 +798,7 @@ class PE(Module):
             self.log('info', "PEhash for all files:")
             header = ['Name', 'MD5', 'PEhash']
             self.log('table', dict(header=header, rows=rows))
+
         elif self.args.cluster:
             self.log('info', "Clustering files by PEhash...")
 
@@ -807,8 +808,9 @@ class PE(Module):
 
             for item in cluster.items():
                 if len(item[1]) > 1:
-                    self.log('info', "PEhash {0} was calculated on files:".format(bold(item[0])))
+                    self.log('info', "PEhash cluster {0}:".format(bold(item[0])))
                     self.log('table', dict(header=['Name', 'MD5'], rows=item[1]))
+
         elif self.args.scan:
             if __sessions__.is_set() and current_pehash:
                 self.log('info', "Finding matching samples...")
