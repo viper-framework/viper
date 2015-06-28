@@ -382,17 +382,15 @@ class PE(Module):
 
                 cluster[cur_imphash].append([sample.sha256, sample.name])
 
-            for key, value in cluster.items():
+            for cluster_name, cluster_members in cluster.items():
                 # Skipping clusters with only one entry.
-                if len(value) == 1:
+                if len(cluster_members) == 1:
                     continue
 
-                self.log('info', "Imphash cluster {0}".format(bold(key)))
+                self.log('info', "Imphash cluster {0}".format(bold(cluster_name)))
 
-                for entry in value:
-                    self.log('item', "{0} [{1}]".format(entry[0], entry[1]))
-
-                self.log('', "")
+                self.log('table', dict(header=['MD5', 'Name'],
+                    rows=cluster_members))
 
             return
 
