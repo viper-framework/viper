@@ -22,8 +22,8 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 MALWR_LOGIN = 'https://malwr.com/account/login/'
-MALWR_USER = None
-MALWR_PASS = None
+MALWR_USER = 'a_hunter' 
+MALWR_PASS = 'malwristtoll01.' 
 MALWR_SEARCH = 'https://malwr.com/analysis/search/'
 MALWR_PREFIX = 'https://malwr.com'
 
@@ -37,7 +37,7 @@ ANUBIS_PREFIX = 'https://anubis.iseclab.org/'
 class Reports(Module):
     cmd = 'reports'
     description = 'Online Sandboxes Reports'
-    authors = ['emdel', 'nex']
+    authors = ['emdel', 'nex', 'deralexxx']
 
     def __init__(self):
         super(Reports, self).__init__()
@@ -177,8 +177,10 @@ class Reports(Module):
     def joe(self):
         url = 'http://www.joesecurity.org/reports/report-{0}.html'.format(__sessions__.current.file.md5)
         page = requests.get(url)
-        if '<h2>404 - File Not Found</h2>' in page.text:
+        if '<h2>404 - File Not Found</h2>' in page.text or 'Apparently the requested URL could not be found' in page.text:
             self.log('info', "No reports for opened file")
+	elif '403 Forbidden' in page.text:
+	    self.log('info', "Permission to joe denied")
         else:
             self.log('info', "Report found at {0}".format(url))
 
@@ -186,7 +188,6 @@ class Reports(Module):
         url = 'https://www.metascan-online.com/en/scanresult/file/{0}'.format(__sessions__.current.file.md5)
         page = requests.get(url)
         reports = []
-        print page.text
         if '<title>Error</title>' in page.text:
             self.log('info', "No reports for opened file")
             return
