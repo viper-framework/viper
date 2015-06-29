@@ -18,7 +18,7 @@ except ImportError:
 class Fuzzy(Module):
     cmd = 'fuzzy'
     description = "Search for similar files through fuzzy hashing"
-    authors = ['nex']
+    authors = ['nex','deralexxx']
 
     def __init__(self):
         super(Fuzzy, self).__init__()
@@ -48,7 +48,7 @@ class Fuzzy(Module):
         # Check if we're operating in cluster mode, otherwise we run on the
         # currently opened file.
         if arg_cluster:
-            print_info("Generating clusters, this might take a while...")
+            self.log('info', "Generating clusters, this might take a while...")
 
             clusters = dict()
             for sample in samples:

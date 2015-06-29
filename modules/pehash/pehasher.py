@@ -22,12 +22,13 @@ from viper.common.out import *
 
 def calculate_pehash(file_path=None):
     if not HAVE_PEFILE:
-        print_error("Missing dependency, install pefile (`pip install pefile`)")
-        return ''
+        self.log('error', "Missing dependency2, install pefile (`pip install pefile`)") 
+	return ''
 
     if not HAVE_BITSTRING:
-        print_error("Missing dependency, install bitstring (`pip install bitstring`)")
+	self.log('error', "Missing dependency2, install bitstring (`pip install bitstring`)")
         return ''
+
 
     if not file_path:
         return ''
