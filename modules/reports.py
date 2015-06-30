@@ -22,8 +22,8 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 MALWR_LOGIN = 'https://malwr.com/account/login/'
-MALWR_USER = 'a_hunter' 
-MALWR_PASS = 'malwristtoll01.' 
+MALWR_USER = '' 
+MALWR_PASS = '' 
 MALWR_SEARCH = 'https://malwr.com/analysis/search/'
 MALWR_PREFIX = 'https://malwr.com'
 
