@@ -180,7 +180,13 @@ class Console(object):
                 prefix = bold(cyan(__project__.name)) + ' '
 
             if __sessions__.is_set():
-                prompt = prefix + cyan('viper ', True) + white(__sessions__.current.file.name, True) + cyan(' > ', True)
+                stored = ''
+                if not Database().find(key='sha256',value=__sessions__.current.file.sha256):
+                    stored = magenta(' [not stored]', True)
+
+                prompt = (prefix + cyan('viper ', True) + 
+                    white(__sessions__.current.file.name, True) + 
+                    stored + cyan(' > ', True))
             # Otherwise display the basic prompt.
             else:
                 prompt = prefix + cyan('viper > ', True)
