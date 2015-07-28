@@ -76,3 +76,14 @@ def hexdump(src, length=16, maxlines=None):
                 break
 
     return ''.join(lines)
+	
+# Extracts the root Viper path from any project path  
+def get_viper_path(project_path):
+        parts = project_path.split('/')
+        count = len(parts)
+        for index in range(count - 1, 0, -1):
+            if parts[index] != 'viper':
+                del parts[index]
+            else:
+                break        
+        return '/'.join(parts)
