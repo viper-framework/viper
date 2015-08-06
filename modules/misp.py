@@ -68,6 +68,9 @@ class MISP(Module):
         group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID. (NOT IMPLEMENTED)")
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5). (NOT IMPLEMENTED)")
 
+        parser_search = subparsers.add_parser('search', help='Search in all the attributes.')
+        parser_search.add_argument("-q", "--query", help="String to search.")
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     def download(self):
@@ -97,6 +100,15 @@ class MISP(Module):
         else:
             self.log('error', out.text)
 
+    def searchall(self):
+        result = self.misp.search_all(self.args.query)
+        if len(result['response']) == 0:
+            self.log('error', "No hits")
+            return
+        self.log('success', 'Found the following events:')
+        for e in result['response']:
+            self.log('success', '\t{}{}{}'.format(self.url, '/events/view/', e['Event']['id']))
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
@@ -106,14 +118,28 @@ class MISP(Module):
             self.log('error', "Missing dependency, install requests (`pip install pymisp`)")
             return
 
-        if not MISP_URL and self.args.url is None:
+        if self.args.url is None:
+            self.url = MISP_URL
+        else:
+            self.url = self.args.url
+
+        if self.args.key is None:
+            self.key = MISP_KEY
+        else:
+            self.key = self.args.key
+
+        if self.url is None:
             self.log('error', "This command requires the URL of the MISP instance you want to query.")
             return
-        if not MISP_KEY and self.args.key is None:
+        if self.key is None:
             self.log('error', "This command requires a MISP private API key.")
             return
 
-        self.misp = PyMISP(self.args.url, self.args.key, True, 'json')
+        self.misp = PyMISP(self.url, self.key, True, 'json')
 
         if self.args.subname == 'upload':
             self.upload()
+        elif self.args.subname == 'search':
+            self.searchall()
+        elif self.args.subname == 'download':
+            self.download()
