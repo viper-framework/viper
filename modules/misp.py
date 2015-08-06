@@ -102,8 +102,8 @@ class MISP(Module):
 
     def searchall(self):
         result = self.misp.search_all(self.args.query)
-        if len(result['response']) == 0:
-            self.log('error', "No hits")
+        if result.get('response') is None:
+            self.log('error', "No hits for " + self.args.query)
             return
         self.log('success', 'Found the following events:')
         for e in result['response']:
