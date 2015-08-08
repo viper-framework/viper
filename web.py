@@ -138,7 +138,7 @@ def parse_text(module_text):
         if 'Session opened on' in line:
             continue
         # add text the string
-        set_text += '{0}\n'.format(line)
+        set_text += '{0}'.format(line)
     return set_text
 
 def project_list():
@@ -599,7 +599,7 @@ def run_module():
     else:
         module_results = "You Didn't Enter A Command!"
     
-    return '<pre>{0}</pre>'.format(str(module_results))
+    return '<pre>{0}</pre>'.format(str(parse_text(module_results)))
     
 
 # Yara Rules
