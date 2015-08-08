@@ -6,7 +6,7 @@ import re
 import email
 import hashlib
 import tempfile
-import OleFileIO_PL
+import olefile
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -429,7 +429,7 @@ class EmailParse(Module):
 
         # Try to open as an ole msg, if not treat as email string
         try:
-            ole = OleFileIO_PL.OleFileIO(__sessions__.current.file.path)
+            ole = olefile.OleFileIO(__sessions__.current.file.path)
             ole_flag = True
         except:
             ole_flag = False
