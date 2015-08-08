@@ -4,6 +4,8 @@
 
 import argparse
 import textwrap
+import os
+import tempfile
 
 try:
     from pymisp import PyMISP
@@ -65,26 +67,38 @@ class MISP(Module):
 
         parser_down = subparsers.add_parser('download', help='Download malware samples from MISP.')
         group = parser_down.add_mutually_exclusive_group(required=True)
-        group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID. (NOT IMPLEMENTED)")
-        group.add_argument("--hash", help="Download the sample related to this hash (only MD5). (NOT IMPLEMENTED)")
+        group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID.")
+        group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
         parser_search = subparsers.add_parser('search', help='Search in all the attributes.')
-        parser_search.add_argument("-q", "--query", help="String to search.")
+        parser_search.add_argument("-q", "--query", required=True, help="String to search.")
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     def download(self):
-        self.log('error', "Not implemented")
-        return False
+        ok = False
+        data = None
         if self.args.event:
-            # Download all the samples
-            # Set tags (event IP + source + ?)
-            pass
+            ok, data = self.misp.download_samples(event_id=self.args.event)
         elif self.args.hash:
-            # Download sample
-            # Set tags (event IP + source + ?)
-            # open session
-            pass
+            ok, data = self.misp.download_samples(sample_hash=self.args.hash)
+        if not ok:
+            self.log('error', data)
+            return
+        to_print = []
+        for d in data:
+            eid, filename, payload = d
+            path = os.path.join(tempfile.gettempdir(), filename)
+            with open(path, 'w') as f:
+                f.write(payload.getvalue())
+            to_print.append((eid, path))
+
+        if len(to_print) == 1:
+            return __sessions__.new(to_print[0][1])
+        else:
+            self.log('success', 'The following files have been downloaded:')
+            for p in to_print:
+                self.log('success', '\tEventID: {} - {}'.format(*p))
 
     def upload(self):
         if not __sessions__.is_set():
@@ -98,12 +112,14 @@ class MISP(Module):
         if out.status_code == 200:
             self.log('success', "File uploaded sucessfully")
         else:
-            self.log('error', out.text)
+            result = out.json()
+            self.log('error', result.get('message'))
 
     def searchall(self):
         result = self.misp.search_all(self.args.query)
+
         if result.get('response') is None:
-            self.log('error', "No hits for " + self.args.query)
+            self.log('error', result.get('message'))
             return
         self.log('success', 'Found the following events:')
         for e in result['response']:
