@@ -109,14 +109,13 @@ class MISP(Module):
         out = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
                                       self.args.event, self.args.distrib, self.args.ids, categ,
                                       self.args.info, self.args.analysis, self.args.threat)
+        result = out.json()
         if out.status_code == 200:
-            result = out.json()
             if result.get('errors') is not None:
                 self.log('error', result.get('errors')[0]['error']['value'][0])
             else:
                 self.log('success', "File uploaded sucessfully")
         else:
-            result = out.json()
             self.log('error', result.get('message'))
 
     def searchall(self):
@@ -127,7 +126,11 @@ class MISP(Module):
             return
         self.log('success', 'Found the following events:')
         for e in result['response']:
-            self.log('success', '\t{}{}{}'.format(self.url, '/events/view/', e['Event']['id']))
+            nb_samples = 0
+            for a in e['Event']['Attribute']:
+                if a.get('type') == 'malware-sample':
+                    nb_samples += 1
+            self.log('success', '\t{} ({} samples) - {}{}{}'.format(e['Event']['info'], nb_samples, self.url, '/events/view/', e['Event']['id']))
 
     def run(self):
         super(MISP, self).run()
