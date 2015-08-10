@@ -110,7 +110,11 @@ class MISP(Module):
                                       self.args.event, self.args.distrib, self.args.ids, categ,
                                       self.args.info, self.args.analysis, self.args.threat)
         if out.status_code == 200:
-            self.log('success', "File uploaded sucessfully")
+            result = out.json()
+            if result.get('errors') is not None:
+                self.log('error', result.get('errors')[0]['error']['value'][0])
+            else:
+                self.log('success', "File uploaded sucessfully")
         else:
             result = out.json()
             self.log('error', result.get('message'))
