@@ -13,11 +13,22 @@ try:
 except:
     HAVE_PYMISP = False
 
+try:
+    import requests
+    HAVE_REQUESTS = True
+except:
+    HAVE_REQUESTS = False
+
+
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 MISP_URL = ''
 MISP_KEY = ''
+
+VT_REPORT_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
+VT_DOWNLOAD_URL = 'https://www.virustotal.com/vtapi/v2/file/download'
+VT_KEY = ''
 
 
 class MISP(Module):
@@ -73,6 +84,10 @@ class MISP(Module):
         parser_search = subparsers.add_parser('search', help='Search in all the attributes.')
         parser_search.add_argument("-q", "--query", required=True, help="String to search.")
 
+        parser_checkhashes = subparsers.add_parser('check_hashes', help='Crosscheck hashes on VT.')
+        parser_checkhashes.add_argument("-e", "--event", required=True, help="Lookup all the hashes of an event on VT.")
+        parser_checkhashes.add_argument("-p", "--populate", action='store_true', help="Automatically populate event with hashes found on VT.")
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     def download(self):
@@ -117,6 +132,113 @@ class MISP(Module):
                 self.log('success', "File uploaded sucessfully")
         else:
             self.log('error', result.get('message'))
+
+    def check_hashes(self):
+        out = self.misp.get_event(self.args.event)
+        result = out.json()
+        if out.status_code != 200:
+            self.log('error', result.get('message'))
+            return
+
+        event = result.get('Event')
+        event_hashes = []
+        sample_hashes = []
+        base_new_attributes = {}
+        for a in event['Attribute']:
+            h = None
+            if a['type'] in ('md5', 'sha1', 'sha256'):
+                h = a['value']
+                event_hashes.append(h)
+            if a['type'] in ('filename|md5', 'filename|sha1', 'filename|sha256'):
+                h = a['value'].split('|')[1]
+                event_hashes.append(h)
+            if a['type'] == 'malware-sample':
+                h = a['value'].split('|')[1]
+                sample_hashes.append(h)
+            if h is not None:
+                base_new_attributes[h] = {"category": a["category"],
+                                          "comment": '{} - Xchecked via VT: {}'.format(a["comment"], h),
+                                          "to_ids": a["to_ids"],
+                                          "distribution": a["distribution"]}
+
+        vt_hashes = {}
+        unk_vt_hashes = []
+        vt_request = {'apikey': VT_KEY}
+        while len(event_hashes) > 0:
+            vt_request['resource'] = event_hashes.pop()
+            response = requests.post(VT_REPORT_URL, data=vt_request)
+            if response.status_code == 403:
+                self.log('error', 'This command requires virustotal private API key')
+                self.log('error', 'Please check that your key have the right permissions')
+                return
+            try:
+                result = response.json()
+            except:
+                # FIXME: support rate-limiting (4/min)
+                self.log('error', 'Unable to get the report of {}'.format(vt_request['resource']))
+                continue
+            if result['response_code'] == 1:
+                md5 = result['md5']
+                sha1 = result['sha1']
+                sha256 = result['sha256']
+                event_hashes = [eh for eh in event_hashes if eh not in (md5, sha1, sha256)]
+                link = result['permalink']
+                vt_hashes[md5] = (sha1, sha256, link)
+            else:
+                unk_vt_hashes.append(vt_request['resource'])
+
+        if self.args.populate:
+            attributes = []
+
+        for md5 in vt_hashes.keys():
+            sha1, sha256, link = vt_hashes.get(md5)
+            if md5 in sample_hashes:
+                self.log('success', 'Sample available in MISP:')
+            else:
+                self.log('success', 'Sample available in VT:')
+                if self.args.populate:
+                    attributes += self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes)
+            self.log('success', '\t{}\n\t\t{}\n\t\t{}\n\t\t{}'.format(link, md5, sha1, sha256))
+        if self.args.populate:
+            self._populate(event['id'], event['uuid'], attributes)
+        if len(unk_vt_hashes) > 0:
+            self.log('error', 'Unknown on VT:')
+            for h in unk_vt_hashes:
+                self.log('error', '\t {}', format(h))
+
+    def _prepare_attributes(self, md5, sha1, sha256, link, base_attr):
+        attibutes = []
+        # Find existing attribute
+        base = None
+        if base_attr.get(md5):
+            base = base_attr.get(md5)
+        elif base_attr.get(sha1):
+            base = base_attr.get(sha1)
+        else:
+            base = base_attr.get(sha256)
+        tmp = base.copy()
+        tmp.update({'type': 'md5', 'value': md5})
+        attibutes.append(tmp)
+        tmp = base.copy()
+        tmp.update({'type': 'sha1', 'value': sha1})
+        attibutes.append(tmp)
+        tmp = base.copy()
+        tmp.update({'type': 'sha256', 'value': sha256})
+        attibutes.append(tmp)
+        attibutes.append({'type': 'link', 'category': 'External analysis',
+                          'distribution': base['distribution'], 'value': link})
+        return attibutes
+
+    def _populate(self, event_id, uuid, attributes):
+        to_send = {'Event': {'id': event_id, 'Attribute': attributes}}
+        out = self.misp.update_event(event_id, to_send)
+        result = out.json()
+        if out.status_code == 200:
+            if result.get('response') is None:
+                self.log('error', result.get('message'))
+        else:
+            self.log('error', result.get('message'))
+
 
     def searchall(self):
         result = self.misp.search_all(self.args.query)
@@ -166,3 +288,5 @@ class MISP(Module):
             self.searchall()
         elif self.args.subname == 'download':
             self.download()
+        elif self.args.subname == 'check_hashes':
+            self.check_hashes()
