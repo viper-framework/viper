@@ -6,6 +6,7 @@ import argparse
 import textwrap
 import os
 import tempfile
+import time
 
 try:
     from pymisp import PyMISP
@@ -149,10 +150,10 @@ class MISP(Module):
             if a['type'] in ('md5', 'sha1', 'sha256'):
                 h = a['value']
                 event_hashes.append(h)
-            if a['type'] in ('filename|md5', 'filename|sha1', 'filename|sha256'):
+            elif a['type'] in ('filename|md5', 'filename|sha1', 'filename|sha256'):
                 h = a['value'].split('|')[1]
                 event_hashes.append(h)
-            if a['type'] == 'malware-sample':
+            elif a['type'] == 'malware-sample':
                 h = a['value'].split('|')[1]
                 sample_hashes.append(h)
             if h is not None:
@@ -204,41 +205,41 @@ class MISP(Module):
         if len(unk_vt_hashes) > 0:
             self.log('error', 'Unknown on VT:')
             for h in unk_vt_hashes:
-                self.log('error', '\t {}', format(h))
+                self.log('error', '\t {}'.format(h))
 
     def _prepare_attributes(self, md5, sha1, sha256, link, base_attr):
         attibutes = []
-        # Find existing attribute
-        base = None
         if base_attr.get(md5):
-            base = base_attr.get(md5)
+            attibutes.append(dict(base_attr.get(md5), **{'type': 'sha1', 'value': sha1}))
+            attibutes.append(dict(base_attr.get(md5), **{'type': 'sha256', 'value': sha256}))
+            distrib = base_attr.get(md5)['distribution']
         elif base_attr.get(sha1):
-            base = base_attr.get(sha1)
+            attibutes.append(dict(base_attr.get(sha1), **{'type': 'md5', 'value': md5}))
+            attibutes.append(dict(base_attr.get(sha1), **{'type': 'sha256', 'value': sha256}))
+            distrib = base_attr.get(sha1)['distribution']
         else:
-            base = base_attr.get(sha256)
-        tmp = base.copy()
-        tmp.update({'type': 'md5', 'value': md5})
-        attibutes.append(tmp)
-        tmp = base.copy()
-        tmp.update({'type': 'sha1', 'value': sha1})
-        attibutes.append(tmp)
-        tmp = base.copy()
-        tmp.update({'type': 'sha256', 'value': sha256})
-        attibutes.append(tmp)
+            attibutes.append(dict(base_attr.get(sha256), **{'type': 'md5', 'value': md5}))
+            attibutes.append(dict(base_attr.get(sha256), **{'type': 'sha1', 'value': sha1}))
+            distrib = base_attr.get(sha256)['distribution']
         attibutes.append({'type': 'link', 'category': 'External analysis',
-                          'distribution': base['distribution'], 'value': link})
+                          'distribution': distrib, 'value': link})
         return attibutes
 
     def _populate(self, event_id, uuid, attributes):
-        to_send = {'Event': {'id': event_id, 'Attribute': attributes}}
+        to_send = {'Event': {'id': int(event_id), 'uuid': uuid,
+                             'Attribute': attributes, 'timestamp': int(time.time())}}
         out = self.misp.update_event(event_id, to_send)
         result = out.json()
         if out.status_code == 200:
-            if result.get('response') is None:
+            if result.get('message') is not None:
                 self.log('error', result.get('message'))
+            elif result.get('errors') is not None:
+                for e in result.get('errors'):
+                    self.log('error', e['error']['value'][0])
+            else:
+                self.log('success', "All attributes updated sucessfully")
         else:
             self.log('error', result.get('message'))
-
 
     def searchall(self):
         result = self.misp.search_all(self.args.query)
