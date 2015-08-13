@@ -202,7 +202,7 @@ class MISP(Module):
                     attributes += self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes)
             self.log('success', '\t{}\n\t\t{}\n\t\t{}\n\t\t{}'.format(link, md5, sha1, sha256))
         if self.args.populate:
-            self._populate(event['id'], event['uuid'], attributes)
+            self._populate(event, attributes)
         if len(unk_vt_hashes) > 0:
             self.log('error', 'Unknown on VT:')
             for h in unk_vt_hashes:
@@ -241,10 +241,13 @@ class MISP(Module):
                           'distribution': distrib, 'value': link})
         return attibutes
 
-    def _populate(self, event_id, uuid, attributes):
-        to_send = {'Event': {'id': int(event_id), 'uuid': uuid,
-                             'Attribute': attributes, 'timestamp': int(time.time())}}
-        out = self.misp.update_event(event_id, to_send)
+    def _populate(self, event, attributes):
+        to_send = {'Event': {'id': int(event['id']), 'uuid': event['uuid'],
+                             'date': event['date'], 'distribution': event['distribution'],
+                             'threat_level_id': event['threat_level_id'],
+                             'analysis': event['analysis'], 'Attribute': attributes,
+                             'timestamp': int(time.time())}}
+        out = self.misp.update_event(int(event['id']), to_send)
         result = out.json()
         if out.status_code == 200:
             if result.get('message') is not None:
