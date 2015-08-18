@@ -185,6 +185,10 @@ class MISP(Module):
                 sha256 = result['sha256']
                 hashes_to_check = [eh for eh in hashes_to_check if eh not in (md5, sha1, sha256)]
                 link = result['permalink']
+                # Do not re-add a link
+                for a in event['Attribute']:
+                    if a['value'] == link:
+                        link = None
                 vt_hashes[md5] = (sha1, sha256, link)
             else:
                 unk_vt_hashes.append(vt_request['resource'])
@@ -192,8 +196,8 @@ class MISP(Module):
         if self.args.populate:
             attributes = []
 
-        for md5 in vt_hashes.keys():
-            sha1, sha256, link = vt_hashes.get(md5)
+        for md5, data in vt_hashes.items():
+            sha1, sha256, link = data
             if md5 in sample_hashes:
                 self.log('success', 'Sample available in MISP:')
             else:
@@ -237,8 +241,9 @@ class MISP(Module):
             if new_sha1:
                 attibutes.append(dict(base_attr.get(sha256), **{'type': 'sha1', 'value': sha1}))
             distrib = base_attr.get(sha256)['distribution']
-        attibutes.append({'type': 'link', 'category': 'External analysis',
-                          'distribution': distrib, 'value': link})
+        if link is not None:
+            attibutes.append({'type': 'link', 'category': 'External analysis',
+                              'distribution': distrib, 'value': link})
         return attibutes
 
     def _populate(self, event, attributes):
@@ -269,10 +274,15 @@ class MISP(Module):
         self.log('success', 'Found the following events:')
         for e in result['response']:
             nb_samples = 0
+            nb_hashes = 0
             for a in e['Event']['Attribute']:
                 if a.get('type') == 'malware-sample':
                     nb_samples += 1
-            self.log('success', '\t{} ({} samples) - {}{}{}'.format(e['Event']['info'], nb_samples, self.url, '/events/view/', e['Event']['id']))
+                if a['type'] in ('md5', 'sha1', 'sha256', 'filename|md5',
+                                 'filename|sha1', 'filename|sha256'):
+                    nb_hashes += 1
+            self.log('success', '\t{} ({} samples, {} hashes) - {}{}{}'.format(
+                e['Event']['info'], nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
     def run(self):
         super(MISP, self).run()
