@@ -178,7 +178,7 @@ class MISP(Module):
                 sample_hashes.append(h)
             if h is not None:
                 base_new_attributes[h] = {"category": a["category"],
-                                          "comment": '{} - Xchecked via VT: {}'.format(a["comment"], h),
+                                          "comment": '{} - Xchecked via VT: {}'.format(a["comment"].encode('utf-8'), h),
                                           "to_ids": a["to_ids"],
                                           "distribution": a["distribution"]}
 
@@ -188,7 +188,10 @@ class MISP(Module):
         hashes_to_check = list(event_hashes)
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
-            response = requests.post(VT_REPORT_URL, data=vt_request)
+            try:
+                response = requests.post(VT_REPORT_URL, data=vt_request)
+            except requests.ConnectionError:
+                self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
             if response.status_code == 403:
                 self.log('error', 'This command requires virustotal API key')
                 self.log('error', 'Please check that your key have the right permissions')
