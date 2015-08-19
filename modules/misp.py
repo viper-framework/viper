@@ -23,6 +23,7 @@ except:
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.common.constants import VIPER_ROOT
 
 MISP_URL = ''
 MISP_KEY = ''
@@ -89,7 +90,26 @@ class MISP(Module):
         parser_checkhashes.add_argument("-e", "--event", required=True, help="Lookup all the hashes of an event on VT.")
         parser_checkhashes.add_argument("-p", "--populate", action='store_true', help="Automatically populate event with hashes found on VT.")
 
+        parser_checkhashes = subparsers.add_parser('yara', help='Get YARA rules of an event.')
+        parser_checkhashes.add_argument("-e", "--event", required=True, help="Download the yara rules of that event.")
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
+
+    def yara(self):
+        ok = False
+        data = None
+        if self.args.event:
+            ok, data = self.misp.get_yara(self.args.event)
+        if not ok:
+            self.log('error', data)
+            return
+        rule_path = os.path.join(VIPER_ROOT, 'data/yara', self.args.event + '.yara')
+        if os.path.exists(rule_path):
+            self.log('error', 'File {} already exists.'.format(rule_path))
+            return
+        with open(rule_path, 'wb') as f:
+            f.write(data.encode('utf-8'))
+        self.log('success', 'The yara rules of event {} have been downloaded: {}'.format(self.args.event, rule_path))
 
     def download(self):
         ok = False
@@ -165,12 +185,12 @@ class MISP(Module):
         vt_hashes = {}
         unk_vt_hashes = []
         vt_request = {'apikey': VT_KEY}
-        hashes_to_check = event_hashes
+        hashes_to_check = list(event_hashes)
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
             response = requests.post(VT_REPORT_URL, data=vt_request)
             if response.status_code == 403:
-                self.log('error', 'This command requires virustotal private API key')
+                self.log('error', 'This command requires virustotal API key')
                 self.log('error', 'Please check that your key have the right permissions')
                 return
             try:
@@ -184,11 +204,11 @@ class MISP(Module):
                 sha1 = result['sha1']
                 sha256 = result['sha256']
                 hashes_to_check = [eh for eh in hashes_to_check if eh not in (md5, sha1, sha256)]
-                link = result['permalink']
+                link = [False, result['permalink']]
                 # Do not re-add a link
                 for a in event['Attribute']:
-                    if a['value'] == link:
-                        link = None
+                    if a['value'] == link[1]:
+                        link[0] = True
                 vt_hashes[md5] = (sha1, sha256, link)
             else:
                 unk_vt_hashes.append(vt_request['resource'])
@@ -204,7 +224,7 @@ class MISP(Module):
                 self.log('success', 'Sample available in VT:')
                 if self.args.populate:
                     attributes += self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes)
-            self.log('success', '\t{}\n\t\t{}\n\t\t{}\n\t\t{}'.format(link, md5, sha1, sha256))
+            self.log('success', '\t{}\n\t\t{}\n\t\t{}\n\t\t{}'.format(link[1], md5, sha1, sha256))
         if self.args.populate:
             self._populate(event, attributes)
         if len(unk_vt_hashes) > 0:
@@ -241,12 +261,15 @@ class MISP(Module):
             if new_sha1:
                 attibutes.append(dict(base_attr.get(sha256), **{'type': 'sha1', 'value': sha1}))
             distrib = base_attr.get(sha256)['distribution']
-        if link is not None:
+        if not link[0]:
             attibutes.append({'type': 'link', 'category': 'External analysis',
-                              'distribution': distrib, 'value': link})
+                              'distribution': distrib, 'value': link[1]})
         return attibutes
 
     def _populate(self, event, attributes):
+        if len(attributes) == 0:
+            self.log('info', "No new attributes to add.")
+            return
         to_send = {'Event': {'id': int(event['id']), 'uuid': event['uuid'],
                              'date': event['date'], 'distribution': event['distribution'],
                              'threat_level_id': event['threat_level_id'],
@@ -320,3 +343,5 @@ class MISP(Module):
             self.download()
         elif self.args.subname == 'check_hashes':
             self.check_hashes()
+        elif self.args.subname == 'yara':
+            self.yara()
