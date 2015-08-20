@@ -182,16 +182,18 @@ class MISP(Module):
                                           "to_ids": a["to_ids"],
                                           "distribution": a["distribution"]}
 
-        vt_hashes = {}
         unk_vt_hashes = []
+        attributes = []
         vt_request = {'apikey': VT_KEY}
-        hashes_to_check = list(event_hashes)
+        # Make sure to start getting reports for the longest possible hashes (reduce risks of collisions)
+        hashes_to_check = sorted(event_hashes, key=len)
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
             try:
                 response = requests.post(VT_REPORT_URL, data=vt_request)
             except requests.ConnectionError:
                 self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
+                return
             if response.status_code == 403:
                 self.log('error', 'This command requires virustotal API key')
                 self.log('error', 'Please check that your key have the right permissions')
@@ -212,22 +214,16 @@ class MISP(Module):
                 for a in event['Attribute']:
                     if a['value'] == link[1]:
                         link[0] = True
-                vt_hashes[md5] = (sha1, sha256, link)
+                if md5 in sample_hashes:
+                    self.log('success', 'Sample available in MISP:')
+                else:
+                    self.log('success', 'Sample available in VT:')
+                    if self.args.populate:
+                        attributes += self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes)
+                self.log('success', '\t{}\n\t\t{}\n\t\t{}\n\t\t{}'.format(link[1], md5, sha1, sha256))
             else:
                 unk_vt_hashes.append(vt_request['resource'])
 
-        if self.args.populate:
-            attributes = []
-
-        for md5, data in vt_hashes.items():
-            sha1, sha256, link = data
-            if md5 in sample_hashes:
-                self.log('success', 'Sample available in MISP:')
-            else:
-                self.log('success', 'Sample available in VT:')
-                if self.args.populate:
-                    attributes += self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes)
-            self.log('success', '\t{}\n\t\t{}\n\t\t{}\n\t\t{}'.format(link[1], md5, sha1, sha256))
         if self.args.populate:
             self._populate(event, attributes)
         if len(unk_vt_hashes) > 0:
@@ -236,7 +232,6 @@ class MISP(Module):
                 self.log('error', '\t {}'.format(h))
 
     def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes):
-        attibutes = []
         new_md5 = False
         new_sha1 = False
         new_sha256 = False
@@ -246,24 +241,24 @@ class MISP(Module):
             new_sha1 = True
         if sha256 not in event_hashes:
             new_sha256 = True
-        if base_attr.get(md5):
-            if new_sha1:
-                attibutes.append(dict(base_attr.get(md5), **{'type': 'sha1', 'value': sha1}))
-            if new_sha256:
-                attibutes.append(dict(base_attr.get(md5), **{'type': 'sha256', 'value': sha256}))
-            distrib = base_attr.get(md5)['distribution']
+
+        curattr = None
+        if base_attr.get(sha256):
+            curattr = base_attr.get(sha256)
         elif base_attr.get(sha1):
-            if new_md5:
-                attibutes.append(dict(base_attr.get(sha1), **{'type': 'md5', 'value': md5}))
-            if new_sha256:
-                attibutes.append(dict(base_attr.get(sha1), **{'type': 'sha256', 'value': sha256}))
-            distrib = base_attr.get(sha1)['distribution']
+            curattr = base_attr.get(sha1)
         else:
-            if new_md5:
-                attibutes.append(dict(base_attr.get(sha256), **{'type': 'md5', 'value': md5}))
-            if new_sha1:
-                attibutes.append(dict(base_attr.get(sha256), **{'type': 'sha1', 'value': sha1}))
-            distrib = base_attr.get(sha256)['distribution']
+            curattr = base_attr.get(md5)
+
+        attibutes = []
+        if new_sha256:
+            attibutes.append(dict(curattr, **{'type': 'sha256', 'value': sha256}))
+        if new_sha1:
+            attibutes.append(dict(curattr, **{'type': 'sha1', 'value': sha1}))
+        if new_md5:
+            attibutes.append(dict(curattr, **{'type': 'md5', 'value': md5}))
+
+        distrib = curattr['distribution']
         if not link[0]:
             attibutes.append({'type': 'link', 'category': 'External analysis',
                               'distribution': distrib, 'value': link[1]})
