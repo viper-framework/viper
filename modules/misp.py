@@ -84,7 +84,7 @@ class MISP(Module):
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
         parser_search = subparsers.add_parser('search', help='Search in all the attributes.')
-        parser_search.add_argument("-q", "--query", required=True, help="String to search.")
+        parser_search.add_argument("-q", "--query", required=True, nargs='+', help="String to search.")
 
         parser_checkhashes = subparsers.add_parser('check_hashes', help='Crosscheck hashes on VT.')
         parser_checkhashes.add_argument("-e", "--event", required=True, help="Lookup all the hashes of an event on VT.")
@@ -292,7 +292,7 @@ class MISP(Module):
             self.log('error', result.get('message'))
 
     def searchall(self):
-        result = self.misp.search_all(self.args.query)
+        result = self.misp.search_all(' '.join(self.args.query))
 
         if result.get('response') is None:
             self.log('error', result.get('message'))
@@ -308,7 +308,7 @@ class MISP(Module):
                                  'filename|sha1', 'filename|sha256'):
                     nb_hashes += 1
             self.log('success', '\t{} ({} samples, {} hashes) - {}{}{}'.format(
-                e['Event']['info'], nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
+                e['Event']['info'].encode('utf-8'), nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
     def run(self):
         super(MISP, self).run()
