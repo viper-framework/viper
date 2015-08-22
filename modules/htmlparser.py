@@ -159,7 +159,7 @@ class HTMLParse(Module):
                 for link in links:
                     self.log('item', "{0}\t {1}".format(link[0], self.string_clean(link[1])))
         # iFrames
-        elif self.args.frame:
+        elif self.args.iframe:
             frames, frame_content = self.parse_iframes()
             if arg_dump:
                 self.log('info', "Dumping Output to {0}".format(arg_dump))
