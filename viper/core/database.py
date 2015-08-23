@@ -47,7 +47,7 @@ class Malware(Base):
         'Note',
         cascade='all, delete',
         secondary=association_table,
-        backref=backref('malware', cascade='all')
+        backref=backref('malware')
     )
     __table_args__ = (Index(
         'hash_index',
