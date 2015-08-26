@@ -109,13 +109,13 @@ class Commands(object):
     # While the session is active, every operation and module executed will be
     # run against the file specified.
     def cmd_open(self, *args):
-        parser = argparse.ArgumentParser(prog="open", description="Open a file", epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.")
+        parser = argparse.ArgumentParser(prog='open', description="Open a file", epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.")
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('-f', '--file', action="store_true", help="target is a file")
-        group.add_argument('-u', '--url', action="store_true", help="target is a URL")
-        group.add_argument('-l', '--last', action="store_true", help="target is the entry number from the last find command's results")
-        parser.add_argument('-t', '--tor', action="store_true", help="Download the file through Tor")
-        parser.add_argument("value", metavar='Path, URL, hash or ID', nargs='*', help="Target to open. Hash can be md5 or sha256. ID has to be from the last search.")
+        group.add_argument('-f', '--file', action='store_true', help="Target is a file")
+        group.add_argument('-u', '--url', action='store_true', help="Target is a URL")
+        group.add_argument('-l', '--last', action='store_true', help="Target is the entry number from the last find command's results")
+        parser.add_argument('-t', '--tor', action='store_true', help="Download the file through Tor")
+        parser.add_argument("value", metavar='PATH, URL, HASH or ID', nargs='*', help="Target to open. Hash can be md5 or sha256. ID has to be from the last search.")
 
         try:
             args = parser.parse_args(args)
@@ -225,11 +225,11 @@ class Commands(object):
     def cmd_notes(self, *args):
         parser = argparse.ArgumentParser(prog="notes", description="Show information on the opened file")
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('-l', '--list', action="store_true", help="List all notes available for the current file")
-        group.add_argument('-a', '--add', action="store_true", help="Add a new note to the current file")
-        group.add_argument('-v', '--view', metavar='note_id', type=int, help="View the specified note")
-        group.add_argument('-e', '--edit', metavar='note_id', type=int, help="Edit an existing note")
-        group.add_argument('-d', '--delete', metavar='note_id', type=int, help="Delete an existing note")
+        group.add_argument('-l', '--list', action='store_true', help="List all notes available for the current file")
+        group.add_argument('-a', '--add', action='store_true', help="Add a new note to the current file")
+        group.add_argument('-v', '--view', metavar='NOTE ID', type=int, help="View the specified note")
+        group.add_argument('-e', '--edit', metavar='NOTE ID', type=int, help="Edit an existing note")
+        group.add_argument('-d', '--delete', metavar='NOTE ID', type=int, help="Delete an existing note")
 
         try:
             args = parser.parse_args(args)
@@ -319,7 +319,7 @@ class Commands(object):
     # to store details in the database.
     def cmd_store(self, *args):
         parser = argparse.ArgumentParser(prog="store", description="Store the opened file to the local repository")
-        parser.add_argument('-d', '--delete', action="store_true", help="Delete the original file")
+        parser.add_argument('-d', '--delete', action='store_true', help="Delete the original file")
         parser.add_argument('-f', '--folder', type=str, nargs='+', help="Specify a folder to import")
         parser.add_argument('-s', '--file-size', type=int, help="Specify a maximum file size")
         parser.add_argument('-y', '--file-type', type=str, help="Specify a file type pattern")
@@ -457,7 +457,7 @@ class Commands(object):
     def cmd_find(self, *args):
         parser = argparse.ArgumentParser(prog="find", description="Find a file")
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('-t', '--tags', action="store_true", help="List available tags and quit")
+        group.add_argument('-t', '--tags', action='store_true', help="List available tags and quit")
         group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note"], help="Where to search.")
         parser.add_argument("value", nargs='?', help="String to search.")
         try:
@@ -536,9 +536,9 @@ class Commands(object):
     #
     # This command is used to modify the tags of the opened file.
     def cmd_tags(self, *args):
-        parser = argparse.ArgumentParser(prog="tags", description="Modify tags of the opened file")
-        parser.add_argument('-a', '--add', help="Add tags to the opened file (comma separated)")
-        parser.add_argument('-d', '--delete', help="Delete a tag from the opened file")
+        parser = argparse.ArgumentParser(prog='tags', description="Modify tags of the opened file")
+        parser.add_argument('-a', '--add', metavar='TAG', help="Add tags to the opened file (comma separated)")
+        parser.add_argument('-d', '--delete', metavar='TAG', help="Delete a tag from the opened file")
         try:
             args = parser.parse_args(args)
         except:
@@ -593,7 +593,7 @@ class Commands(object):
     def cmd_sessions(self, *args):
         parser = argparse.ArgumentParser(prog="sessions", description="Open a file", epilog="List or switch sessions")
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('-l', '--list', action="store_true", help="List all existing sessions")
+        group.add_argument('-l', '--list', action='store_true', help="List all existing sessions")
         group.add_argument('-s', '--switch', type=int, help="Switch to the specified session")
 
         try:
@@ -638,10 +638,10 @@ class Commands(object):
     # This command retrieves a list of all projects.
     # You can also switch to a different project.
     def cmd_projects(self, *args):
-        parser = argparse.ArgumentParser(prog="projects", description="Open a file", epilog="List or switch existing projects")
+        parser = argparse.ArgumentParser(prog='projects', description="Open a file", epilog="List or switch existing projects")
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('-l', '--list', action="store_true", help="List all existing projects")
-        group.add_argument('-s', '--switch', metavar='project_name', help="Switch to the specified project")
+        group.add_argument('-l', '--list', action='store_true', help="List all existing projects")
+        group.add_argument('-s', '--switch', metavar='PROJECT NAME', help="Switch to the specified project")
 
         try:
             args = parser.parse_args(args)
@@ -686,7 +686,7 @@ class Commands(object):
     # This command will export the current session to file or zip.
     def cmd_export(self, *args):
         parser = argparse.ArgumentParser(prog="export", description="Export the current session to file or zip")
-        parser.add_argument('-z', '--zip', action="store_true", help="Export session in a zip archive")
+        parser.add_argument('-z', '--zip', action='store_true', help="Export session in a zip archive")
         parser.add_argument('value', help="path or archive name")
 
         try:
