@@ -318,7 +318,7 @@ class Commands(object):
     # This command stores the opened file in the local repository and tries
     # to store details in the database.
     def cmd_store(self, *args):
-        parser = argparse.ArgumentParser(prog="store", description="Store the opened file to the local repository")
+        parser = argparse.ArgumentParser(prog='store', description="Store the opened file to the local repository")
         parser.add_argument('-d', '--delete', action='store_true', help="Delete the original file")
         parser.add_argument('-f', '--folder', type=str, nargs='+', help="Specify a folder to import")
         parser.add_argument('-s', '--file-size', type=int, help="Specify a maximum file size")
@@ -455,7 +455,7 @@ class Commands(object):
     #
     # This command is used to search for files in the database.
     def cmd_find(self, *args):
-        parser = argparse.ArgumentParser(prog="find", description="Find a file")
+        parser = argparse.ArgumentParser(prog='find', description="Find a file")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-t', '--tags', action='store_true', help="List available tags and quit")
         group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note"], help="Where to search.")
@@ -591,7 +591,7 @@ class Commands(object):
     #
     # This command is used to list and switch across all the opened sessions.
     def cmd_sessions(self, *args):
-        parser = argparse.ArgumentParser(prog="sessions", description="Open a file", epilog="List or switch sessions")
+        parser = argparse.ArgumentParser(prog='sessions', description="Open a file", epilog="List or switch sessions")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-l', '--list', action='store_true', help="List all existing sessions")
         group.add_argument('-s', '--switch', type=int, help="Switch to the specified session")
@@ -685,7 +685,7 @@ class Commands(object):
     #
     # This command will export the current session to file or zip.
     def cmd_export(self, *args):
-        parser = argparse.ArgumentParser(prog="export", description="Export the current session to file or zip")
+        parser = argparse.ArgumentParser(prog='export', description="Export the current session to file or zip")
         parser.add_argument('-z', '--zip', action='store_true', help="Export session in a zip archive")
         parser.add_argument('value', help="path or archive name")
 
