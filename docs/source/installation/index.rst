@@ -7,7 +7,7 @@ Before proceeding, you should make sure you have the basic tools installed to be
 
     $ sudo apt-get install gcc python-dev python-pip
 
-In order to have support for certain modules, you will need to install the following dependencies too before proceeding:
+In order to have support for certain modules, you will need to install the following dependencies too before proceeding::
 
     $ sudo apt-get install libssl-dev swig
 
@@ -18,19 +18,24 @@ Viper makes use of a number of Python library for its core functioning, which ca
 
     $ sudo pip install SQLAlchemy PrettyTable python-magic
 
-In addition you should install ssdeep with pydeep. After you downloaded the source code for ssdeep from the `official website`_, proceed with the following::
+In addition you should install ssdeep with pydeep::
 
-    $ tar -zxvf ssdeep-X.XX.tar.gz
-    $ cd ssdeep-X.XX
-    $ ./configure && make
-    $ sudo make install
-    $ sudo pip install pydeep
+    $ sudo apt-get install ssdeep libfuzzy-dev libffi-dev
+    $ sudo pip install ssdeep
 
 Viper can retrieve files remotely through `Tor`_, if you're interested in such feature you should install SocksiPy::
 
     $ sudo apt-get install python-socksipy
 
 You will also clearly need a running Tor daemon, refer to the official website for setup instructions.
+
+Fetch viper
+-------------
+To get viper, clone the github repository::
+
+    $ sudo apt-get install git
+    $ git clone https://github.com/viper-framework/viper.git
+    $ cd viper
 
 Extra dependencies
 ------------------
