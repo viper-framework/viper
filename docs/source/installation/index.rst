@@ -31,11 +31,10 @@ You will also clearly need a running Tor daemon, refer to the official website f
 
 Fetch viper
 -------------
-To get viper, clone the github repository::
+To get viper, download the source (.tar.gz) from the official site and unpack the source::
 
-    $ sudo apt-get install git
-    $ git clone https://github.com/viper-framework/viper.git
-    $ cd viper
+    $ tar xfvz viper-*.tar.gz
+    $ cd viper-*
 
 Extra dependencies
 ------------------
