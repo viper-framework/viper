@@ -32,6 +32,12 @@ from viper.common import network
 from viper.core.ui.commands import Commands
 from viper.common.constants import VIPER_ROOT
 
+###
+# Needed for bottle (and correct uwsgi handling)
+###
+app = application = bottle.Bottle()
+
+
 ##
 # User Config
 ##
@@ -39,10 +45,12 @@ from viper.common.constants import VIPER_ROOT
 web_port = 9090
 cuckoo_api = 'http://localhost:8090'
 cuckoo_web = 'http://localhost:9191'
-
+# VIPER_ROOT ='/srv/www/viper' #if not set when using uwsgi, web.py does not correctly set VIPER_ROOT
 ##
 # End User Config
 ##
+
+bottle.TEMPLATE_PATH.insert(0,os.path.join(VIPER_ROOT, 'data/web'))
 
 # Module Dicts
 mod_dicts = {}
@@ -225,8 +233,8 @@ def server_static(path):
     return static_file(path, root=os.path.join(VIPER_ROOT, 'data/web/static'))
 
 # Index Page
-@route("/")
-@route("/project/<p>")
+@app.route("/")
+@app.route("/project/<p>")
 def landing(p=False):
     contents = {}
     if p in project_list():
@@ -251,15 +259,15 @@ def landing(p=False):
     return template('index.tpl', **contents)
 
 # create Project
-@route("/create", method="POST")
+@app.route("/create", method="POST")
 def add_project():
     project_name = request.forms.get('project').strip()
     __project__.open(project_name)
     redirect('/project/{0}'.format(project_name))
        
 # Info Page for File
-@route("/file/<file_hash>", method="GET")
-@route("/file/<project>/<file_hash>", method="GET")
+@app.route("/file/<file_hash>", method="GET")
+@app.route("/file/<project>/<file_hash>", method="GET")
 def file_info(file_hash, project=False):
     contents = {}
     if project in project_list():
@@ -311,7 +319,7 @@ def file_info(file_hash, project=False):
     
 # Add New File
 # Uses Context Manager to Remove Temp files
-@route('/add', method='POST')
+@app.route('/add', method='POST')
 def add_file():
     tags = request.forms.get('tag_list')
     uploads = request.files.getlist('file')
@@ -396,7 +404,7 @@ def add_file():
     redirect("/project/{0}".format(project))
 
 #add file from url
-@route('/URLDownload', method='POST')
+@app.route('/URLDownload', method='POST')
 def url_download():
     url = request.forms.get('url')
     tags = request.forms.get('tag_list')
@@ -432,8 +440,8 @@ def url_download():
 
 
 # File Download
-@route("/get/<file_hash>", method="GET")
-@route("/get/<project>/<file_hash>", method="GET")
+@app.route("/get/<file_hash>", method="GET")
+@app.route("/get/<project>/<file_hash>", method="GET")
 def file_download(file_hash, project=False):
     if project in project_list():
         __project__.open(project)
@@ -459,7 +467,7 @@ def file_download(file_hash, project=False):
     return data
     
 # Search
-@route('/search', method='POST')
+@app.route('/search', method='POST')
 def find_file():
     key = request.forms.get('key')
     value = request.forms.get('term').lower()
@@ -499,8 +507,8 @@ def find_file():
 
 
 # Tags
-@route('/tags', method='GET')
-@route('/tags/<tag_action>', method='POST')    
+@app.route('/tags', method='GET')
+@app.route('/tags/<tag_action>', method='POST')    
 def tags(tag_action=False):
     # Set DB
     db = Database()
@@ -553,7 +561,7 @@ def tags(tag_action=False):
         redirect('/file/{0}/{1}'.format(project, file_hash))
 
 # Notes Add, Update, Delete
-@route('/file/notes', method='POST')
+@app.route('/file/notes', method='POST')
 def file_notes():
     db = Database()
     update = request.forms.get('update')
@@ -577,7 +585,7 @@ def file_notes():
         
 
 # Return Output from Module.
-@route('/file/module', method='POST')
+@app.route('/file/module', method='POST')
 def run_module():      
     # Get the hash of the file we want to run a command against
     file_hash = request.forms.get('file_hash')
@@ -603,8 +611,8 @@ def run_module():
     
 
 # Yara Rules
-@route('/yara', method='GET')   
-@route('/yara', method='POST')
+@app.route('/yara', method='GET')   
+@app.route('/yara', method='POST')
 def yara_rules():
     
     # Get list of Rules
@@ -652,7 +660,7 @@ def yara_rules():
             return template('error.tpl', error="The File Name did not match the style 'name.yar'")
 
 # Cuckoo Functions
-@route('/cuckoo/submit', method='GET')
+@app.route('/cuckoo/submit', method='GET')
 def cuckoo_submit():
     # Get Query Strings
     project = request.query.project
@@ -700,7 +708,7 @@ def cuckoo_submit():
         return '<span class="alert alert-danger">Unable to Submit File</span>'
     
 # Hex Viewer
-@route('/hex', method='POST')
+@app.route('/hex', method='POST')
 def hex_viewer():
     # get post data
     file_hash = request.forms.get('file_hash')
@@ -735,12 +743,12 @@ def hex_viewer():
     return html_string
 
 # Cli Commands
-@route('/cli')
+@app.route('/cli')
 def cli_viewer():
     return template('cli.tpl')
 
 # VirusTotal Download
-@route('/virustotal', method='POST')
+@app.route('/virustotal', method='POST')
 def vt_download():
     vt_hash = request.forms.get('vt_hash')
     project = request.forms.get('project')
