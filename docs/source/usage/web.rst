@@ -478,83 +478,55 @@ You can set the listening IP address and port with options -H and -p ::
     Hit Ctrl-C to quit.
 
 
-Install Apache
+Use viper in a (web) production environment
 --------------
+In production use, its often not recommended to use the default Bottle WSGIRefServer as it can be quite slow and requires manual start.
 
-To place Web Interface of Viper behind a Apache (for SSL / Authentication) do the following:
+A dedicated webserver that serves pages on standard ports and with a standardized configuration is possible with viper, but requires some additional setup
+To make this work, we are using uwsgi and nginx as stack.
 
-$ sudo apt-get install apache2
+To use nginx as the webserver serving web.py,::
 
-configure the packages / ports (in case you want them change)::
+$ sudo apt-get remove apache2 #avoid conflicts
+$ sudo apt-get install nginx-full uwsgi uwsgi-plugin-python 
 
-    $ vi /etc/apache2/ports.conf
-    $ vi /etc/apache2/sites-available/default
+Move (or copy) the source to the web directory and make sure the permissions match ::
 
-Enable several Mods and restart apache::
+$ sudo mv viper-* /srv/www/viper
+$ chown -R www-data:www-data /srv/www/viper
 
+Change the VIPER_ROOT variable in web.py to reflect your installation.::
+ 
+ $ sudo vi /srv/www/viper/web.py
 
-    $ sudo a2enmod proxy 
-    $ sudo a2enmod proxy_http
-    $ a2enmod ssl
-    $ sudo service apache2 restart
+Modify the user section, and uncomment and change the following line to reflect your environment::
 
-To create a SSL server certificate find several tutorials on the web.:: 
-    
-    $ ...
-    $ sudo service apache2 restart
+   VIPER_ROOT ='/srv/www/viper'
 
+Create a file /etc/uwsgi/apps-available/bottle.ini::
 
-The following apache site config does several things:
+   [uwsgi]
+   socket = /run/uwsgi/app/bottle/socket
+   chdir = /srv/www/viper/
+   master = true
+   plugins = python
+   file = web.py
+   uid = www-data
+   gid = www-data
 
-    - proxy your port 80 of apache to 9090 of viper web interface:
-    - adding SSl Server key
-    - Adding Basic Authentication
-    - Adding SSL Client side certificate
+Link the /etc/uwsgi/apps-available/bottle.ini file to apps-enabled::
 
-Edit the file::
-    
-    $ vi /etc/apache2/sites_available/000-default
+ $ sudo  ln -s /etc/uwsgi/apps-available/bottle.ini /etc/uwsgi/apps-enabled/bottle.ini
+ 
+Restart nginx and uwsgi::
 
-Example::
+ $ sudo service nginx restart
+ $ sudo service uwsgi restart
+ 
+Tail the uwsgi logfile to make sure everything works ok: ::
+   
+ $ tail -f /var/log/uwsgi/app/bottle.log
 
-    <VirtualHost *:80>
-        ServerAdmin your@mail.com
-        Servername your.hostname.com
-        SSLEngine on
-        SSLCertificateKeyFile /etc/apache2/ssl_cert/server.key
-        SSLCertificateFile /etc/apache2/ssl_cert/server.crt
-        SSLProtocol All -SSLv2 -SSLv3
-        SSLOptions +FakeBasicAuth
-        # CA in case you have one
-        SSLCertificateChainFile /etc/ssl/certs/subca2.crt
-        SSLCACertificateFile    /etc/ssl/certs/rootca2.crt
-        SSLVerifyClient optional
-        SSLVerifyDepth 2
-        #Proxy Settings to forward the port 80 to 9090
-        ProxyPreserveHost On
-        ProxyPass / http://127.0.0.1:9090/
-        ProxyPassReverse / http://127.0.0.1:9090/
-        # Logging
-        ErrorLog ${APACHE_LOG_DIR}/error.log
-        # Possible values include: debug, info, notice, warn, error, crit,
-        # alert, emerg.
-        LogLevel warn
-        CustomLog ${APACHE_LOG_DIR}/access.log combined
-        <Location />
-        Satisfy any
-        AuthType        basic
-        AuthName        "MALWARE"
-        Require         valid-user
-        AuthUserFile    /etc/apache2/conf/protected.passwd
-        # insert your SSl needs here
-        #SSLRequire  %{SSL_CLIENT_S_DN_CN} =~ m/=.*BLA.*/i
-        </Location>
-    </VirtualHost>
+And browse to the default port 80 interface of the webserver. You should be greeted with the viper webpage. 
 
-To add the first user to the Basic Auth::
-
-    $ htpasswd -c /etc/apache2/conf/protected.passwd USERNAME
-    
-To add a new user to the Basic Auth use::
-
-    $ htpasswd -b /etc/apache2/conf/protected.passwd USERNAME2
+Setting up SSL and web-based authentication is out of scope for this document, but infromation can be found in the nginx manual and in one of the many tutorials on the web.
