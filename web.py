@@ -10,7 +10,10 @@ import time
 import bottle
 import shutil
 import logging
-import commands
+try:
+    from subprocess import getoutput
+except ImportError:
+    from commands import getoutput
 import requests
 import argparse
 import tempfile
@@ -717,8 +720,8 @@ def hex_viewer():
     hex_cmd = 'hd -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
     
     # get the output
-    hex_string = commands.getoutput(hex_cmd)
-    
+    hex_string = getoutput(hex_cmd)
+
     # Format the data
     html_string = ''
     hex_rows = hex_string.split('\n')

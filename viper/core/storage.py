@@ -15,7 +15,7 @@ def store_sample(file_object):
     
     folder = os.path.join(__project__.get_path(), 'binaries', sha256[0], sha256[1], sha256[2], sha256[3])
     if not os.path.exists(folder):
-        os.makedirs(folder, 0750)
+        os.makedirs(folder, 0o750)
 
     file_path = os.path.join(folder, sha256)
 

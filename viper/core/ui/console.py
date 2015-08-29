@@ -15,6 +15,13 @@ from viper.core.ui.commands import Commands
 from viper.core.storage import get_sample_path
 from viper.core.database import Database
 
+# For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
+try:
+        input = raw_input
+except NameError:
+        pass
+
+
 def logo():
     print("""         _                   
         (_) 
@@ -193,7 +200,7 @@ class Console(object):
 
             # Wait for input from the user.
             try:
-                data = raw_input(prompt).strip()
+                data = input(prompt).strip()
             except KeyboardInterrupt:
                 print("")
             # Terminate on EOF.

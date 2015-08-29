@@ -4,13 +4,22 @@
 
 import os
 import hashlib
-from StringIO import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    from StringIO import StringIO
 from zipfile import ZipFile, ZIP_STORED
 
 from viper.common.out import *
 from viper.common.network import download
 from viper.common.objects import File
 from viper.common.utils import path_split_all
+
+# For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
+try:
+    input = raw_input
+except NameError:
+    pass
 
 url = 'https://github.com/viper-framework/viper/archive/master.zip'
 
@@ -20,7 +29,7 @@ url = 'https://github.com/viper-framework/viper/archive/master.zip'
 # - Ignore all git related files and directories.
 def main():
     print_warning("WARNING: If you proceed you will lose any changes you might have made to Viper.")
-    choice = raw_input("Are you sure you want to proceed? [y/N] ")
+    choice = input("Are you sure you want to proceed? [y/N] ")
 
     if choice.lower() != 'y':
         return

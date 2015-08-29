@@ -18,6 +18,13 @@ from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
 
+# For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
+try:
+        input = raw_input
+except NameError:
+        pass
+
+
 class Commands(object):
 
     output = []
@@ -91,7 +98,7 @@ class Commands(object):
     # useful for copy & paste of content like Email headers
 
     def cmd_new(self, *args):
-        title = raw_input("Enter a title for the new file: ")
+        title = input("Enter a title for the new file: ")
         # Create a new temporary file.
         tmp = tempfile.NamedTemporaryFile(delete=False)
         # Open the temporary file with the default editor, or with nano.
@@ -262,7 +269,7 @@ class Commands(object):
             self.log('table', dict(header=['ID', 'Title'], rows=rows))
 
         elif args.add:
-            title = raw_input("Enter a title for the new note: ")
+            title = input("Enter a title for the new note: ")
 
             # Create a new temporary file.
             tmp = tempfile.NamedTemporaryFile(delete=False)
@@ -431,7 +438,7 @@ class Commands(object):
     def cmd_delete(self, *args):
         if __sessions__.is_set():
             while True:
-                choice = raw_input("Are you sure you want to delete this binary? Can't be reverted! [y/n] ")
+                choice = input("Are you sure you want to delete this binary? Can't be reverted! [y/n] ")
                 if choice == 'y':
                     break
                 elif choice == 'n':
