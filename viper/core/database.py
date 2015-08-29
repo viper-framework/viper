@@ -1,6 +1,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from __future__ import unicode_literals  # make all strings unicode in python2
 from datetime import datetime
 
 from sqlalchemy import *
@@ -341,7 +342,8 @@ class Database:
 
             rows = session.query(Malware).filter(Malware.name.like(value)).all()
         elif key == 'note':
-            rows = session.query(Malware).filter(Malware.note.any(Note.body.like(u'%' + unicode(value) + u'%'))).all()
+            value = '%{0}%'.format(value)
+            rows = session.query(Malware).filter(Malware.note.any(Note.body.like(value))).all()
         elif key == 'type':
             rows = session.query(Malware).filter(Malware.type.like('%{0}%'.format(value))).all()
         elif key == 'mime':
