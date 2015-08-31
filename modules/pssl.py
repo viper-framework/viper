@@ -51,7 +51,21 @@ class Pssl(Module):
             self.log('error', 'Nothing found')
 
     def fetch_cert(self, sha1):
-        self.log('success', json.dumps(self.pssl.fetch_cert(sha1, False), indent=2))
+        try:
+            cert_info = self.pssl.fetch_cert(sha1)
+        except Exception as e:
+            self.log('error', e)
+            return
+        to_print = 'Valid: {} -> {}\n'.format(cert_info['info']['not_before'], cert_info['info']['not_after'])
+        to_print += '\t{}\n'.format(json.dumps(cert_info['info']['extension'], indent=2))
+        to_print += '\tKey Length: {}\n'.format(cert_info['info']['keylength'])
+        to_print += '\tFingerprint: {}\n'.format(cert_info['info']['fingerprint'])
+        to_print += '\tIssuer: {}\n'.format(cert_info['info']['issuer'])
+        to_print += '\tSubject: {}\n'.format(cert_info['info']['subject'])
+        to_print += '\tKey: \n{}\n'.format(cert_info['info']['key'])
+        to_print += '\tPEM: \n{}\n'.format(cert_info['pem'])
+
+        self.log('success', to_print)
 
     def run(self):
         super(Pssl, self).run()
