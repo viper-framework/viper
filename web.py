@@ -790,4 +790,4 @@ if __name__ == '__main__':
     
     # Set template dir
     bottle.TEMPLATE_PATH.insert(0,os.path.join(VIPER_ROOT, 'data/web'))
-    run(host=args.host, port=web_port, reloader=True)
+    app.run(host=args.host, port=web_port, reloader=True)
