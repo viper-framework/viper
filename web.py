@@ -14,6 +14,12 @@ try:
     from subprocess import getoutput
 except ImportError:
     from commands import getoutput
+    
+try:
+    from scandir import walk
+except ImportError:
+    from os import walk
+    
 import requests
 import argparse
 import tempfile
@@ -348,7 +354,7 @@ def add_file():
                 try:
                     with ZipFile(file_path) as zf:
                         zf.extractall(temp_dir, pwd=zip_pass)            
-                    for root, dirs, files in os.walk(temp_dir, topdown=False):
+                    for root, dirs, files in walk(temp_dir, topdown=False):
                         for name in files:
                             if not name == upload.filename:
                                 file_list.append(os.path.join(root, name))
@@ -383,7 +389,7 @@ def add_file():
                         return template('error.tpl', error="This is not a tar file")
                     with tarfile.open(file_path,'r:*') as tarf:
                         tarf.extractall(temp_dir)
-                    for root, dirs, files in os.walk(temp_dir, topdown=False):
+                    for root, dirs, files in walk(temp_dir, topdown=False):
                         for name in files:
                             if not name == upload.filename:
                                 file_list.append(os.path.join(root, name))
