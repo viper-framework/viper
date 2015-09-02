@@ -5,6 +5,11 @@ import os
 import tempfile
 import string as printstring  # string is being used as a var - easier to replace here
 
+try:
+    from scandir import walk
+except ImportError:
+    from os import walk
+
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
@@ -171,7 +176,7 @@ class YaraScan(Module):
         # Retrieve the list of rules and populate a list.
         rules = []
         count = 1
-        for folder, folders, files in os.walk(self.rule_path):
+        for folder, folders, files in walk(self.rule_path):
             for file_name in files:
                 rules.append([count, os.path.join(folder, file_name)])
                 count += 1

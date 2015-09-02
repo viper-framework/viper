@@ -10,6 +10,11 @@ import shutil
 from zipfile import ZipFile
 from collections import defaultdict
 
+try:
+    from scandir import walk
+except ImportError:
+    from os import walk
+
 from viper.common.out import *
 from viper.common.utils import convert_size
 from viper.common.objects import File
@@ -383,7 +388,7 @@ class Commands(object):
             # Check if the specified folder is valid.
             if os.path.isdir(args.folder):
                 # Walk through the folder and subfolders.
-                for dir_name, dir_names, file_names in os.walk(args.folder):
+                for dir_name, dir_names, file_names in walk(args.folder):
                     # Add each collected file.
                     for file_name in file_names:
                         file_path = os.path.join(dir_name, file_name)

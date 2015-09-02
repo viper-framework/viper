@@ -10,6 +10,11 @@ from viper.core.session import __sessions__
 from viper.common.constants import VIPER_ROOT
 
 try:
+    from scandir import walk
+except ImportError:
+    from os import walk
+
+try:
     import yara
     HAVE_YARA = True
 except ImportError:
@@ -30,7 +35,7 @@ class RAT(Module):
     def list(self):
         self.log('info', "List of available RAT modules:")
 
-        for folder, folders, files in os.walk(os.path.join(VIPER_ROOT, 'modules/rats/')):
+        for folder, folders, files in walk(os.path.join(VIPER_ROOT, 'modules/rats/')):
             for file_name in files:
                 if not file_name.endswith('.py') or file_name.startswith('__init__'):
                     continue
