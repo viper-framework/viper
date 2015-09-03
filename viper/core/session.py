@@ -16,6 +16,8 @@ class Session(object):
         self.file = None
         # Timestamp of the creation of the session.
         self.created_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        # MISP event associated to the object
+        self.misp_event = None
 
 class Sessions(object):
     def __init__(self):

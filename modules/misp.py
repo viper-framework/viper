@@ -23,6 +23,7 @@ except:
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.common.objects import MispEvent
 from viper.common.constants import VIPER_ROOT
 
 MISP_URL = ''
@@ -92,6 +93,16 @@ class MISP(Module):
 
         parser_checkhashes = subparsers.add_parser('yara', help='Get YARA rules of an event.')
         parser_checkhashes.add_argument("-e", "--event", required=True, help="Download the yara rules of that event.")
+
+        parser_get_event = subparsers.add_parser('get_event', help='Initialize the session with an existing MISP event.')
+        parser_get_event.add_argument("-e", "--event", required=True, help="Existing Event ID.")
+
+        parser_create_event = subparsers.add_parser('create_event', help='Create a new event on MISP and initialize the session with it.')
+        parser_create_event.add_argument("-d", "--distrib", required=True, type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
+        parser_create_event.add_argument("-t", "--threat", required=True, type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
+        parser_create_event.add_argument("-a", "--analysis", required=True, type=int, choices=[0, 1, 2], help="Analysis level a new event.")
+        parser_create_event.add_argument("-i", "--info", required=True, help="Event info field of a new event.")
+        parser_create_event.add_argument("--date", help="Date of the event. (Default: today).")
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
@@ -305,6 +316,13 @@ class MISP(Module):
             self.log('success', '\t{} ({} samples, {} hashes) - {}{}{}'.format(
                 e['Event']['info'].encode('utf-8'), nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
+    def get_event(self):
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return False
+        event = self.misp.get_event(self.args.event)
+        __sessions__.current.misp_event = MispEvent(event.json())
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
@@ -343,3 +361,7 @@ class MISP(Module):
             self.check_hashes()
         elif self.args.subname == 'yara':
             self.yara()
+        elif self.args.subname == 'get_event':
+            self.get_event()
+        elif self.args.subname == 'create_event':
+            self.create_event()
