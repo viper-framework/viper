@@ -3,13 +3,25 @@
 
 import os
 
+from viper.core.config import Config
+
 class Project(object):
     def __init__(self):
         self.name = None
         self.path = None
 
+        cfg = Config()
+        if cfg.paths.root_path:
+            self.root_path = cfg.paths.root_path
+        else:
+            self.root_path = os.getcwd()
+            
+        if not os.path.exists(self.root_path):
+            os.makedirs(self.root_path)
+        
     def open(self, name):
-        path = os.path.join(os.getcwd(), 'projects', name)
+
+        path = os.path.join(self.root_path, 'projects', name)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -20,6 +32,6 @@ class Project(object):
         if self.path and os.path.exists(self.path):
             return self.path
         else:
-            return os.getcwd()
+            return self.root_path
 
 __project__ = Project()

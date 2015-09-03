@@ -13,19 +13,26 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from viper.common.out import *
 from viper.common.objects import File, Singleton
 from viper.core.project import __project__
+from viper.core.config import Config
+
+cfg = Config()
 
 Base = declarative_base()
 
+project_name = __project__.name
+if project_name == None:
+    project_name = 'default'
+
 association_table = Table(
-    'association',
+    '{0}_association'.format(project_name),
     Base.metadata,
-    Column('tag_id', Integer, ForeignKey('tag.id')),
-    Column('note_id', Integer, ForeignKey('note.id')),
-    Column('malware_id', Integer, ForeignKey('malware.id'))
+    Column('tag_id', Integer, ForeignKey('{0}_tag.id'.format(project_name))),
+    Column('note_id', Integer, ForeignKey('{0}_note.id'.format(project_name))),
+    Column('malware_id', Integer, ForeignKey('{0}_malware.id'.format(project_name)))
 )
 
 class Malware(Base):
-    __tablename__ = 'malware'
+    __tablename__ = '{0}_malware'.format(project_name)
 
     id = Column(Integer(), primary_key=True)
     name = Column(String(255), nullable=True)
@@ -42,16 +49,16 @@ class Malware(Base):
     tag = relationship(
         'Tag',
         secondary=association_table,
-        backref=backref('malware')
+        backref=backref('{0}_malware'.format(project_name))
     )
     note = relationship(
         'Note',
         cascade='all, delete',
         secondary=association_table,
-        backref=backref('malware')
+        backref=backref('{0}_malware'.format(project_name))
     )
     __table_args__ = (Index(
-        'hash_index',
+        '{0}_hash_index'.format(project_name),
         'md5',
         'crc32',
         'sha1',
@@ -94,7 +101,7 @@ class Malware(Base):
         self.name = name
 
 class Tag(Base):
-    __tablename__ = 'tag'
+    __tablename__ = '{0}_tag'.format(project_name)
 
     id = Column(Integer(), primary_key=True)
     tag = Column(String(255), nullable=False, unique=True, index=True)
@@ -114,7 +121,7 @@ class Tag(Base):
         self.tag = tag
 
 class Note(Base):
-    __tablename__ = 'note'
+    __tablename__ = '{0}_note'.format(project_name)
 
     id = Column(Integer(), primary_key=True)
     title = Column(String(255), nullable=True)
@@ -139,9 +146,13 @@ class Database:
     #__metaclass__ = Singleton
 
     def __init__(self):
-        db_path = os.path.join(__project__.get_path(), 'viper.db')
-
-        self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
+        connection_string = cfg.database.conn_string
+    
+        if not connection_string :
+            db_path = os.path.join(__project__.get_path(), 'viper.db')
+            self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
+        else:
+            self.engine = create_engine(connection_string, poolclass=NullPool)
         self.engine.echo = False
         self.engine.pool_timeout = 60
 

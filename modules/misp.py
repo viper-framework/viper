@@ -25,13 +25,9 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 from viper.common.constants import VIPER_ROOT
 
-MISP_URL = ''
-MISP_KEY = ''
+from viper.core.config import Config
 
-VT_REPORT_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
-VT_DOWNLOAD_URL = 'https://www.virustotal.com/vtapi/v2/file/download'
-VT_KEY = ''
-
+cfg = Config()
 
 class MISP(Module):
     cmd = 'misp'
@@ -184,13 +180,13 @@ class MISP(Module):
 
         unk_vt_hashes = []
         attributes = []
-        vt_request = {'apikey': VT_KEY}
+        vt_request = {'apikey': cfg.virustotal.virustotal_key}
         # Make sure to start getting reports for the longest possible hashes (reduce risks of collisions)
         hashes_to_check = sorted(event_hashes, key=len)
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
             try:
-                response = requests.post(VT_REPORT_URL, data=vt_request)
+                response = requests.post(cfg.virustotal.virustotal_url, data=vt_request)
             except requests.ConnectionError:
                 self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
                 return
@@ -307,6 +303,7 @@ class MISP(Module):
 
     def run(self):
         super(MISP, self).run()
+        
         if self.args is None:
             return
 
@@ -315,12 +312,12 @@ class MISP(Module):
             return
 
         if self.args.url is None:
-            self.url = MISP_URL
+            self.url = cfg.misp.misp_url
         else:
             self.url = self.args.url
 
         if self.args.key is None:
-            self.key = MISP_KEY
+            self.key = cfg.misp.misp_key
         else:
             self.key = self.args.key
 

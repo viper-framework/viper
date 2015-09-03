@@ -12,12 +12,9 @@ except ImportError:
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.core.config import Config
 
-VIRUSTOTAL_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
-VIRUSTOTAL_URL_SUBMIT = 'https://www.virustotal.com/vtapi/v2/file/scan'
-VIRUSTOTAL_URL_DOWNLOAD = 'https://www.virustotal.com/vtapi/v2/file/download'
-VIRUSTOTAL_URL_COMMENT = 'https://www.virustotal.com/vtapi/v2/comments/put'
-KEY = 'a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088'
+cfg = Config()
 
 # TODO: All that JSON exception handling is REALLY ugly. Needs to be fixed.
 
@@ -39,8 +36,8 @@ class VirusTotal(Module):
 
         if self.args.hash:
             try:
-                params = {'apikey': KEY,'hash':self.args.hash}
-                response = requests.get(VIRUSTOTAL_URL_DOWNLOAD, params=params)
+                params = {'apikey': cfg.virustotal.virustotal_key,'hash':self.args.hash}
+                response = requests.get(cfg.virustotal.virustotal_url_download, params=params)
 
                 if response.status_code == 403:
                     self.log('error','This command requires virustotal private API key')
@@ -64,10 +61,10 @@ class VirusTotal(Module):
             self.log('error', "No session opened")
             return
 
-        data = {'resource': __sessions__.current.file.md5, 'apikey': KEY}
+        data = {'resource': __sessions__.current.file.md5, 'apikey': cfg.virustotal.virustotal_key}
 
         try:
-            response = requests.post(VIRUSTOTAL_URL, data=data)
+            response = requests.post(cfg.virustotal.virustotal_url, data=data)
         except Exception as e:
             self.log('error', "Failed performing request: {0}".format(e))
             return
@@ -111,9 +108,9 @@ class VirusTotal(Module):
 
             if self.args.submit:
                 try:
-                    data = {'apikey': KEY}
+                    data = {'apikey': cfg.virustotal.virustotal_key}
                     files = {'file': open(__sessions__.current.file.path, 'rb').read()}
-                    response = requests.post(VIRUSTOTAL_URL_SUBMIT, data=data, files=files)
+                    response = requests.post(cfg.virustotal.virustotal_url_submit, data=data, files=files)
                 except Exception as e:
                     self.log('error', "Failed Submit: {0}".format(e))
                     return
@@ -141,8 +138,8 @@ class VirusTotal(Module):
         if self.args.comment:
             try:
 
-                data = {'apikey' : KEY, 'resource': __sessions__.current.file.md5, 'comment' : ' '.join(self.args.comment)}
-                response = requests.post(VIRUSTOTAL_URL_COMMENT,data=data)
+                data = {'apikey' : cfg.virustotal.virustotal_key, 'resource': __sessions__.current.file.md5, 'comment' : ' '.join(self.args.comment)}
+                response = requests.post(cfg.virustotal.virustotal_url_comment,data=data)
             except Exception as e:
                 self.log('error',"Failed Submit Comment: {0}".format(e))
                 return
