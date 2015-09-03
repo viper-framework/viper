@@ -1,0 +1,58 @@
+# This file is part of Viper - https://github.com/botherder/viper
+# See the file 'LICENSE' for copying permission.
+
+##
+# Core
+##
+
+
+[paths]
+# root path for project storage
+# If blank default is vipers cwd
+root_path = 
+
+[database]
+# Configure the database connection type example shown below
+# Examples
+# sqlite:///foo.db
+# postgresql://foo:bar@localhost:5432/mydatabase     -   sudo apt-get install python-psycopg2
+# mysql://foo:bar@localhost/mydatabase     -   sudo apt-get install python-mysqldb
+# If blank, default is a SQLite in root_path or project path
+conn_string = 
+
+[api]
+# API Web Port
+api_port = 8080
+
+##
+# Modules
+##
+
+[virustotal]
+virustotal_url = https://www.virustotal.com/vtapi/v2/file/report
+virustotal_url_submit = https://www.virustotal.com/vtapi/v2/file/scan
+virustotal_url_download = https://www.virustotal.com/vtapi/v2/file/download
+virustotal_url_comment = https://www.virustotal.com/vtapi/v2/comments/put
+virustotal_key = a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088
+
+[cuckoo]
+cuckoo_api = http://localhost:8090
+cuckoo_web = http://localhost:9191
+
+[reports]
+malwr_login = https://malwr.com/account/login/
+malwr_user =  
+malwr_pass = 
+malwr_search = https://malwr.com/analysis/search/
+malwr_prefix = https://malwr.com
+
+anubis_login = https://anubis.iseclab.org/?action=login
+anubis_user = 
+anubis_pass = 
+anubis_search = https://anubis.iseclab.org/?action=hashquery
+anubis_prefix = https://anubis.iseclab.org/
+
+[misp]
+misp_url = 
+misp_key = 
+
