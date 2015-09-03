@@ -42,100 +42,100 @@ class Fuzzy(Module):
             if self.args.cluster:
                 arg_cluster = self.args.cluster
 
-        db = Database()
-        samples = db.find(key='all')
+            db = Database()
+            samples = db.find(key='all')
 
-        # Check if we're operating in cluster mode, otherwise we run on the
-        # currently opened file.
-        if arg_cluster:
-            self.log('info', "Generating clusters, this might take a while...")
+            # Check if we're operating in cluster mode, otherwise we run on the
+            # currently opened file.
+            if arg_cluster:
+                self.log('info', "Generating clusters, this might take a while...")
 
-            clusters = dict()
-            for sample in samples:
-                if not sample.ssdeep:
-                    continue
-
-                if arg_verbose:
-                    self.log('info', "Testing file {0} with ssdeep {1}".format(
-                        sample.md5, sample.ssdeep))
-
-                clustered = False
-                for cluster_name, cluster_members in clusters.items():
-                    # Check if sample is already in the cluster.
-                    if sample.md5 in cluster_members:
+                clusters = dict()
+                for sample in samples:
+                    if not sample.ssdeep:
                         continue
 
                     if arg_verbose:
-                        self.log('info', "Testing {0} in cluser {1}".format(
-                            sample.md5, cluster_name))
-                    
-                    for member in cluster_members:
-                        if sample.md5 == member[0]:
+                        self.log('info', "Testing file {0} with ssdeep {1}".format(
+                            sample.md5, sample.ssdeep))
+
+                    clustered = False
+                    for cluster_name, cluster_members in clusters.items():
+                        # Check if sample is already in the cluster.
+                        if sample.md5 in cluster_members:
                             continue
 
-                        member_hash = member[0]
-                        member_name = member[1]
+                        if arg_verbose:
+                            self.log('info', "Testing {0} in cluser {1}".format(
+                                sample.md5, cluster_name))
+                        
+                        for member in cluster_members:
+                            if sample.md5 == member[0]:
+                                continue
 
-                        member_ssdeep = db.find(key='md5', value=member_hash)[0].ssdeep
-                        if pydeep.compare(sample.ssdeep, member_ssdeep) > 40:
-                            if arg_verbose:
-                                self.log('info', "Found home for {0} in cluster {1}".format(
-                                    sample.md5, cluster_name))
+                            member_hash = member[0]
+                            member_name = member[1]
 
-                            clusters[cluster_name].append([sample.md5, sample.name])
-                            clustered = True
-                            break
+                            member_ssdeep = db.find(key='md5', value=member_hash)[0].ssdeep
+                            if pydeep.compare(sample.ssdeep, member_ssdeep) > 40:
+                                if arg_verbose:
+                                    self.log('info', "Found home for {0} in cluster {1}".format(
+                                        sample.md5, cluster_name))
 
-                if not clustered:
-                    cluster_id = len(clusters) + 1
-                    clusters[cluster_id] = [[sample.md5, sample.name],]
+                                clusters[cluster_name].append([sample.md5, sample.name])
+                                clustered = True
+                                break
 
-            ordered_clusters = collections.OrderedDict(sorted(clusters.items()))
+                    if not clustered:
+                        cluster_id = len(clusters) + 1
+                        clusters[cluster_id] = [[sample.md5, sample.name],]
 
-            self.log('info', "Following are the identified clusters with more than one member")
+                ordered_clusters = collections.OrderedDict(sorted(clusters.items()))
 
-            for cluster_name, cluster_members in ordered_clusters.items():
-                # We include in the results only clusters with more than just
-                # one member.
-                if len(cluster_members) <= 1:
-                    continue
+                self.log('info', "Following are the identified clusters with more than one member")
 
-                self.log('info', "Ssdeep cluster {0}".format(bold(cluster_name)))
+                for cluster_name, cluster_members in ordered_clusters.items():
+                    # We include in the results only clusters with more than just
+                    # one member.
+                    if len(cluster_members) <= 1:
+                        continue
 
-                self.log('table', dict(header=['MD5', 'Name'],
-                    rows=cluster_members))
+                    self.log('info', "Ssdeep cluster {0}".format(bold(cluster_name)))
 
-        # We're running against the already opened file.
-        else:
-            if not __sessions__.is_set():
-                self.log('error', "No session opened")
-                return
+                    self.log('table', dict(header=['MD5', 'Name'],
+                        rows=cluster_members))
 
-            if not __sessions__.current.file.ssdeep:
-                self.log('error', "No ssdeep hash available for opened file")
-                return
+            # We're running against the already opened file.
+            else:
+                if not __sessions__.is_set():
+                    self.log('error', "No session opened")
+                    return
 
-            matches = []
-            for sample in samples:
-                if sample.sha256 == __sessions__.current.file.sha256:
-                    continue
+                if not __sessions__.current.file.ssdeep:
+                    self.log('error', "No ssdeep hash available for opened file")
+                    return
 
-                if not sample.ssdeep:
-                    continue
+                matches = []
+                for sample in samples:
+                    if sample.sha256 == __sessions__.current.file.sha256:
+                        continue
 
-                score = pydeep.compare(__sessions__.current.file.ssdeep,
-                    sample.ssdeep)
+                    if not sample.ssdeep:
+                        continue
 
-                if score > 40:
-                    matches.append(['{0}%'.format(score), sample.name,
-                        sample.sha256])
+                    score = pydeep.compare(__sessions__.current.file.ssdeep,
+                        sample.ssdeep)
 
-                if arg_verbose:
-                    self.log('info', "Match {0}%: {2} [{1}]".format(score,
-                        sample.name, sample.sha256))
+                    if score > 40:
+                        matches.append(['{0}%'.format(score), sample.name,
+                            sample.sha256])
 
-            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
+                    if arg_verbose:
+                        self.log('info', "Match {0}%: {2} [{1}]".format(score,
+                            sample.name, sample.sha256))
 
-            if len(matches) > 0:
-                self.log('table', dict(header=['Score', 'Name', 'SHA256'],
-                    rows=matches))
+                self.log('info', "{0} relevant matches found".format(bold(len(matches))))
+
+                if len(matches) > 0:
+                    self.log('table', dict(header=['Score', 'Name', 'SHA256'],
+                        rows=matches))

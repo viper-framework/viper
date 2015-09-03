@@ -20,3 +20,4 @@ M2Crypto
 pymisp
 django
 pypdns
+scandir
