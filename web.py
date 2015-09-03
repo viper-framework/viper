@@ -38,7 +38,7 @@ from viper.common.constants import VIPER_ROOT
 ###
 # Needed for bottle (and correct uwsgi handling)
 ###
-app = application = bottle.Bottle()
+app = application = bottle.default_app()
 
 
 ##
