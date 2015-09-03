@@ -21,7 +21,7 @@ class Pdns(Module):
         self.parser.add_argument("--url", help='URL of the Passive DNS server')
         self.parser.add_argument("-u", "--user", help='Username on the PDNS instance')
         self.parser.add_argument("-p", "--password", help='Password on the PDNS instance')
-        self.parser.add_argument("-q", "--query", required=True, help='Password on the PDNS instance')
+        self.parser.add_argument("-q", "--query", required=True, help='Domain or IP address to query')
 
     def run(self):
         super(Pdns, self).run()
@@ -44,8 +44,12 @@ class Pdns(Module):
         else:
             password = PDNS_PASS
 
-        pdns = PyPDNS(url, (user, password))
-        data = pdns.query(self.args.query)
+        pdns = PyPDNS(url.rstrip('/'), (user, password))
+        try:
+            data = pdns.query(self.args.query)
+        except Exception as e:
+            self.log('error', e)
+            return
         if not data:
             self.log('error', 'Unable to find {}.'.format(self.args.query))
             return
