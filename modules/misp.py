@@ -7,6 +7,7 @@ import textwrap
 import os
 import tempfile
 import time
+import json
 
 try:
     from pymisp import PyMISP
@@ -103,6 +104,23 @@ class MISP(Module):
         parser_create_event.add_argument("-a", "--analysis", required=True, type=int, choices=[0, 1, 2], help="Analysis level a new event.")
         parser_create_event.add_argument("-i", "--info", required=True, help="Event info field of a new event.")
         parser_create_event.add_argument("--date", help="Date of the event. (Default: today).")
+
+        parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
+        subparsers_add = parser_add.add_subparsers(dest='add')
+        subparsers_add.add_parser("hashes", help="Add hashes of the current session.")
+        #parser_add.add_argument("regkey", nargs='+', help="Add a registry key to the event. To also add the value: <key> <value>")
+        #parser_add.add_argument("pipe", help="Add a pipe to the event.")
+        #parser_add.add_argument("mutex", help="Add a mutex to the event.")
+        #parser_add.add_argument("ipdst", help="Add a destination IP (C&C Server) to the event.")
+        #parser_add.add_argument("hostname", help="Add an hostname  to the event.")
+        #parser_add.add_argument("domain", help="Add a domain to the event.")
+        #parser_add.add_argument("url", help="Add a URL to the event.")
+        #parser_add.add_argument("ua", help="Add a user-agent to the event.")
+        #parser_add.add_argument("pattern_file", help="Add a pattern in file to the event.")
+        #parser_add.add_argument("pattern_mem", help="Add a pattern in memory to the event.")
+        #parser_add.add_argument("pattern_traffic", help="Add a  to the event.")
+
+        #parser_show = subparsers.add_parser('show', help='Show attributes to an existing MISP event.')
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
@@ -320,8 +338,63 @@ class MISP(Module):
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return False
+
         event = self.misp.get_event(self.args.event)
         __sessions__.current.misp_event = MispEvent(event.json())
+
+    def create_event(self):
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return False
+
+        # Dirty trick to keep consistency in the module: the threat level in the upload
+        # API can go from 0 import to 3 but it is 1 to 4 in the event mgmt API.
+        # It will be fixed in a near future, in the mean time, we do that:
+        self.args.threat += 1
+
+        event = self.misp.new_event(self.args.distrib, self.args.threat, self.args.analysis,
+                                    self.args.info, self.args.date)
+        __sessions__.current.misp_event = MispEvent(event)
+
+    def add(self):
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return False
+        if not __sessions__.current.misp_event:
+            self.log('error', "Not attached to a MISP event")
+            return False
+
+        current_event = __sessions__.current.misp_event
+
+        if self.args.add == 'hashes':
+            event = self.misp.add_hashes(current_event.event, filename=__sessions__.current.file.name,
+                                         md5=__sessions__.current.file.md5, sha1=__sessions__.current.file.sha1,
+                                         sha256=__sessions__.current.file.sha256,
+                                         comment=__sessions__.current.file.tags)
+            if event.get('Event'):
+                current_event.event = event
+        elif self.args.regkey:
+            pass
+        elif self.args.pipe:
+            pass
+        elif self.args.mutex:
+            pass
+        elif self.args.ipdst:
+            pass
+        elif self.args.hostname:
+            pass
+        elif self.args.domain:
+            pass
+        elif self.args.url:
+            pass
+        elif self.args.ua:
+            pass
+        elif self.args.pattern_file:
+            pass
+        elif self.args.pattern_mem:
+            pass
+        elif self.args.pattern_traffic:
+            pass
 
     def run(self):
         super(MISP, self).run()
@@ -365,3 +438,5 @@ class MISP(Module):
             self.get_event()
         elif self.args.subname == 'create_event':
             self.create_event()
+        elif self.args.subname == 'add':
+            self.add()
