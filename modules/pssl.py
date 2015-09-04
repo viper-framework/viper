@@ -29,24 +29,32 @@ class Pssl(Module):
 
     def query_ip(self, ip):
         result = self.pssl.query(ip)
+        if not result.items():
+            self.log('error', 'Nothing found')
+            return
+        if result.get('error'):
+            self.log('error', result.get('error'))
+            return
         for ip, certificates_info in result.items():
-            to_print = '{} :\n'.format(ip)
+            self.log('info', '{} :'.format(ip))
             for sha1 in certificates_info['certificates']:
-                to_print += '\t{}\n'.format(sha1)
+                self.log('item', '{}'.format(sha1))
                 if certificates_info['subjects'].get(sha1):
                     for value in certificates_info['subjects'][sha1]['values']:
-                        to_print += '\t -> {}\n'.format(value)
-            self.log('success', to_print)
+                        self.log('item', '--> {}\n'.format(value))
 
     def query_cert(self, sha1):
-        result = self.pssl.query_cert(sha1)
+        try:
+            result = self.pssl.query_cert(sha1)
+        except Exception as e:
+            self.log('error', e)
+            return
         if result.get('hits'):
-            to_print = '{} has been seen {} times on:\n'.format(sha1, result['hits'])
-            for ip in result['seen'][:5]:
-                to_print += '\t{}\n'.format(ip)
-            if result['hits'] > 5:
-                to_print += '\tOnly show a subsed of the IPs'
-            self.log('success', to_print)
+            self.log('info', '{} has been seen on {} IP adresses'.format(sha1, result['hits']))
+            for ip in result['seen'][:10]:
+                self.log('item', '{}'.format(ip))
+            if result['hits'] > 10:
+                self.log('warning', 'Certificate seen on too many IPs, only show a subset')
         else:
             self.log('error', 'Nothing found')
 
@@ -56,16 +64,16 @@ class Pssl(Module):
         except Exception as e:
             self.log('error', e)
             return
-        to_print = 'Valid: {} -> {}\n'.format(cert_info['info']['not_before'], cert_info['info']['not_after'])
-        to_print += '\t{}\n'.format(json.dumps(cert_info['info']['extension'], indent=2))
-        to_print += '\tKey Length: {}\n'.format(cert_info['info']['keylength'])
-        to_print += '\tFingerprint: {}\n'.format(cert_info['info']['fingerprint'])
-        to_print += '\tIssuer: {}\n'.format(cert_info['info']['issuer'])
-        to_print += '\tSubject: {}\n'.format(cert_info['info']['subject'])
-        to_print += '\tKey: \n{}\n'.format(cert_info['info']['key'])
-        to_print += '\tPEM: \n{}\n'.format(cert_info['pem'])
-
-        self.log('success', to_print)
+        self.log('info', 'Certificate Details - Validity: {} -> {}'.format(cert_info['info']['not_before'], cert_info['info']['not_after']))
+        self.log('item', 'Key Length: {}'.format(cert_info['info']['keylength']))
+        self.log('item', 'Fingerprint: {}'.format(cert_info['info']['fingerprint']))
+        self.log('item', 'Issuer: {}'.format(cert_info['info']['issuer']))
+        self.log('item', 'Subject: {}'.format(cert_info['info']['subject']))
+        self.log('info', 'Extensions:')
+        for key, value in cert_info['info']['extension'].items():
+            self.log('item', '{}: {}'.format(key, value.strip()))
+        self.log('item', 'Public key: \n{}'.format(cert_info['info']['key']))
+        self.log('item', 'PEM: \n{}'.format(cert_info['pem']))
 
     def run(self):
         super(Pssl, self).run()
