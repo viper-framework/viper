@@ -357,6 +357,9 @@ class MISP(Module):
         __sessions__.current.misp_event = MispEvent(event)
 
     def add(self):
+        # TODO: inform user if there is a correlation after adding an attribute
+        # Only keep useful information in the event saved in the session
+        # Handle the case of the user adds 2 attributes in the same second, and it fails (possibly in PyMISP)
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return False
