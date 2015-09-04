@@ -616,7 +616,7 @@ def run_module():
     else:
         module_results = "You Didn't Enter A Command!"
     
-    return '<pre>{0}</pre>'.format(str(module_results))
+    return '<pre>{0}</pre>'.format(str(parse_text(module_results)))
     
 
 # Yara Rules
