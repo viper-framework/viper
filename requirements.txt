@@ -19,5 +19,6 @@ pyasn1
 M2Crypto
 pymisp
 django
+pypssl
 pypdns
 scandir
