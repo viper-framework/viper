@@ -2,8 +2,6 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import json
-
 from pypssl import PyPSSL
 
 from viper.common.abstracts import Module
@@ -28,7 +26,11 @@ class Pssl(Module):
         self.parser.add_argument("-f", "--fetch", help='SHA1 of the certificate to fetch.')
 
     def query_ip(self, ip):
-        result = self.pssl.query(ip)
+        try:
+            result = self.pssl.query(ip)
+        except Exception as e:
+            self.log('error', e)
+            return
         if not result.items():
             self.log('error', 'Nothing found')
             return
@@ -87,6 +89,10 @@ class Pssl(Module):
         else:
             self.log('error', 'You need to give the server to query.')
             return
+
+        # Assuming the backend used is https://github.com/adulau/crl-monitor, the path is set by the API
+        url = url.rstrip('/')
+
         if self.args.user:
             user = self.args.user
         else:
