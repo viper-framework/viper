@@ -39,6 +39,33 @@ rule adWind
 		all of them
 }
 
+rule Adzok
+{
+	meta:
+		author = " Kevin Breen <kevin@techanarchy.net>"
+		Description = "Adzok Rat"
+		Versions = "Free 1.0.0.3,"
+		date = "2015/05"
+		ref = "http://malwareconfig.com/stats/Adzok"
+		maltype = "Remote Access Trojan"
+		filetype = "jar"
+        family = "adzok"
+        tags = "rat, adzok"
+
+	strings:
+		$a1 = "config.xmlPK"
+		$a2 = "key.classPK"
+		$a3 = "svd$1.classPK"
+		$a4 = "svd$2.classPK"
+    $a5 = "Mensaje.classPK"
+		$a6 = "inic$ShutdownHook.class"
+		$a7 = "Uninstall.jarPK"
+		$a8 = "resources/icono.pngPK"
+        
+	condition:
+    7 of ($a*)
+}
+
 rule Ap0calypse
 {
 	meta:
@@ -80,6 +107,35 @@ rule Albertino
 
 	condition:
 		all of them
+}
+
+rule AlienSpy
+{
+	meta:
+		author = " Kevin Breen <kevin@techanarchy.net>"
+		date = "2015/03"
+		ref = "http://malwareconfig.com/stats/AlienSpy"
+		maltype = "Remote Access Trojan"
+		filetype = "jar"
+        family = "alienspy"
+        tags = "rat, alienspy"
+
+	strings:
+		$a1 = "Main.classPK"
+		$a2 = "MANIFEST.MFPK"
+		$a3 = "plugins/Server.classPK"
+		$a4 = "META-INF/MANIFEST.MF"
+        $a5 = "ID"
+        
+        $b1 = "config.xml"
+        $b2 = "options/PK"
+        $b3 = "plugins/PK"
+        $b4 = "util/PK"
+        $b5 = "util/OSHelper/PK"
+        $b6 = "Start.class"
+        $b7 = "AlienSpy"
+	condition:
+        all of ($a*) or all of ($b*)
 }
 
 rule Bandook
@@ -214,6 +270,29 @@ rule ClientMesh
         all of them
 }
 
+rule Crimson
+{
+	meta:
+		author = " Kevin Breen <kevin@techanarchy.net>"
+		Description = "Crimson Rat"
+		date = "2015/05"
+		ref = "http://malwareconfig.com/stats/Crimson"
+		maltype = "Remote Access Trojan"
+		filetype = "jar"
+        family = "crimson"
+        tags = "rat, crimson"
+
+	strings:
+		$a1 = "com/crimson/PK"
+		$a2 = "com/crimson/bootstrapJar/PK"
+		$a3 = "com/crimson/permaJarMulti/PermaJarReporter$1.classPK"
+		$a4 = "com/crimson/universal/containers/KeyloggerLog.classPK"
+        $a5 = "com/crimson/universal/UploadTransfer.classPK"
+        
+	condition:
+        all of ($a*)
+}
+
 rule CyberGate
 {
 
@@ -313,6 +392,62 @@ rule Greame
     		all of them
 }
 
+rule HawkEye
+{
+	meta:
+		author = " Kevin Breen <kevin@techanarchy.net>"
+		date = "2015/06"
+		ref = "http://malwareconfig.com/stats/HawkEye"
+		maltype = "KeyLogger"
+		filetype = "exe"
+        family = "hawkeye"
+        tags = "rat, hawkeye"
+
+	strings:
+		$key = "HawkEyeKeylogger" wide
+		$salt = "099u787978786" wide
+		$string1 = "HawkEye_Keylogger" wide
+		$string2 = "holdermail.txt" wide
+		$string3 = "wallet.dat" wide
+		$string4 = "Keylog Records" wide
+    $string5 = "<!-- do not script -->" wide
+    $string6 = "\\pidloc.txt" wide
+    $string7 = "BSPLIT" wide
+
+	condition:
+		$key and $salt and all of ($string*)
+}
+
+rule Imminent
+{
+    meta:
+        author = " Kevin Breen <kevin@techanarchy.net>"
+        date = "2014/04"
+        ref = "http://malwareconfig.com/stats/Imminent"
+        maltype = "Remote Access Trojan"
+        filetype = "exe"
+        family = "imminent"
+        tags = "rat, imminent"
+
+    strings:
+        $v1a = "DecodeProductKey"
+        $v1b = "StartHTTPFlood"
+        $v1c = "CodeKey"
+        $v1d = "MESSAGEBOX"
+        $v1e = "GetFilezillaPasswords"
+        $v1f = "DataIn"
+        $v1g = "UDPzSockets"
+        $v1h = {52 00 54 00 5F 00 52 00 43 00 44 00 41 00 54 00 41}
+
+        $v2a = "<URL>k__BackingField"
+        $v2b = "<RunHidden>k__BackingField"
+        $v2c = "DownloadAndExecute"
+        $v2d = "-CHECK & PING -n 2 127.0.0.1 & EXIT" wide
+        $v2e = "england.png" wide
+        $v2f = "Showed Messagebox" wide
+    condition:
+        all of ($v1*) or all of ($v2*)
+}
 
 rule Infinity
 {
@@ -392,6 +527,34 @@ rule LostDoor
     	all of ($a*) or all of ($b*)
 }
 
+rule LuminosityLink
+{
+    meta:
+        author = " Kevin Breen <kevin@techanarchy.net>"
+        date = "2015/06"
+        ref = "http://malwareconfig.com/stats/LuminosityLink"
+        maltype = "Remote Access Trojan"
+        filetype = "exe"
+        family = "luminositylink"
+        tags = "rat, luminositylink"
+
+    strings:
+        $a = "SMARTLOGS" wide
+        $b = "RUNPE" wide
+        $c = "b.Resources" wide
+        $d = "CLIENTINFO*" wide
+        $e = "Invalid Webcam Driver Download URL, or Failed to Download File!" wide
+        $f = "Proactive Anti-Malware has been manually activated!" wide
+        $g = "REMOVEGUARD" wide
+        $h = "C0n1f8" wide
+        $i = "Luminosity" wide
+        $j = "LuminosityCryptoMiner" wide
+        $k = "MANAGER*CLIENTDETAILS*" wide
+
+    condition:
+        all of them
+}
+
 rule LuxNet
 {
 	meta:
@@ -439,6 +602,28 @@ rule NanoCore
 
     condition:
         6 of them
+}
+
+rule NetWire
+{
+	meta:
+		author = " Kevin Breen <kevin@techanarchy.net>"
+		date = "2014/04"
+		ref = "http://malwareconfig.com/stats/NetWire"
+		maltype = "Remote Access Trojan"
+		filetype = "exe"
+        family = "netwire"
+        tags = "rat, netwire"
+		
+    strings:
+        $string1 = "[Scroll Lock]"
+        $string2 = "[Shift Lock]"
+        $string3 = "200 OK"
+        $string4 = "%s.Identifier"
+        $string5 = "sqlite3_column_text"
+        $string6 = "[%s] - [%.2d/%.2d/%d %.2d:%.2d:%.2d]"
+    condition:
+        all of them
 }
 
 rule njRat
@@ -540,6 +725,37 @@ rule PoisonIvy
         $string5 = "advpack"
     condition:
         $stub at 0x1620 and all of ($string*) or (all of them)
+}
+
+rule PredatorPain
+{
+
+	meta:
+		author = " Kevin Breen <kevin@techanarchy.net>"
+		date = "2014/04"
+		ref = "http://malwareconfig.com/stats/PredatorPain"
+		maltype = "Remote Access Trojan"
+		filetype = "exe"
+        family = "predatorpain"
+        tags = "rat, predatorpain"
+
+	strings:
+		$string1 = "holderwb.txt" wide
+		$string3 = "There is a file attached to this email" wide
+		$string4 = "screens\\screenshot" wide
+		$string5 = "Disablelogger" wide
+		$string6 = "\\pidloc.txt" wide
+        $string7 = "clearie" wide
+        $string8 = "clearff" wide
+        $string9 = "emails should be sent to you shortly" wide
+        $string10 = "jagex_cache\\regPin" wide
+        $string11 = "open=Sys.exe" wide
+		$ver1 = "PredatorLogger" wide
+		$ver2 = "EncryptedCredentials" wide
+        $ver3 = "Predator Pain" wide
+
+	condition:
+		7 of ($string*) and any of ($ver*)
 }
 
 rule Punisher
