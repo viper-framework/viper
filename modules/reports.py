@@ -80,24 +80,25 @@ class Reports(Module):
         else:
             username = MALWR_USER
             password = MALWR_PASS
+        try:
+            sess = requests.Session()
+            sess.auth = (username, password)
 
-        sess = requests.Session()
-        sess.auth = (username, password)
+            sess.get(MALWR_LOGIN, verify=False)
+            csrf = sess.cookies['csrftoken']
 
-        sess.get(MALWR_LOGIN, verify=False)
-        csrf = sess.cookies['csrftoken']
-
-        sess.post(
-            MALWR_LOGIN,
-            {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
-            headers=dict(Referer=MALWR_LOGIN),
-            verify=False,
-            timeout=60
-        )
-
+            sess.post(
+                MALWR_LOGIN,
+                {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
+                headers=dict(Referer=MALWR_LOGIN),
+                verify=False,
+                timeout=60
+                )
+        except:
+            self.log('info', "Error while connecting to malwr")
+            return
         payload = {'search': __sessions__.current.file.sha256, 'csrfmiddlewaretoken': csrf}
         headers = {"Referer": MALWR_SEARCH}
-
         p = sess.post(
             MALWR_SEARCH,
             payload,
