@@ -39,3 +39,5 @@ projects/
 *.db
 
 data/yara/index.yara
+
+viper.conf
