@@ -2,8 +2,10 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import sys
 import ConfigParser
 
+from viper.common.out import *
 from viper.common.objects import Dictionary
 
 class Config:
@@ -13,9 +15,20 @@ class Config:
         config = ConfigParser.ConfigParser()
         
         if cfg:
-            config.read(cfg)
+            test = config.read(cfg)
         else:
-            config.read('viper.conf')
+            test = config.read('viper.conf')
+            
+        # Check for empty config
+        if len(test) == 0:
+            print_error("Could not find a valid configuration file. Did you rename viper.conf.example to viper.conf")
+            print_info("Trying to rename for you")
+            try:
+                os.rename('viper.conf.example', 'viper.conf')
+                config.read('viper.conf')
+            except:
+                print_error("Failed to rename config file, Exiting")
+                sys.exit()
             
         for section in config.sections():
             setattr(self, section, Dictionary())
