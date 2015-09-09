@@ -132,7 +132,7 @@ class MISP(Module):
         domain.add_argument("domain", help='Domain')
 
         url = subparsers_add.add_parser("url", help="Add a URL to the event.")
-        url.add_argument("url", help='URL')
+        url.add_argument("full_url", help='URL')
 
         ua = subparsers_add.add_parser("ua", help="Add a user-agent to the event.")
         ua.add_argument("ua", help='User Agent')
@@ -464,7 +464,7 @@ class MISP(Module):
             event = self.misp.add_domain(current_event, self.args.domain)
             self._check_add(event)
         elif self.args.add == 'url':
-            event = self.misp.add_url(current_event, self.args.url)
+            event = self.misp.add_url(current_event, self.args.full_url)
             self._check_add(event)
         elif self.args.add == 'ua':
             event = self.misp.add_useragent(current_event, self.args.ua)
