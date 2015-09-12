@@ -74,10 +74,10 @@ class MISP(Module):
                                                 * 3: Undefined
 
                                           '''))
-        parser_up.add_argument("-e", "--event", type=int, help="Event ID to update. If None, a new event is created.")
+        parser_up.add_argument("-e", "--event", type=int, help="Event ID to update. If None, and you're not connected to a MISP event a new one is created.")
         parser_up.add_argument("-d", "--distrib", type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
         parser_up.add_argument("-ids", action='store_true', help="Is eligible for automatically creating IDS signatures.")
-        parser_up.add_argument("-c", "--categ", type=int, choices=[0, 1, 2, 3], help="Category of the samples.")
+        parser_up.add_argument("-c", "--categ", type=int, choices=[0, 1, 2, 3], default=1, help="Category of the samples.")
         parser_up.add_argument("-i", "--info", nargs='+', help="Event info field of a new event.")
         parser_up.add_argument("-a", "--analysis", type=int, choices=[0, 1, 2], help="Analysis level a new event.")
         parser_up.add_argument("-t", "--threat", type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
@@ -211,14 +211,28 @@ class MISP(Module):
             return False
 
         categ = self.categories.get(self.args.categ)
-        out = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
-                                      self.args.event, self.args.distrib, self.args.ids, categ,
-                                      ' '.join(self.args.info), self.args.analysis, self.args.threat)
+        if self.args.info is not None:
+            info = ' '.join(self.args.info)
+        else:
+            info = None
+        if __sessions__.current.misp_event and self.args.event is None:
+            event = __sessions__.current.misp_event.event_id
+        else:
+            event = None
+        try:
+            out = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
+                                          event, self.args.distrib, self.args.ids, categ, info,
+                                          self.args.analysis, self.args.threat)
+        except Exception as e:
+            self.log('error', e)
+            return
         result = out.json()
         if out.status_code == 200:
             if result.get('errors') is not None:
                 self.log('error', result.get('errors')[0]['error']['value'][0])
             else:
+                # TODO: open a session (the response doesn't contain the event ID)
+                # __sessions__.new(misp_event=MispEvent(result))
                 self.log('success', "File uploaded sucessfully")
         else:
             self.log('error', result.get('message'))
