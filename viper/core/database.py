@@ -330,6 +330,8 @@ class Database:
             rows = session.query(Malware).order_by(Malware.id.desc()).limit(value).offset(offset)
         elif key == 'md5':
             rows = session.query(Malware).filter(Malware.md5 == value).all()
+        elif key == 'sha1':
+            rows = session.query(Malware).filter(Malware.sha1 == value).all()
         elif key == 'sha256':
             rows = session.query(Malware).filter(Malware.sha256 == value).all()
         elif key == 'tag':

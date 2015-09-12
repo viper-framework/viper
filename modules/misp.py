@@ -23,7 +23,9 @@ except:
 
 
 from viper.common.abstracts import Module
+from viper.core.database import Database
 from viper.core.session import __sessions__
+from viper.core.storage import get_sample_path
 from viper.common.objects import MispEvent
 from viper.common.constants import VIPER_ROOT
 
@@ -76,7 +78,7 @@ class MISP(Module):
         parser_up.add_argument("-d", "--distrib", type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
         parser_up.add_argument("-ids", action='store_true', help="Is eligible for automatically creating IDS signatures.")
         parser_up.add_argument("-c", "--categ", type=int, choices=[0, 1, 2, 3], help="Category of the samples.")
-        parser_up.add_argument("-i", "--info", help="Event info field of a new event.")
+        parser_up.add_argument("-i", "--info", nargs='+', help="Event info field of a new event.")
         parser_up.add_argument("-a", "--analysis", type=int, choices=[0, 1, 2], help="Analysis level a new event.")
         parser_up.add_argument("-t", "--threat", type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
 
@@ -102,7 +104,7 @@ class MISP(Module):
         parser_create_event.add_argument("-d", "--distrib", required=True, type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
         parser_create_event.add_argument("-t", "--threat", required=True, type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
         parser_create_event.add_argument("-a", "--analysis", required=True, type=int, choices=[0, 1, 2], help="Analysis level a new event.")
-        parser_create_event.add_argument("-i", "--info", required=True, help="Event info field of a new event.")
+        parser_create_event.add_argument("-i", "--info", required=True, nargs='+', help="Event info field of a new event.")
         parser_create_event.add_argument("--date", help="Date of the event. (Default: today).")
 
         parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
@@ -199,7 +201,7 @@ class MISP(Module):
         categ = self.categories.get(self.args.categ)
         out = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
                                       self.args.event, self.args.distrib, self.args.ids, categ,
-                                      self.args.info, self.args.analysis, self.args.threat)
+                                      ' '.join(self.args.info), self.args.analysis, self.args.threat)
         result = out.json()
         if out.status_code == 200:
             if result.get('errors') is not None:
@@ -208,6 +210,39 @@ class MISP(Module):
                 self.log('success', "File uploaded sucessfully")
         else:
             self.log('error', result.get('message'))
+
+    def search_local_hashes(self, event):
+        local = []
+        for a in event['Event']['Attribute']:
+            row = None
+            if a['type'] in ('malware-sample', 'filename|md5', 'md5'):
+                h = a['value']
+                if '|' in a['type']:
+                    h = a['value'].split('|')[1]
+                row = Database().find(key='md5', value=h)
+            elif a['type'] in ('sha1', 'filename|sha1'):
+                h = a['value']
+                if '|' in a['type']:
+                    h = a['value'].split('|')[1]
+                row = Database().find(key='sha1', value=h)
+            elif a['type'] in ('sha256', 'filename|sha256'):
+                h = a['value']
+                if '|' in a['type']:
+                    h = a['value'].split('|')[1]
+                row = Database().find(key='sha256', value=h)
+            if row:
+                local.append(row[0])
+        shas = set([l.sha256 for l in local])
+        if len(shas) == 1:
+            __sessions__.new(get_sample_path(shas.pop()), MispEvent(event))
+        elif len(shas) > 1:
+            self.log('success', 'The following samples are in this viper instance:')
+            __sessions__.new(misp_event=MispEvent(event))
+            for s in shas:
+                self.log('item', s)
+        else:
+            __sessions__.new(misp_event=MispEvent(event))
+            self.log('info', 'No known samples in that event.')
 
     def check_hashes(self):
         out = self.misp.get_event(self.args.event)
@@ -361,26 +396,19 @@ class MISP(Module):
                 e['Event']['info'].encode('utf-8'), nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
     def get_event(self):
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return False
-
         event = self.misp.get_event(self.args.event)
-        __sessions__.current.misp_event = MispEvent(event.json())
+        event_dict = event.json()
+        self.search_local_hashes(event_dict)
 
     def create_event(self):
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return False
-
         # Dirty trick to keep consistency in the module: the threat level in the upload
         # API can go from 0 import to 3 but it is 1 to 4 in the event mgmt API.
         # It will be fixed in a near future, in the mean time, we do that:
         self.args.threat += 1
 
         event = self.misp.new_event(self.args.distrib, self.args.threat, self.args.analysis,
-                                    self.args.info, self.args.date)
-        __sessions__.current.misp_event = MispEvent(event)
+                                    ' '.join(self.args.info), self.args.date)
+        self.search_local_hashes(event)
 
     def _find_related_id(self, event):
         if not event.get('RelatedEvent'):
