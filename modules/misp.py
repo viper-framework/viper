@@ -187,7 +187,9 @@ class MISP(Module):
             to_print.append((eid, path))
 
         if len(to_print) == 1:
-            return __sessions__.new(to_print[0][1])
+            self.log('success', 'The sample has been downloaded from Event {}'.format(to_print[0][0]))
+            event = self.misp.get_event(to_print[0][0])
+            return __sessions__.new(to_print[0][1], MispEvent(event.json()))
         else:
             self.log('success', 'The following files have been downloaded:')
             for p in to_print:
