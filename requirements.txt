@@ -22,3 +22,5 @@ django
 pypssl
 pypdns
 scandir
+pype32
+pbkdf2
