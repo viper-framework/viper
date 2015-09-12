@@ -476,6 +476,9 @@ class MISP(Module):
 
         if self.args.add == 'hashes':
             if self.args.filename is None and self.args.md5 is None and self.args.sha1 is None and self.args.sha256 is None:
+                if not __sessions__.current.file:
+                    self.log('error', "Not attached to a file, please set the hashes manually.")
+                    return False
                 event = self.misp.add_hashes(current_event, filename=__sessions__.current.file.name,
                                              md5=__sessions__.current.file.md5, sha1=__sessions__.current.file.sha1,
                                              sha256=__sessions__.current.file.sha256,
