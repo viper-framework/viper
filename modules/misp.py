@@ -83,7 +83,7 @@ class MISP(Module):
         parser_up.add_argument("-t", "--threat", type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
 
         parser_down = subparsers.add_parser('download', help='Download malware samples from MISP.')
-        group = parser_down.add_mutually_exclusive_group(required=True)
+        group = parser_down.add_mutually_exclusive_group()
         group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID.")
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
@@ -175,6 +175,16 @@ class MISP(Module):
             ok, data = self.misp.download_samples(event_id=self.args.event)
         elif self.args.hash:
             ok, data = self.misp.download_samples(sample_hash=self.args.hash)
+        else:
+            # Download from current MISP event if possible
+            if not __sessions__.is_set():
+                self.log('error', "No session opened")
+                return False
+            if not __sessions__.current.misp_event:
+                self.log('error', "Not connected to a MISP event.")
+                return False
+            ok, data = self.misp.download_samples(event_id=__sessions__.current.misp_event.event_id)
+
         if not ok:
             self.log('error', data)
             return
@@ -215,8 +225,11 @@ class MISP(Module):
 
     def search_local_hashes(self, event):
         local = []
+        samples_count = 0
         for a in event['Event']['Attribute']:
             row = None
+            if a['type'] == 'malware-sample':
+                samples_count += 1
             if a['type'] in ('malware-sample', 'filename|md5', 'md5'):
                 h = a['value']
                 if '|' in a['type']:
@@ -234,6 +247,7 @@ class MISP(Module):
                 row = Database().find(key='sha256', value=h)
             if row:
                 local.append(row[0])
+        self.log('info', 'This event contains {} samples.'.format(samples_count))
         shas = set([l.sha256 for l in local])
         if len(shas) == 1:
             __sessions__.new(get_sample_path(shas.pop()), MispEvent(event))
@@ -244,7 +258,7 @@ class MISP(Module):
                 self.log('item', s)
         else:
             __sessions__.new(misp_event=MispEvent(event))
-            self.log('info', 'No known samples in that event.')
+            self.log('info', 'No known (in Viper) samples in that event.')
 
     def check_hashes(self):
         out = self.misp.get_event(self.args.event)
