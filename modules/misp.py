@@ -231,7 +231,11 @@ class MISP(Module):
             if result.get('errors') is not None:
                 self.log('error', result.get('errors')[0]['error']['value'][0])
             else:
-                # TODO: open a session (the response doesn't contain the event ID)
+                if event is not None:
+                    full_event = self.misp.get_event(event)
+                    return __sessions__.new(misp_event=MispEvent(full_event.json()))
+                # TODO: also open a session when upload_sample created a new event
+                # (the response doesn't contain the event ID)
                 # __sessions__.new(misp_event=MispEvent(result))
                 self.log('success', "File uploaded sucessfully")
         else:
@@ -460,7 +464,7 @@ class MISP(Module):
                 self.log('success', 'New related event: {}/{}'.format(self.url.rstrip('/'), related))
             else:
                 self.log('info', 'Related event: {}/{}'.format(self.url.rstrip('/'), related))
-        __sessions__.current.misp_event.event = new_event
+        __sessions__.new(misp_event=MispEvent(new_event))
 
     def show(self):
         if not __sessions__.is_set():
