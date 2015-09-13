@@ -188,12 +188,16 @@ class Console(object):
 
             if __sessions__.is_set():
                 stored = ''
-                if not Database().find(key='sha256',value=__sessions__.current.file.sha256):
-                    stored = magenta(' [not stored]', True)
-
-                prompt = (prefix + cyan('viper ', True) + 
-                    white(__sessions__.current.file.name, True) + 
-                    stored + cyan(' > ', True))
+                filename = ''
+                if __sessions__.current.file:
+                    filename = __sessions__.current.file.name
+                    if not Database().find(key='sha256', value=__sessions__.current.file.sha256):
+                        stored = magenta(' [not stored]', True)
+                misp = ''
+                if __sessions__.current.misp_event:
+                    misp = ' [MISP {}]'.format(__sessions__.current.misp_event.event_id)
+                prompt = (prefix + cyan('viper ', True) +
+                          white(filename, True) + blue(misp, True) + stored + cyan(' > ', True))
             # Otherwise display the basic prompt.
             else:
                 prompt = prefix + cyan('viper > ', True)
