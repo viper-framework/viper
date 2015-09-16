@@ -150,6 +150,8 @@ class MISP(Module):
 
         subparsers.add_parser('show', help='Show attributes to an existing MISP event.')
 
+        subparsers.add_parser('publish', help='Publish an existing MISP event.')
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     def yara(self):
@@ -343,8 +345,8 @@ class MISP(Module):
                     self.log('success', 'Sample available in MISP:')
                 else:
                     self.log('success', 'Sample available in VT:')
-                    if self.args.populate:
-                        attributes += self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes)
+                if self.args.populate:
+                    attributes += self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes, sample_hashes)
                 self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(link[1], md5, sha1, sha256))
             else:
                 unk_vt_hashes.append(vt_request['resource'])
@@ -356,11 +358,11 @@ class MISP(Module):
             for h in unk_vt_hashes:
                 self.log('item', '{}'.format(h))
 
-    def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes):
+    def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes, sample_hashes):
         new_md5 = False
         new_sha1 = False
         new_sha256 = False
-        if md5 not in event_hashes:
+        if md5 not in event_hashes and md5 not in sample_hashes:
             new_md5 = True
         if sha1 not in event_hashes:
             new_sha1 = True
@@ -467,6 +469,21 @@ class MISP(Module):
                 self.log('info', 'Related event: {}/{}'.format(self.url.rstrip('/'), related))
         __sessions__.new(misp_event=MispEvent(new_event))
 
+    def publish(self):
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return False
+        if not __sessions__.current.misp_event:
+            self.log('error', "Not attached to a MISP event")
+            return False
+
+        current_event = copy.deepcopy(__sessions__.current.misp_event.event)
+        event = self.misp.publish(current_event)
+        if not event.get('Event'):
+            self.log('error', event['message'])
+            return
+        self.log('success', 'Event {} published.'.format(event['Event']['id']))
+
     def show(self):
         if not __sessions__.is_set():
             self.log('error', "No session opened")
@@ -481,6 +498,10 @@ class MISP(Module):
         rows = []
         for a in current_event['Event']['Attribute']:
             rows.append([a['type'], a['value'], a['comment']])
+        if current_event['Event']['published']:
+            self.log('info', 'This event has been published')
+        else:
+            self.log('info', 'This event has not been published')
         self.log('table', dict(header=header, rows=rows))
 
     def add(self):
@@ -591,3 +612,7 @@ class MISP(Module):
             self.add()
         elif self.args.subname == 'show':
             self.show()
+        elif self.args.subname == 'publish':
+            self.publish()
+        else:
+            self.log('error', "No calls defined for this command.")
