@@ -119,7 +119,7 @@ class Reports(Module):
             return reports
 
     def anubis(self):
-        if not cfg.reports.anubis_user or not cfg.reports.anubis_pass:
+        if not cfg.reports.anubis_user or not cfg.reports.anubis_user:
             choice = raw_input("You need to specify a valid username/password, login now? [y/N] ")
             if choice == 'y':
                 username, password = self.authenticate()
@@ -127,7 +127,7 @@ class Reports(Module):
                 return
         else:
             username = cfg.reports.anubis_user
-            password = cfg.reports.anubis_pass
+            password = cfg.reports.anubis_user
 
         sess = requests.Session()
         sess.auth = (username, password)
