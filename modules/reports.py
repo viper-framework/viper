@@ -70,24 +70,25 @@ class Reports(Module):
         else:
             username = cfg.reports.malwr_user
             password = cfg.reports.malwr_pass
+        try:
+            sess = requests.Session()
+            sess.auth = (username, password)
 
-        sess = requests.Session()
-        sess.auth = (username, password)
+            sess.get(cfg.reports.malwr_login, verify=False)
+            csrf = sess.cookies['csrftoken']
 
-        sess.get(cfg.reports.malwr_login, verify=False)
-        csrf = sess.cookies['csrftoken']
-
-        sess.post(
-            cfg.reports.malwr_login,
-            {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
-            headers=dict(Referer=cfg.reports.malwr_login),
-            verify=False,
-            timeout=60
-        )
-
+            sess.post(
+                cfg.reports.malwr_login,
+                {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
+                headers=dict(Referer=cfg.reports.malwr_login),
+                verify=False,
+                timeout=60
+                )
+        except:
+            self.log('info', "Error while connecting to malwr")
+            return
         payload = {'search': __sessions__.current.file.sha256, 'csrfmiddlewaretoken': csrf}
         headers = {"Referer": cfg.reports.malwr_search}
-
         p = sess.post(
             cfg.reports.malwr_search,
             payload,
