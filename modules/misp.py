@@ -10,7 +10,7 @@ import tempfile
 import time
 
 try:
-    from pymisp import PyMISP
+    from pymisp import PyMISP, PyMISPError
     HAVE_PYMISP = True
 except:
     HAVE_PYMISP = False
@@ -639,7 +639,11 @@ class MISP(Module):
         else:
             verify = MISP_VERIFY
 
-        self.misp = PyMISP(self.url, self.key, verify, 'json')
+        try:
+            self.misp = PyMISP(self.url, self.key, verify, 'json')
+        except PyMISPError as e:
+            self.log('error', e.message)
+            return
 
         if self.args.subname == 'upload':
             self.upload()
