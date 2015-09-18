@@ -31,6 +31,7 @@ from viper.common.constants import VIPER_ROOT
 
 MISP_URL = ''
 MISP_KEY = ''
+MISP_VERIFY = True
 
 VT_REPORT_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
 VT_DOWNLOAD_URL = 'https://www.virustotal.com/vtapi/v2/file/download'
@@ -633,7 +634,12 @@ class MISP(Module):
             self.log('error', "This command requires a MISP private API key.")
             return
 
-        self.misp = PyMISP(self.url, self.key, self.args.verify, 'json')
+        if not self.args.verify:
+            verify = False
+        else:
+            verify = MISP_VERIFY
+
+        self.misp = PyMISP(self.url, self.key, verify, 'json')
 
         if self.args.subname == 'upload':
             self.upload()
