@@ -46,6 +46,7 @@ class MISP(Module):
         super(MISP, self).__init__()
         self.parser.add_argument("--url", help='URL of the MISP instance')
         self.parser.add_argument("-k", "--key", help='Your key on the MISP instance')
+        self.parser.add_argument("-v", "--verify", action='store_false', help='Disable certificate verification (for self-signed)')
         subparsers = self.parser.add_subparsers(dest='subname')
 
         parser_up = subparsers.add_parser('upload', help='Send malware sample to MISP.', formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -632,7 +633,7 @@ class MISP(Module):
             self.log('error', "This command requires a MISP private API key.")
             return
 
-        self.misp = PyMISP(self.url, self.key, True, 'json')
+        self.misp = PyMISP(self.url, self.key, self.args.verify, 'json')
 
         if self.args.subname == 'upload':
             self.upload()
