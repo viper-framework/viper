@@ -50,7 +50,9 @@ class MISP(Module):
         self.parser.add_argument("-v", "--verify", action='store_false', help='Disable certificate verification (for self-signed)')
         subparsers = self.parser.add_subparsers(dest='subname')
 
-        parser_up = subparsers.add_parser('upload', help='Send malware sample to MISP.', formatter_class=argparse.RawDescriptionHelpFormatter,
+        # ##### Upload sample to MISP #####
+        parser_up = subparsers.add_parser('upload', help='Send malware sample to MISP.',
+                                          formatter_class=argparse.RawDescriptionHelpFormatter,
                                           description=textwrap.dedent('''
                                             Distribution levels:
                                                 * 0: Your organisation only
@@ -74,7 +76,6 @@ class MISP(Module):
                                                 * 1: Medium
                                                 * 2: Low
                                                 * 3: Undefined
-
                                           '''))
         parser_up.add_argument("-e", "--event", type=int, help="Event ID to update. If None, and you're not connected to a MISP event a new one is created.")
         parser_up.add_argument("-d", "--distrib", type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
@@ -84,85 +85,135 @@ class MISP(Module):
         parser_up.add_argument("-a", "--analysis", type=int, choices=[0, 1, 2], help="Analysis level a new event.")
         parser_up.add_argument("-t", "--threat", type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
 
+        # ##### Download samples from event #####
         parser_down = subparsers.add_parser('download', help='Download malware samples from MISP.')
         group = parser_down.add_mutually_exclusive_group()
         group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID.")
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
+        # ##### Search in MISP #####
         parser_search = subparsers.add_parser('search', help='Search in all the attributes.')
         parser_search.add_argument("query", nargs='+', help="String to search.")
 
+        # ##### Check hashes on VT #####
         parser_checkhashes = subparsers.add_parser('check_hashes', help='Crosscheck hashes on VT.')
-        parser_checkhashes.add_argument("event", help="Lookup all the hashes of an event on VT.")
+        parser_checkhashes.add_argument("event", type=int, help="Lookup all the hashes of an event on VT.")
         parser_checkhashes.add_argument("-p", "--populate", action='store_true', help="Automatically populate event with hashes found on VT.")
 
+        # ##### Download Yara rules #####
         parser_checkhashes = subparsers.add_parser('yara', help='Get YARA rules of an event.')
-        parser_checkhashes.add_argument("event", help="Download the yara rules of that event.")
+        parser_checkhashes.add_argument("event", type=int, help="Download the yara rules of that event.")
 
+        # ##### Get an Event #####
         parser_get_event = subparsers.add_parser('get_event', help='Initialize the session with an existing MISP event.')
-        parser_get_event.add_argument("event", help="Existing Event ID.")
+        parser_get_event.add_argument("event", type=int, help="Existing Event ID.")
 
-        parser_create_event = subparsers.add_parser('create_event', help='Create a new event on MISP and initialize the session with it.')
+        # ##### Create an Event #####
+        parser_create_event = subparsers.add_parser('create_event', help='Create a new event on MISP and initialize the session with it.',
+                                                    formatter_class=argparse.RawDescriptionHelpFormatter,
+                                                    description=textwrap.dedent('''
+                                                      Distribution levels:
+                                                          * 0: Your organisation only
+                                                          * 1: This community only
+                                                          * 2: Connected communities
+                                                          * 3: All communities
+
+                                                      Analysis levels:
+                                                          * 0: Initial
+                                                          * 1: Ongoing
+                                                          * 2: Completed
+
+                                                      Threat levels:
+                                                          * 0: High
+                                                          * 1: Medium
+                                                          * 2: Low
+                                                          * 3: Undefined
+                                                    '''))
         parser_create_event.add_argument("-d", "--distrib", required=True, type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
         parser_create_event.add_argument("-t", "--threat", required=True, type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
         parser_create_event.add_argument("-a", "--analysis", required=True, type=int, choices=[0, 1, 2], help="Analysis level a new event.")
         parser_create_event.add_argument("-i", "--info", required=True, nargs='+', help="Event info field of a new event.")
         parser_create_event.add_argument("--date", help="Date of the event. (Default: today).")
 
+        # ##### Add attributes #####
         parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
         subparsers_add = parser_add.add_subparsers(dest='add')
+        # Hashes
         h = subparsers_add.add_parser("hashes", help="If no parameters, add add all the hashes of the current session.")
         h.add_argument("-f", "--filename", help="Filename")
         h.add_argument("-m", "--md5", help="MD5")
         h.add_argument("-s", "--sha1", help="SHA1")
         h.add_argument("-a", "--sha256", help="SHA256")
-
+        # Registry key
         rk = subparsers_add.add_parser("regkey", help="Add a registry key to the event.")
         rk.add_argument("regkey", nargs='+', help="First word is the key, second word (optional) is the value: <key> <value>")
-
+        # Pipe
         pipe = subparsers_add.add_parser("pipe", help="Add a pipe to the event.")
         pipe.add_argument("pipe", help='Name of the pipe.')
-
+        # Mutex
         mutex = subparsers_add.add_parser("mutex", help="Add a mutex to the event.")
         mutex.add_argument("mutex", help='Name of the mutex.')
-
+        # IP Destination
         ipdst = subparsers_add.add_parser("ipdst", help="Add a destination IP (C&C Server) to the event.")
         ipdst.add_argument("ipdst", help='IP address')
-
+        # Hostname
         hostname = subparsers_add.add_parser("hostname", help="Add an hostname to the event.")
         hostname.add_argument("hostname", help='Hostname')
-
+        # Domain
         domain = subparsers_add.add_parser("domain", help="Add a domain to the event.")
         domain.add_argument("domain", help='Domain')
-
+        # URL
         url = subparsers_add.add_parser("url", help="Add a URL to the event.")
         url.add_argument("full_url", help='URL')
-
+        # User Agent
         ua = subparsers_add.add_parser("ua", help="Add a user-agent to the event.")
         ua.add_argument("ua", help='User Agent')
-
+        # Pattern in file
         pfile = subparsers_add.add_parser("pattern_file", help="Add a pattern in file to the event.")
         pfile.add_argument("pfile", help='Pattern in file')
-
+        # Pattern in Memory
         pmem = subparsers_add.add_parser("pattern_mem", help="Add a pattern in memory to the event.")
         pmem.add_argument("pmem", help='Pattern in memory')
-
+        # Pattern in traffic
         ptraffic = subparsers_add.add_parser("pattern_traffic", help="Add a  to the event.")
         ptraffic.add_argument("ptraffic", help='Pattern in traffic')
 
+        # ##### Show attributes  #####
         subparsers.add_parser('show', help='Show attributes to an existing MISP event.')
 
+        # ##### Publish an event #####
         subparsers.add_parser('publish', help='Publish an existing MISP event.')
 
+        # ##### Show version #####
         subparsers.add_parser('version', help='Returns the version of the MISP instance.')
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
+    def _has_misp_session(self):
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return False
+        if not __sessions__.current.misp_event:
+            self.log('error', "Not attached to a MISP event")
+            return False
+        return True
+
+    def _get_eventid(self):
+        if self.args.event:
+            return self.args.event
+        else:
+            # Get current event ID if possible
+            if not self._has_misp_session():
+                return None
+            return __sessions__.current.misp_event.event_id
+
     def yara(self):
         ok = False
         data = None
-        if self.args.event:
-            ok, data = self.misp.get_yara(self.args.event)
+        event_id = self._get_eventid()
+        if event_id is None:
+            return
+        ok, data = self.misp.get_yara(event_id)
         if not ok:
             self.log('error', data)
             return
@@ -177,19 +228,13 @@ class MISP(Module):
     def download(self):
         ok = False
         data = None
-        if self.args.event:
-            ok, data = self.misp.download_samples(event_id=self.args.event)
-        elif self.args.hash:
+        if self.args.hash:
             ok, data = self.misp.download_samples(sample_hash=self.args.hash)
         else:
-            # Download from current MISP event if possible
-            if not __sessions__.is_set():
-                self.log('error', "No session opened")
-                return False
-            if not __sessions__.current.misp_event:
-                self.log('error', "Not connected to a MISP event.")
-                return False
-            ok, data = self.misp.download_samples(event_id=__sessions__.current.misp_event.event_id)
+            event_id = self._get_eventid()
+            if event_id is None:
+                return
+            ok, data = self.misp.download_samples(event_id=event_id)
 
         if not ok:
             self.log('error', data)
@@ -211,6 +256,12 @@ class MISP(Module):
             for p in to_print:
                 self.log('success', '\tEventID: {} - {}'.format(*p))
 
+    def _has_error_message(self, result):
+        if result.get('message'):
+            self.log('error', result.get('message'))
+            return True
+        return False
+
     def upload(self):
         if not __sessions__.is_set():
             self.log('error', "No session opened")
@@ -221,36 +272,33 @@ class MISP(Module):
             info = ' '.join(self.args.info)
         else:
             info = None
-        if self.args.event is not None:
-            event = self.args.event
-        elif __sessions__.current.misp_event is not None:
-            event = __sessions__.current.misp_event.event_id
-        else:
-            event = None
+        # No need to check the output: is the event_id is none, we create a new one.
+        event_id = self._get_eventid()
         try:
             out = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
-                                          event, self.args.distrib, self.args.ids, categ, info,
+                                          event_id, self.args.distrib, self.args.ids, categ, info,
                                           self.args.analysis, self.args.threat)
         except Exception as e:
             self.log('error', e)
             return
         result = out.json()
-        if out.status_code == 200:
-            if result.get('errors') is not None:
-                self.log('error', result.get('errors')[0]['error']['value'][0])
-            else:
-                self.log('success', "File uploaded sucessfully")
-                if event is None:
-                    event = result.get('id')
-                if event is not None:
-                    full_event = self.misp.get_event(event)
-                    return __sessions__.new(misp_event=MispEvent(full_event.json()))
+        if self._has_error_message(result):
+            return
+        if result.get('errors') is not None:
+            self.log('error', result.get('errors')[0]['error']['value'][0])
         else:
-            self.log('error', result.get('message'))
+            self.log('success', "File uploaded sucessfully")
+            if event_id is None:
+                event = result.get('id')
+            if event is not None:
+                full_event = self.misp.get_event(event)
+                return __sessions__.new(misp_event=MispEvent(full_event.json()))
 
     def search_local_hashes(self, event):
         local = []
         samples_count = 0
+        if self._has_error_message(event):
+            return
         for a in event['Event']['Attribute']:
             row = None
             if a['type'] == 'malware-sample':
@@ -288,8 +336,7 @@ class MISP(Module):
     def check_hashes(self):
         out = self.misp.get_event(self.args.event)
         result = out.json()
-        if out.status_code != 200:
-            self.log('error', result.get('message'))
+        if self._has_error_message(result):
             return
 
         event = result.get('Event')
@@ -406,22 +453,18 @@ class MISP(Module):
                              'timestamp': int(time.time())}}
         out = self.misp.update_event(int(event['id']), to_send)
         result = out.json()
-        if out.status_code == 200:
-            if result.get('message') is not None:
-                self.log('error', result.get('message'))
-            elif result.get('errors') is not None:
-                for e in result.get('errors'):
-                    self.log('error', e['error']['value'][0])
-            else:
-                self.log('success', "All attributes updated sucessfully")
+        if self._has_error_message(result):
+            return
+        if result.get('errors') is not None:
+            for e in result.get('errors'):
+                self.log('error', e['error']['value'][0])
         else:
-            self.log('error', result.get('message'))
+            self.log('success', "All attributes updated sucessfully")
 
     def searchall(self):
         result = self.misp.search_all(' '.join(self.args.query))
 
-        if result.get('response') is None:
-            self.log('error', result.get('message'))
+        if self._has_error_message(result):
             return
         self.log('success', 'Found the following events:')
         for e in result['response']:
@@ -447,8 +490,12 @@ class MISP(Module):
         # It will be fixed in a near future, in the mean time, we do that:
         self.args.threat += 1
 
-        event = self.misp.new_event(self.args.distrib, self.args.threat, self.args.analysis,
-                                    ' '.join(self.args.info), self.args.date)
+        if self.args.info is not None:
+            info = ' '.join(self.args.info)
+        else:
+            info = None
+
+        event = self.misp.new_event(self.args.distrib, self.args.threat, self.args.analysis, info, self.args.date)
         self.search_local_hashes(event)
 
     def _find_related_id(self, event):
@@ -474,27 +521,18 @@ class MISP(Module):
         __sessions__.new(misp_event=MispEvent(new_event))
 
     def publish(self):
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return False
-        if not __sessions__.current.misp_event:
-            self.log('error', "Not attached to a MISP event")
-            return False
+        if not self._has_misp_session():
+            return
 
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
         event = self.misp.publish(current_event)
-        if not event.get('Event'):
-            self.log('error', event['message'])
+        if self._has_error_message(event):
             return
         self.log('success', 'Event {} published.'.format(event['Event']['id']))
 
     def show(self):
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return False
-        if not __sessions__.current.misp_event:
-            self.log('error', "Not attached to a MISP event")
-            return False
+        if not self._has_misp_session():
+            return
 
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
 
@@ -509,12 +547,8 @@ class MISP(Module):
         self.log('table', dict(header=header, rows=rows))
 
     def add(self):
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return False
-        if not __sessions__.current.misp_event:
-            self.log('error', "Not attached to a MISP event")
-            return False
+        if not self._has_misp_session():
+            return
 
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
 
