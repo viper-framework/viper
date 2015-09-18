@@ -152,6 +152,8 @@ class MISP(Module):
 
         subparsers.add_parser('publish', help='Publish an existing MISP event.')
 
+        subparsers.add_parser('version', help='Returns the version of the MISP instance.')
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     def yara(self):
@@ -566,13 +568,51 @@ class MISP(Module):
             event = self.misp.add_traffic_pattern(current_event, self.args.ptraffic)
             self._check_add(event)
 
+    def version(self):
+        ok = True
+        api_version = self.misp.get_api_version()
+        self.log('info', 'The version of your MISP API is: {}'.format(api_version['version']))
+        api_version_master = self.misp.get_api_version_master()
+        if api_version_master.get('version') is None:
+            ok = False
+            self.log('error', api_version_master)
+        else:
+            self.log('info', 'The version of MISP API master branch is: {}'.format(api_version_master['version']))
+
+        misp_version = self.misp.get_version()
+        if misp_version.get('version') is None:
+            ok = False
+            self.log('error', misp_version)
+        else:
+            self.log('info', 'The version of your MISP instance is: {}'.format(misp_version['version']))
+
+        misp_version_master = self.misp.get_version_master()
+        if misp_version_master.get('version') is None:
+            ok = False
+            self.log('error', misp_version_master)
+        else:
+            self.log('info', 'The version of MISP master branch is: {}'.format(misp_version_master['version']))
+
+        if not ok:
+            return
+
+        if misp_version['version'] == misp_version_master['version']:
+            self.log('success', 'Congratulation, your MISP instance is up-to-date')
+        else:
+            self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
+
+        if api_version['version'] == api_version_master['version']:
+            self.log('success', 'Congratulation, the MISP API installed is up-to-date')
+        else:
+            self.log('warning', 'The MISP API installed is outdated, you should update to avoid issues.')
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
             return
 
         if not HAVE_PYMISP:
-            self.log('error', "Missing dependency, install requests (`pip install pymisp`)")
+            self.log('error', "Missing dependency, install pymisp (`pip install pymisp`)")
             return
 
         if self.args.url is None:
@@ -614,5 +654,7 @@ class MISP(Module):
             self.show()
         elif self.args.subname == 'publish':
             self.publish()
+        elif self.args.subname == 'version':
+            self.version()
         else:
             self.log('error', "No calls defined for this command.")
