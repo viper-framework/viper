@@ -49,3 +49,28 @@ If you are running a Viper version 1.1 und using update.py to update to 1.2 you 
       IOError: [Errno 2] No such file or directory: 'data/web/'
       
 That issue is known and already adressed in the new version of update.py (you might wanna pull that file manually
+
+PreprocessError: data/yara/index.yara:0:Invalid file extension '.yara'.Can only include .yar
+============================================================================================
+
+If you running yara or RAT module and receiving that issue::
+
+    ...
+    PreprocessError: data/yara/index.yara:0:Invalid file extension '.yara'.Can only include .yar
+    ...
+    
+    
+It is most likely the versions of yara are not correct, try to run::
+
+    viper@viper:/home/viper# yara -version
+    yara 2.1
+
+And check for the yara-python bindings::
+ 
+    viper@viper:/home/viper# pip freeze | grep yara
+    yara-python==2.1
+
+
+If you have installed yara-python using pip it is likely you are running an older version of yara (see yara documentation for compiling howto)
+
+
