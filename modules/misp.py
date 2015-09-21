@@ -275,13 +275,12 @@ class MISP(Module):
         # No need to check the output: is the event_id is none, we create a new one.
         event_id = self._get_eventid()
         try:
-            out = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
-                                          event_id, self.args.distrib, self.args.ids, categ, info,
-                                          self.args.analysis, self.args.threat)
+            result = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
+                                             event_id, self.args.distrib, self.args.ids, categ, info,
+                                             self.args.analysis, self.args.threat)
         except Exception as e:
             self.log('error', e)
             return
-        result = out.json()
         if self._has_error_message(result):
             return
         if result.get('errors') is not None:
@@ -615,6 +614,11 @@ class MISP(Module):
         else:
             self.log('info', 'The version of MISP API master branch is: {}'.format(api_version_master['version']))
 
+        if api_version['version'] == api_version_master['version']:
+            self.log('success', 'Congratulation, the MISP API installed is up-to-date')
+        else:
+            self.log('warning', 'The MISP API installed is outdated, you should update to avoid issues.')
+
         misp_version = self.misp.get_version()
         if misp_version.get('version') is None:
             ok = False
@@ -636,11 +640,6 @@ class MISP(Module):
             self.log('success', 'Congratulation, your MISP instance is up-to-date')
         else:
             self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
-
-        if api_version['version'] == api_version_master['version']:
-            self.log('success', 'Congratulation, the MISP API installed is up-to-date')
-        else:
-            self.log('warning', 'The MISP API installed is outdated, you should update to avoid issues.')
 
     def run(self):
         super(MISP, self).run()
