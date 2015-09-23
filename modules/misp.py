@@ -97,12 +97,12 @@ class MISP(Module):
 
         # ##### Check hashes on VT #####
         parser_checkhashes = subparsers.add_parser('check_hashes', help='Crosscheck hashes on VT.')
-        parser_checkhashes.add_argument("event", type=int, help="Lookup all the hashes of an event on VT.")
+        parser_checkhashes.add_argument("event", nargs='?', default=None, type=int, help="Lookup all the hashes of an event on VT.")
         parser_checkhashes.add_argument("-p", "--populate", action='store_true', help="Automatically populate event with hashes found on VT.")
 
         # ##### Download Yara rules #####
         parser_checkhashes = subparsers.add_parser('yara', help='Get YARA rules of an event.')
-        parser_checkhashes.add_argument("event", type=int, help="Download the yara rules of that event.")
+        parser_checkhashes.add_argument("event", nargs='?', default=None, type=int, help="Download the yara rules of that event.")
 
         # ##### Get an Event #####
         parser_get_event = subparsers.add_parser('get_event', help='Initialize the session with an existing MISP event.')
@@ -189,23 +189,150 @@ class MISP(Module):
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
-    def _has_misp_session(self):
+    # ####### Generic Helpers ########
+    def _has_misp_session(self, quiet=False):
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            if not quiet:
+                self.log('error', "No session opened")
             return False
         if not __sessions__.current.misp_event:
-            self.log('error', "Not attached to a MISP event")
+            if not quiet:
+                self.log('error', "Not attached to a MISP event")
             return False
         return True
 
-    def _get_eventid(self):
+    def _get_eventid(self, quiet=False):
         if self.args.event:
             return self.args.event
         else:
             # Get current event ID if possible
-            if not self._has_misp_session():
+            if not self._has_misp_session(quiet):
                 return None
             return __sessions__.current.misp_event.event_id
+
+    def _has_error_message(self, result):
+        if result.get('error'):
+            if isinstance(result['error'], list):
+                for e in result['errors']:
+                    self.log('error', e['error']['value'][0])
+            else:
+                self.log('error', result['error'])
+            return True
+        return False
+
+    def _search_local_hashes(self, event):
+        local = []
+        samples_count = 0
+        if event.get('Event') is None:
+            self.log('error', event)
+            return
+        for a in event['Event']['Attribute']:
+            row = None
+            if a['type'] == 'malware-sample':
+                samples_count += 1
+            if a['type'] in ('malware-sample', 'filename|md5', 'md5'):
+                h = a['value']
+                if '|' in a['type']:
+                    h = a['value'].split('|')[1]
+                row = Database().find(key='md5', value=h)
+            elif a['type'] in ('sha1', 'filename|sha1'):
+                h = a['value']
+                if '|' in a['type']:
+                    h = a['value'].split('|')[1]
+                row = Database().find(key='sha1', value=h)
+            elif a['type'] in ('sha256', 'filename|sha256'):
+                h = a['value']
+                if '|' in a['type']:
+                    h = a['value'].split('|')[1]
+                row = Database().find(key='sha256', value=h)
+            if row:
+                local.append(row[0])
+        self.log('info', 'This event contains {} samples.'.format(samples_count))
+        shas = set([l.sha256 for l in local])
+        if len(shas) == 1:
+            __sessions__.new(get_sample_path(shas.pop()), MispEvent(event))
+        elif len(shas) > 1:
+            self.log('success', 'The following samples are in this viper instance:')
+            __sessions__.new(misp_event=MispEvent(event))
+            for s in shas:
+                self.log('item', s)
+        else:
+            __sessions__.new(misp_event=MispEvent(event))
+            self.log('info', 'No known (in Viper) samples in that event.')
+
+    # ####### Helpers for check_hashes ########
+
+    def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes, sample_hashes):
+        new_md5 = False
+        new_sha1 = False
+        new_sha256 = False
+        if md5 not in event_hashes and md5 not in sample_hashes:
+            new_md5 = True
+        if sha1 not in event_hashes:
+            new_sha1 = True
+        if sha256 not in event_hashes:
+            new_sha256 = True
+
+        curattr = None
+        if base_attr.get(sha256):
+            curattr = base_attr.get(sha256)
+        elif base_attr.get(sha1):
+            curattr = base_attr.get(sha1)
+        else:
+            curattr = base_attr.get(md5)
+
+        attibutes = []
+        if new_sha256:
+            attibutes.append(dict(curattr, **{'type': 'sha256', 'value': sha256}))
+        if new_sha1:
+            attibutes.append(dict(curattr, **{'type': 'sha1', 'value': sha1}))
+        if new_md5:
+            attibutes.append(dict(curattr, **{'type': 'md5', 'value': md5}))
+
+        distrib = curattr['distribution']
+        if not link[0]:
+            attibutes.append({'type': 'link', 'category': 'External analysis',
+                              'distribution': distrib, 'value': link[1]})
+        return attibutes
+
+    def _populate(self, event, attributes):
+        if len(attributes) == 0:
+            self.log('info', "No new attributes to add.")
+            return
+        to_send = {'Event': {'id': int(event['id']), 'uuid': event['uuid'],
+                             'date': event['date'], 'distribution': event['distribution'],
+                             'threat_level_id': event['threat_level_id'],
+                             'analysis': event['analysis'], 'Attribute': attributes,
+                             'timestamp': int(time.time())}}
+        result = self.misp.update(to_send)
+        if not self._has_error_message(result):
+            self.log('success', "All attributes updated sucessfully")
+
+    # ####### Helpers for add ########
+
+    def _find_related_id(self, event):
+        if not event.get('RelatedEvent'):
+            return []
+        related = []
+        for events in event.get('RelatedEvent'):
+            for info in events['Event']:
+                related.append(info['id'])
+        return list(set(related))
+
+    def _check_add(self, new_event):
+        if not new_event.get('Event'):
+            self.log('error', new_event)
+            return
+        old_related = self._find_related_id(__sessions__.current.misp_event.event.get('Event'))
+        new_related = self._find_related_id(new_event.get('Event'))
+        for related in new_related:
+            if related not in old_related:
+                self.log('success', 'New related event: {}/{}'.format(self.url.rstrip('/'), related))
+            else:
+                self.log('info', 'Related event: {}/{}'.format(self.url.rstrip('/'), related))
+        __sessions__.new(misp_event=MispEvent(new_event))
+
+    # ##########################################
 
     def yara(self):
         ok = False
@@ -249,18 +376,13 @@ class MISP(Module):
 
         if len(to_print) == 1:
             self.log('success', 'The sample has been downloaded from Event {}'.format(to_print[0][0]))
-            event = self.misp.get_event(to_print[0][0])
-            return __sessions__.new(to_print[0][1], MispEvent(event.json()))
+            event = self.misp.get(to_print[0][0])
+            if not self._has_error_message(event):
+                return __sessions__.new(to_print[0][1], MispEvent(event))
         else:
             self.log('success', 'The following files have been downloaded:')
             for p in to_print:
                 self.log('success', '\tEventID: {} - {}'.format(*p))
-
-    def _has_error_message(self, result):
-        if result.get('message'):
-            self.log('error', result.get('message'))
-            return True
-        return False
 
     def upload(self):
         if not __sessions__.is_set():
@@ -273,7 +395,7 @@ class MISP(Module):
         else:
             info = None
         # No need to check the output: is the event_id is none, we create a new one.
-        event_id = self._get_eventid()
+        event_id = self._get_eventid(True)
         try:
             result = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
                                              event_id, self.args.distrib, self.args.ids, categ, info,
@@ -281,68 +403,28 @@ class MISP(Module):
         except Exception as e:
             self.log('error', e)
             return
-        if self._has_error_message(result):
-            return
-        if result.get('errors') is not None:
-            self.log('error', result.get('errors')[0]['error']['value'][0])
-        else:
+        if not self._has_error_message(result):
             self.log('success', "File uploaded sucessfully")
             if event_id is None:
                 event = result.get('id')
             if event is not None:
-                full_event = self.misp.get_event(event)
-                return __sessions__.new(misp_event=MispEvent(full_event.json()))
-
-    def search_local_hashes(self, event):
-        local = []
-        samples_count = 0
-        if self._has_error_message(event):
-            return
-        for a in event['Event']['Attribute']:
-            row = None
-            if a['type'] == 'malware-sample':
-                samples_count += 1
-            if a['type'] in ('malware-sample', 'filename|md5', 'md5'):
-                h = a['value']
-                if '|' in a['type']:
-                    h = a['value'].split('|')[1]
-                row = Database().find(key='md5', value=h)
-            elif a['type'] in ('sha1', 'filename|sha1'):
-                h = a['value']
-                if '|' in a['type']:
-                    h = a['value'].split('|')[1]
-                row = Database().find(key='sha1', value=h)
-            elif a['type'] in ('sha256', 'filename|sha256'):
-                h = a['value']
-                if '|' in a['type']:
-                    h = a['value'].split('|')[1]
-                row = Database().find(key='sha256', value=h)
-            if row:
-                local.append(row[0])
-        self.log('info', 'This event contains {} samples.'.format(samples_count))
-        shas = set([l.sha256 for l in local])
-        if len(shas) == 1:
-            __sessions__.new(get_sample_path(shas.pop()), MispEvent(event))
-        elif len(shas) > 1:
-            self.log('success', 'The following samples are in this viper instance:')
-            __sessions__.new(misp_event=MispEvent(event))
-            for s in shas:
-                self.log('item', s)
-        else:
-            __sessions__.new(misp_event=MispEvent(event))
-            self.log('info', 'No known (in Viper) samples in that event.')
+                full_event = self.misp.get(event)
+                if not self._has_error_message(full_event):
+                    return __sessions__.new(misp_event=MispEvent(full_event))
 
     def check_hashes(self):
-        out = self.misp.get_event(self.args.event)
-        result = out.json()
-        if self._has_error_message(result):
+        event_id = self._get_eventid()
+        if event_id is None:
+            return
+        event = self.misp.get(event_id)
+        if self._has_error_message(event):
             return
 
-        event = result.get('Event')
+        e = event.get('Event')
         event_hashes = []
         sample_hashes = []
         base_new_attributes = {}
-        for a in event['Attribute']:
+        for a in e['Attribute']:
             h = None
             if a['type'] in ('md5', 'sha1', 'sha256'):
                 h = a['value']
@@ -388,7 +470,7 @@ class MISP(Module):
                 hashes_to_check = [eh for eh in hashes_to_check if eh not in (md5, sha1, sha256)]
                 link = [False, result['permalink']]
                 # Do not re-add a link
-                for a in event['Attribute']:
+                for a in e['Attribute']:
                     if a['value'] == link[1]:
                         link[0] = True
                 if md5 in sample_hashes:
@@ -402,63 +484,11 @@ class MISP(Module):
                 unk_vt_hashes.append(vt_request['resource'])
 
         if self.args.populate:
-            self._populate(event, attributes)
+            self._populate(e, attributes)
         if len(unk_vt_hashes) > 0:
             self.log('error', 'Unknown on VT:')
             for h in unk_vt_hashes:
                 self.log('item', '{}'.format(h))
-
-    def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes, sample_hashes):
-        new_md5 = False
-        new_sha1 = False
-        new_sha256 = False
-        if md5 not in event_hashes and md5 not in sample_hashes:
-            new_md5 = True
-        if sha1 not in event_hashes:
-            new_sha1 = True
-        if sha256 not in event_hashes:
-            new_sha256 = True
-
-        curattr = None
-        if base_attr.get(sha256):
-            curattr = base_attr.get(sha256)
-        elif base_attr.get(sha1):
-            curattr = base_attr.get(sha1)
-        else:
-            curattr = base_attr.get(md5)
-
-        attibutes = []
-        if new_sha256:
-            attibutes.append(dict(curattr, **{'type': 'sha256', 'value': sha256}))
-        if new_sha1:
-            attibutes.append(dict(curattr, **{'type': 'sha1', 'value': sha1}))
-        if new_md5:
-            attibutes.append(dict(curattr, **{'type': 'md5', 'value': md5}))
-
-        distrib = curattr['distribution']
-        if not link[0]:
-            attibutes.append({'type': 'link', 'category': 'External analysis',
-                              'distribution': distrib, 'value': link[1]})
-        return attibutes
-
-    def _populate(self, event, attributes):
-        if len(attributes) == 0:
-            self.log('info', "No new attributes to add.")
-            return
-        to_send = {'Event': {'id': int(event['id']), 'uuid': event['uuid'],
-                             'date': event['date'], 'distribution': event['distribution'],
-                             'threat_level_id': event['threat_level_id'],
-                             'analysis': event['analysis'], 'Attribute': attributes,
-                             'timestamp': int(time.time())}}
-        out = self.misp.update_event(int(event['id']), to_send)
-        result = out.json()
-        if self._has_error_message(result):
-            return
-        if result.get('errors') is not None:
-            for e in result.get('errors'):
-                self.log('error', e['error']['value'][0])
-        else:
-            self.log('success', "All attributes updated sucessfully")
 
     def searchall(self):
         result = self.misp.search_all(' '.join(self.args.query))
@@ -479,9 +509,9 @@ class MISP(Module):
                 e['Event']['info'].encode('utf-8'), nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
     def get_event(self):
-        event = self.misp.get_event(self.args.event)
-        event_dict = event.json()
-        self.search_local_hashes(event_dict)
+        event = self.misp.get(self.args.event)
+        if not self._has_error_message(event):
+            self._search_local_hashes(event)
 
     def create_event(self):
         # Dirty trick to keep consistency in the module: the threat level in the upload
@@ -495,34 +525,11 @@ class MISP(Module):
             info = None
 
         event = self.misp.new_event(self.args.distrib, self.args.threat, self.args.analysis, info, self.args.date)
-        self.search_local_hashes(event)
-
-    def _find_related_id(self, event):
-        if not event.get('RelatedEvent'):
-            return []
-        related = []
-        for events in event.get('RelatedEvent'):
-            for info in events['Event']:
-                related.append(info['id'])
-        return list(set(related))
-
-    def _check_add(self, new_event):
-        if not new_event.get('Event'):
-            self.log('error', new_event)
+        if self._has_error_message(event):
             return
-        old_related = self._find_related_id(__sessions__.current.misp_event.event.get('Event'))
-        new_related = self._find_related_id(new_event.get('Event'))
-        for related in new_related:
-            if related not in old_related:
-                self.log('success', 'New related event: {}/{}'.format(self.url.rstrip('/'), related))
-            else:
-                self.log('info', 'Related event: {}/{}'.format(self.url.rstrip('/'), related))
-        __sessions__.new(misp_event=MispEvent(new_event))
+        self._search_local_hashes(event)
 
     def publish(self):
-        if not self._has_misp_session():
-            return
-
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
         event = self.misp.publish(current_event)
         if self._has_error_message(event):
@@ -530,10 +537,7 @@ class MISP(Module):
         self.log('success', 'Event {} published.'.format(event['Event']['id']))
 
     def show(self):
-        if not self._has_misp_session():
-            return
-
-        current_event = copy.deepcopy(__sessions__.current.misp_event.event)
+        current_event = __sessions__.current.misp_event.event
 
         header = ['type', 'value', 'comment']
         rows = []
@@ -546,9 +550,6 @@ class MISP(Module):
         self.log('table', dict(header=header, rows=rows))
 
     def add(self):
-        if not self._has_misp_session():
-            return
-
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
 
         if self.args.add == 'hashes':
@@ -563,7 +564,6 @@ class MISP(Module):
             else:
                 event = self.misp.add_hashes(current_event, filename=self.args.filename,
                                              md5=self.args.md5, sha1=self.args.sha1, sha256=self.args.sha256)
-            self._check_add(event)
         elif self.args.add == 'regkey':
             if len(self.args.regkey) == 2:
                 reg, val = self.args.regkey
@@ -571,75 +571,67 @@ class MISP(Module):
                 reg = self.args.regkey[0]
                 val = None
             event = self.misp.add_regkey(current_event, reg, val)
-            self._check_add(event)
         elif self.args.add == 'pipe':
             event = self.misp.add_pipe(current_event, self.args.pipe)
-            self._check_add(event)
         elif self.args.add == 'mutex':
             event = self.misp.add_mutex(current_event, self.args.mutex)
-            self._check_add(event)
         elif self.args.add == 'ipdst':
             event = self.misp.add_ipdst(current_event, self.args.ipdst)
-            self._check_add(event)
         elif self.args.add == 'hostname':
             event = self.misp.add_hostname(current_event, self.args.hostname)
-            self._check_add(event)
         elif self.args.add == 'domain':
             event = self.misp.add_domain(current_event, self.args.domain)
-            self._check_add(event)
         elif self.args.add == 'url':
             event = self.misp.add_url(current_event, self.args.full_url)
-            self._check_add(event)
         elif self.args.add == 'ua':
             event = self.misp.add_useragent(current_event, self.args.ua)
-            self._check_add(event)
         elif self.args.add == 'pattern_file':
             event = self.misp.add_pattern(current_event, self.args.pfile, True, False)
-            self._check_add(event)
         elif self.args.add == 'pattern_mem':
             event = self.misp.add_pattern(current_event, self.args.pmem, False, True)
-            self._check_add(event)
         elif self.args.add == 'pattern_traffic':
             event = self.misp.add_traffic_pattern(current_event, self.args.ptraffic)
-            self._check_add(event)
+
+        if self._has_error_message(event):
+            return
+        self._check_add(event)
 
     def version(self):
-        ok = True
+        api_ok = True
+
         api_version = self.misp.get_api_version()
         self.log('info', 'The version of your MISP API is: {}'.format(api_version['version']))
         api_version_master = self.misp.get_api_version_master()
-        if api_version_master.get('version') is None:
-            ok = False
-            self.log('error', api_version_master)
+        if self._has_error_message(api_version_master):
+            api_ok = False
         else:
             self.log('info', 'The version of MISP API master branch is: {}'.format(api_version_master['version']))
 
-        if api_version['version'] == api_version_master['version']:
-            self.log('success', 'Congratulation, the MISP API installed is up-to-date')
-        else:
-            self.log('warning', 'The MISP API installed is outdated, you should update to avoid issues.')
+        if api_ok:
+            if api_version['version'] == api_version_master['version']:
+                self.log('success', 'Congratulation, the MISP API installed is up-to-date')
+            else:
+                self.log('warning', 'The MISP API installed is outdated, you should update to avoid issues.')
+
+        instance_ok = True
 
         misp_version = self.misp.get_version()
-        if misp_version.get('version') is None:
-            ok = False
-            self.log('error', misp_version)
+        if self._has_error_message(misp_version):
+            instance_ok = False
         else:
             self.log('info', 'The version of your MISP instance is: {}'.format(misp_version['version']))
 
         misp_version_master = self.misp.get_version_master()
-        if misp_version_master.get('version') is None:
-            ok = False
-            self.log('error', misp_version_master)
+        if self._has_error_message(misp_version_master):
+            instance_ok = False
         else:
             self.log('info', 'The version of MISP master branch is: {}'.format(misp_version_master['version']))
 
-        if not ok:
-            return
-
-        if misp_version['version'] == misp_version_master['version']:
-            self.log('success', 'Congratulation, your MISP instance is up-to-date')
-        else:
-            self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
+        if instance_ok:
+            if misp_version['version'] == misp_version_master['version']:
+                self.log('success', 'Congratulation, your MISP instance is up-to-date')
+            else:
+                self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
 
     def run(self):
         super(MISP, self).run()
@@ -678,27 +670,34 @@ class MISP(Module):
             self.log('error', e.message)
             return
 
-        if self.args.subname == 'upload':
-            self.upload()
-        elif self.args.subname == 'search':
-            self.searchall()
-        elif self.args.subname == 'download':
-            self.download()
-        elif self.args.subname == 'check_hashes':
-            self.check_hashes()
-        elif self.args.subname == 'yara':
-            self.yara()
-        elif self.args.subname == 'get_event':
-            self.get_event()
-        elif self.args.subname == 'create_event':
-            self.create_event()
-        elif self.args.subname == 'add':
-            self.add()
-        elif self.args.subname == 'show':
-            self.show()
-        elif self.args.subname == 'publish':
-            self.publish()
-        elif self.args.subname == 'version':
-            self.version()
-        else:
-            self.log('error', "No calls defined for this command.")
+        # Require an open MISP session
+        if self.args.subname in ['add', 'show', 'publish'] and not self._has_misp_session():
+            return
+
+        try:
+            if self.args.subname == 'upload':
+                self.upload()
+            elif self.args.subname == 'search':
+                self.searchall()
+            elif self.args.subname == 'download':
+                self.download()
+            elif self.args.subname == 'check_hashes':
+                self.check_hashes()
+            elif self.args.subname == 'yara':
+                self.yara()
+            elif self.args.subname == 'get_event':
+                self.get_event()
+            elif self.args.subname == 'create_event':
+                self.create_event()
+            elif self.args.subname == 'add':
+                self.add()
+            elif self.args.subname == 'show':
+                self.show()
+            elif self.args.subname == 'publish':
+                self.publish()
+            elif self.args.subname == 'version':
+                self.version()
+            else:
+                self.log('error', "No calls defined for this command.")
+        except requests.exceptions.HTTPError as e:
+            self.log('error', e)
