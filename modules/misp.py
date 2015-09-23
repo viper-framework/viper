@@ -406,11 +406,10 @@ class MISP(Module):
         if not self._has_error_message(result):
             self.log('success', "File uploaded sucessfully")
             if event_id is None:
-                event = result.get('id')
-            if event is not None:
-                full_event = self.misp.get(event)
-                if not self._has_error_message(full_event):
-                    return __sessions__.new(misp_event=MispEvent(full_event))
+                event_id = result['id']
+            full_event = self.misp.get(event_id)
+            if not self._has_error_message(full_event):
+                return __sessions__.new(misp_event=MispEvent(full_event))
 
     def check_hashes(self):
         event_id = self._get_eventid()
