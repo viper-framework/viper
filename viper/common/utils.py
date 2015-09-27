@@ -57,9 +57,20 @@ def get_md5(data):
 
 def string_clean(line):
     try:
-        return [x for x in line if x in string.printable]
+        return ''.join([x for x in line if x in string.printable])
     except:
         return line
+
+def string_clean_hex(line):
+    line = str(line)
+    new_line = ''
+    for c in line:
+        if c in string.printable:
+            new_line += c
+        else:
+            new_line += '\\x' + c.encode('hex')
+    return new_line
+
 
 # Snippet taken from:
 # https://gist.github.com/sbz/1080258
