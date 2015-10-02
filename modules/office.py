@@ -13,13 +13,13 @@ import struct
 import zipfile
 import xml.etree.ElementTree as ET
 
-from oletools.olevba import VBA_Parser, detect_autoexec, detect_suspicious, detect_patterns
-from viper.common.utils import string_clean
+from viper.common.utils import string_clean, string_clean_hex
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 try:
     import olefile
+    from oletools.olevba import VBA_Parser, VBA_Scanner
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
@@ -337,36 +337,24 @@ class Office(Module):
     
     def parse_vba(self, save_path):
         save = False
-        vba = VBA_Parser(__sessions__.current.file.path)
+        vbaparser = VBA_Parser(__sessions__.current.file.path)
         # Check for Macros
-        if not vba.detect_vba_macros():
+        if not vbaparser.detect_vba_macros():
             self.log('error', "No Macro's Detected")
             return
         self.log('info', "Macro's Detected")
-        try:
-            run_rows = []
-            word_rows = []
-            pattern_rows = []
-            for (filename, stream_path, vba_filename, vba_code) in vba.extract_macros():
+        #try:
+        if True:
+            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex String':[], 'VBA string':[]}
+            for (filename, stream_path, vba_filename, vba_code) in vbaparser.extract_macros():
                 self.log('info', "Stream Details")
                 self.log('item', "OLE Stream: {0}".format(string_clean(stream_path)))
                 self.log('item', "VBA Filename: {0}".format(string_clean(vba_filename)))
-                autoexec_keywords = detect_autoexec(vba_code)
-                if autoexec_keywords:
-                    for keyword, description in autoexec_keywords:
-                        run_rows.append([keyword, description])
-                    
-                # Match Keyword Types
-                suspicious_keywords = detect_suspicious(vba_code)
-                if suspicious_keywords:
-                    for keyword, description in suspicious_keywords:
-                        word_rows.append([keyword, description])
-                    
-                # Match IOCs
-                patterns = detect_patterns(vba_code)
-                if patterns:
-                    for pattern_type, value in patterns:
-                        pattern_rows.append([pattern_type, value])
+                # Analyse the VBA Code
+                vba_scanner = VBA_Scanner(vba_code)
+                analysis = vba_scanner.scan(include_decoded_strings=True)
+                for kw_type, keyword, description in analysis:
+                    an_results[kw_type].append([string_clean_hex(keyword), description])
                     
                 # Save the code to external File
                 if save_path:
@@ -375,21 +363,38 @@ class Office(Module):
                             out.write(vba_code)
                         save = True
                     except:
-                        self.log('Error', "Unable to write to {0}".format(save_path))
+                        self.log('error', "Unable to write to {0}".format(save_path))
                         return
             # Print all Tables together
             self.log('info', "AutoRun Macros Found")
-            self.log('table', dict(header=['KeyWord', 'Description'], rows=run_rows))
+            self.log('table', dict(header=['Method', 'Description'], rows=an_results['AutoExec']))
+            
             self.log('info', "Suspicious Keywords Found")
-            self.log('table', dict(header=['KeyWord', 'Description'], rows=word_rows))
-            self.log('info', "Suspicious Patterns Found")
-            self.log('table', dict(header=['Pattern', 'Value'], rows=pattern_rows))
+            self.log('table', dict(header=['KeyWord', 'Description'], rows=an_results['Suspicious']))
+            
+            self.log('info', "Possible IOC's")
+            self.log('table', dict(header=['IOC', 'Type'], rows=an_results['IOC']))
+            
+            self.log('info', "Hex Strings")
+            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Hex String']))
+            
+            self.log('info', "Base64 Strings")
+            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Base64 String']))
+            
+            self.log('info', "Dridex String")
+            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Dridex String']))
+            
+            self.log('info', "VBA string")
+            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['VBA string']))
+            
+            
+            
             if save:
                 self.log('success', "Writing VBA Code to {0}".format(save_path))
-        except:
-            self.log('Error', "Unable to Process File")
+        #except:
+            #self.log('error', "Unable to Process File")
         # Close the file
-        vba.close()
+        vbaparser.close()
         
         
         
