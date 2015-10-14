@@ -476,7 +476,7 @@ class PE(Module):
                 if cur_imphash not in cluster:
                     cluster[cur_imphash] = []
 
-                cluster[cur_imphash].append([sample.sha256, sample.name])
+                cluster[cur_imphash].append([sample.md5, sample.name])
 
             for cluster_name, cluster_members in cluster.items():
                 # Skipping clusters with only one entry.
