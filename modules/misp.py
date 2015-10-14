@@ -307,6 +307,7 @@ class MISP(Module):
         result = self.misp.update(to_send)
         if not self._has_error_message(result):
             self.log('success', "All attributes updated sucessfully")
+            __sessions__.new(misp_event=MispEvent(result))
 
     # ####### Helpers for add ########
 
@@ -531,9 +532,9 @@ class MISP(Module):
     def publish(self):
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
         event = self.misp.publish(current_event)
-        if self._has_error_message(event):
-            return
-        self.log('success', 'Event {} published.'.format(event['Event']['id']))
+        if not self._has_error_message(event):
+            self.log('success', 'Event {} published.'.format(event['Event']['id']))
+            __sessions__.new(misp_event=MispEvent(event))
 
     def show(self):
         current_event = __sessions__.current.misp_event.event
@@ -630,7 +631,12 @@ class MISP(Module):
             if misp_version['version'] == misp_version_master['version']:
                 self.log('success', 'Congratulation, your MISP instance is up-to-date')
             else:
-                self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
+                master_major, master_minor, master_hotfix = misp_version_master['version'].split('.')
+                major, minor, hotfix = misp_version['version'].split('.')
+                if master_major < major or master_minor < minor or master_hotfix < hotfix:
+                    self.log('warning', 'Your MISP instance is more recent than master, you must be using a beta version and probably know what you are doing. Enjoy!')
+                else:
+                    self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
 
     def run(self):
         super(MISP, self).run()
