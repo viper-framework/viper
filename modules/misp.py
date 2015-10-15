@@ -317,8 +317,10 @@ class MISP(Module):
         related = []
         for events in event.get('RelatedEvent'):
             for info in events['Event']:
-                related.append(info['id'])
-        return list(set(related))
+                related.append((int(info['id']), info['info'].encode('utf-8')))
+        to_return = list(set(related))
+        to_return.sort(key=lambda tup: tup[0])
+        return to_return
 
     def _check_add(self, new_event):
         if not new_event.get('Event'):
@@ -326,11 +328,12 @@ class MISP(Module):
             return
         old_related = self._find_related_id(__sessions__.current.misp_event.event.get('Event'))
         new_related = self._find_related_id(new_event.get('Event'))
-        for related in new_related:
-            if related not in old_related:
-                self.log('success', 'New related event: {}/{}'.format(self.url.rstrip('/'), related))
+        old_related_ids = [i[0] for i in old_related]
+        for related, title in new_related:
+            if related not in old_related_ids:
+                self.log('success', u'New related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
             else:
-                self.log('info', 'Related event: {}/{}'.format(self.url.rstrip('/'), related))
+                self.log('info', 'Related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
         __sessions__.new(misp_event=MispEvent(new_event))
 
     # ##########################################
@@ -539,15 +542,21 @@ class MISP(Module):
     def show(self):
         current_event = __sessions__.current.misp_event.event
 
+        related = self._find_related_id(current_event.get('Event'))
+        if len(related) > 0:
+            self.log('info', 'Related events:')
+            for r, title in related:
+                self.log('item', '{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
+
         header = ['type', 'value', 'comment']
         rows = []
         for a in current_event['Event']['Attribute']:
             rows.append([a['type'], a['value'], a['comment']])
+        self.log('table', dict(header=header, rows=rows))
         if current_event['Event']['published']:
             self.log('info', 'This event has been published')
         else:
             self.log('info', 'This event has not been published')
-        self.log('table', dict(header=header, rows=rows))
 
     def add(self):
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
