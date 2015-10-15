@@ -548,10 +548,14 @@ class MISP(Module):
             for r, title in related:
                 self.log('item', '{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
 
-        header = ['type', 'value', 'comment']
+        header = ['type', 'value', 'comment', 'related']
         rows = []
         for a in current_event['Event']['Attribute']:
-            rows.append([a['type'], a['value'], a['comment']])
+            idlist = []
+            if a.get('RelatedAttribute'):
+                for r in a.get('RelatedAttribute'):
+                    idlist.append(r['id'])
+            rows.append([a['type'], a['value'], a['comment'], ', '.join(idlist)])
         self.log('table', dict(header=header, rows=rows))
         if current_event['Event']['published']:
             self.log('info', 'This event has been published')
