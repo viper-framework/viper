@@ -307,6 +307,7 @@ class MISP(Module):
         result = self.misp.update(to_send)
         if not self._has_error_message(result):
             self.log('success', "All attributes updated sucessfully")
+            __sessions__.new(misp_event=MispEvent(result))
 
     # ####### Helpers for add ########
 
@@ -316,8 +317,10 @@ class MISP(Module):
         related = []
         for events in event.get('RelatedEvent'):
             for info in events['Event']:
-                related.append(info['id'])
-        return list(set(related))
+                related.append((int(info['id']), info['info'].encode('utf-8')))
+        to_return = list(set(related))
+        to_return.sort(key=lambda tup: tup[0])
+        return to_return
 
     def _check_add(self, new_event):
         if not new_event.get('Event'):
@@ -325,11 +328,12 @@ class MISP(Module):
             return
         old_related = self._find_related_id(__sessions__.current.misp_event.event.get('Event'))
         new_related = self._find_related_id(new_event.get('Event'))
-        for related in new_related:
-            if related not in old_related:
-                self.log('success', 'New related event: {}/{}'.format(self.url.rstrip('/'), related))
+        old_related_ids = [i[0] for i in old_related]
+        for related, title in new_related:
+            if related not in old_related_ids:
+                self.log('success', u'New related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
             else:
-                self.log('info', 'Related event: {}/{}'.format(self.url.rstrip('/'), related))
+                self.log('info', 'Related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
         __sessions__.new(misp_event=MispEvent(new_event))
 
     # ##########################################
@@ -531,22 +535,32 @@ class MISP(Module):
     def publish(self):
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
         event = self.misp.publish(current_event)
-        if self._has_error_message(event):
-            return
-        self.log('success', 'Event {} published.'.format(event['Event']['id']))
+        if not self._has_error_message(event):
+            self.log('success', 'Event {} published.'.format(event['Event']['id']))
+            __sessions__.new(misp_event=MispEvent(event))
 
     def show(self):
         current_event = __sessions__.current.misp_event.event
 
-        header = ['type', 'value', 'comment']
+        related = self._find_related_id(current_event.get('Event'))
+        if len(related) > 0:
+            self.log('info', 'Related events:')
+            for r, title in related:
+                self.log('item', '{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
+
+        header = ['type', 'value', 'comment', 'related']
         rows = []
         for a in current_event['Event']['Attribute']:
-            rows.append([a['type'], a['value'], a['comment']])
+            idlist = []
+            if a.get('RelatedAttribute'):
+                for r in a.get('RelatedAttribute'):
+                    idlist.append(r['id'])
+            rows.append([a['type'], a['value'], a['comment'], ', '.join(idlist)])
+        self.log('table', dict(header=header, rows=rows))
         if current_event['Event']['published']:
             self.log('info', 'This event has been published')
         else:
             self.log('info', 'This event has not been published')
-        self.log('table', dict(header=header, rows=rows))
 
     def add(self):
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
@@ -630,7 +644,12 @@ class MISP(Module):
             if misp_version['version'] == misp_version_master['version']:
                 self.log('success', 'Congratulation, your MISP instance is up-to-date')
             else:
-                self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
+                master_major, master_minor, master_hotfix = misp_version_master['version'].split('.')
+                major, minor, hotfix = misp_version['version'].split('.')
+                if master_major < major or master_minor < minor or master_hotfix < hotfix:
+                    self.log('warning', 'Your MISP instance is more recent than master, you must be using a beta version and probably know what you are doing. Enjoy!')
+                else:
+                    self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
 
     def run(self):
         super(MISP, self).run()
