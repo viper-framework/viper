@@ -3,6 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import r2pipe
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -15,12 +16,16 @@ class Radare(Module):
 
     def __init__(self):
         super(Radare, self).__init__()
-        self.parser.add_argument('-w', '--webserver', action='store_true', help='Start web-frontend for radare2')
+        self.parser.add_argument('command', nargs='*', help='Run a radare2 command on the current file')
         self.server = ''
 
-    def open_radare(self, filename):
-        command_line = 'r2 {} {}'.format(self.server, filename)
+    def open_radare(self):
+        command_line = 'r2 {} {}'.format(self.server, __sessions__.current.file.path)
         os.system(command_line)
+
+    def command(self, command):
+        r = r2pipe.open(__sessions__.current.file.path)
+        print(r.cmd(command))
 
     def run(self):
         super(Radare, self).run()
@@ -29,10 +34,11 @@ class Radare(Module):
             self.log('error', "No session opened")
             return
 
-        if self.args.webserver:
-            self.server = "-c=H"
-
-        try:
-            self.open_radare(__sessions__.current.file.path)
-        except:
-            self.log('error', "Unable to start Radare2")
+        r2command = ' '.join(self.args.command)
+        if not r2command:
+            try:
+                self.open_radare()
+            except:
+                self.log('error', "Unable to start Radare2")
+        else:
+            self.command(r2command)
