@@ -63,6 +63,7 @@ class PE(Module):
         parser_imp.add_argument('-c', '--cluster', action='store_true', help='Cluster repository by imphash (careful, could be massive)')
 
         parser_comp = subparsers.add_parser('compiletime', help='Show the compiletime')
+        parser_comp.add_argument('-a', '--all', action='store_true', help='Retrieve compile time for all stored samples')
         parser_comp.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common compile time')
         parser_comp.add_argument('-w', '--window', type=int, help='Specify an optional time window in minutes')
 
@@ -217,6 +218,29 @@ class PE(Module):
 
         def get_compiletime(pe):
             return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
+
+        if self.args.all:
+            self.log('info', "Retrieving compile time for all stored samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            results = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_compile_time = get_compiletime(cur_pe)
+                except:
+                    continue
+
+                results.append([sample.name, sample.md5, cur_compile_time])
+
+            if len(results) > 0:
+                self.log('table', dict(header=['Name', 'MD5', 'Compile Time'], rows=results))
+
+            return
 
         if not self.__check_session():
             return
