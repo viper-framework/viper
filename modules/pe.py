@@ -789,7 +789,7 @@ class PE(Module):
             # VB check
             if check_module(iat, 'VB'):
                 self.log('info', "{0} - Possible language: Visual Basic".format(sample.name))
-                return True
+                return 'Virtual Basic'
 
             # .NET check
             if check_module(iat, 'mscoree.dll') and not found:
