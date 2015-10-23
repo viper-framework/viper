@@ -93,7 +93,7 @@ class MISP(Module):
 
         # ##### Search in MISP #####
         parser_search = subparsers.add_parser('search', help='Search in all the attributes.')
-        parser_search.add_argument("query", nargs='+', help="String to search.")
+        parser_search.add_argument("query", nargs='*', help="String to search (if empty, search the hashes of the current file).")
 
         # ##### Check hashes on VT #####
         parser_checkhashes = subparsers.add_parser('check_hashes', help='Crosscheck hashes on VT.')
@@ -198,6 +198,17 @@ class MISP(Module):
         if not __sessions__.current.misp_event:
             if not quiet:
                 self.log('error', "Not attached to a MISP event")
+            return False
+        return True
+
+    def _has_file_session(self, quiet=False):
+        if not __sessions__.is_set():
+            if not quiet:
+                self.log('error', "No session opened")
+            return False
+        if not __sessions__.current.file:
+            if not quiet:
+                self.log('error', "Not attached to a file")
             return False
         return True
 
@@ -389,10 +400,6 @@ class MISP(Module):
                 self.log('success', '\tEventID: {} - {}'.format(*p))
 
     def upload(self):
-        if not __sessions__.is_set():
-            self.log('error', "No session opened")
-            return False
-
         categ = self.categories.get(self.args.categ)
         if self.args.info is not None:
             info = ' '.join(self.args.info)
@@ -494,11 +501,22 @@ class MISP(Module):
                 self.log('item', '{}'.format(h))
 
     def searchall(self):
-        result = self.misp.search_all(' '.join(self.args.query))
+        if self.args.query:
+            self._search(' '.join(self.args.query))
+        else:
+            if not self._has_file_session(True):
+                self.log('error', "Not attached to a file, nothing to serch for.")
+                return False
+            to_search = [__sessions__.current.file.md5, __sessions__.current.file.sha1, __sessions__.current.file.sha256]
+            for q in to_search:
+                self._search(q)
+
+    def _search(self, query):
+        result = self.misp.search_all(query)
 
         if self._has_error_message(result):
             return
-        self.log('success', 'Found the following events:')
+        self.log('success', '{} matches on the following events:'.format(query))
         for e in result['response']:
             nb_samples = 0
             nb_hashes = 0
@@ -567,7 +585,7 @@ class MISP(Module):
 
         if self.args.add == 'hashes':
             if self.args.filename is None and self.args.md5 is None and self.args.sha1 is None and self.args.sha256 is None:
-                if not __sessions__.current.file:
+                if not self._has_file_session(True):
                     self.log('error', "Not attached to a file, please set the hashes manually.")
                     return False
                 event = self.misp.add_hashes(current_event, filename=__sessions__.current.file.name,
@@ -690,6 +708,10 @@ class MISP(Module):
 
         # Require an open MISP session
         if self.args.subname in ['add', 'show', 'publish'] and not self._has_misp_session():
+            return
+
+        # Require an open file session
+        if self.args.subname in ['upload'] and not self._has_file_session():
             return
 
         try:
