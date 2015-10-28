@@ -51,7 +51,7 @@ class Sessions(object):
         session.id = total + 1
 
         if path is not None:
-            if self.is_set() and self.current.misp_event:
+            if self.is_set() and misp_event is None and self.current.misp_event:
                 session.misp_event = self.current.misp_event
 
             # Open a section on the given file.
@@ -64,7 +64,7 @@ class Sessions(object):
                 session.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
             print_info("Session opened on {0}".format(path))
         if misp_event is not None:
-            if self.is_set() and self.current.file:
+            if self.is_set() and path is None and self.current.file:
                 session.file = self.current.file
             refresh = False
             if self.current is not None and self.current.misp_event is not None \
