@@ -8,6 +8,8 @@ import textwrap
 import os
 import tempfile
 import time
+import glob
+import shutil
 
 try:
     from pymisp import PyMISP, PyMISPError
@@ -105,8 +107,8 @@ class MISP(Module):
         parser_checkhashes.add_argument("event", nargs='?', default=None, type=int, help="Download the yara rules of that event.")
 
         # ##### Get an Event #####
-        parser_get_event = subparsers.add_parser('get_event', help='Initialize the session with an existing MISP event.')
-        parser_get_event.add_argument("event", type=int, help="Existing Event ID.")
+        parser_pull = subparsers.add_parser('pull', help='Initialize the session with an existing MISP event.')
+        parser_pull.add_argument("event", type=int, help="Existing Event ID.")
 
         # ##### Create an Event #####
         parser_create_event = subparsers.add_parser('create_event', help='Create a new event on MISP and initialize the session with it.',
@@ -181,6 +183,13 @@ class MISP(Module):
         # ##### Show attributes  #####
         subparsers.add_parser('show', help='Show attributes to an existing MISP event.')
 
+        # ##### Open file #####
+        o = subparsers.add_parser('open', help='Open a sample from the temp directory.')
+        ox = o.add_mutually_exclusive_group(required=True)
+        ox.add_argument("-l", "--list", action='store_true', help="List available files")
+        ox.add_argument("-d", "--delete", help="Delete temporary files (use 'all' to remove all the local samples or an Event ID to only remove the associated samples)")
+        ox.add_argument("sid", nargs='?', type=int, help='Sample ID to open (from the list option).')
+
         # ##### Publish an event #####
         subparsers.add_parser('publish', help='Publish an existing MISP event.')
 
@@ -202,7 +211,7 @@ class MISP(Module):
         return True
 
     def _get_eventid(self, quiet=False):
-        if self.args.event:
+        if vars(self.args).get('event'):
             return self.args.event
         else:
             # Get current event ID if possible
@@ -336,6 +345,47 @@ class MISP(Module):
                 self.log('info', 'Related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
         __sessions__.new(misp_event=MispEvent(new_event))
 
+    # ####### Helpers for open ########
+
+    def _load_tmp_samples(self):
+        tmp_samples = []
+        path = os.path.join(tempfile.gettempdir(), 'viper', 'misp', '*')
+        for p in glob.glob(path):
+            eid = os.path.basename(p)
+            fullpath = os.path.join(tempfile.gettempdir(), 'viper', 'misp', eid, '*')
+            for p in glob.glob(fullpath):
+                name = os.path.basename(p)
+                tmp_samples.append((eid, p, name))
+        return tmp_samples
+
+    def _display_tmp_files(self):
+        cureid = None
+        if self._has_misp_session(True):
+            cureid = self._get_eventid()
+        header = ['Sample ID', 'Current', 'Event ID', 'Filename']
+        rows = []
+        i = 0
+        tmp_samples = self._load_tmp_samples()
+        if len(tmp_samples) == 0:
+            self.log('warning', 'No temporary samples available.')
+            return
+        for eid, path, name in tmp_samples:
+            if eid == cureid:
+                rows.append((i, '*', eid, name))
+            else:
+                rows.append((i, '', eid, name))
+            i += 1
+        self.log('table', dict(header=header, rows=rows))
+
+    def _clean_tmp_samples(self, eid):
+        to_remove = os.path.join(tempfile.gettempdir(), 'viper', 'misp')
+        if eid != 'all':
+            to_remove = os.path.join(to_remove, eid)
+        if os.path.exists(to_remove):
+            shutil.rmtree(to_remove)
+            return True
+        return False
+
     # ##########################################
 
     def yara(self):
@@ -373,7 +423,9 @@ class MISP(Module):
         to_print = []
         for d in data:
             eid, filename, payload = d
-            path = os.path.join(tempfile.gettempdir(), filename)
+            path = os.path.join(tempfile.gettempdir(), 'viper', 'misp', eid, filename)
+            if not os.path.exists(os.path.dirname(path)):
+                os.makedirs(os.path.dirname(path))
             with open(path, 'w') as f:
                 f.write(payload.getvalue())
             to_print.append((eid, path))
@@ -385,8 +437,7 @@ class MISP(Module):
                 return __sessions__.new(to_print[0][1], MispEvent(event))
         else:
             self.log('success', 'The following files have been downloaded:')
-            for p in to_print:
-                self.log('success', '\tEventID: {} - {}'.format(*p))
+            self._display_tmp_files()
 
     def upload(self):
         if not __sessions__.is_set():
@@ -511,7 +562,7 @@ class MISP(Module):
             self.log('item', '{} ({} samples, {} hashes) - {}{}{}'.format(
                 e['Event']['info'].encode('utf-8'), nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
-    def get_event(self):
+    def pull(self):
         event = self.misp.get(self.args.event)
         if not self._has_error_message(event):
             self._search_local_hashes(event)
@@ -538,6 +589,30 @@ class MISP(Module):
         if not self._has_error_message(event):
             self.log('success', 'Event {} published.'.format(event['Event']['id']))
             __sessions__.new(misp_event=MispEvent(event))
+
+    def open(self):
+        if self.args.list:
+            self._display_tmp_files()
+        elif self.args.delete:
+            if self.args.delete != 'all':
+                try:
+                    int(self.args.delete)
+                except:
+                    self.log('error', 'You can only delete all the samples of the samples of a specific event ID.')
+                    return
+            if self._clean_tmp_samples(self.args.delete):
+                self.log('success', 'Sucessfully removed.')
+            else:
+                self.log('error', 'Nothing to remove.')
+        else:
+            tmp_samples = self._load_tmp_samples()
+            try:
+                eid, path, name = tmp_samples[int(self.args.sid)]
+            except:
+                self.log('error', 'Invalid sid, please use misp open -l.')
+            event = self.misp.get(eid)
+            if not self._has_error_message(event):
+                return __sessions__.new(path, MispEvent(event))
 
     def show(self):
         current_event = __sessions__.current.misp_event.event
@@ -703,14 +778,16 @@ class MISP(Module):
                 self.check_hashes()
             elif self.args.subname == 'yara':
                 self.yara()
-            elif self.args.subname == 'get_event':
-                self.get_event()
+            elif self.args.subname == 'pull':
+                self.pull()
             elif self.args.subname == 'create_event':
                 self.create_event()
             elif self.args.subname == 'add':
                 self.add()
             elif self.args.subname == 'show':
                 self.show()
+            elif self.args.subname == 'open':
+                self.open()
             elif self.args.subname == 'publish':
                 self.publish()
             elif self.args.subname == 'version':
