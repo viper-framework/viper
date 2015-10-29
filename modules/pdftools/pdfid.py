@@ -2,8 +2,8 @@
 
 __description__ = 'Tool to test a PDF file'
 __author__ = 'Didier Stevens'
-__version__ = '0.1.2'
-__date__ = '2013/03/13'
+__version__ = '0.2.1'
+__date__ = '2014/10/18'
 
 """
 
@@ -32,9 +32,19 @@ History:
   2010/09/21: V0.0.12: fixed cntCharsAfterLastEOF bug; fix by Russell Holloway
   2011/12/29: updated for Python 3, added keyword /EmbeddedFile
   2012/03/03: added PDFiD2JSON; coded by Brandon Dixon
-  2013/02/10: V0.1.0: added http/https support; added support for ZIP file with password 'infected' 
-  2013/03/11: V0.1.1: fixes for Python 3 
+  2013/02/10: V0.1.0: added http/https support; added support for ZIP file with password 'infected'
+  2013/03/11: V0.1.1: fixes for Python 3
   2013/03/13: V0.1.2: Added error handling for files; added /XFA
+  2013/11/01: V0.2.0: Added @file & plugins
+  2013/11/02: continue
+  2013/11/04: added options -c, -m, -v
+  2013/11/06: added option -S
+  2013/11/08: continue
+  2013/11/09: added option -o
+  2013/11/15: refactoring
+  2014/09/30: added CSV header
+  2014/10/16: V0.2.1: added output when plugin & file not pdf
+  2014/10/18: some fixes for Python 3
 
 Todo:
   - update XML example (entropy, EOF)
@@ -52,13 +62,15 @@ import os.path
 import sys
 import json
 import zipfile
+import collections
+import glob
 try:
     import urllib2
     urllib23 = urllib2
 except:
     import urllib.request
     urllib23 = urllib.request
-    
+
 #Convert 2 Bytes If Python 3
 def C2BIP3(string):
     if sys.version_info[0] > 2:
@@ -228,6 +240,7 @@ class cPDFEOF:
     def __init__(self):
         self.token = ''
         self.cntEOFs = 0
+        self.cntCharsAfterLastEOF = 0
 
     def parse(self, char):
         if self.cntEOFs > 0:
@@ -329,6 +342,12 @@ class cCVE_2009_3459:
         if (lastName == '/Colors' and word.isdigit() and int(word) > 2^24): # decided to alert when the number of colors is expressed with more than 3 bytes
             self.count += 1
 
+def XMLAddAttribute(xmlDoc, name, value=None):
+    att = xmlDoc.createAttribute(name)
+    xmlDoc.documentElement.setAttributeNode(att)
+    if value != None:
+        att.nodeValue = value
+
 def PDFiD(file, allNames=False, extraData=False, disarm=False, force=False):
     """Example of XML output:
     <PDFiD ErrorOccured="False" ErrorMessage="" Filename="test.pdf" Header="%PDF-1.1" IsPDF="True" Version="0.0.4" Entropy="4.28">
@@ -386,18 +405,10 @@ def PDFiD(file, allNames=False, extraData=False, disarm=False, force=False):
         words[keyword] = [0, 0]
     slash = ''
     xmlDoc = xml.dom.minidom.getDOMImplementation().createDocument(None, 'PDFiD', None)
-    att = xmlDoc.createAttribute('Version')
-    att.nodeValue = __version__
-    xmlDoc.documentElement.setAttributeNode(att)
-    att = xmlDoc.createAttribute('Filename')
-    att.nodeValue = file
-    xmlDoc.documentElement.setAttributeNode(att)
-    attErrorOccured = xmlDoc.createAttribute('ErrorOccured')
-    xmlDoc.documentElement.setAttributeNode(attErrorOccured)
-    attErrorOccured.nodeValue = 'False'
-    attErrorMessage = xmlDoc.createAttribute('ErrorMessage')
-    xmlDoc.documentElement.setAttributeNode(attErrorMessage)
-    attErrorMessage.nodeValue = ''
+    XMLAddAttribute(xmlDoc, 'Version', __version__)
+    XMLAddAttribute(xmlDoc, 'Filename', file)
+    attErrorOccured = XMLAddAttribute(xmlDoc, 'ErrorOccured', 'False')
+    attErrorMessage = XMLAddAttribute(xmlDoc, 'ErrorMessage', '')
 
     oPDFDate = None
     oEntropy = None
@@ -624,22 +635,145 @@ def PDFiD2String(xmlDoc, force):
         result += ' Entropy outside streams: %s (%10s bytes)\n' % (xmlDoc.documentElement.getAttribute('NonStreamEntropy'), xmlDoc.documentElement.getAttribute('NonStreamCount'))
     return result
 
-def Scan(directory, allNames, extraData, disarm, force):
+class cCount():
+    def __init__(self, count, hexcode):
+        self.count = count
+        self.hexcode = hexcode
+
+class cPDFiD():
+    def __init__(self, xmlDoc, force):
+        self.version = xmlDoc.documentElement.getAttribute('Version')
+        self.filename = xmlDoc.documentElement.getAttribute('Filename')
+        self.errorOccured = xmlDoc.documentElement.getAttribute('ErrorOccured') == 'True'
+        self.errorMessage = xmlDoc.documentElement.getAttribute('ErrorMessage')
+        self.isPDF = None
+        if self.errorOccured:
+            return
+        self.isPDF = xmlDoc.documentElement.getAttribute('IsPDF') == 'True'
+        if not force and not self.isPDF:
+            return
+        self.header = xmlDoc.documentElement.getAttribute('Header')
+        self.keywords = {}
+        for node in xmlDoc.documentElement.getElementsByTagName('Keywords')[0].childNodes:
+            self.keywords[node.getAttribute('Name')] = cCount(int(node.getAttribute('Count')), int(node.getAttribute('HexcodeCount')))
+        self.obj = self.keywords['obj']
+        self.endobj = self.keywords['endobj']
+        self.stream = self.keywords['stream']
+        self.endstream = self.keywords['endstream']
+        self.xref = self.keywords['xref']
+        self.trailer = self.keywords['trailer']
+        self.startxref = self.keywords['startxref']
+        self.page = self.keywords['/Page']
+        self.encrypt = self.keywords['/Encrypt']
+        self.objstm = self.keywords['/ObjStm']
+        self.js = self.keywords['/JS']
+        self.javascript = self.keywords['/JavaScript']
+        self.aa = self.keywords['/AA']
+        self.openaction = self.keywords['/OpenAction']
+        self.acroform = self.keywords['/AcroForm']
+        self.jbig2decode = self.keywords['/JBIG2Decode']
+        self.richmedia = self.keywords['/RichMedia']
+        self.launch = self.keywords['/Launch']
+        self.embeddedfile = self.keywords['/EmbeddedFile']
+        self.xfa = self.keywords['/XFA']
+        self.colors_gt_2_24 = self.keywords['/Colors > 2^24']
+
+def Print(lines, options):
+    print(lines)
+    filename = None
+    if options.scan:
+        filename = 'PDFiD.log'
+    if options.output != '':
+        filename = options.output
+    if filename:
+        logfile = open(filename, 'a')
+        logfile.write(lines + '\n')
+        logfile.close()
+
+def Quote(value, separator, quote):
+    if isinstance(value, str):
+        if separator in value:
+            return quote + value + quote
+    return value
+
+def MakeCSVLine(fields, separator=';', quote='"'):
+    formatstring = separator.join([field[0] for field in fields])
+    strings = [Quote(field[1], separator, quote) for field in fields]
+    return formatstring % tuple(strings)
+
+def ProcessFile(filename, options, plugins):
+    xmlDoc = PDFiD(filename, options.all, options.extra, options.disarm, options.force)
+    if plugins == [] and options.select == '':
+        Print(PDFiD2String(xmlDoc, options.force), options)
+        return
+
+    oPDFiD = cPDFiD(xmlDoc, options.force)
+    if options.select:
+        if options.force or not oPDFiD.errorOccured and oPDFiD.isPDF:
+            pdf = oPDFiD
+            try:
+                selected = eval(options.select)
+            except Exception as e:
+                Print('Error evaluating select expression: %s' % options.select, options)
+                if options.verbose:
+                    raise e
+                return
+            if selected:
+                if options.csv:
+                    Print(filename, options)
+                else:
+                    Print(PDFiD2String(xmlDoc, options.force), options)
+    else:
+        for cPlugin in plugins:
+            if not cPlugin.onlyValidPDF or not oPDFiD.errorOccured and oPDFiD.isPDF:
+                try:
+                    oPlugin = cPlugin(oPDFiD)
+                except Exception as e:
+                    Print('Error instantiating plugin: %s' % cPlugin.name, options)
+                    if options.verbose:
+                        raise e
+                    return
+
+                try:
+                    score = oPlugin.Score()
+                except Exception as e:
+                    Print('Error running plugin: %s' % cPlugin.name, options)
+                    if options.verbose:
+                        raise e
+                    return
+
+                if options.csv:
+                    if score >= options.minimumscore:
+                        Print(MakeCSVLine((('%s', filename), ('%s', cPlugin.name), ('%.02f', score))), options)
+                else:
+                    if score >= options.minimumscore:
+                        Print(PDFiD2String(xmlDoc, options.force), options)
+                        Print('%s score: %.02f' % (cPlugin.name, score), options)
+            else:
+                if options.csv:
+                    if oPDFiD.errorOccured:
+                        Print(MakeCSVLine((('%s', filename), ('%s', cPlugin.name), ('%s', 'Error occured'))), options)
+                    if not oPDFiD.isPDF:
+                        Print(MakeCSVLine((('%s', filename), ('%s', cPlugin.name), ('%s', 'Not a PDF document'))), options)
+                else:
+                    Print(PDFiD2String(xmlDoc, options.force), options)
+
+
+def Scan(directory, options, plugins):
     try:
         if os.path.isdir(directory):
             for entry in os.listdir(directory):
-                Scan(os.path.join(directory, entry), allNames, extraData, disarm, force)
+                Scan(os.path.join(directory, entry), options, plugins)
         else:
-            result = PDFiD2String(PDFiD(directory, allNames, extraData, disarm, force), force)
-            print(result)
-            logfile = open('PDFiD.log', 'a')
-            logfile.write(result + '\n')
-            logfile.close()
-    except:
-        pass
+            ProcessFile(directory, options, plugins)
+    except Exception as e:
+#        print directory
+        print(e)
+#        print(sys.exc_info()[2])
+#        print traceback.format_exc()
 
 #function derived from: http://blog.9bplus.com/pdfidpy-output-to-json
-def PDFiD2JSON(xmlDoc, force): 
+def PDFiD2JSON(xmlDoc, force):
     #Get Top Layer Data
     errorOccured = xmlDoc.documentElement.getAttribute('ErrorOccured')
     errorMessage = xmlDoc.documentElement.getAttribute('ErrorMessage')
@@ -655,7 +789,7 @@ def PDFiD2JSON(xmlDoc, force):
     totalEntropy = xmlDoc.documentElement.getAttribute('TotalEntropy')
     streamEntropy = xmlDoc.documentElement.getAttribute('StreamEntropy')
     nonStreamEntropy = xmlDoc.documentElement.getAttribute('NonStreamEntropy')
-    
+
     keywords = []
     dates = []
 
@@ -682,33 +816,116 @@ def PDFiD2JSON(xmlDoc, force):
     result = json.dumps(complete)
     return result
 
+def File2Strings(filename):
+    try:
+        f = open(filename, 'r')
+    except:
+        return None
+    try:
+        return list(map(lambda line:line.rstrip('\n'), f.readlines()))
+    except:
+        return None
+    finally:
+        f.close()
+
+def ProcessAt(argument):
+    if argument.startswith('@'):
+        strings = File2Strings(argument[1:])
+        if strings == None:
+            raise Exception('Error reading %s' % argument)
+        else:
+            return strings
+    else:
+        return [argument]
+
+def AddPlugin(cClass):
+    global plugins
+
+    plugins.append(cClass)
+
+def ExpandFilenameArguments(filenames):
+    return list(collections.OrderedDict.fromkeys(sum(map(glob.glob, sum(map(ProcessAt, filenames), [])), [])))
+
+class cPluginParent():
+    onlyValidPDF = True
+
+def LoadPlugins(plugins, verbose):
+    if plugins == '':
+        return
+    scriptPath = os.path.dirname(sys.argv[0])
+    for plugin in sum(map(ProcessAt, plugins.split(',')), []):
+        try:
+            if not plugin.lower().endswith('.py'):
+                plugin += '.py'
+            if os.path.dirname(plugin) == '':
+                if not os.path.exists(plugin):
+                    scriptPlugin = os.path.join(scriptPath, plugin)
+                    if os.path.exists(scriptPlugin):
+                        plugin = scriptPlugin
+            exec(open(plugin, 'r').read())
+        except Exception as e:
+            print('Error loading plugin: %s' % plugin)
+            if verbose:
+                raise e
+
+def PDFiDMain(filenames, options):
+    global plugins
+    plugins = []
+    LoadPlugins(options.plugins, options.verbose)
+
+    if options.csv:
+        if plugins != []:
+            Print(MakeCSVLine((('%s', 'Filename'), ('%s', 'Plugin-name'), ('%s', 'Score'))), options)
+        elif options.select != '':
+            Print('Filename', options)
+
+    for filename in filenames:
+        if options.scan:
+            Scan(filename, options, plugins)
+        else:
+            ProcessFile(filename, options, plugins)
+
 def Main():
-    oParser = optparse.OptionParser(usage='usage: %prog [options] [pdf-file|zip-file|url]\n' + __description__, version='%prog ' + __version__)
+    moredesc = '''
+
+Arguments:
+pdf-file and zip-file can be a single file, several files, and/or @file
+@file: run PDFiD on each file listed in the text file specified
+wildcards are supported
+
+Source code put in the public domain by Didier Stevens, no Copyright
+Use at your own risk
+https://DidierStevens.com'''
+
+    oParser = optparse.OptionParser(usage='usage: %prog [options] [pdf-file|zip-file|url|@file] ...\n' + __description__ + moredesc, version='%prog ' + __version__)
     oParser.add_option('-s', '--scan', action='store_true', default=False, help='scan the given directory')
     oParser.add_option('-a', '--all', action='store_true', default=False, help='display all the names')
     oParser.add_option('-e', '--extra', action='store_true', default=False, help='display extra data, like dates')
     oParser.add_option('-f', '--force', action='store_true', default=False, help='force the scan of the file, even without proper %PDF header')
     oParser.add_option('-d', '--disarm', action='store_true', default=False, help='disable JavaScript and auto launch')
+    oParser.add_option('-p', '--plugins', type=str, default='', help='plugins to load (separate plugins with a comma , ; @file supported)')
+    oParser.add_option('-c', '--csv', action='store_true', default=False, help='output csv data when using plugins')
+    oParser.add_option('-m', '--minimumscore', type=float, default=0.0, help='minimum score for plugin results output')
+    oParser.add_option('-v', '--verbose', action='store_true', default=False, help='verbose (will also raise catched exceptions)')
+    oParser.add_option('-S', '--select', type=str, default='', help='selection expression')
+    oParser.add_option('-o', '--output', type=str, default='', help='output to log file')
     (options, args) = oParser.parse_args()
 
     if len(args) == 0:
         if options.disarm:
             print('Option disarm not supported with stdin')
             options.disarm = False
-        print(PDFiD2String(PDFiD('', options.all, options.extra, options.disarm, options.force), options.force))
-    elif len(args) == 1:
         if options.scan:
-            Scan(args[0], options.all, options.extra, options.disarm, options.force)
-        else:
-            print(PDFiD2String(PDFiD(args[0], options.all, options.extra, options.disarm, options.force), options.force))
+            print('Option scan not supported with stdin')
+            options.scan = False
+        filenames = ['']
     else:
-        oParser.print_help()
-        print('')
-        print('  %s' % __description__)
-        print('  Source code put in the public domain by Didier Stevens, no Copyright')
-        print('  Use at your own risk')
-        print('  https://DidierStevens.com')
-        return
+        try:
+            filenames = ExpandFilenameArguments(args)
+        except Exception as e:
+            print(e)
+            return
+    PDFiDMain(filenames, options)
 
 if __name__ == '__main__':
     Main()
