@@ -1,11 +1,10 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Adzok.py
 
-import os
 import re
-import sys
 import string
 from zipfile import ZipFile
+from cStringIO import StringIO
 
 #Helper Functions Go Here
 def string_print(line):
@@ -23,10 +22,11 @@ def parse_config(raw_config):
 
 def config(data):
     raw_config = False
-    with ZipFile(file_name, 'r') as zip:
-        for name in zip.namelist():
+    jar_file = StringIO(data)
+    with ZipFile(jar_file, 'r') as jar:
+        for name in jar.namelist():
             if name == 'config.xml':
-                raw_config = zip.read(name)
+                raw_config = jar.read(name)
     if raw_config:
         return parse_config(raw_config)
 
