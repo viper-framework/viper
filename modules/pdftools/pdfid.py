@@ -71,6 +71,8 @@ except:
     import urllib.request
     urllib23 = urllib.request
 
+plugins = []
+
 #Convert 2 Bytes If Python 3
 def C2BIP3(string):
     if sys.version_info[0] > 2:

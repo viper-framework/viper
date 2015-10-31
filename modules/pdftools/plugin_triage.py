@@ -2,6 +2,8 @@
 
 #2014/09/30
 
+from pdfid import cPluginParent, AddPlugin
+
 class cPDFiDTriage(cPluginParent):
 #    onlyValidPDF = True
     name = 'Triage plugin'

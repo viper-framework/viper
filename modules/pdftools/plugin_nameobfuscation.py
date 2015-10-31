@@ -3,6 +3,8 @@
 #2013/11/04
 #2013/11/08
 
+from pdfid import cPluginParent, AddPlugin
+
 class cPDFiDNameObfuscation(cPluginParent):
 #    onlyValidPDF = True
     name = 'Name Obfuscation plugin'
