@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import sys
 import glob
 import atexit
 import readline
@@ -14,20 +15,23 @@ from viper.core.project import __project__
 from viper.core.ui.commands import Commands
 from viper.core.storage import get_sample_path
 from viper.core.database import Database
+from viper.core.config import Config
+
+cfg = Config()
 
 # For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
 try:
-        input = raw_input
+    input = raw_input
 except NameError:
-        pass
+    pass
 
 
 def logo():
-    print("""         _                   
-        (_) 
-   _   _ _ ____  _____  ____ 
+    print("""         _
+        (_)
+   _   _ _ ____  _____  ____
   | | | | |  _ \| ___ |/ ___)
-   \ V /| | |_| | ____| |    
+   \ V /| | |_| | ____| |
     \_/ |_|  __/|_____)_| v1.3-dev
           |_|
     """)
@@ -35,14 +39,24 @@ def logo():
     db = Database()
     count = db.get_sample_count()
 
+    # Handle the New database format
+    try:
+        db.find('all', None)
+    except:
+        print_error("You need to update your viper database. Run 'python update.py -d'")
+        sys.exit()
+
+
     if __project__.name:
         name = __project__.name
     else:
         name = 'default'
 
-    print(magenta("You have " + bold(count)) + 
-          magenta(" files in your " + bold(name) + 
+    print(magenta("You have " + bold(count)) +
+          magenta(" files in your " + bold(name) +
           magenta(" repository".format(bold(name)))))
+    if cfg.autorun.enabled and len(cfg.autorun.commands) == 0:
+        print_warning("You have enabled autorun but not set any commands in viper.conf.")
 
 class Console(object):
 
@@ -80,50 +94,6 @@ class Console(object):
 
         return data
 
-    def print_output(self, output, filename):
-        if not output:
-            return
-        if filename:
-            with open(filename.strip(), 'a') as out:
-                for entry in output:
-                    if entry['type'] == 'info':
-                        out.write('[*] {0}\n'.format(entry['data']))
-                    elif entry['type'] == 'item':
-                        out.write('  [-] {0}\n'.format(entry['data']))
-                    elif entry['type'] == 'warning':
-                        out.write('[!] {0}\n'.format(entry['data']))
-                    elif entry['type'] == 'error':
-                        out.write('[!] {0}\n'.format(entry['data']))
-                    elif entry['type'] == 'success':
-                        out.write('[+] {0}\n'.format(entry['data']))
-                    elif entry['type'] == 'table':
-                        out.write(str(table(
-                            header=entry['data']['header'],
-                            rows=entry['data']['rows']
-                        )))
-                        out.write('\n')
-                    else:
-                        out.write('{0}\n'.format(entry['data']))
-            print_success("Output written to {0}".format(filename))
-        else:
-            for entry in output:
-                if entry['type'] == 'info':
-                    print_info(entry['data'])
-                elif entry['type'] == 'item':
-                    print_item(entry['data'])
-                elif entry['type'] == 'warning':
-                    print_warning(entry['data'])
-                elif entry['type'] == 'error':
-                    print_error(entry['data'])
-                elif entry['type'] == 'success':
-                    print_success(entry['data'])
-                elif entry['type'] == 'table':
-                    print(table(
-                        header=entry['data']['header'],
-                        rows=entry['data']['rows']
-                    ))
-                else:
-                    print(entry['data'])
 
     def stop(self):
         # Stop main loop.
@@ -220,7 +190,7 @@ class Console(object):
                 # Skip if the input is empty.
                 if not data:
                     continue
-                
+
                 # Check for output redirection
                 # If there is a > in the string, we assume the user wants to output to file.
                 filename = False
@@ -260,7 +230,7 @@ class Console(object):
                         # execute it.
                         if root in self.cmd.commands:
                             self.cmd.commands[root]['obj'](*args)
-                            self.print_output(self.cmd.output, filename)
+                            print_output(self.cmd.output, filename)
                             del(self.cmd.output[:])
                         # If the root command is part of loaded modules, we initialize
                         # the module and execute it.
@@ -269,8 +239,9 @@ class Console(object):
                             module.set_commandline(args)
                             module.run()
 
-                            self.print_output(module.output, filename)
-                            del(module.output[:])
+                            print_output(module.output, filename)
+                            if cfg.modules.store_output and __sessions__.is_set():
+                                Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
                         else:
                             print("Command not recognized.")
                     except KeyboardInterrupt:

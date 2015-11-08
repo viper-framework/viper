@@ -5,10 +5,9 @@
 from pypssl import PyPSSL
 
 from viper.common.abstracts import Module
+from viper.core.config import Config
 
-PSSL_URL = ''
-PSSL_USER = ''
-PSSL_PASS = ''
+cfg = Config()
 
 
 class Pssl(Module):
@@ -84,8 +83,8 @@ class Pssl(Module):
 
         if self.args.url:
             url = self.args.url
-        elif PSSL_URL:
-            url = PSSL_URL
+        elif cfg.pssl.pssl_url:
+            url = cfg.pssl.pssl_url
         else:
             self.log('error', 'You need to give the server to query.')
             return
@@ -96,11 +95,11 @@ class Pssl(Module):
         if self.args.user:
             user = self.args.user
         else:
-            user = PSSL_USER
+            user = cfg.pssl.pssl_user
         if self.args.password:
             password = self.args.password
         else:
-            password = PSSL_PASS
+            password = cfg.pssl.pssl_pass
 
         self.pssl = PyPSSL(url, basic_auth=(user, password))
 

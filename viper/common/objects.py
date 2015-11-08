@@ -44,7 +44,9 @@ class File(object):
         self.crc32 = ''
         self.ssdeep = ''
         self.tags = ''
-        
+        self.parent = ''
+        self.children = ''
+
         if self.is_valid():
             self.name = os.path.basename(self.path)
             self.size = os.path.getsize(self.path)
@@ -136,3 +138,13 @@ class File(object):
                 return ''
 
         return mime_type
+
+
+class Dictionary(dict):
+    """Viper custom dict."""
+
+    def __getattr__(self, key):
+        return self.get(key, None)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__

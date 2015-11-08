@@ -62,6 +62,9 @@ class Sessions(object):
             if row:
                 session.file.name = row[0].name
                 session.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
+                if row[0].parent:
+                    session.file.parent = '{0} - {1}'.format(row[0].parent.name, row[0].parent.sha256)
+                session.file.children = Database().get_children(row[0].id)
             print_info("Session opened on {0}".format(path))
         if misp_event is not None:
             if self.is_set() and self.current.file:

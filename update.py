@@ -2,7 +2,9 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
+import sys
+from sqlalchemy import *
+from optparse import OptionParser
 import hashlib
 try:
     from io import StringIO
@@ -27,7 +29,7 @@ url = 'https://github.com/viper-framework/viper/archive/master.zip'
 # - Add a check for current working directory.
 # - Add error handling.
 # - Ignore all git related files and directories.
-def main():
+def update():
     print_warning("WARNING: If you proceed you will lose any changes you might have made to Viper.")
     choice = input("Are you sure you want to proceed? [y/N] ")
 
@@ -97,5 +99,88 @@ def main():
     zip_file.close()
     zip_data.close()
 
+def update_db():
+    print_item("Backing up Sqlite DB")
+
+    try:
+        os.rename('viper.db', 'viper.db.bak')
+    except Exception as e:
+        print_error("Failed to Backup. {0} Stopping".format(e))
+        return
+
+
+    print_item("Creating New DataBase File")
+    from viper.core.database import Database
+    Database()
+
+    print_item("Connecting to Viper Databases")
+    old_engine = create_engine('sqlite:///viper.db.bak')
+    new_engine = create_engine('sqlite:///viper.db')
+
+    print_item("Reading data from Old Database")
+    malware = old_engine.execute('SELECT * FROM malware').fetchall()
+    association = old_engine.execute('SELECT * FROM association').fetchall()
+    notes = old_engine.execute('SELECT * FROM note').fetchall()
+    tags = old_engine.execute('SELECT * FROM tag').fetchall()
+
+    print_item(" Adding rows to New Database")
+
+    #add all the rows back in
+    for row in notes:
+        new_engine.execute("INSERT INTO note VALUES ('{0}', '{1}', '{2}')".format(row[0], row[1], row[2]))
+
+    for row in tags:
+        new_engine.execute("INSERT INTO tag VALUES ('{0}', '{1}')".format(row[0], row[1]))
+
+    for row in malware:
+        new_engine.execute("INSERT INTO malware VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', "
+                           "'{5}', '{6}', '{7}', '{8}', '{9}', '{10}', '{11}', 'Null')".format(row[0], row[1], row[2],
+                                                                                               row[3], row[4], row[5],
+                                                                                               row[6], row[7], row[8],
+                                                                                               row[9], row[10], row[11])
+                           )
+
+    #rebuild association table with foreign keys
+    for row in association:
+        if row[0] == None:
+            tag_id = "Null"
+        else:
+            tag_id = "(SELECT id from tag WHERE id='{0}')".format(row[0])
+        if row[1] == None:
+            note_id = "Null"
+        else:
+            note_id = "(SELECT id from note WHERE id='{0}')".format(row[1])
+        if row[2] == None:
+            malware_id = "Null"
+        else:
+            malware_id = "(SELECT id from malware WHERE id='{0}')".format(row[2])
+
+        new_engine.execute("INSERT INTO association VALUES ({0}, {1}, {2}, 'Null')".format(tag_id, note_id, malware_id))
+
+    print_info("Update Complete")
+
+
+
 if __name__ == '__main__':
-    main()
+    parser = OptionParser(usage='usage: %prog -c|-d' )
+    parser.add_option("-d", "--db", action='store_true', default=False, help="Update DB Tables")
+    parser.add_option("-c", "--core", action='store_true', default=False, help="Update Core Files")
+
+    (options, args) = parser.parse_args()
+
+    if not options.db and not options.core:
+        print ""
+        print "========================================================================="
+        print "| This script will Update your Viper to the latest Dev Version.         |"
+        print "| Some Dev Updates have new or modified tables. This script will allow  |"
+        print "| you to update your existing DB files to the required Schema.          |"
+        print "=========================================================================\n"
+        parser.print_help()
+        sys.exit()
+
+    if options.db:
+        print_info("Updating to New DB format")
+        update_db()
+
+    if options.core:
+        update()

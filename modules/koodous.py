@@ -14,9 +14,9 @@ import tempfile
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.core.config import Config
 
-KOODOUS_URL_BASE = 'https://koodous.com/api/apks'
-KOODOUS_TOKEN = 'd01d9c845e4b2430682241c5faa55e786c129441'
+cfg = Config()
 
 class Koodous(Module):
     cmd = 'koodous'
@@ -67,9 +67,9 @@ class Koodous(Module):
         """
             Function to download a sample from Koodous
         """
-        url = '%s/%s/download' % (KOODOUS_URL_BASE, sha256)
+        url = '%s/%s/download' % (cfg.koodous.url, sha256)
 
-        headers = {'Authorization': 'Token %s' % KOODOUS_TOKEN}
+        headers = {'Authorization': 'Token %s' % cfg.koodous.token}
 
         response = requests.get(url=url, headers=headers)
         if response.status_code == 200:
@@ -97,8 +97,8 @@ class Koodous(Module):
             return
         sha256 = hashlib.sha256(content_file).hexdigest()
         
-        url = '%s/%s/get_upload_url' % (KOODOUS_URL_BASE, sha256)
-        headers = {"Authorization": "Token %s" % KOODOUS_TOKEN}
+        url = '%s/%s/get_upload_url' % (cfg.koodous.koodous_url, sha256)
+        headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         response = requests.get(url=url, headers=headers)
         if response.status_code == 200:
@@ -118,7 +118,7 @@ class Koodous(Module):
         """
             Function to comment an APK in Koodous
         """
-        headers = {"Authorization": "Token %s" % KOODOUS_TOKEN}
+        headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         try:
             content_file = open(__sessions__.current.file.path, 'rb').read()
@@ -127,7 +127,7 @@ class Koodous(Module):
             self.log('error', 'You have no file loaded')
         
         try:
-            url = '%s/%s/comments' % (KOODOUS_URL_BASE, sha256)
+            url = '%s/%s/comments' % (cfg.koodous.koodous_url, sha256)
             data = {'text': comment}
             response = requests.post(url=url, headers=headers, data=data)
             if response.status_code == 201:
@@ -143,7 +143,7 @@ class Koodous(Module):
         """
             Function to view comments of a sample in Koodous
         """
-        headers = {"Authorization": "Token %s" % KOODOUS_TOKEN}
+        headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         try:
             content_file = open(__sessions__.current.file.path, 'rb').read()
@@ -152,7 +152,7 @@ class Koodous(Module):
             self.log('error', 'You have no file loaded')
             return
         try:
-            url = '%s/%s/comments' % (KOODOUS_URL_BASE, sha256)
+            url = '%s/%s/comments' % (cfg.koodous.koodous_url, sha256)
             response = requests.get(url=url, headers=headers)
             if response.json().get('count') == 0:
                 self.log('info', 'This sample has no comments.')

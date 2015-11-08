@@ -20,18 +20,9 @@ except ImportError:
 from viper.common.utils import string_clean
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.core.config import Config
 
-MALWR_LOGIN = 'https://malwr.com/account/login/'
-MALWR_USER = '' 
-MALWR_PASS = '' 
-MALWR_SEARCH = 'https://malwr.com/analysis/search/'
-MALWR_PREFIX = 'https://malwr.com'
-
-ANUBIS_LOGIN = 'https://anubis.iseclab.org/?action=login'
-ANUBIS_USER = None
-ANUBIS_PASS = None
-ANUBIS_SEARCH = 'https://anubis.iseclab.org/?action=hashquery'
-ANUBIS_PREFIX = 'https://anubis.iseclab.org/'
+cfg = Config()
 
 
 class Reports(Module):
@@ -65,32 +56,32 @@ class Reports(Module):
                 if cols:
                     time = str(cols[0].string)
                     link = cols[1].find('a')
-                    url = '{0}{1}'.format(MALWR_PREFIX, link.get("href"))
+                    url = '{0}{1}'.format(cfg.reports.malwr_prefix, link.get("href"))
                     reports.append([time, url])
 
             return reports
 
     def malwr(self):
-        if not MALWR_USER or not MALWR_PASS:
+        if not cfg.reports.malwr_user or not cfg.reports.malwr_pass:
             choice = raw_input("You need to specify a valid username/password, login now? [y/N] ")
             if choice == 'y':
                 username, password = self.authenticate()
             else:
                 return
         else:
-            username = MALWR_USER
-            password = MALWR_PASS
+            username = cfg.reports.malwr_user
+            password = cfg.reports.malwr_pass
         try:
             sess = requests.Session()
             sess.auth = (username, password)
 
-            sess.get(MALWR_LOGIN, verify=False)
+            sess.get(cfg.reports.malwr_login, verify=False)
             csrf = sess.cookies['csrftoken']
 
             sess.post(
-                MALWR_LOGIN,
+                cfg.reports.malwr_login,
                 {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
-                headers=dict(Referer=MALWR_LOGIN),
+                headers=dict(Referer=cfg.reports.malwr_login),
                 verify=False,
                 timeout=60
                 )
@@ -98,9 +89,9 @@ class Reports(Module):
             self.log('info', "Error while connecting to malwr")
             return
         payload = {'search': __sessions__.current.file.sha256, 'csrfmiddlewaretoken': csrf}
-        headers = {"Referer": MALWR_SEARCH}
+        headers = {"Referer": cfg.reports.malwr_search}
         p = sess.post(
-            MALWR_SEARCH,
+            cfg.reports.malwr_search,
             payload,
             headers=headers,
             timeout=60,
@@ -124,31 +115,31 @@ class Reports(Module):
             cols = table.findAll('td')
             time = cols[1].string.strip()
             link = cols[4].find('a')
-            url = '{0}{1}'.format(ANUBIS_PREFIX, link.get('href'))
+            url = '{0}{1}'.format(cfg.reports.anubis_prefix, link.get('href'))
             reports.append([time, url])
             return reports
 
     def anubis(self):
-        if not ANUBIS_USER or not ANUBIS_PASS:
+        if not cfg.reports.anubis_user or not cfg.reports.anubis_pass:
             choice = raw_input("You need to specify a valid username/password, login now? [y/N] ")
             if choice == 'y':
                 username, password = self.authenticate()
             else:
                 return
         else:
-            username = ANUBIS_USER
-            password = ANUBIS_PASS
+            username = cfg.reports.anubis_user
+            password = cfg.reports.anubis_pass
 
         sess = requests.Session()
         sess.auth = (username, password)
 
         res = sess.post(
-            ANUBIS_LOGIN,
+            cfg.reports.anubis_login,
             {'username': username, 'password': password},
             verify=False
         )
         res = sess.post(
-            ANUBIS_SEARCH,
+            cfg.reports.anubis_search,
             {'hashlist': __sessions__.current.file.sha256},
             verify=False
         )

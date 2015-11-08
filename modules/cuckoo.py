@@ -9,6 +9,9 @@ except ImportError:
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.core.config import Config
+
+cfg = Config()
 
 
 class Cuckoo(Module):
@@ -34,8 +37,14 @@ class Cuckoo(Module):
             self.log('error', "Missing dependency, install requests (`pip install requests`)")
             return
 
-        host = self.args.host
-        port = self.args.port
+        if cfg.cuckoo.cuckoo_host:
+            host = cfg.cuckoo.cuckoo_host
+        else:
+            host = self.args.host
+        if cfg.cuckoo.cuckoo_port:
+            port = cfg.cuckoo.cuckoo_port
+        else:
+            port = self.args.port
 
         url = 'http://{0}:{1}/tasks/create/file'.format(host, port)
 

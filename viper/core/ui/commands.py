@@ -4,6 +4,7 @@
 import argparse
 import os
 import time
+import json
 import fnmatch
 import tempfile
 import shutil
@@ -24,18 +25,21 @@ from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
+from viper.core.config import Config
+from viper.common.autorun import autorun_module
+
+cfg = Config()
 
 # For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
 try:
-        input = raw_input
+    input = raw_input
 except NameError:
-        pass
+    pass
 
 
 class Commands(object):
-
     output = []
-    
+
     def __init__(self):
         # Open connection to the database.
         self.db = Database()
@@ -56,16 +60,18 @@ class Commands(object):
             sessions=dict(obj=self.cmd_sessions, description="List or switch sessions"),
             stats=dict(obj=self.cmd_stats, description="Viper Collection Statistics"),
             projects=dict(obj=self.cmd_projects, description="List or switch existing projects"),
+            parent=dict(obj=self.cmd_parent, description="Add or remove a parent file"),
             export=dict(obj=self.cmd_export, description="Export the current session to file or zip"),
+            analysis=dict(obj=self.cmd_analysis, description="View the stored analysis"),
         )
-        
+
     # Output Logging
     def log(self, event_type, event_data):
         self.output.append(dict(
             type=event_type,
             data=event_data
         ))
-        
+
     ##
     # CLEAR
     #
@@ -228,7 +234,9 @@ class Commands(object):
                     ['SHA256', __sessions__.current.file.sha256],
                     ['SHA512', __sessions__.current.file.sha512],
                     ['SSdeep', __sessions__.current.file.ssdeep],
-                    ['CRC32', __sessions__.current.file.crc32]
+                    ['CRC32', __sessions__.current.file.crc32],
+                    ['Parent', __sessions__.current.file.parent],
+                    ['Children', __sessions__.current.file.children]
                 ]
             ))
 
@@ -254,7 +262,7 @@ class Commands(object):
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
-        
+
         # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
         malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
         if not malware:
@@ -263,7 +271,6 @@ class Commands(object):
 
         if args.list:
             # Retrieve all notes for the currently opened file.
-            
 
             notes = malware[0].note
             if not notes:
@@ -328,6 +335,59 @@ class Commands(object):
             parser.print_usage()
 
     ##
+    # ANALYSIS
+    #
+    # This command allows you to view, add, modify and delete notes associated
+    # with the currently opened file.
+    def cmd_analysis(self, *args):
+        parser = argparse.ArgumentParser(prog="analysis", description="Show stored module results")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('-l', '--list', action='store_true',
+                           help="List all module results available for the current file")
+        group.add_argument('-v', '--view', metavar='ANALYSIS ID', type=int, help="View the specified analysis")
+        group.add_argument('-d', '--delete', metavar='ANALYSIS ID', type=int, help="Delete an existing analysis")
+
+        try:
+            args = parser.parse_args(args)
+        except:
+            return
+
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            return
+
+        # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
+        malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
+        if not malware:
+            self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
+            return
+
+        if args.list:
+            # Retrieve all analysis for the currently opened file.
+
+            analysis_list = malware[0].analysis
+            if not analysis_list:
+                self.log('info', "No analysis available for this file yet")
+                return
+
+            # Populate table rows.
+            rows = [[analysis.id, analysis.cmd_line, analysis.stored_at] for analysis in analysis_list]
+
+            # Display list of existing notes.
+            self.log('table', dict(header=['ID', 'Cmd Line', 'Saved On'], rows=rows))
+
+        elif args.view:
+            # Retrieve note wth the specified ID and print it.
+            result = Database().get_analysis(args.view)
+            if result:
+                self.log('info', bold('Cmd Line: ') + result.cmd_line)
+                for line in json.loads(result.results):
+                    self.log(line['type'], line['data'])
+            else:
+                self.log('info', "There is no analysis with ID {0}".format(args.view))
+
+
+    ##
     # STORE
     #
     # This command stores the opened file in the local repository and tries
@@ -368,6 +428,7 @@ class Commands(object):
                 # associated database record.
                 new_path = store_sample(obj)
                 self.log("success", "Stored file \"{0}\" to {1}".format(obj.name, new_path))
+
             else:
                 return False
 
@@ -422,6 +483,11 @@ class Commands(object):
 
                         # Add file.
                         add_file(file_obj, args.tags)
+                        if add_file and cfg.autorun.enabled:
+                            autorun_module(file_obj.sha256)
+                            # Close the open session to keep the session table clean
+                            __sessions__.close()
+
             else:
                 self.log('error', "You specified an invalid folder: {0}".format(args.folder))
         # Otherwise we try to store the currently opened file, if there is any.
@@ -435,6 +501,8 @@ class Commands(object):
                 if add_file(__sessions__.current.file, args.tags):
                     # Open session to the new file.
                     self.cmd_open(*[__sessions__.current.file.sha256])
+                    if cfg.autorun.enabled:
+                        autorun_module(__sessions__.current.file.sha256)
             else:
                 self.log('error', "No session opened")
 
@@ -750,7 +818,7 @@ class Commands(object):
                 self.log('error', "Unable to export file: {0}".format(e))
             else:
                 self.log('info', "File exported to {0}".format(store_path))
-                
+
     ##
     # Stats
     #
@@ -764,7 +832,6 @@ class Commands(object):
         except:
             return
 
-
         arg_top = args.top
         db = Database()
 
@@ -773,14 +840,14 @@ class Commands(object):
         mime_dict = defaultdict(int)
         tags_dict = defaultdict(int)
         size_list = []
-        
+
         # Find all
         items = self.db.find('all')
-        
+
         if len(items) < 1:
             self.log('info', "No items in database to generate stats")
             return
-        
+
         # Sort in to stats
         for item in items:
             if '.' in item.name:
@@ -791,9 +858,10 @@ class Commands(object):
             for t in item.tag:
                 if t.tag:
                     tags_dict[t.tag] += 1
-        
+
         avg_size = sum(size_list) / len(size_list)
-        all_stats = {'Total':len(items), 'File Extension':extension_dict, 'Mime':mime_dict, 'Tags':tags_dict, 'Avg Size':avg_size, 'Largest':max(size_list), 'Smallest':min(size_list)}
+        all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
+                     'Avg Size': avg_size, 'Largest': max(size_list), 'Smallest': min(size_list)}
 
         # Counter for top x
         if arg_top:
@@ -802,17 +870,17 @@ class Commands(object):
         else:
             counter = len(items)
             prefix = ''
-        
+
         # Project Stats Last as i have it iterate them all
-        
+
         # Print all the results
-        
+
         self.log('info', "Projects")
         self.log('table', dict(header=['Name', 'Count'], rows=[['Main', len(items)], ['Next', '10']]))
-        
+
         # For Current Project
         self.log('info', "Current Project")
-        
+
         # Extension
         self.log('info', "{0}Extensions".format(prefix))
         header = ['Ext', 'Count']
@@ -821,8 +889,8 @@ class Commands(object):
         for k in sorted(extension_dict, key=extension_dict.get, reverse=True)[:counter]:
             rows.append([k, extension_dict[k]])
         self.log('table', dict(header=header, rows=rows))
-        
-        
+
+
         # Mimes
         self.log('info', "{0}Mime Types".format(prefix))
         header = ['Mime', 'Count']
@@ -830,7 +898,7 @@ class Commands(object):
         for k in sorted(mime_dict, key=mime_dict.get, reverse=True)[:counter]:
             rows.append([k, mime_dict[k]])
         self.log('table', dict(header=header, rows=rows))
-        
+
         # Tags
         self.log('info', "{0}Tags".format(prefix))
         header = ['Tag', 'Count']
@@ -838,10 +906,66 @@ class Commands(object):
         for k in sorted(tags_dict, key=tags_dict.get, reverse=True)[:counter]:
             rows.append([k, tags_dict[k]])
         self.log('table', dict(header=header, rows=rows))
-        
+
         # Size
         self.log('info', "Size Stats")
         self.log('item', "Largest  {0}".format(convert_size(max(size_list))))
         self.log('item', "Smallest  {0}".format(convert_size(min(size_list))))
         self.log('item', "Average  {0}".format(convert_size(avg_size)))
-                
+
+    ##
+    # PARENT
+    #
+    # This command is used to modify the tags of the opened file.
+    def cmd_parent(self, *args):
+        parser = argparse.ArgumentParser(prog='tags', description="Set the Parent for this file.")
+        parser.add_argument('-a', '--add', metavar='SHA256', help="Add parent file by sha256")
+        parser.add_argument('-d', '--delete', action='store_true', help="Delete Parent")
+        parser.add_argument('-o', '--open', action='store_true', help="Open The Parent")
+        try:
+            args = parser.parse_args(args)
+        except:
+            return
+
+        # This command requires a session to be opened.
+        if not __sessions__.is_set():
+            self.log('error', "No session opened")
+            parser.print_usage()
+            return
+
+
+        # If no arguments are specified, there's not much to do.
+        if args.add is None and args.delete is None and args.open is None:
+            parser.print_usage()
+            return
+
+        db = Database()
+        if not db.find(key='sha256', value=__sessions__.current.file.sha256):
+            self.log('error', "The opened file is not stored in the database. "
+                              "If you want to add it use the `store` command.")
+            return
+
+        if args.add:
+            if not db.find(key='sha256', value=args.add):
+                self.log('error', "the parent file is not found in the database. ")
+                return
+            db.add_parent(__sessions__.current.file.sha256, args.add)
+            self.log('info', "parent added to the currently opened file")
+
+            self.log('info', "Refreshing session to update attributes...")
+            __sessions__.new(__sessions__.current.file.path)
+
+        if args.delete:
+            db.delete_parent(__sessions__.current.file.sha256)
+            self.log('info', "parent removed from the currently opened file")
+
+            self.log('info', "Refreshing session to update attributes...")
+            __sessions__.new(__sessions__.current.file.path)
+
+        if args.open:
+            # Open a session on the parent
+            if __sessions__.current.file.parent:
+                __sessions__.new(get_sample_path(__sessions__.current.file.parent[-64:]))
+            else:
+                self.log('info', "No parent set for this sample")
+
