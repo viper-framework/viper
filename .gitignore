@@ -33,9 +33,11 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+.idea
 
 binaries/
 projects/
 *.db
+*.conf
 
 data/yara/index.yara

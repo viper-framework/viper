@@ -5,10 +5,9 @@
 from pypdns import PyPDNS
 
 from viper.common.abstracts import Module
+from viper.core.config import Config
 
-PDNS_URL = ''
-PDNS_USER = ''
-PDNS_PASS = ''
+cfg = Config()
 
 
 class Pdns(Module):
@@ -30,19 +29,19 @@ class Pdns(Module):
 
         if self.args.url:
             url = self.args.url
-        elif PDNS_URL:
-            url = PDNS_URL
+        elif cfg.pdns.pdns_url:
+            url = cfg.pdns.pdns_url
         else:
             self.log('error', 'You need to give the server to query.')
             return
         if self.args.user:
             user = self.args.user
         else:
-            user = PDNS_USER
+            user = cfg.pdns.pdns_user
         if self.args.password:
             password = self.args.password
         else:
-            password = PDNS_PASS
+            password = cfg.pdns.pdns_pass
 
         pdns = PyPDNS(url.rstrip('/'), (user, password))
         try:

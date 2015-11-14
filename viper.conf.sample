@@ -1,0 +1,88 @@
+# This file is part of Viper - https://github.com/botherder/viper
+# See the file 'LICENSE' for copying permission.
+
+##
+# Core
+##
+
+[modules]
+store_output = True
+
+[paths]
+# root path for project storage
+# If blank default is vipers cwd
+root_path = 
+
+[database]
+# Configure the database connection type example shown below
+# reserved for future use
+
+[web]
+host = 0.0.0.0
+port = 8080
+
+[api]
+host = 0.0.0.0
+port = 9090
+
+
+[autorun]
+enabled = True
+
+# Verbose True will print the output of each command. 
+# False will tell you a command has been run but not display the output
+verbose = False
+
+# Enter a comma separated list of command lines, As you would enter them in the CLI. You can use ; to chain commands.
+# Commands are run in sequence and the output of MODULES is stored if store_output is set to True.
+# commands = yara scan -t, fuzzy, pe compiletime
+commands = yara scan -t
+
+
+##
+# Modules
+##
+
+[virustotal]
+virustotal_url = https://www.virustotal.com/vtapi/v2/file/report
+virustotal_url_submit = https://www.virustotal.com/vtapi/v2/file/scan
+virustotal_url_download = https://www.virustotal.com/intelligence/download
+virustotal_url_comment = https://www.virustotal.com/vtapi/v2/comments/put
+virustotal_key = a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088
+
+[cuckoo]
+cuckoo_api = http://localhost:8090
+cuckoo_web = http://localhost:9191
+
+[reports]
+malwr_login = https://malwr.com/account/login/
+malwr_user =
+malwr_pass =
+malwr_search = https://malwr.com/analysis/search/
+malwr_prefix = https://malwr.com
+
+anubis_login = https://anubis.iseclab.org/?action=login
+anubis_user = 
+anubis_pass = 
+anubis_search = https://anubis.iseclab.org/?action=hashquery
+anubis_prefix = https://anubis.iseclab.org/
+
+[misp]
+misp_url =
+misp_key =
+misp_verify = True
+
+[pssl]
+pssl_url =
+pssl_user =
+pssl_pass =
+
+[pdns]
+pdns_url =
+pdns_user =
+pdns_pass =
+
+[koodous]
+koodous_url = https://koodous.com/api/apks
+koodous_token = d01d9c845e4b2430682241c5faa55e786c129441
+

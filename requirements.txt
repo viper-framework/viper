@@ -5,7 +5,6 @@ pydeep
 requests
 SQLAlchemy
 pycrypto
-OleFileIO_PL
 olefile
 oletools
 BeautifulSoup4
