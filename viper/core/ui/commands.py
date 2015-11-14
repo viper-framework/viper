@@ -337,7 +337,7 @@ class Commands(object):
     ##
     # ANALYSIS
     #
-    # This command allows you to view, add, modify and delete notes associated
+    # This command allows you to view the stored output from modules that have been run
     # with the currently opened file.
     def cmd_analysis(self, *args):
         parser = argparse.ArgumentParser(prog="analysis", description="Show stored module results")
@@ -356,7 +356,7 @@ class Commands(object):
             self.log('error', "No session opened")
             return
 
-        # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
+        # check if the file is already stores, otherwise exit
         malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
         if not malware:
             self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
@@ -373,11 +373,11 @@ class Commands(object):
             # Populate table rows.
             rows = [[analysis.id, analysis.cmd_line, analysis.stored_at] for analysis in analysis_list]
 
-            # Display list of existing notes.
+            # Display list of existing results.
             self.log('table', dict(header=['ID', 'Cmd Line', 'Saved On'], rows=rows))
 
         elif args.view:
-            # Retrieve note wth the specified ID and print it.
+            # Retrieve analysis wth the specified ID and print it.
             result = Database().get_analysis(args.view)
             if result:
                 self.log('info', bold('Cmd Line: ') + result.cmd_line)
@@ -916,7 +916,7 @@ class Commands(object):
     ##
     # PARENT
     #
-    # This command is used to modify the tags of the opened file.
+    # This command is used to view or edit the parent child relationship between files.
     def cmd_parent(self, *args):
         parser = argparse.ArgumentParser(prog='tags', description="Set the Parent for this file.")
         parser.add_argument('-a', '--add', metavar='SHA256', help="Add parent file by sha256")

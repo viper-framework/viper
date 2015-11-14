@@ -179,7 +179,10 @@ if __name__ == '__main__':
         sys.exit()
 
     if options.db:
+        print_warning("To update Projects you will need to copy their viper.db file in to the main viper folder")
+        print_warning("Run the DB update then move the new db file back to the project folder. ")
         print_info("Updating to New DB format")
+
         update_db()
 
     if options.core:
