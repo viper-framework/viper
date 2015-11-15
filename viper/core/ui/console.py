@@ -242,6 +242,7 @@ class Console(object):
                             print_output(module.output, filename)
                             if cfg.modules.store_output and __sessions__.is_set():
                                 Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
+                            del(module.output[:])
                         else:
                             print("Command not recognized.")
                     except KeyboardInterrupt:
