@@ -51,7 +51,7 @@ virustotal_url_comment = https://www.virustotal.com/vtapi/v2/comments/put
 virustotal_key = a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088
 
 [cuckoo]
-cuckoo_modified = True
+cuckoo_modified = False
 cuckoo_host = http://localhost:8080
 
 [reports]
