@@ -240,8 +240,11 @@ class Console(object):
                             module.run()
 
                             print_output(module.output, filename)
-                            if cfg.modules.store_output and __sessions__.current.file:
-                                Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
+                            if cfg.modules.store_output and __sessions__.is_set():
+                                try:
+                                    Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
+                                except:
+                                    pass
                             del(module.output[:])
                         else:
                             print("Command not recognized.")
