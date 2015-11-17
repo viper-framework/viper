@@ -240,7 +240,7 @@ class Console(object):
                             module.run()
 
                             print_output(module.output, filename)
-                            if cfg.modules.store_output and __sessions__.is_set():
+                            if cfg.modules.store_output and __sessions__.current.file:
                                 Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
                             del(module.output[:])
                         else:
