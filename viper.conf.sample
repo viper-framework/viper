@@ -11,7 +11,7 @@ store_output = True
 [paths]
 # root path for project storage
 # If blank default is vipers cwd
-root_path = 
+store_path =
 
 [database]
 # Configure the database connection type example shown below
@@ -22,6 +22,7 @@ host = 0.0.0.0
 port = 8080
 
 [api]
+enabled = True
 host = 0.0.0.0
 port = 9090
 
