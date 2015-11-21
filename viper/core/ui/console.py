@@ -132,12 +132,7 @@ class Console(object):
         # If there is an history file, read from it and load the history
         # so that they can be loaded in the shell.
         # Now we are storing the history file in the local project folder
-        # if there is an opened project. Otherwise just store it in the
-        # home directory.
-        if __project__.path:
-            history_path = os.path.join(__project__.path, 'history')
-        else:
-            history_path = os.path.expanduser('~/.viperhistory')
+        history_path = os.path.join(__project__.path, 'history')
 
         if os.path.exists(history_path):
             readline.read_history_file(history_path)
