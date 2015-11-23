@@ -41,6 +41,9 @@ class Cuckoo(Module):
         self.parser.add_argument('-f', '--file', action='store_true', help='Submit File for analysis')
         self.parser.add_argument('-r', '--resubmit', action='store_true', help='Resubmit Analysis of File')
         self.parser.add_argument('-d', '--dropped', type=int, help='Get all Dropped Samples from task id')
+        self.parser.add_argument('-m', '--machine',  help='Name of Machine or all')
+        self.parser.add_argument('-p', '--package',  help='Select a package type to run')
+        self.parser.add_argument('-o', '--options',  help='Options in the format "procmemdump=yes,nohuman=yes"')
 
 
     def add_file(self, file_path, tags, parent):
@@ -56,7 +59,8 @@ class Cuckoo(Module):
     def api_query(self, api_method, api_uri, files=None, params=None):
         if files:
             try:
-                response = requests.post(api_uri, files=files)
+                response = requests.post(api_uri, files=files, data=params)
+
             except requests.ConnectionError:
                 self.log('error', "Unable to connect to Cuckoo API at '{0}'.".format(api_uri))
                 return
@@ -78,7 +82,6 @@ class Cuckoo(Module):
             except Exception as e:
                 self.log('error', "Failed performing request at '{0}': {1}".format(api_uri, e))
                 return
-
         return response
 
     def run(self):
@@ -165,26 +168,37 @@ class Cuckoo(Module):
                         return
                 else:
                     search_results = self.api_query('get', search_url).json()
+                    count = 0
                     if 'tasks' in search_results:
                         rows = []
                         header = ['ID', 'Started On', 'Status', 'Completed On']
                         for result in search_results['tasks']:
                             if result['sample']['sha256'] == __sessions__.current.file.sha256:
                                 rows.append([result['id'], result['started_on'], result['status'], result['completed_on']])
+                                count += 1
                         if len(rows) > 0:
-                            self.log('info', "Found {0} Results".format(len(search_results['tasks'])))
+                            self.log('info', "Found {0} Results".format(count))
                             self.log('table', dict(header=header, rows=rows))
                             self.log('warning', "use -r, --resubmit to force a new analysis")
                             return
             # Submit the file
+            params = {}
+            if self.args.machine:
+                params['machine'] = self.args.machine
+            if self.args.package:
+                params['package'] = self.args.package
+            if self.args.options:
+                params['options'] = self.args.options
+
             files = {'file': (__sessions__.current.file.name, open(__sessions__.current.file.path, 'rb').read())}
-            submit_file = self.api_query('post', submit_file_url, files=files).json()
+            submit_file = self.api_query('post', submit_file_url, files=files, params=params).json()
             try:
                 self.log('info', "Task Submitted ID: {0}".format(submit_file['task_id']))
             except KeyError:
-                self.log('info', "Task Submitted ID: {0}".format(submit_file['task_ids'][0]))
-            except:
-                self.log('error', submit_file)
+                try:
+                    self.log('info', "Task Submitted ID: {0}".format(submit_file['task_ids'][0]))
+                except KeyError:
+                    self.log('error', submit_file)
 
         if self.args.dropped and __sessions__.is_set():
             try:
