@@ -12,6 +12,9 @@ except ImportError:
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.core.config import Config
+
+cfg = Config()
 
 
 # TODO: All that JSON exception handling is REALLY ugly. Needs to be fixed.
