@@ -2,7 +2,7 @@
 # This gets a list of Projects for the nav bar
 import os
 projects_path = os.path.join(os.getcwd(), 'projects')
-projects = ['Main']
+projects = ['default']
 if os.path.exists(projects_path):
     for project in os.listdir(projects_path):
         project_path = os.path.join(projects_path, project)

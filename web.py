@@ -250,9 +250,9 @@ def landing(p=False):
         __project__.open(p)
         contents['p'] = p
     else:
-        __project__.open("../")
-        contents['p'] = 'Main'
-    db = Database() 
+        __project__.open("default")
+        contents['p'] = 'default'
+    db = Database()
     # Pagination
     # 25 per page
     value = 25
@@ -261,8 +261,8 @@ def landing(p=False):
     page = request.query.page
     if not page:
         page = 0
-    offset = int(page) * int(value) 
-    contents['act_page'] = page   
+    offset = int(page) * int(value)
+    contents['act_page'] = page
     contents['latest'] = db.find('latest', value=value, offset=offset)
     # return the Template
     return template('index.tpl', **contents)
@@ -273,7 +273,7 @@ def add_project():
     project_name = request.forms.get('project').strip()
     __project__.open(project_name)
     redirect('/project/{0}'.format(project_name))
-       
+
 # Info Page for File
 @app.route("/file/<file_hash>", method="GET")
 @app.route("/file/<project>/<file_hash>", method="GET")
@@ -283,8 +283,8 @@ def file_info(file_hash, project=False):
         __project__.open(project)
         contents['project'] = project
     else:
-        __project__.open('../')
-        contents['project'] = 'Main'
+        __project__.open('default')
+        contents['project'] = 'default'
     # Open the Database
     db = Database()
     # Open a session
@@ -293,7 +293,7 @@ def file_info(file_hash, project=False):
         __sessions__.new(path)
     except:
         return template('error.tpl', error="{0} Does not match any hash in the Database".format(file_hash))
-    
+
     # Get the file info
     contents['file_info'] = [
                 __sessions__.current.file.name,
@@ -307,9 +307,9 @@ def file_info(file_hash, project=False):
                 __sessions__.current.file.sha256,
                 __sessions__.current.file.sha512,
                 __sessions__.current.file.ssdeep,
-                __sessions__.current.file.crc32                
+                __sessions__.current.file.crc32
                 ]
-                
+
     # Get Any Notes
     note_list = []
     malware = db.find(key='sha256', value=file_hash)
@@ -320,27 +320,27 @@ def file_info(file_hash, project=False):
             for note in notes:
                 note_list.append([note.title, note.body, note.id])
     contents['notes'] = note_list
-    
+
     # Close the session
     __sessions__.close()
     # Return the page
     return template('file.tpl', **contents)
-    
+
 # Add New File
 # Uses Context Manager to Remove Temp files
 @app.route('/add', method='POST')
 def add_file():
     tags = request.forms.get('tag_list')
     uploads = request.files.getlist('file')
-    
+
     # Set Project
     project = request.forms.get('project')
     if project in project_list():
         __project__.open(project)
     else:
-        __project__.open('../')
-        project = 'Main'
-    db = Database()    
+        __project__.open('default')
+        project = 'default'
+    db = Database()
     file_list = []
     # Write temp file to disk
     with upload_temp() as temp_dir:
@@ -353,7 +353,7 @@ def add_file():
                 zip_pass = request.forms.get('zip_pass')
                 try:
                     with ZipFile(file_path) as zf:
-                        zf.extractall(temp_dir, pwd=zip_pass)            
+                        zf.extractall(temp_dir, pwd=zip_pass)
                     for root, dirs, files in walk(temp_dir, topdown=False):
                         for name in files:
                             if not name == upload.filename:
@@ -398,12 +398,13 @@ def add_file():
             # Non zip files
             elif request.forms.get('compression') == 'none':
                 file_list.append(file_path)
-            
+
         # Add each file
         for new_file in file_list:
             print new_file
             obj = File(new_file)
             new_path = store_sample(obj)
+            print new_path
             success = True
             if new_path:
                 # Add file to the database.
@@ -425,7 +426,7 @@ def url_download():
     if upload == None:
         return template('error.tpl', error="server can't download from URL")
     # Set Project
-    project = 'Main'
+    project = 'default'
     db = Database()
     tf = tempfile.NamedTemporaryFile()
     tf.write(upload)
@@ -442,7 +443,7 @@ def url_download():
 
     if success:
         #redirect("/project/{0}".format(project))
-        redirect("/file/Main/"+tf_obj.sha256)
+        redirect("/file/default/"+tf_obj.sha256)
     else:
         return template('error.tpl', error="Unable to Store The File,already in database")
 
@@ -455,15 +456,15 @@ def file_download(file_hash, project=False):
     if project in project_list():
         __project__.open(project)
     else:
-        __project__.open('../')
-        project = 'Main'
+        __project__.open('default')
+        project = 'default'
     # Open the Database
     db = Database()
     # Open a session
     rows = db.find(key='sha256', value=file_hash)
     if not rows:
         return template('error.tpl', error="{0} Does not match any hash in the Database".format(file_hash))
-        
+
     path = get_sample_path(rows[0].sha256)
     if not path:
         return template('error.tpl', error="File not found on disk")
@@ -474,7 +475,7 @@ def file_download(file_hash, project=False):
     for chunk in File(path).get_chunks():
         data += chunk
     return data
-    
+
 # Search
 @app.route('/search', method='POST')
 def find_file():
@@ -490,14 +491,14 @@ def find_file():
         if os.path.exists(projects_path):
             for name in os.listdir(projects_path):
                 projects.append(name)
-        projects.append('../')
+        projects.append('default')
     else:
         # If not searching all projects what are we searching
-        if curr_project == 'Main':
-            projects.append('../')
+        if curr_project == 'default':
+            projects.append('default')
         else:
             projects.append(curr_project)
-    
+
     # Search each Project in the list
     for project in projects:
         __project__.open(project)
@@ -507,33 +508,33 @@ def find_file():
         proj_results = []
         rows = db.find(key=key, value=value)
         for row in rows:
-            if project == '../':
-                project = 'Main'
+            if project == 'default':
+                project = 'default'
             proj_results.append([row.name, row.sha256])
         results[project] = proj_results
- 
+
     return template('search.tpl', results=results)
 
 
 # Tags
 @app.route('/tags', method='GET')
-@app.route('/tags/<tag_action>', method='POST')    
+@app.route('/tags/<tag_action>', method='POST')
 def tags(tag_action=False):
     # Set DB
     db = Database()
-    
+
     # Search or Delete
     if request.method == 'GET':
         action = request.query.action
         value = request.query.value.strip()
-        
+
         if value:
             if action == 'search':
                 # This will search all projects
                 # Get project list
                 projects = project_list()
                 # Add Main db to list.
-                projects.append('../')
+                projects.append('default')
                 # Search All projects
                 p_list = []
                 results = {}
@@ -545,8 +546,8 @@ def tags(tag_action=False):
                     proj_results = []
                     rows = db.find(key='tag', value=value)
                     for row in rows:
-                        if project == '../':
-                            project = 'Main'
+                        if project == 'default':
+                            project = 'default'
                         proj_results.append([row.name, row.sha256])
                     results[project] = proj_results
                     p_list.append(project)
@@ -554,8 +555,8 @@ def tags(tag_action=False):
                 return template('search.tpl', projects=p_list, results=results)
             else:
                 return template('error.tpl', error="'{0}' Is not a valid tag action".format(action))
-                             
-    # Add / Delete                        
+
+    # Add / Delete
     if request.method == 'POST':
         file_hash = request.forms.get('sha256')
         project = request.forms.get('project')
@@ -581,7 +582,7 @@ def file_notes():
     note_id = request.forms.get('id')
     note_sha = request.forms.get('sha256')
     project = request.forms.get('project')
-    
+
     # Delete Note
     if delete and note_id:
         db.delete_note(note_id)
@@ -591,11 +592,11 @@ def file_notes():
     if new and note_sha and note_title and note_body:
         db.add_note(note_sha, note_title, note_body)
     redirect('/file/{0}/{1}#notes'.format(project, note_sha))
-        
+
 
 # Return Output from Module.
 @app.route('/file/module', method='POST')
-def run_module():      
+def run_module():
     # Get the hash of the file we want to run a command against
     file_hash = request.forms.get('file_hash')
     if len(file_hash) != 64:
@@ -615,19 +616,19 @@ def run_module():
             module_results = "The Command '{0}' generated an error. \n{1}".format(cmd_string, e)
     else:
         module_results = "You Didn't Enter A Command!"
-    
+
     return '<pre>{0}</pre>'.format(str(parse_text(module_results)))
-    
+
 
 # Yara Rules
-@app.route('/yara', method='GET')   
+@app.route('/yara', method='GET')
 @app.route('/yara', method='POST')
 def yara_rules():
-    
+
     # Get list of Rules
     rule_path = os.path.join(VIPER_ROOT, 'data/yara')
     rule_list = os.listdir(rule_path)
-    
+
     # GET is for listing Rules
     if request.method == 'GET':
         action = request.query.action
@@ -652,7 +653,7 @@ def yara_rules():
             if rule_name.split('.')[-1] in ['yar', 'yara']:
                 os.remove(os.path.join(rule_path, rule_name))
             redirect('/yara?action=list')
-            
+
     # POST is for adding / updating Rules
     if request.method == 'POST':
         rule_name = request.forms.get('rule_name')
@@ -677,8 +678,8 @@ def cuckoo_submit():
     if project in project_list():
         __project__.open(project)
     else:
-        __project__.open('../')
-        project = 'Main'
+        __project__.open('default')
+        project = 'default'
     # Open the Database
     db = Database()
     # Open a session

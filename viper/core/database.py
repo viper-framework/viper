@@ -180,6 +180,7 @@ class Database:
 
     def __init__(self):
         db_path = os.path.join(__project__.get_path(), 'viper.db')
+        print db_path
 
         self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
         self.engine.echo = False

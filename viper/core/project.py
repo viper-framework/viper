@@ -4,6 +4,7 @@
 import os
 import time
 
+from viper.common.constants import *
 from viper.core.config import Config
 cfg = Config()
 
@@ -11,23 +12,27 @@ class Project(object):
     def __init__(self):
         self.name = None
         self.path = None
-
+        print "ini"
         if cfg.paths.store_path:
             self.path = cfg.paths.store_path
         else:
-            self.path = os.getcwd()
+            self.path = VIPER_ROOT
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
         
     def open(self, name):
-        if name == 'default':
-            path = self.path
+        if cfg.paths.store_path:
+            base_path = cfg.paths.store_path
         else:
-            path = os.path.join(self.path, 'projects', name)
+            base_path = VIPER_ROOT
+
+        if name == 'default':
+            path = base_path
+        else:
+            path = os.path.join(base_path, 'projects', name)
             if not os.path.exists(path):
                 os.makedirs(path)
-
         self.name = name
         self.path = path
 
