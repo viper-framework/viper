@@ -12,7 +12,6 @@ class Project(object):
     def __init__(self):
         self.name = None
         self.path = None
-        print "ini"
         if cfg.paths.store_path:
             self.path = cfg.paths.store_path
         else:
