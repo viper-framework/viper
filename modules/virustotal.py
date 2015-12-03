@@ -4,10 +4,12 @@
 import tempfile
 
 try:
-    import requests
-    HAVE_REQUESTS = True
+    from virus_total_apis import PublicApi as vt
+    from virus_total_apis import PrivateApi as vt_priv
+    from virus_total_apis import IntelApi as vt_intel
+    HAVE_VT = True
 except ImportError:
-    HAVE_REQUESTS = False
+    HAVE_VT = False
 
 from viper.common.out import bold
 from viper.common.abstracts import Module
@@ -17,8 +19,6 @@ from viper.core.config import Config
 cfg = Config()
 
 
-# TODO: All that JSON exception handling is REALLY ugly. Needs to be fixed.
-
 class VirusTotal(Module):
     cmd = 'virustotal'
     description = 'Lookup the file on VirusTotal'
@@ -26,69 +26,65 @@ class VirusTotal(Module):
 
     def __init__(self):
         super(VirusTotal, self).__init__()
+        if cfg.virustotal.virustotal_has_private_key:
+            self.vt = vt_priv(cfg.virustotal.virustotal_key)
+        else:
+            self.vt = vt(cfg.virustotal.virustotal_key)
+
+        if cfg.virustotal.virustotal_has_intel_key:
+            self.vt_intel = vt_intel(cfg.virustotal.virustotal_key)
+
         self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file to VirusTotal (by default it only looks up the hash)')
-        self.parser.add_argument('-d','--download', action='store', dest='hash')
-        self.parser.add_argument('-c','--comment',nargs='+', action='store', dest='comment')
+        self.parser.add_argument('-d', '--download', action='store', dest='hash')
+        self.parser.add_argument('-c', '--comment', nargs='+', action='store', dest='comment')
+
+    def _has_fail(self, response):
+        if isinstance(response, dict):
+            # Fail
+            if response.get('error'):
+                self.log('error', response['error'])
+                return True
+            return False
+        else:
+            return False
 
     def run(self):
         super(VirusTotal, self).run()
         if self.args is None:
             return
 
-        if self.args.hash:
-            try:
-                params = {'apikey': cfg.virustotal.virustotal_key,'hash':self.args.hash}
-                response = requests.get(cfg.virustotal.virustotal_url_download, params=params)
+        if not HAVE_VT:
+            self.log('error', "Missing dependency, install virustotal-api (`pip install virustotal-api`)")
+            return
 
-                if response.status_code == 403:
-                    self.log('error','This command requires virustotal private API key')
-                    self.log('error','Please check that your key have the right permissions')
-                    return
-                if response.status_code == 200:
-                    response = response.content
+        if self.args.hash:
+            if cfg.virustotal.virustotal_has_private_key:
+                response = self.vt.get_file(self.args.hash)
+                if not self._has_fail(response):
                     tmp = tempfile.NamedTemporaryFile(delete=False)
                     tmp.write(response)
                     tmp.close()
                     return __sessions__.new(tmp.name)
-
-            except Exception as e:
-                    self.log('error', "Failed to download file: {0}".format(e))
-
-        if not HAVE_REQUESTS:
-            self.log('error', "Missing dependency, install requests (`pip install requests`)")
-            return
+            elif cfg.virustotal.virustotal_has_intel_key:
+                tmp = tempfile.NamedTemporaryFile(delete=False)
+                tmp.close()
+                response = self.vt_intel.get_file(self.args.hash, tmp.name)
+                if not self._has_fail(response):
+                    return __sessions__.new(tmp.name)
+            else:
+                self.log('error', 'This command requires virustotal private ot intelligence API key')
 
         if not __sessions__.is_set():
             self.log('error', "No session opened")
             return
 
-        data = {'resource': __sessions__.current.file.md5, 'apikey': cfg.virustotal.virustotal_key}
-
-        try:
-            response = requests.post(cfg.virustotal.virustotal_url, data=data)
-        except Exception as e:
-            self.log('error', "Failed performing request: {0}".format(e))
+        response = self.vt.get_file_report(__sessions__.current.file.md5)
+        if self._has_fail(response):
             return
 
-        try:
-            virustotal = response.json()
-            # since python 2.7 the above line causes the Error dict object not callable
-        except Exception as e:
-            # workaround in case of python 2.7
-            if str(e) == "'dict' object is not callable":
-                try:
-                    virustotal = response.json
-                except Exception as e:
-                    self.log('error', "Failed parsing the response: {0}".format(e))
-                    self.log('error', "Data:\n{}".format(response.content))
-                    return
-            else:
-                self.log('error', "Failed parsing the response: {0}".format(e))
-                self.log('error', "Data:\n{}".format(response.content))
-                return
-
+        virustotal = response['results']
         rows = []
-        if 'scans' in virustotal:
+        if virustotal.get('scans'):
             for engine, signature in virustotal['scans'].items():
                 if signature['detected']:
                     signature = signature['result']
@@ -108,59 +104,15 @@ class VirusTotal(Module):
             self.log('info', "The file does not appear to be on VirusTotal yet")
 
             if self.args.submit:
-                try:
-                    data = {'apikey': cfg.virustotal.virustotal_key}
-                    files = {'file': open(__sessions__.current.file.path, 'rb').read()}
-                    response = requests.post(cfg.virustotal.virustotal_url_submit, data=data, files=files)
-                except Exception as e:
-                    self.log('error', "Failed Submit: {0}".format(e))
-                    return
-
-                try:
-                    virustotal = response.json()
-                    # since python 2.7 the above line causes the Error dict object not callable
-                except Exception as e:
-                    # workaround in case of python 2.7
-                    if str(e) == "'dict' object is not callable":
-                        try:
-                            virustotal = response.json
-                        except Exception as e:
-                            self.log('error', "Failed parsing the response: {0}".format(e))
-                            self.log('error', "Data:\n{}".format(response.content))
-                            return
-                    else:
-                        self.log('error', "Failed parsing the response: {0}".format(e))
-                        self.log('error', "Data:\n{}".format(response.content))
-                        return
-
-                if 'verbose_msg' in virustotal:
-                    self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
+                response = self.vt.scan_file(__sessions__.current.file.path)
+                if not self._has_fail(response):
+                    virustotal = response['results']
+                    if virustotal.get('verbose_msg'):
+                        self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
 
         if self.args.comment:
-            try:
-
-                data = {'apikey' : cfg.virustotal.virustotal_key, 'resource': __sessions__.current.file.md5, 'comment' : ' '.join(self.args.comment)}
-                response = requests.post(cfg.virustotal.virustotal_url_comment,data=data)
-            except Exception as e:
-                self.log('error',"Failed Submit Comment: {0}".format(e))
-                return
-            try:
-                virustotal = response.json()
-                # since python 2.7 the above line causes the Error dict object not callable
-            except Exception as e:
-                # workaround in case of python 2.7
-                if str(e) == "'dict' object is not callable":
-                    try:
-                        virustotal = response.json
-                    except Exception as e:
-                        self.log('error',"Failed parsing the response: {0}".format(e))
-                        self.log('error',"Data:\n{}".format(response.content))
-                        return
-                else:
-                    self.log('error',"Failed parsing the response: {0}".format(e))
-                    self.log('error',"Data:\n{}".format(response.content))
-                    return
-
-            if 'verbose_msg' in virustotal:
-                self.log('info',("{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg'])))
-                return
+            response = self.vt.put_comments(__sessions__.current.file.md5, ' '.join(self.args.comment))
+            if not self._has_fail(response):
+                virustotal = response['results']
+                if virustotal.get('verbose_msg'):
+                    self.log('info', ("{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg'])))
