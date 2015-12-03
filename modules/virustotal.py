@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import tempfile
+import os
 
 try:
     from virus_total_apis import PublicApi as vt
@@ -66,11 +67,10 @@ class VirusTotal(Module):
                     tmp.close()
                     return __sessions__.new(tmp.name)
             elif cfg.virustotal.virustotal_has_intel_key:
-                tmp = tempfile.NamedTemporaryFile(delete=False)
-                tmp.close()
-                response = self.vt_intel.get_file(self.args.hash, tmp.name)
+                tmpdir = tempfile.mkdtemp()
+                response = self.vt_intel.get_file(self.args.hash, tmpdir)
                 if not self._has_fail(response):
-                    return __sessions__.new(tmp.name)
+                    return __sessions__.new(os.path.join(tmpdir, self.args.hash))
             else:
                 self.log('error', 'This command requires virustotal private ot intelligence API key')
 
