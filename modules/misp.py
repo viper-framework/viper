@@ -193,34 +193,12 @@ class MISP(Module):
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     # ####### Generic Helpers ########
-    def _has_misp_session(self, quiet=False):
-        if not __sessions__.is_set():
-            if not quiet:
-                self.log('error', "No session opened")
-            return False
-        if not __sessions__.current.misp_event:
-            if not quiet:
-                self.log('error', "Not attached to a MISP event")
-            return False
-        return True
-
-    def _has_file_session(self, quiet=False):
-        if not __sessions__.is_set():
-            if not quiet:
-                self.log('error', "No session opened")
-            return False
-        if not __sessions__.current.file:
-            if not quiet:
-                self.log('error', "Not attached to a file")
-            return False
-        return True
-
     def _get_eventid(self, quiet=False):
         if vars(self.args).get('event'):
             return self.args.event
         else:
             # Get current event ID if possible
-            if not self._has_misp_session(quiet):
+            if not __sessions__.is_attached_misp(quiet):
                 return None
             return __sessions__.current.misp_event.event_id
 
@@ -365,7 +343,7 @@ class MISP(Module):
 
     def _display_tmp_files(self):
         cureid = None
-        if self._has_misp_session(True):
+        if __sessions__.is_attached_misp(True):
             cureid = self._get_eventid()
         header = ['Sample ID', 'Current', 'Event ID', 'Filename']
         rows = []
@@ -549,7 +527,7 @@ class MISP(Module):
         if self.args.query:
             self._search(' '.join(self.args.query))
         else:
-            if not self._has_file_session(True):
+            if not __sessions__.is_attached_file(True):
                 self.log('error', "Not attached to a file, nothing to serch for.")
                 return False
             to_search = [__sessions__.current.file.md5, __sessions__.current.file.sha1, __sessions__.current.file.sha256]
@@ -654,7 +632,7 @@ class MISP(Module):
 
         if self.args.add == 'hashes':
             if self.args.filename is None and self.args.md5 is None and self.args.sha1 is None and self.args.sha256 is None:
-                if not self._has_file_session(True):
+                if not __sessions__.is_attached_file(True):
                     self.log('error', "Not attached to a file, please set the hashes manually.")
                     return False
                 event = self.misp.add_hashes(current_event, filename=__sessions__.current.file.name,
@@ -776,11 +754,11 @@ class MISP(Module):
             return
 
         # Require an open MISP session
-        if self.args.subname in ['add', 'show', 'publish'] and not self._has_misp_session():
+        if self.args.subname in ['add', 'show', 'publish'] and not __sessions__.is_attached_misp():
             return
 
         # Require an open file session
-        if self.args.subname in ['upload'] and not self._has_file_session():
+        if self.args.subname in ['upload'] and not __sessions__.is_attached_file():
             return
 
         try:

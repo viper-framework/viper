@@ -26,6 +26,28 @@ class Sessions(object):
         # Store the results of the last "find" command.
         self.find = None
 
+    def is_attached_misp(self, quiet=False):
+        if not self.is_set():
+            if not quiet:
+                print_error("No session opened")
+            return False
+        if not self.current.misp_event:
+            if not quiet:
+                print_error("Not attached to a MISP event")
+            return False
+        return True
+
+    def is_attached_file(self, quiet=False):
+        if not self.is_set():
+            if not quiet:
+                self.log('error', "No session opened")
+            return False
+        if not self.current.file:
+            if not quiet:
+                self.log('error', "Not attached to a file")
+            return False
+        return True
+
     def close(self):
         self.current = None
 

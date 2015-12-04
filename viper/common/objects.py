@@ -16,18 +16,38 @@ try:
 except ImportError:
     pass
 
+
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
 
 class MispEvent(object):
 
     def __init__(self, event):
         self.event_id = event['Event']['id']
         self.event = event
+
+    def get_all_hashes(self):
+        event_hashes = []
+        sample_hashes = []
+        for a in self.event['Event']['Attribute']:
+            h = None
+            if a['type'] in ('md5', 'sha1', 'sha256'):
+                h = a['value']
+                event_hashes.append(h)
+            elif a['type'] in ('filename|md5', 'filename|sha1', 'filename|sha256'):
+                h = a['value'].split('|')[1]
+                event_hashes.append(h)
+            elif a['type'] == 'malware-sample':
+                h = a['value'].split('|')[1]
+                sample_hashes.append(h)
+        return event_hashes, sample_hashes
+
 
 class File(object):
 
@@ -79,7 +99,7 @@ class File(object):
         sha1 = hashlib.sha1()
         sha256 = hashlib.sha256()
         sha512 = hashlib.sha512()
-        
+
         for chunk in self.get_chunks():
             crc = binascii.crc32(chunk, crc)
             md5.update(chunk)
