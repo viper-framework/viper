@@ -82,12 +82,12 @@ class VirusTotal(Module):
                     to_dl = [eh for eh in to_dl if eh not in response]
 
         elif option == "ips":
-            ips = [a['value'] for a in __sessions__.current.misp_event.event['Event']['Attribute'] if a['type'] == 'ip-dst']
+            ips = __sessions__.current.misp_event.get_all_ips()
             for ip in ips:
                 self.log('success', bold(ip))
                 self.pdns_ip(ip, verbose)
         elif option == "domains":
-            domains = [a['value'] for a in __sessions__.current.misp_event.event['Event']['Attribute'] if a['type'] == 'domain' or a['type'] == 'hostname']
+            domains = __sessions__.current.misp_event.get_all_domains()
             for d in domains:
                 self.log('success', bold(d))
                 self.pdns_domain(d, verbose)
@@ -173,7 +173,6 @@ class VirusTotal(Module):
             res_rows.sort()
             if not verbose:
                 res_rows = res_rows[-10:]
-            self.log('info', "VirusTotal Detected URLs:")
             self.log('table', dict(header=['Scan date', 'URL', 'positives', 'total'], rows=res_rows))
 
     def pdns_ip(self, ip, verbose=False):
@@ -186,8 +185,9 @@ class VirusTotal(Module):
             res_rows.sort()
             if not verbose:
                 res_rows = res_rows[-10:]
-            self.log('info', "VirusTotal IP resolutions:")
+            self.log('success', "VirusTotal IP resolutions for {}:".format(ip))
             self.log('table', dict(header=['Last resolved', 'Hostname'], rows=res_rows))
+        self.log('info', "VirusTotal Detected URLs for {}:".format(ip))
         self._prepare_urls(virustotal.get('detected_urls'), verbose)
 
     def pdns_domain(self, domain, verbose=False):
@@ -200,9 +200,11 @@ class VirusTotal(Module):
             res_rows.sort()
             if not verbose:
                 res_rows = res_rows[-10:]
-            self.log('info', "VirusTotal domain resolutions:")
+            self.log('success', "VirusTotal domain resolutions for {}:".format(domain))
             self.log('table', dict(header=['Last resolved', 'IP Address'], rows=res_rows))
+        self.log('info', "VirusTotal Detected URLs for {}:".format(domain))
         self._prepare_urls(virustotal.get('detected_urls'), verbose)
+        self.log('success', virustotal['permalink'])
 
     def run(self):
         super(VirusTotal, self).run()
