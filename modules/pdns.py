@@ -47,7 +47,7 @@ class Pdns(Module):
             self.log('error', e)
             return
         if not data:
-            self.log('error', 'Unable to find {}.'.format(self.args.query))
+            self.log('error', 'Nothing found for {}.'.format(q))
             return
         if not verbose:
             data = data[-10:]
