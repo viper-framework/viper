@@ -5,6 +5,7 @@
 from pypssl import PyPSSL
 
 from viper.common.abstracts import Module
+from viper.core.session import __sessions__
 from viper.core.config import Config
 
 cfg = Config()
@@ -24,6 +25,18 @@ class Pssl(Module):
         self.parser.add_argument("-c", "--cert", help='SHA1 of the certificate to search.')
         self.parser.add_argument("-f", "--fetch", help='SHA1 of the certificate to fetch.')
 
+        self.parser.add_argument('-m', '--misp', default=None, choices=['ips'],
+                                 help='Searches for the ips from the current MISP event')
+
+    def misp(self, option):
+        if not __sessions__.is_attached_misp():
+            return
+
+        if option == 'ips':
+            ips = __sessions__.current.misp_event.get_all_ips()
+            for ip in ips:
+                self.query_ip(ip)
+
     def query_ip(self, ip):
         try:
             result = self.pssl.query(ip)
@@ -31,18 +44,22 @@ class Pssl(Module):
             self.log('error', e)
             return
         if not result.items():
-            self.log('error', 'Nothing found')
+            self.log('error', 'Nothing found for {}'.format(ip))
             return
         if result.get('error'):
             self.log('error', result.get('error'))
             return
         for ip, certificates_info in result.items():
-            self.log('info', '{} :'.format(ip))
+            res_rows = []
             for sha1 in certificates_info['certificates']:
-                self.log('item', '{}'.format(sha1))
+                to_append = [sha1]
                 if certificates_info['subjects'].get(sha1):
-                    for value in certificates_info['subjects'][sha1]['values']:
-                        self.log('item', '--> {}\n'.format(value))
+                    to_append.append('\n'.join(certificates_info['subjects'][sha1]['values']))
+                else:
+                    to_append.append('')
+                res_rows.append(to_append)
+            self.log('success', 'Passive SSL for {} :'.format(ip))
+            self.log('table', dict(header=['SHA1', 'Subjects'], rows=res_rows))
 
     def query_cert(self, sha1):
         try:
@@ -103,7 +120,9 @@ class Pssl(Module):
 
         self.pssl = PyPSSL(url, basic_auth=(user, password))
 
-        if self.args.ip:
+        if self.args.misp:
+            self.misp(self.args.misp)
+        elif self.args.ip:
             self.query_ip(self.args.ip)
         elif self.args.cert:
             self.query_cert(self.args.cert)
