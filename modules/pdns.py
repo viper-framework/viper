@@ -54,7 +54,7 @@ class Pdns(Module):
         res_rows = [(d['time_first'].strftime("%Y/%m/%d %H:%M"), d['time_last'].strftime("%Y/%m/%d %H:%M"),
                      d['count'], d['rrname'], d['rdata']) for d in data]
         self.log('success', 'Passive DNS for {}:'.format(q))
-        self.log('table', dict(header=['First valid', 'Last valid', 'Times seen', 'RR Name', 'Content'], rows=res_rows))
+        self.log('table', dict(header=['First seen', 'Last seen', 'Times seen', 'RR Name', 'Content'], rows=res_rows))
 
     def run(self):
         super(Pdns, self).run()
