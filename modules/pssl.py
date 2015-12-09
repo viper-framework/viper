@@ -25,6 +25,7 @@ class Pssl(Module):
         self.parser.add_argument("-c", "--cert", help='SHA1 of the certificate to search.')
         self.parser.add_argument("-f", "--fetch", help='SHA1 of the certificate to fetch.')
 
+        self.parser.add_argument("-v", "--verbose", action='store_true', help="Turn on verbose mode.")
         self.parser.add_argument('-m', '--misp', default=None, choices=['ips'],
                                  help='Searches for the ips from the current MISP event')
 
@@ -61,7 +62,7 @@ class Pssl(Module):
             self.log('success', 'Passive SSL for {} :'.format(ip))
             self.log('table', dict(header=['SHA1', 'Subjects'], rows=res_rows))
 
-    def query_cert(self, sha1):
+    def query_cert(self, sha1, verbose=False):
         try:
             result = self.pssl.query_cert(sha1)
         except Exception as e:
@@ -69,7 +70,11 @@ class Pssl(Module):
             return
         if result.get('hits'):
             self.log('info', '{} has been seen on {} IP adresses'.format(sha1, result['hits']))
-            for ip in result['seen'][:10]:
+            if not verbose:
+                r = result['seen'][:10]
+            else:
+                r = result['seen']
+            for ip in r:
                 self.log('item', '{}'.format(ip))
             if result['hits'] > 10:
                 self.log('warning', 'Certificate seen on too many IPs, only show a subset')
@@ -125,7 +130,7 @@ class Pssl(Module):
         elif self.args.ip:
             self.query_ip(self.args.ip)
         elif self.args.cert:
-            self.query_cert(self.args.cert)
+            self.query_cert(self.args.cert, self.args.verbose)
         elif self.args.fetch:
             self.fetch_cert(self.args.fetch)
         else:
