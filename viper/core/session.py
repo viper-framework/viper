@@ -40,11 +40,11 @@ class Sessions(object):
     def is_attached_file(self, quiet=False):
         if not self.is_set():
             if not quiet:
-                self.log('error', "No session opened")
+                print_error("No session opened")
             return False
         if not self.current.file:
             if not quiet:
-                self.log('error', "Not attached to a file")
+                print_error("Not attached to a file")
             return False
         return True
 
