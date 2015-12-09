@@ -39,18 +39,19 @@ class VirusTotal(Module):
         self.parser.add_argument('--search', help='Search a hash.')
         self.parser.add_argument('-c', '--comment', nargs='+', help='Comment to add to the file')
         self.parser.add_argument('-d', '--download', action='store_true', help='Hash of the file to download')
-        self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file to VirusTotal (by default it only looks up the hash)')
+        self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file or a URL to VirusTotal (by default it only looks up the hash/url)')
 
         self.parser.add_argument('-i', '--ip', help='IP address to lookup in the passive DNS')
         self.parser.add_argument('-dm', '--domain', help='Domain to lookup in the passive DNS')
+        self.parser.add_argument('-u', '--url', help='URL to lookup on VT')
 
         self.parser.add_argument("-v", "--verbose", action='store_true', help="Turn on verbose mode.")
 
-        self.parser.add_argument('-m', '--misp', default=None, choices=['hashes', 'ips', 'domains', 'download'],
-                                 help='Searches for the hashes, ips or domains from the current MISP event, or download the samples if possible.')
+        self.parser.add_argument('-m', '--misp', default=None, choices=['hashes', 'ips', 'domains', 'urls', 'download'],
+                                 help='Searches for the hashes, ips, domains or URLs from the current MISP event, or download the samples if possible.')
 
     # ######### MISP submodule #########
-    def misp(self, option, verbose=False):
+    def misp(self, option, verbose=False, submit=False):
         if not __sessions__.is_attached_misp():
             return
 
@@ -84,13 +85,15 @@ class VirusTotal(Module):
         elif option == "ips":
             ips = __sessions__.current.misp_event.get_all_ips()
             for ip in ips:
-                self.log('success', bold(ip))
                 self.pdns_ip(ip, verbose)
         elif option == "domains":
             domains = __sessions__.current.misp_event.get_all_domains()
             for d in domains:
-                self.log('success', bold(d))
                 self.pdns_domain(d, verbose)
+        elif option == "urls":
+            urls = __sessions__.current.misp_event.get_all_urls()
+            for u in urls:
+                self.url(u, verbose, submit)
 
     # ##################################
 
@@ -103,6 +106,39 @@ class VirusTotal(Module):
             return False
         else:
             return False
+
+    def url(self, url, verbose=False, submit=False):
+        if submit:
+            response = self.vt.get_url_report(url, '1')
+        else:
+            response = self.vt.get_url_report(url)
+        if self._has_fail(response):
+            return False
+
+        virustotal = response['results']
+
+        if virustotal['response_code'] in [0, -2] or not virustotal.get('scans'):
+            self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
+            return
+
+        if verbose:
+            self._display_verbose_scan(virustotal['scans'], url)
+        self.log('info', "{} out of {} scans detected {} as malicious.".format(
+                 virustotal['positives'], virustotal['total'], bold(url)))
+        self.log('info', virustotal['permalink'])
+
+    def _display_verbose_scan(self, scans, query):
+        rows = []
+        if scans:
+            for engine, signature in scans.items():
+                if signature['detected']:
+                    rows.append([engine, signature['result']])
+                    signature = signature['result']
+
+        rows.sort()
+        if rows:
+            self.log('info', "VirusTotal Report for {}:".format(bold(query)))
+            self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
 
     def download(self, filehash, open_session=True):
         if cfg.virustotal.virustotal_has_private_key:
@@ -124,7 +160,7 @@ class VirusTotal(Module):
             self.log('error', 'This command requires virustotal private ot intelligence API key')
             return
 
-    def scan(self, to_search, verbose=True):
+    def scan(self, to_search, verbose=True, submit=False):
         response = self.vt.get_file_report(to_search)
         if self._has_fail(response):
             return False
@@ -134,7 +170,7 @@ class VirusTotal(Module):
         if virustotal['response_code'] == 0:
             # Unknown hash
             self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
-            if self.args.submit:
+            if submit:
                 response = self.vt.scan_file(to_search)
                 if not self._has_fail(response):
                     self.log('info', "{}: {}".format(bold("VirusTotal message"), response['results']['verbose_msg']))
@@ -145,26 +181,13 @@ class VirusTotal(Module):
             return True
         elif virustotal['response_code'] == -2:
             # Queued for analysis
-            self.log('info', "The file is in the que and will be processed soon, please try again later")
+            self.log('info', "The file is in the queue and will be processed soon, please try again later")
             return True
 
-        if not verbose:
-            self.log('info', "{} out of {} antivirus detected {} as malicious.".format(virustotal['positives'], virustotal['total'], to_search))
+        if verbose:
+            self._display_verbose_scan(virustotal['scans'], to_search)
 
-        else:
-            rows = []
-            if virustotal.get('scans'):
-                for engine, signature in virustotal['scans'].items():
-                    if signature['detected']:
-                        rows.append([engine, signature['result']])
-                        signature = signature['result']
-
-            rows.sort()
-            if rows:
-                self.log('info', "VirusTotal Report for {}:".format(to_search))
-                self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
-                self.log('info', "{} out of {} antivirus detected the sample as malicious.".format(virustotal['positives'], virustotal['total']))
-
+        self.log('info', "{} out of {} antivirus detected {} as malicious.".format(virustotal['positives'], virustotal['total'], bold(to_search)))
         return virustotal['md5'], virustotal['sha1'], virustotal['sha256']
 
     def _prepare_urls(self, detected_urls, verbose):
@@ -174,6 +197,8 @@ class VirusTotal(Module):
             if not verbose:
                 res_rows = res_rows[-10:]
             self.log('table', dict(header=['Scan date', 'URL', 'positives', 'total'], rows=res_rows))
+        else:
+            self.log('warning', 'Nothing has been found.')
 
     def pdns_ip(self, ip, verbose=False):
         response = self.vt.get_ip_report(ip)
@@ -185,9 +210,9 @@ class VirusTotal(Module):
             res_rows.sort()
             if not verbose:
                 res_rows = res_rows[-10:]
-            self.log('success', "VirusTotal IP resolutions for {}:".format(ip))
+            self.log('info', "VirusTotal IP resolutions for {}:".format(bold(ip)))
             self.log('table', dict(header=['Last resolved', 'Hostname'], rows=res_rows))
-        self.log('info', "VirusTotal Detected URLs for {}:".format(ip))
+        self.log('info', "VirusTotal Detected URLs for {}:".format(bold(ip)))
         self._prepare_urls(virustotal.get('detected_urls'), verbose)
 
     def pdns_domain(self, domain, verbose=False):
@@ -200,11 +225,10 @@ class VirusTotal(Module):
             res_rows.sort()
             if not verbose:
                 res_rows = res_rows[-10:]
-            self.log('success', "VirusTotal domain resolutions for {}:".format(domain))
+            self.log('success', "VirusTotal domain resolutions for {}:".format(bold(domain)))
             self.log('table', dict(header=['Last resolved', 'IP Address'], rows=res_rows))
-        self.log('info', "VirusTotal Detected URLs for {}:".format(domain))
+        self.log('info', "VirusTotal Detected URLs for {}:".format(bold(domain)))
         self._prepare_urls(virustotal.get('detected_urls'), verbose)
-        self.log('success', virustotal['permalink'])
 
     def run(self):
         super(VirusTotal, self).run()
@@ -217,11 +241,13 @@ class VirusTotal(Module):
 
         to_search = None
         if self.args.misp:
-            self.misp(self.args.misp, self.args.verbose)
+            self.misp(self.args.misp, self.args.verbose, self.args.submit)
         elif self.args.ip:
             self.pdns_ip(self.args.ip, self.args.verbose)
         elif self.args.domain:
             self.pdns_domain(self.args.domain, self.args.verbose)
+        elif self.args.url:
+            self.url(self.args.url, self.args.verbose, self.args.submit)
 
         elif self.args.search:
             to_search = self.args.search
@@ -229,7 +255,7 @@ class VirusTotal(Module):
                 to_search = __sessions__.current.file.md5
 
         if to_search:
-            self.scan(to_search, self.args.verbose)
+            self.scan(to_search, self.args.verbose, self.args.submit)
             if self.args.download:
                 self.download(to_search, self.args.verbose)
 

@@ -40,6 +40,9 @@ class MispEvent(object):
         return [a['value'] for a in self.event['Event']['Attribute']
                 if a['type'] == 'domain' or a['type'] == 'hostname']
 
+    def get_all_urls(self):
+        return [a['value'] for a in self.event['Event']['Attribute'] if a['type'] == 'url']
+
     def get_all_hashes(self):
         event_hashes = []
         sample_hashes = []
