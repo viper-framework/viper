@@ -25,3 +25,4 @@ pbkdf2
 r2pipe
 git+https://github.com/crackinglandia/pype32.git#egg=pype32
 virustotal-api
+git+https://github.com/Rafiot/virustotal-api.git

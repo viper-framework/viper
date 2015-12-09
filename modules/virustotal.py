@@ -160,7 +160,7 @@ class VirusTotal(Module):
             self.log('error', 'This command requires virustotal private ot intelligence API key')
             return
 
-    def scan(self, to_search, verbose=True, submit=False):
+    def scan(self, to_search, verbose=True, submit=False, path_to_submit=None):
         response = self.vt.get_file_report(to_search)
         if self._has_fail(response):
             return False
@@ -170,8 +170,8 @@ class VirusTotal(Module):
         if virustotal['response_code'] == 0:
             # Unknown hash
             self.log('info', "{}: {}".format(bold("VirusTotal message"), virustotal['verbose_msg']))
-            if submit:
-                response = self.vt.scan_file(to_search)
+            if submit and path_to_submit:
+                response = self.vt.scan_file(path_to_submit)
                 if not self._has_fail(response):
                     self.log('info', "{}: {}".format(bold("VirusTotal message"), response['results']['verbose_msg']))
                     return True
@@ -240,6 +240,7 @@ class VirusTotal(Module):
             return
 
         to_search = None
+        path_to_submit = None
         if self.args.misp:
             self.misp(self.args.misp, self.args.verbose, self.args.submit)
         elif self.args.ip:
@@ -248,14 +249,16 @@ class VirusTotal(Module):
             self.pdns_domain(self.args.domain, self.args.verbose)
         elif self.args.url:
             self.url(self.args.url, self.args.verbose, self.args.submit)
-
         elif self.args.search:
             to_search = self.args.search
         elif __sessions__.is_attached_file():
-                to_search = __sessions__.current.file.md5
+            to_search = __sessions__.current.file.md5
+
+        if self.args.submit and __sessions__.is_attached_file():
+            path_to_submit = __sessions__.current.file.path
 
         if to_search:
-            self.scan(to_search, self.args.verbose, self.args.submit)
+            self.scan(to_search, self.args.verbose, self.args.submit, path_to_submit)
             if self.args.download:
                 self.download(to_search, self.args.verbose)
 
