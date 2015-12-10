@@ -22,6 +22,8 @@ def print_success(message):
 
 def table(header, rows):
     content = [header] + rows
+    # Make sure everything is string
+    content = [[str(e) for e in l] for l in content]
     t = AsciiTable(content)
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
