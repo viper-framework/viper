@@ -1,6 +1,5 @@
 python-magic
 http://pefile.googlecode.com/files/pefile-1.2.10-139.tar.gz#egg=pefile
-PrettyTable
 pydeep
 requests
 SQLAlchemy
@@ -24,3 +23,4 @@ scandir
 pbkdf2
 r2pipe
 git+https://github.com/crackinglandia/pype32.git#egg=pype32
+terminaltables

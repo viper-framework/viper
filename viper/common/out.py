@@ -1,7 +1,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-from prettytable import PrettyTable
+from terminaltables import AsciiTable
 
 from viper.common.colors import *
 
@@ -21,14 +21,23 @@ def print_success(message):
     print(bold(green("[+]")) + " {0}".format(message))
 
 def table(header, rows):
-    table = PrettyTable(header)
-    table.align = 'l'
-    table.padding_width = 1
-
-    for row in rows:
-        table.add_row(row)
-
-    return table
+    content = [header] + rows
+    t = AsciiTable(content)
+    if not t.ok:
+        longest_col = t.column_widths.index(max(t.column_widths))
+        max_length_col = t.column_max_width(longest_col)
+        for i, content in enumerate(t.table_data):
+            if len(content[longest_col]) > max_length_col:
+                temp = ''
+                for l in content[longest_col].splitlines():
+                    l = l.replace('\t', '  ')
+                    if len(l) > max_length_col:
+                        temp += l[:max_length_col - 6] + ' [...]\n'
+                    else:
+                        temp += l + '\n'
+                    content[longest_col] = temp.strip()
+            t.table_data[i] = content
+    return t.table
 
 def print_output(output, filename=None):
     if not output:
