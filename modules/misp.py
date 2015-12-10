@@ -482,7 +482,7 @@ class MISP(Module):
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
             try:
-                response = requests.post(cfg.virustotal._url, data=vt_request)
+                response = requests.post(cfg.misp.misp_vturl, data=vt_request)
             except requests.ConnectionError:
                 self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
                 return

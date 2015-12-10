@@ -70,6 +70,7 @@ anubis_prefix = https://anubis.iseclab.org/
 misp_url =
 misp_key =
 misp_verify = True
+misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
 
 [pssl]
 pssl_url =
