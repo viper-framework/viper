@@ -626,6 +626,7 @@ class MISP(Module):
             self.log('info', 'This event has been published')
         else:
             self.log('info', 'This event has not been published')
+        self.log('info', 'Link to Event: {}/events/view/{}'.format(self.url.rstrip('/'), __sessions__.current.misp_event.event_id))
 
     def add(self):
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
