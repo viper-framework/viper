@@ -2,8 +2,9 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import tempfile
 import os
+import glob
+import shutil
 
 try:
     from virus_total_apis import PublicApi as vt
@@ -16,6 +17,7 @@ except ImportError:
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.core.project import __project__
 from viper.core.config import Config
 
 cfg = Config()
@@ -28,6 +30,7 @@ class VirusTotal(Module):
 
     def __init__(self):
         super(VirusTotal, self).__init__()
+        self.cur_path = __project__.get_path()
         if cfg.virustotal.virustotal_has_private_key:
             self.vt = vt_priv(cfg.virustotal.virustotal_key)
         else:
@@ -39,6 +42,9 @@ class VirusTotal(Module):
         self.parser.add_argument('--search', help='Search a hash.')
         self.parser.add_argument('-c', '--comment', nargs='+', help='Comment to add to the file')
         self.parser.add_argument('-d', '--download', action='store_true', help='Hash of the file to download')
+        self.parser.add_argument('-dl', '--download_list', action='store_true', help='List the downloaded files')
+        self.parser.add_argument('-do', '--download_open', type=int, help='Open a file from the list of the DL files (ID)')
+        self.parser.add_argument('-dd', '--download_delete', help='Delete a file from the list of the DL files can be an ID or all.')
         self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file or a URL to VirusTotal (by default it only looks up the hash/url)')
 
         self.parser.add_argument('-i', '--ip', help='IP address to lookup in the passive DNS')
@@ -140,25 +146,86 @@ class VirusTotal(Module):
             self.log('info', "VirusTotal Report for {}:".format(bold(query)))
             self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
 
+    # ####### Helpers for open ########
+
+    def _load_tmp_samples(self):
+        tmp_samples = []
+        samples_path = os.path.join(self.cur_path, 'vt_samples')
+        path = os.path.join(samples_path, '*')
+        for p in glob.glob(path):
+            if os.path.basename(p).isdigit():
+                eid = os.path.basename(p)
+            else:
+                eid = ''
+            fullpath = os.path.join(samples_path, eid, '*')
+            for p in glob.glob(fullpath):
+                name = os.path.basename(p)
+                if not os.path.basename(p).isdigit():
+                    tmp_samples.append((eid, p, name))
+        return tmp_samples
+
+    def _display_tmp_files(self):
+        cureid = None
+        if __sessions__.is_attached_misp(True):
+            cureid = __sessions__.current.misp_event.event_id
+        header = ['Sample ID', 'Current', 'Event ID', 'Filename']
+        rows = []
+        i = 0
+        tmp_samples = self._load_tmp_samples()
+        if len(tmp_samples) == 0:
+            self.log('warning', 'No temporary samples available.')
+            return
+        for eid, path, name in tmp_samples:
+            if eid == cureid:
+                rows.append((i, '*', eid, name))
+            else:
+                rows.append((i, '', eid, name))
+            i += 1
+        self.log('table', dict(header=header, rows=rows))
+
+    def _clean_tmp_samples(self, eid):
+        to_remove = os.path.join(self.cur_path, 'vt_samples')
+        if eid != 'all':
+            to_remove = os.path.join(to_remove, eid)
+        if os.path.exists(to_remove):
+            shutil.rmtree(to_remove)
+            return True
+        return False
+
+    # ##########################################
+
     def download(self, filehash, open_session=True):
+        # FIXME: private and intel API are inconsistent to save a file.
+        samples_path = os.path.join(self.cur_path, 'vt_samples')
+        if __sessions__.is_attached_misp(True):
+            event_id = __sessions__.current.misp_event.event_id
+            samples_path = os.path.join(samples_path, event_id)
+        if not os.path.exists(samples_path):
+            os.makedirs(samples_path)
+
+        filename = os.path.join(samples_path, filehash)
+
         if cfg.virustotal.virustotal_has_private_key:
             response = self.vt.get_file(filehash)
             if not self._has_fail(response):
-                tmp = tempfile.NamedTemporaryFile(delete=False)
-                tmp.write(response)
-                tmp.close()
-                return __sessions__.new(tmp.name)
+                with open(filename, 'w') as f:
+                    f.write(response)
+            else:
+                return
+
         elif cfg.virustotal.virustotal_has_intel_key:
-            tmpdir = tempfile.mkdtemp()
-            response = self.vt_intel.get_file(filehash, tmpdir)
-            if not self._has_fail(response):
-                if open_session:
-                    return __sessions__.new(os.path.join(tmpdir, filehash))
-                else:
-                    self.log('success', 'Downloaded: {}'.format(os.path.join(tmpdir, filehash)))
+            response = self.vt_intel.get_file(filehash, samples_path)
+            if self._has_fail(response):
+                return
         else:
             self.log('error', 'This command requires virustotal private ot intelligence API key')
             return
+
+        if open_session:
+            return __sessions__.new(filename)
+        else:
+            self.log('success', 'Successfully downloaded {}'.format(filehash))
+        self._display_tmp_files()
 
     def scan(self, to_search, verbose=True, submit=False, path_to_submit=None):
         response = self.vt.get_file_report(to_search)
@@ -249,6 +316,33 @@ class VirusTotal(Module):
             self.pdns_domain(self.args.domain, self.args.verbose)
         elif self.args.url:
             self.url(self.args.url, self.args.verbose, self.args.submit)
+        elif self.args.download_list:
+            self._display_tmp_files()
+        elif self.args.download_open is not None:
+            tmp_samples = self._load_tmp_samples()
+            try:
+                eid, path, name = tmp_samples[self.args.download_open]
+                if eid:
+                    self.log('info', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))
+                return __sessions__.new(path)
+            except:
+                self.log('error', 'Invalid id, please use virustotal -dl.')
+        elif self.args.download_delete is not None:
+            if self.args.download_delete == 'all':
+                samples_path = os.path.join(self.cur_path, 'vt_samples')
+                if os.path.exists(samples_path):
+                    shutil.rmtree(samples_path)
+                    self.log('success', 'Successfully removed {}'.format(samples_path))
+                else:
+                    self.log('error', '{} does not exists'.format(samples_path))
+            else:
+                tmp_samples = self._load_tmp_samples()
+                try:
+                    eid, path, name = tmp_samples[int(self.args.download_delete)]
+                    os.remove(path)
+                    self.log('success', 'Successfully removed {}'.format(path))
+                except:
+                    self.log('error', 'Invalid id, please use virustotal -dl.')
         elif self.args.search:
             to_search = self.args.search
         elif __sessions__.is_attached_file():
