@@ -6,7 +6,6 @@ import argparse
 import copy
 import textwrap
 import os
-import tempfile
 import time
 import glob
 import shutil
@@ -43,6 +42,7 @@ class MISP(Module):
 
     def __init__(self):
         super(MISP, self).__init__()
+        self.cur_path = __project__.get_path()
         self.parser.add_argument("--url", help='URL of the MISP instance')
         self.parser.add_argument("-k", "--key", help='Your key on the MISP instance')
         self.parser.add_argument("-v", "--verify", action='store_false', help='Disable certificate verification (for self-signed)')
@@ -341,10 +341,11 @@ class MISP(Module):
 
     def _load_tmp_samples(self):
         tmp_samples = []
-        path = os.path.join(tempfile.gettempdir(), 'viper', 'misp', '*')
+        samples_path = os.path.join(self.cur_path, 'misp_samples')
+        path = os.path.join(samples_path, '*')
         for p in glob.glob(path):
             eid = os.path.basename(p)
-            fullpath = os.path.join(tempfile.gettempdir(), 'viper', 'misp', eid, '*')
+            fullpath = os.path.join(samples_path, eid, '*')
             for p in glob.glob(fullpath):
                 name = os.path.basename(p)
                 tmp_samples.append((eid, p, name))
@@ -370,7 +371,8 @@ class MISP(Module):
         self.log('table', dict(header=header, rows=rows))
 
     def _clean_tmp_samples(self, eid):
-        to_remove = os.path.join(tempfile.gettempdir(), 'viper', 'misp')
+        samples_path = os.path.join(self.cur_path, 'misp_samples')
+        to_remove = os.path.join(samples_path)
         if eid != 'all':
             to_remove = os.path.join(to_remove, eid)
         if os.path.exists(to_remove):
@@ -413,9 +415,10 @@ class MISP(Module):
             self.log('error', data)
             return
         to_print = []
+        samples_path = os.path.join(self.cur_path, 'misp_samples')
         for d in data:
             eid, filename, payload = d
-            path = os.path.join(tempfile.gettempdir(), 'viper', 'misp', eid, filename)
+            path = os.path.join(samples_path, eid, filename)
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             with open(path, 'w') as f:
@@ -736,9 +739,8 @@ class MISP(Module):
         return tmp_local
 
     def store(self):
-        cur_path = __project__.get_path()
         try:
-            event_path = os.path.join(cur_path, 'misp_events')
+            event_path = os.path.join(self.cur_path, 'misp_events')
             if not os.path.exists(event_path):
                 os.mkdir(os.path.dirname(event_path))
             if self.args.list:
