@@ -10,6 +10,7 @@ import tempfile
 import time
 import glob
 import shutil
+import json
 
 try:
     from pymisp import PyMISP, PyMISPError
@@ -27,6 +28,7 @@ except:
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
+from viper.core.project import __project__
 from viper.core.storage import get_sample_path
 from viper.common.objects import MispEvent
 from viper.common.constants import VIPER_ROOT
@@ -189,6 +191,13 @@ class MISP(Module):
 
         # ##### Show version #####
         subparsers.add_parser('version', help='Returns the version of the MISP instance.')
+
+        # Store
+        s = subparsers.add_parser('store', help='Store the current MISP event in the current project.')
+        s.add_argument("-l", "--list", action='store_true', help="List stored MISP events")
+        s.add_argument("-u", "--update", action='store_true', help="Update all stored MISP events")
+        s.add_argument("-d", "--delete", type=int, help="Delete a stored MISP event")
+        s.add_argument("-o", "--open", type=int, help="Open a stored MISP event")
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
@@ -717,6 +726,56 @@ class MISP(Module):
                 else:
                     self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
 
+    def _get_local_events(self, path):
+        tmp_local = []
+        path = os.path.join(path, '*')
+        for p in glob.glob(path):
+            eid = os.path.basename(p).rstrip('.json')
+            e_json = json.loads(open(p, 'r').read())
+            tmp_local.append((eid, p, e_json['Event']['info']))
+        return tmp_local
+
+    def store(self):
+        cur_path = __project__.get_path()
+        try:
+            event_path = os.path.join(cur_path, 'misp_events')
+            if not os.path.exists(event_path):
+                os.mkdir(os.path.dirname(event_path))
+            if self.args.list:
+                header = ['Event ID', 'Title']
+                rows = []
+                for eid, path, title in self._get_local_events(event_path):
+                    rows.append((eid, title))
+                self.log('table', dict(header=header, rows=rows))
+            elif self.args.update:
+                for eid, path, title in self._get_local_events(event_path):
+                    event = self.misp.get(eid)
+                    with open(path, 'w') as f:
+                        f.write(json.dumps(event))
+                    self.log('success', '{} updated successfully.'.format(eid))
+            elif self.args.delete:
+                path = os.path.join(event_path, '{}.json'.format(self.args.delete))
+                if os.path.exists(path):
+                    os.remove(path)
+                    self.log('success', '{} removed successfully.'.format(self.args.delete))
+                else:
+                    self.log('error', '{} does not exists.'.format(self.args.delete))
+            elif self.args.open:
+                path = os.path.join(event_path, '{}.json'.format(self.args.open))
+                if os.path.exists(path):
+                    e_json = json.loads(open(path, 'r').read())
+                    __sessions__.new(misp_event=MispEvent(e_json))
+                else:
+                    self.log('error', '{} does not exists.'.format(self.args.open))
+            elif __sessions__.is_attached_misp():
+                eventid = self._get_eventid()
+                path = os.path.join(event_path, '{}.json'.format(eventid))
+                with open(path, 'w') as f:
+                    f.write(json.dumps(__sessions__.current.misp_event.event))
+                self.log('success', '{} stored successfully.'.format(eventid))
+        except IOError as e:
+            self.log('error', e.strerror)
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
@@ -787,6 +846,8 @@ class MISP(Module):
                 self.publish()
             elif self.args.subname == 'version':
                 self.version()
+            elif self.args.subname == 'store':
+                self.store()
             else:
                 self.log('error', "No calls defined for this command.")
         except requests.exceptions.HTTPError as e:
