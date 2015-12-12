@@ -1015,3 +1015,19 @@ rule XtremeRAT
     condition:
         all of them
 }
+
+rule winnti
+{
+	meta:
+		autor = "S2R2"
+		family = "winnti"
+
+	strings:
+		$tcp = { 60 62 63 64 }
+		$http = { 62 62 63 64 }
+		$https = { 63 62 63 64 }
+
+	condition:
+		$tcp at (filesize + 196 - uint32(filesize - 4)) or $http at (filesize + 196 - uint32(filesize - 4)) or $https at (filesize + 196 - uint32(filesize - 4))
+}
+
