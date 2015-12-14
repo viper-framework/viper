@@ -633,7 +633,7 @@ class MISP(Module):
             if a.get('RelatedAttribute'):
                 for r in a.get('RelatedAttribute'):
                     idlist.append(r['id'])
-            rows.append([a['type'], a['value'], a['comment'], ', '.join(idlist)])
+            rows.append([a['type'], a['value'], '\n'.join(textwrap.wrap(a['comment'], 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
         self.log('table', dict(header=header, rows=rows))
         if current_event['Event']['published']:
             self.log('info', 'This event has been published')
