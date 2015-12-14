@@ -3,6 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 from terminaltables import AsciiTable
+import textwrap
 
 from viper.common.colors import *
 
@@ -39,7 +40,7 @@ def table(header, rows):
                 for l in content[longest_col].splitlines():
                     l = l.replace('\t', '  ')
                     if len(l) > max_length_col:
-                        temp += l[:max_length_col - 6] + ' [...]\n'
+                        temp += '\n'.join(textwrap.wrap(l, max_length_col)) + '\n'
                     else:
                         temp += l + '\n'
                     content[longest_col] = temp.strip()
