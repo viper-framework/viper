@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -23,7 +24,11 @@ def print_success(message):
 def table(header, rows):
     content = [header] + rows
     # Make sure everything is string
-    content = [[str(e) for e in l] for l in content]
+    try:
+        content = [list(map(unicode, l)) for l in content]
+    except:
+        # Python3 way of doing it:
+        content = [list(map(str, l)) for l in content]
     t = AsciiTable(content)
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
