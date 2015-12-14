@@ -323,9 +323,15 @@ class VirusTotal(Module):
             try:
                 eid, path, name = tmp_samples[self.args.download_open]
                 if eid:
-                    self.log('info', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))
+                    if __sessions__.is_attached_misp(quiet=True):
+                        if __sessions__.current.misp_event.event_id != eid:
+                            self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
+                        else:
+                            self.log('success', 'You opened a sample related to the current MISP event.')
+                    else:
+                        self.log('warning', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))
                 return __sessions__.new(path)
-            except:
+            except IndexError:
                 self.log('error', 'Invalid id, please use virustotal -dl.')
         elif self.args.download_delete is not None:
             if self.args.download_delete == 'all':
