@@ -143,7 +143,7 @@ class VirusTotal(Module):
 
         rows.sort()
         if rows:
-            self.log('info', "VirusTotal Report for {}:".format(bold(query)))
+            self.log('success', "VirusTotal Report for {}:".format(bold(query)))
             self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
 
     # ####### Helpers for open ########
@@ -255,17 +255,19 @@ class VirusTotal(Module):
             self._display_verbose_scan(virustotal['scans'], to_search)
 
         self.log('info', "{} out of {} antivirus detected {} as malicious.".format(virustotal['positives'], virustotal['total'], bold(to_search)))
+        self.log('info', virustotal['permalink'] + '\n')
         return virustotal['md5'], virustotal['sha1'], virustotal['sha256']
 
-    def _prepare_urls(self, detected_urls, verbose):
+    def _prepare_urls(self, query, detected_urls, verbose):
         if detected_urls:
+            self.log('success', "VirusTotal Detected URLs for {}:".format(bold(query)))
             res_rows = [(r['scan_date'], r['url'], r['positives'], r['total']) for r in detected_urls]
             res_rows.sort()
             if not verbose:
                 res_rows = res_rows[-10:]
             self.log('table', dict(header=['Scan date', 'URL', 'positives', 'total'], rows=res_rows))
         else:
-            self.log('warning', 'Nothing has been found.')
+            self.log('warning', 'No URLs found for {}.'.format(bold(query)))
 
     def pdns_ip(self, ip, verbose=False):
         response = self.vt.get_ip_report(ip)
@@ -277,10 +279,12 @@ class VirusTotal(Module):
             res_rows.sort()
             if not verbose:
                 res_rows = res_rows[-10:]
-            self.log('info', "VirusTotal IP resolutions for {}:".format(bold(ip)))
+            self.log('success', "VirusTotal IP resolutions for {}:".format(bold(ip)))
             self.log('table', dict(header=['Last resolved', 'Hostname'], rows=res_rows))
-        self.log('info', "VirusTotal Detected URLs for {}:".format(bold(ip)))
-        self._prepare_urls(virustotal.get('detected_urls'), verbose)
+        else:
+            self.log('warning', 'No resolutions found for {}.'.format(bold(ip)))
+        self._prepare_urls(ip, virustotal.get('detected_urls'), verbose)
+        self.log('info', 'https://www.virustotal.com/en/ip-address/{}/information/\n'.format(ip))
 
     def pdns_domain(self, domain, verbose=False):
         response = self.vt.get_domain_report(domain)
@@ -294,8 +298,10 @@ class VirusTotal(Module):
                 res_rows = res_rows[-10:]
             self.log('success', "VirusTotal domain resolutions for {}:".format(bold(domain)))
             self.log('table', dict(header=['Last resolved', 'IP Address'], rows=res_rows))
-        self.log('info', "VirusTotal Detected URLs for {}:".format(bold(domain)))
-        self._prepare_urls(virustotal.get('detected_urls'), verbose)
+        else:
+            self.log('warning', 'No resolutions found for {}.'.format(bold(domain)))
+        self._prepare_urls(domain, virustotal.get('detected_urls'), verbose)
+        self.log('info', 'https://www.virustotal.com/en/domain/{}/information/\n'.format(domain))
 
     def run(self):
         super(VirusTotal, self).run()
