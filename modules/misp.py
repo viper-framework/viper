@@ -610,8 +610,9 @@ class MISP(Module):
             tmp_samples = self._load_tmp_samples()
             try:
                 eid, path, name = tmp_samples[int(self.args.sid)]
-            except:
+            except IndexError:
                 self.log('error', 'Invalid sid, please use misp open -l.')
+                return
             event = self.misp.get(eid)
             if not self._has_error_message(event):
                 return __sessions__.new(path, MispEvent(event))
@@ -742,13 +743,13 @@ class MISP(Module):
         try:
             event_path = os.path.join(self.cur_path, 'misp_events')
             if not os.path.exists(event_path):
-                os.mkdir(os.path.dirname(event_path))
+                os.mkdir(event_path)
             if self.args.list:
                 header = ['Event ID', 'Title']
                 rows = []
                 for eid, path, title in self._get_local_events(event_path):
                     rows.append((eid, title))
-                self.log('table', dict(header=header, rows=rows))
+                self.log('table', dict(header=header, rows=sorted(rows, key=lambda i: (int(i[0])))))
             elif self.args.update:
                 for eid, path, title in self._get_local_events(event_path):
                     event = self.misp.get(eid)
