@@ -219,6 +219,14 @@ class MISP(Module):
             else:
                 self.log('error', result['error'])
             return True
+        elif result.get('errors'):
+            if isinstance(result['errors'], dict):
+                for where, errors in result['errors'].items():
+                    for e in errors:
+                        for type_e, messages in e.items():
+                            for m in messages:
+                                self.log('error', 'Error in {}: {}'.format(where, m))
+            return True
         return False
 
     def _search_local_hashes(self, event):
