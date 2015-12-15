@@ -204,6 +204,9 @@ class VirusTotal(Module):
             os.makedirs(samples_path)
 
         filename = os.path.join(samples_path, filehash)
+        if os.path.exists(filename):
+            self.log('info', '{} has already been downloaded.'.format(filehash))
+            return
 
         if cfg.virustotal.virustotal_has_private_key:
             response = self.vt.get_file(filehash)
