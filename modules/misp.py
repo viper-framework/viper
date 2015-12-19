@@ -212,20 +212,9 @@ class MISP(Module):
             return __sessions__.current.misp_event.event_id
 
     def _has_error_message(self, result):
-        if result.get('error'):
-            if isinstance(result['error'], list):
-                for e in result['errors']:
-                    self.log('error', e['error']['value'][0])
-            else:
-                self.log('error', result['error'])
-            return True
-        elif result.get('errors'):
-            if isinstance(result['errors'], dict):
-                for where, errors in result['errors'].items():
-                    for e in errors:
-                        for type_e, messages in e.items():
-                            for m in messages:
-                                self.log('error', 'Error in {}: {}'.format(where, m))
+        if result.get('errors'):
+            for message in result['errors']:
+                self.log('error', message)
             return True
         return False
 
