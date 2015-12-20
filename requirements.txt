@@ -24,4 +24,4 @@ scandir
 pbkdf2
 r2pipe
 git+https://github.com/crackinglandia/pype32.git#egg=pype32
-git+https://github.com/Rafiot/virustotal-api.git
+git+https://github.com/blacktop/virustotal-api.git
