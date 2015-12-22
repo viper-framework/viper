@@ -26,10 +26,10 @@ def table(header, rows):
     content = [header] + rows
     # Make sure everything is string
     try:
-        content = [list(map(unicode, [a.replace('\t', '  ') for a in l])) for l in content]
+        content = [[a.replace('\t', '  ') for a in list(map(unicode, l))] for l in content]
     except:
         # Python3 way of doing it:
-        content = [list(map(str, [a.replace('\t', '  ') for a in l])) for l in content]
+        content = [[a.replace('\t', '  ') for a in list(map(str, l))] for l in content]
     t = AsciiTable(content)
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
