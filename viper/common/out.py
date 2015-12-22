@@ -43,7 +43,7 @@ def table(header, rows):
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
         max_length_col = t.column_max_width(longest_col)
-        if not max_length_col <= 0:
+        if max_length_col > 0:
             for i, content in enumerate(t.table_data):
                 if len(content[longest_col]) > max_length_col:
                     temp = ''
