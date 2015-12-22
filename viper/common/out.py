@@ -2,7 +2,12 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-from terminaltables import AsciiTable
+try:
+    from terminaltables import AsciiTable
+    HAVE_TERMTAB = True
+except:
+    HAVE_TERMTAB = False
+
 import textwrap
 
 from viper.common.colors import *
@@ -23,6 +28,10 @@ def print_success(message):
     print(bold(green("[+]")) + " {0}".format(message))
 
 def table(header, rows):
+    if not HAVE_TERMTAB:
+        self.log('error', "Missing dependency, install terminaltables (`pip install terminaltables`)")
+        return
+
     content = [header] + rows
     # Make sure everything is string
     try:
