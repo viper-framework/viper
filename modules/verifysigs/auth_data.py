@@ -34,25 +34,27 @@ from pyasn1.codec.der import encoder as der_encoder
 from pyasn1.type import univ
 
 try:
-  from M2Crypto import Err as M2_Err    # pylint: disable-msg=C6204
-  from M2Crypto import RSA as M2_RSA    # pylint: disable-msg=C6204
-  from M2Crypto import X509 as M2_X509  # pylint: disable-msg=C6204
+    from cryptography import x509
+    from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+    from cryptography.hazmat.primitives.asymmetric import padding
+    from cryptography.hazmat.backends import default_backend
+    X509 = True
 except ImportError:
-  M2_X509 = None
+    X509 = None
 
 
 class Asn1Error(Exception):
   pass
 
 
-def RequiresM2Crypto(fn):
-  """Decorator to support limited functionality if M2Crypto is missing."""
+def RequiresCryptography(fn):
+  """Decorator to support limited functionality if cryptography is missing."""
 
-  def M2CheckingWrapper(*args, **kwargs):
-    if not M2_X509:
-      raise Asn1Error('%s requires M2Crypto, which is not available', fn)
+  def CryptographyCheckingWrapper(*args, **kwargs):
+    if not X509:
+      raise Asn1Error('%s requires cryptography, which is not available', fn)
     return fn(*args, **kwargs)
-  return M2CheckingWrapper
+  return CryptographyCheckingWrapper
 
 
 # This is meant to hold the ASN.1 data representing all pieces
@@ -526,44 +528,34 @@ class AuthData(object):
       signee = signer
     return not_before, not_after, signee
 
-  @RequiresM2Crypto
+  @RequiresCryptography
   def _ValidatePubkeyGeneric(self, signing_cert, digest_alg, payload,
                              enc_digest):
-    m2_cert = M2_X509.load_cert_der_string(der_encoder.encode(signing_cert))
-    pubkey = m2_cert.get_pubkey()
-    pubkey.reset_context(digest_alg().name)
-    pubkey.verify_init()
-    pubkey.verify_update(payload)
-    v = pubkey.verify_final(enc_digest)
-    if v != 1:
-      self.openssl_error = M2_Err.get_error()
-      # Let's try a special case. I have no idea how I would determine when
-      # to use this instead of the above code, so I'll always try. The
-      # observed problem was that for one countersignature (RSA on MD5),
-      # the encrypted digest did not contain an ASN.1 structure, but the
-      # raw hash value instead.
-      try:
-        rsa = pubkey.get_rsa()
-      except ValueError:
-        # It's not an RSA key, just fall through...
-        pass
-      else:
-        clear = rsa.public_decrypt(enc_digest, M2_RSA.pkcs1_padding)
-        if digest_alg(payload).digest() == clear:
-          return 1
-    return v
+    cert = x509.load_der_x509_certificate(der_encoder.encode(signing_cert), default_backend())
+    pubkey = cert.public_key()
+    if isinstance(pubkey, RSAPublicKey):
+        verifier = pubkey.verifier(enc_digest, padding.PKCS1v15(), cert.signature_hash_algorithm)
+    else:
+        verifier = pubkey.verifier(enc_digest, cert.signature_hash_algorithm)
+    verifier.update(payload)
+    try:
+        verifier.verify()
+        return True
+    except:
+        return False
 
-  @RequiresM2Crypto
+  @RequiresCryptography
   def ValidateCertificateSignature(self, signed_cert, signing_cert):
     """Given a cert signed by another cert, validates the signature."""
     # First the naive way -- note this does not check expiry / use etc.
-    signed_m2 = M2_X509.load_cert_der_string(der_encoder.encode(signed_cert))
-    signing_m2 = M2_X509.load_cert_der_string(der_encoder.encode(signing_cert))
-    pubkey = signing_m2.get_pubkey()
-    v = signed_m2.verify(pubkey)
-    if v != 1:
-      self.openssl_error = M2_Err.get_error()
-      raise Asn1Error('1: Validation of cert signature failed.')
+    signed = x509.load_der_x509_certificate(der_encoder.encode(signed_cert), default_backend())
+    signing = x509.load_der_x509_certificate(der_encoder.encode(signing_cert), default_backend())
+    verifier = signing.public_key().verifier(signed.signature, padding.PKCS1v15(), signed.signature_hash_algorithm)
+    verifier.update(signed.tbs_certificate_bytes)
+    try:
+        verifier.verify()
+    except Exception as e:
+        raise Asn1Error('1: Validation of cert signature failed: {}'.format(e))
 
   def ValidateSignatures(self):
     """Validate encrypted hashes with respective public keys.
@@ -580,7 +572,7 @@ class AuthData(object):
     v = self._ValidatePubkeyGeneric(signing_cert, self.digest_algorithm,
                                     self.computed_auth_attrs_for_hash,
                                     self.encrypted_digest)
-    if v != 1:
+    if not v:
       raise Asn1Error('1: Validation of basic signature failed.')
 
     if self.has_countersignature:
@@ -588,5 +580,5 @@ class AuthData(object):
       v = self._ValidatePubkeyGeneric(signing_cert, self.digest_algorithm,
                                       self.computed_counter_attrs_for_hash,
                                       self.encrypted_counter_digest)
-      if v != 1:
+      if not v:
         raise Asn1Error('2: Validation of counterSignature failed.')
