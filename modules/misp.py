@@ -35,6 +35,7 @@ from viper.core.config import Config
 
 cfg = Config()
 
+
 class MISP(Module):
     cmd = 'misp'
     description = 'Upload and query IOCs to/from a MISP instance'
@@ -87,6 +88,7 @@ class MISP(Module):
         parser_down = subparsers.add_parser('download', help='Download malware samples from MISP.')
         group = parser_down.add_mutually_exclusive_group()
         group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID.")
+        group.add_argument("-l", "--list", nargs='*', help="Download all the samples related to a list of events. Empty list to download all the samples of all the events stored in the current project.")
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
         # ##### Search in MISP #####
@@ -102,9 +104,9 @@ class MISP(Module):
         parser_checkhashes = subparsers.add_parser('yara', help='Get YARA rules of an event.')
         parser_checkhashes.add_argument("event", nargs='?', default=None, type=int, help="Download the yara rules of that event.")
 
-        # ##### Get an Event #####
+        # ##### Get Events #####
         parser_pull = subparsers.add_parser('pull', help='Initialize the session with an existing MISP event.')
-        parser_pull.add_argument("event", type=int, help="Existing Event ID.")
+        parser_pull.add_argument("event", nargs='+', type=int, help="(List of) Event(s) ID.")
 
         # ##### Create an Event #####
         parser_create_event = subparsers.add_parser('create_event', help='Create a new event on MISP and initialize the session with it.',
@@ -218,7 +220,7 @@ class MISP(Module):
             return True
         return False
 
-    def _search_local_hashes(self, event):
+    def _search_local_hashes(self, event, open_session=True):
         local = []
         samples_count = 0
         if event.get('Event') is None:
@@ -245,7 +247,9 @@ class MISP(Module):
                 row = Database().find(key='sha256', value=h)
             if row:
                 local.append(row[0])
-        self.log('info', 'This event contains {} samples.'.format(samples_count))
+        self.log('info', 'Event {} contains {} samples.'.format(event['Event']['id'], samples_count))
+        if not open_session:
+            return
         shas = set([l.sha256 for l in local])
         if len(shas) == 1:
             __sessions__.new(get_sample_path(shas.pop()), MispEvent(event))
@@ -402,15 +406,34 @@ class MISP(Module):
         data = None
         if self.args.hash:
             ok, data = self.misp.download_samples(sample_hash=self.args.hash)
+        elif self.args.list is not None:
+            list_events = []
+            if len(self.args.list) == 0:
+                event_path = os.path.join(self.cur_path, 'misp_events')
+                for eid, path, title in self._get_local_events(event_path):
+                    list_events.append(eid)
+            else:
+                list_events = self.args.list
+
+            all_data = []
+            for eid in list_events:
+                event = self.misp.get(eid)
+                ok, data = self.misp.download_samples(event_id=event['Event']['id'])
+                if not ok:
+                    self.log('error', data)
+                    continue
+                if data:
+                    all_data += data
+            data = all_data
         else:
             event_id = self._get_eventid()
             if event_id is None:
                 return
             ok, data = self.misp.download_samples(event_id=event_id)
 
-        if not ok:
-            self.log('error', data)
-            return
+            if not ok:
+                self.log('error', data)
+                return
         to_print = []
         samples_path = os.path.join(self.cur_path, 'misp_samples')
         for d in data:
@@ -427,9 +450,11 @@ class MISP(Module):
             event = self.misp.get(to_print[0][0])
             if not self._has_error_message(event):
                 return __sessions__.new(to_print[0][1], MispEvent(event))
-        else:
+        elif len(to_print) > 1:
             self.log('success', 'The following files have been downloaded:')
             self._display_tmp_files()
+        else:
+            self.log('warning', 'No samples available.')
 
     def upload(self):
         categ = self.categories.get(self.args.categ)
@@ -562,9 +587,12 @@ class MISP(Module):
                 e['Event']['info'].encode('utf-8'), nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
     def pull(self):
-        event = self.misp.get(self.args.event)
-        if not self._has_error_message(event):
-            self._search_local_hashes(event)
+        open_session = len(self.args.event) == 1
+        for e in self.args.event:
+            event = self.misp.get(e)
+            if not self._has_error_message(event):
+                self._search_local_hashes(event, open_session)
+                self._dump(event)
 
     def create_event(self):
         # Dirty trick to keep consistency in the module: the threat level in the upload
@@ -736,6 +764,15 @@ class MISP(Module):
             tmp_local.append((eid, p, e_json['Event']['info']))
         return tmp_local
 
+    def _dump(self, event):
+        event_path = os.path.join(self.cur_path, 'misp_events')
+        if not os.path.exists(event_path):
+            os.makedirs(event_path)
+        path = os.path.join(event_path, '{}.json'.format(event['Event']['id']))
+        with open(path, 'w') as f:
+            f.write(json.dumps(event))
+        self.log('success', '{} stored successfully.'.format(event['Event']['id']))
+
     def store(self):
         try:
             event_path = os.path.join(self.cur_path, 'misp_events')
@@ -768,11 +805,7 @@ class MISP(Module):
                 else:
                     self.log('error', '{} does not exists.'.format(self.args.open))
             elif __sessions__.is_attached_misp():
-                eventid = self._get_eventid()
-                path = os.path.join(event_path, '{}.json'.format(eventid))
-                with open(path, 'w') as f:
-                    f.write(json.dumps(__sessions__.current.misp_event.event))
-                self.log('success', '{} stored successfully.'.format(eventid))
+                self._dump(__sessions__.current.misp_event.event)
         except IOError as e:
             self.log('error', e.strerror)
 
