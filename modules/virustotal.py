@@ -5,6 +5,7 @@
 import os
 import glob
 import shutil
+import json
 
 try:
     from virus_total_apis import PublicApi as vt
@@ -16,6 +17,7 @@ except ImportError:
 
 from viper.common.out import bold
 from viper.common.abstracts import Module
+from viper.common.objects import MispEvent
 from viper.core.session import __sessions__
 from viper.core.project import __project__
 from viper.core.config import Config
@@ -53,11 +55,39 @@ class VirusTotal(Module):
 
         self.parser.add_argument("-v", "--verbose", action='store_true', help="Turn on verbose mode.")
 
-        self.parser.add_argument('-m', '--misp', default=None, choices=['hashes', 'ips', 'domains', 'urls', 'download'],
-                                 help='Searches for the hashes, ips, domains or URLs from the current MISP event, or download the samples if possible.')
+        self.parser.add_argument('-m', '--misp', default=None, choices=['hashes', 'ips', 'domains', 'urls', 'download', 'download_all'],
+                                 help='Searches for the hashes, ips, domains or URLs from the current MISP event, or download the samples if possible. Be carefull with download_all: it will download *all* the samples of all the MISP events in the current project.')
+
+    def _get_local_events(self, path):
+        return [json.loads(open(p, 'r').read()) for p in glob.glob(os.path.join(path, '*'))]
+
+    def _download_hashes(self, misp_event, verbose):
+        eid = misp_event.event_id
+        ehashes, shashes = misp_event.get_all_hashes()
+        to_dl = sorted(ehashes, key=len)
+        while to_dl:
+            h = to_dl.pop()
+            response = self.scan(h, verbose)
+            if not response or isinstance(response, bool):
+                pass
+            else:
+                dl = True
+                for sh in shashes:
+                    if sh in response:
+                        dl = False
+                if not dl:
+                    self.log('info', "Sample available on MISP")
+                else:
+                    self.download(h, False, eid, verbose)
+                to_dl = [eh for eh in to_dl if eh not in response]
 
     # ######### MISP submodule #########
     def misp(self, option, verbose=False, submit=False):
+        if option == 'download_all':
+            for event in self._get_local_events(os.path.join(self.cur_path, 'misp_events')):
+                self._download_hashes(MispEvent(event), False)
+            return
+
         if not __sessions__.is_attached_misp():
             return
 
@@ -70,24 +100,7 @@ class VirusTotal(Module):
                 if response and not isinstance(response, bool):
                     to_scan = [eh for eh in to_scan if eh not in response]
         elif option == 'download':
-            ehashes, shashes = __sessions__.current.misp_event.get_all_hashes()
-            to_dl = sorted(ehashes, key=len)
-            while to_dl:
-                h = to_dl.pop()
-                response = self.scan(h, verbose)
-                if not response or isinstance(response, bool):
-                    pass
-                else:
-                    dl = True
-                    for sh in shashes:
-                        if sh in response:
-                            dl = False
-                    if not dl:
-                        self.log('info', "Sample available on MISP")
-                    else:
-                        self.download(h, False)
-                    to_dl = [eh for eh in to_dl if eh not in response]
-
+            self._download_hashes(__sessions__.current.misp_event, verbose)
         elif option == "ips":
             ips = __sessions__.current.misp_event.get_all_ips()
             for ip in ips:
@@ -155,13 +168,15 @@ class VirusTotal(Module):
         for p in glob.glob(path):
             if os.path.basename(p).isdigit():
                 eid = os.path.basename(p)
-            else:
-                eid = ''
-            fullpath = os.path.join(samples_path, eid, '*')
-            for p in glob.glob(fullpath):
-                name = os.path.basename(p)
-                if not os.path.basename(p).isdigit():
+                fullpath = os.path.join(samples_path, eid, '*')
+                for p in glob.glob(fullpath):
+                    name = os.path.basename(p)
                     tmp_samples.append((eid, p, name))
+            else:
+                for p in glob.glob(p):
+                    name = os.path.basename(p)
+                    if not os.path.basename(p).isdigit():
+                        tmp_samples.append(('', p, name))
         return tmp_samples
 
     def _display_tmp_files(self):
@@ -194,12 +209,14 @@ class VirusTotal(Module):
 
     # ##########################################
 
-    def download(self, filehash, open_session=True):
+    def download(self, filehash, open_session=True, force_eid=None, verbose=True):
         # FIXME: private and intel API are inconsistent to save a file.
         samples_path = os.path.join(self.cur_path, 'vt_samples')
         if __sessions__.is_attached_misp(True):
-            event_id = __sessions__.current.misp_event.event_id
-            samples_path = os.path.join(samples_path, event_id)
+            samples_path = os.path.join(samples_path, __sessions__.current.misp_event.event_id)
+        elif force_eid:
+            samples_path = os.path.join(samples_path, force_eid)
+
         if not os.path.exists(samples_path):
             os.makedirs(samples_path)
 
@@ -226,9 +243,9 @@ class VirusTotal(Module):
 
         if open_session:
             return __sessions__.new(filename)
-        else:
-            self.log('success', 'Successfully downloaded {}'.format(filehash))
-        self._display_tmp_files()
+        self.log('success', 'Successfully downloaded {}'.format(filehash))
+        if verbose:
+            self._display_tmp_files()
 
     def scan(self, to_search, verbose=True, submit=False, path_to_submit=None):
         response = self.vt.get_file_report(to_search)
