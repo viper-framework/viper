@@ -7,9 +7,9 @@ Before proceeding, you should make sure you have the basic tools installed to be
 
     $ sudo apt-get install gcc python-dev python-pip
 
-In order to have support for certain modules, you will need to install the following dependencies too before proceeding:
+In order to have support for certain modules, you will need to install the following dependencies too before proceeding::
 
-    $ sudo apt-get install libssl-dev swig
+    $ sudo apt-get install libssl-dev swig libffi-dev
 
 Core dependencies
 -----------------
