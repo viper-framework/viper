@@ -32,6 +32,9 @@ class VirusTotal(Module):
 
     def __init__(self):
         super(VirusTotal, self).__init__()
+        if not HAVE_VT:
+            self.log('error', "Missing dependency, install virustotal-api (`pip install virustotal-api`)")
+            return
         self.cur_path = __project__.get_path()
         if cfg.virustotal.virustotal_has_private_key:
             self.vt = vt_priv(cfg.virustotal.virustotal_key)
