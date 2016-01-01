@@ -324,13 +324,13 @@ class VirusTotal(Module):
         self.log('info', 'https://www.virustotal.com/en/domain/{}/information/\n'.format(domain))
 
     def run(self):
-        if not HAVE_VT:
-            self.log('error', "Missing dependency, install virustotal-api (`pip install virustotal-api`)")
-            return
         super(VirusTotal, self).run()
         if self.args is None:
             return
 
+        if not HAVE_VT:
+            self.log('error', "Missing dependency, install virustotal-api (`pip install virustotal-api`)")
+            return
 
         to_search = None
         path_to_submit = None
