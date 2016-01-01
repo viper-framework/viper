@@ -15,7 +15,6 @@ bitstring
 dnspython
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 pyasn1
-M2Crypto
 pymisp
 django
 pypssl
@@ -25,3 +24,5 @@ pbkdf2
 r2pipe
 git+https://github.com/crackinglandia/pype32.git#egg=pype32
 git+https://github.com/blacktop/virustotal-api.git
+cffi
+git+https://github.com/pyca/cryptography.git
