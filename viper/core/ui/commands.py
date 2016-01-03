@@ -16,6 +16,7 @@ try:
 except ImportError:
     from os import walk
 
+import viper.common.out as out
 from viper.common.out import *
 from viper.common.utils import convert_size
 from viper.common.objects import File
@@ -72,6 +73,10 @@ class Commands(object):
             type=event_type,
             data=event_data
         ))
+        if event_type == 'table':
+            print table(event_data['header'], event_data['rows'])
+        else:
+            getattr(out, 'print_{0}'.format(event_type))(event_data)
 
     ##
     # CLEAR
