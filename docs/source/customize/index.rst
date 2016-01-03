@@ -132,7 +132,7 @@ Here is an example:
             def run(self):
                 # Check if there is an open session.
                 if not __sessions__.is_set():
-                    # No session opened.
+                    # No open session.
                     return
 
                 # Print attributes of the opened file.

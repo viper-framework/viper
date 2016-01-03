@@ -196,7 +196,7 @@ class MISP(Module):
     def _has_misp_session(self, quiet=False):
         if not __sessions__.is_set():
             if not quiet:
-                self.log('error', "No session opened")
+                self.log('error', "No open session")
             return False
         if not __sessions__.current.misp_event:
             if not quiet:
@@ -207,7 +207,7 @@ class MISP(Module):
     def _has_file_session(self, quiet=False):
         if not __sessions__.is_set():
             if not quiet:
-                self.log('error', "No session opened")
+                self.log('error', "No open session")
             return False
         if not __sessions__.current.file:
             if not quiet:

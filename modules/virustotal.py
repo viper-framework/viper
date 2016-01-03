@@ -59,7 +59,7 @@ class VirusTotal(Module):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         data = {'resource': __sessions__.current.file.md5, 'apikey': cfg.virustotal.virustotal_key}

@@ -261,7 +261,7 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session open")
+            self.log('error', "No open session")
             return
 
         # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
@@ -354,7 +354,7 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session open")
+            self.log('error', "No open session")
             return
 
         # check if the file is already stores, otherwise exit
@@ -504,7 +504,7 @@ class Commands(object):
                     if cfg.autorun.enabled:
                         autorun_module(__sessions__.current.file.sha256)
             else:
-                self.log('error', "No session open")
+                self.log('error', "No open session")
 
     ##
     # RENAME
@@ -528,7 +528,7 @@ class Commands(object):
             self.log('info', "Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
         else:
-            self.log('error', "No session open")
+            self.log('error', "No open session")
 
     ##
     # DELETE
@@ -555,7 +555,7 @@ class Commands(object):
             os.remove(__sessions__.current.file.path)
             __sessions__.close()
         else:
-            self.log('error', "No session open")
+            self.log('error', "No open session")
 
     ##
     # FIND
@@ -653,7 +653,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session open")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 
@@ -803,7 +803,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session open")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 
@@ -953,7 +953,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session open")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 
