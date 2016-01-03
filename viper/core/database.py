@@ -406,32 +406,28 @@ class Database:
     def add_parent(self, malware_sha256, parent_sha256):
         session = self.Session()
 
-        # try:
-        if True:
+        try:
             malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).first()
             malware.parent = session.query(Malware).filter(Malware.sha256 == parent_sha256).first()
             session.commit()
-
-            # except SQLAlchemyError as e:
-            # print_error("Unable to add parent: {0}".format(e))
-            # session.rollback()
-            # finally:
-            # session.close()
+        except SQLAlchemyError as e:
+            print_error("Unable to add parent: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
 
     def delete_parent(self, malware_sha256):
         session = self.Session()
 
-        # try:
-        if True:
+        try:
             malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).first()
             malware.parent = None
             session.commit()
-
-            # except SQLAlchemyError as e:
-            # print_error("Unable to add parent: {0}".format(e))
-            # session.rollback()
-            # finally:
-            # session.close()
+        except SQLAlchemyError as e:
+            print_error("Unable to delete parent: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
 
     def get_children(self, parent_id):
         session = self.Session()
