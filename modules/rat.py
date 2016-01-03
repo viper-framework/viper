@@ -44,7 +44,7 @@ class RAT(Module):
 
     def get_config(self, family):
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         try:
@@ -73,7 +73,7 @@ class RAT(Module):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         rules = yara.compile(os.path.join(VIPER_ROOT, 'data/yara/rats.yara'))

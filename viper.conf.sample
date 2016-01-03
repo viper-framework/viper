@@ -37,7 +37,7 @@ verbose = False
 # Enter a comma separated list of command lines, As you would enter them in the CLI. You can use ; to chain commands.
 # Commands are run in sequence and the output of MODULES is stored if store_output is set to True.
 # commands = yara scan -t, fuzzy, pe compiletime
-commands = yara scan -t
+commands = yara scan -t, triage
 
 
 ##

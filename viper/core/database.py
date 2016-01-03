@@ -198,11 +198,14 @@ class Database:
         if not malware_entry:
             return
 
-        tags = tags.strip()
-        if ',' in tags:
-            tags = tags.split(',')
-        else:
-            tags = tags.split()
+        # The tags argument might be a list, a single tag, or a 
+        # comma-separated list of tags.
+        if isinstance(tags, str):
+            tags = tags.strip()
+            if ',' in tags:
+                tags = tags.split(',')
+            else:
+                tags = tags.split()
 
         for tag in tags:
             tag = tag.strip().lower()
@@ -334,6 +337,29 @@ class Database:
 
         return True
 
+    def rename(self, id, name):
+        session = self.Session()
+
+        if not name:
+            return False
+
+        try:
+            malware = session.query(Malware).get(id)
+            if not malware:
+                print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
+                return False
+
+            malware.name = name
+            session.commit()
+        except SQLAlchemyError as e:
+            print_error("Unable to rename file: {}".format(e))
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+        return True
+
     def delete_file(self, id):
         session = self.Session()
 
@@ -341,7 +367,7 @@ class Database:
             malware = session.query(Malware).get(id)
             if not malware:
                 print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
-                return
+                return False
 
             session.delete(malware)
             session.commit()
@@ -406,32 +432,28 @@ class Database:
     def add_parent(self, malware_sha256, parent_sha256):
         session = self.Session()
 
-        # try:
-        if True:
+        try:
             malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).first()
             malware.parent = session.query(Malware).filter(Malware.sha256 == parent_sha256).first()
             session.commit()
-
-            # except SQLAlchemyError as e:
-            # print_error("Unable to add parent: {0}".format(e))
-            # session.rollback()
-            # finally:
-            # session.close()
+        except SQLAlchemyError as e:
+            print_error("Unable to add parent: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
 
     def delete_parent(self, malware_sha256):
         session = self.Session()
 
-        # try:
-        if True:
+        try:
             malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).first()
             malware.parent = None
             session.commit()
-
-            # except SQLAlchemyError as e:
-            # print_error("Unable to add parent: {0}".format(e))
-            # session.rollback()
-            # finally:
-            # session.close()
+        except SQLAlchemyError as e:
+            print_error("Unable to delete parent: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
 
     def get_children(self, parent_id):
         session = self.Session()

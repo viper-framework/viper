@@ -61,7 +61,7 @@ class Editdistance(Module):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         self.edit()

@@ -89,7 +89,7 @@ class Console(object):
                 # the file which is currently being analyzed.
                 data = data.replace('$self', __sessions__.current.file.path)
             else:
-                print("No session opened")
+                print("No open session")
                 return None
 
         return data

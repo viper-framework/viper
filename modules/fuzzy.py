@@ -108,7 +108,7 @@ class Fuzzy(Module):
             # We're running against the already opened file.
             else:
                 if not __sessions__.is_set():
-                    self.log('error', "No session opened")
+                    self.log('error', "No open session")
                     return
 
                 if not __sessions__.current.file.ssdeep:

@@ -1,7 +1,14 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-from prettytable import PrettyTable
+try:
+    from terminaltables import AsciiTable
+    HAVE_TERMTAB = True
+except:
+    HAVE_TERMTAB = False
+
+import textwrap
 
 from viper.common.colors import *
 
@@ -21,14 +28,33 @@ def print_success(message):
     print(bold(green("[+]")) + " {0}".format(message))
 
 def table(header, rows):
-    table = PrettyTable(header)
-    table.align = 'l'
-    table.padding_width = 1
+    if not HAVE_TERMTAB:
+        self.log('error', "Missing dependency, install terminaltables (`pip install terminaltables`)")
+        return
 
-    for row in rows:
-        table.add_row(row)
-
-    return table
+    content = [header] + rows
+    # Make sure everything is string
+    try:
+        content = [[a.replace('\t', '  ') for a in list(map(unicode, l))] for l in content]
+    except:
+        # Python3 way of doing it:
+        content = [[a.replace('\t', '  ') for a in list(map(str, l))] for l in content]
+    t = AsciiTable(content)
+    if not t.ok:
+        longest_col = t.column_widths.index(max(t.column_widths))
+        max_length_col = t.column_max_width(longest_col)
+        if max_length_col > 0:
+            for i, content in enumerate(t.table_data):
+                if len(content[longest_col]) > max_length_col:
+                    temp = ''
+                    for l in content[longest_col].splitlines():
+                        if len(l) > max_length_col:
+                            temp += '\n'.join(textwrap.wrap(l, max_length_col)) + '\n'
+                        else:
+                            temp += l + '\n'
+                        content[longest_col] = temp.strip()
+                t.table_data[i] = content
+    return t.table
 
 def print_output(output, filename=None):
     if not output:

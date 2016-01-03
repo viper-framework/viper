@@ -1,13 +1,13 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import argparse
 import os
 import time
 import json
+import shutil
 import fnmatch
 import tempfile
-import shutil
+import argparse
 from zipfile import ZipFile
 from collections import defaultdict
 
@@ -63,6 +63,7 @@ class Commands(object):
             parent=dict(obj=self.cmd_parent, description="Add or remove a parent file"),
             export=dict(obj=self.cmd_export, description="Export the current session to file or zip"),
             analysis=dict(obj=self.cmd_analysis, description="View the stored analysis"),
+            rename=dict(obj=self.cmd_rename, description="Rename the file in the database"),
         )
 
     # Output Logging
@@ -260,7 +261,7 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
@@ -353,7 +354,7 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         # check if the file is already stores, otherwise exit
@@ -385,7 +386,6 @@ class Commands(object):
                     self.log(line['type'], line['data'])
             else:
                 self.log('info', "There is no analysis with ID {0}".format(args.view))
-
 
     ##
     # STORE
@@ -510,12 +510,36 @@ class Commands(object):
                     if cfg.autorun.enabled:
                         autorun_module(__sessions__.current.file.sha256)
             else:
-                self.log('error', "No session opened")
+                self.log('error', "No open session")
+
+    ##
+    # RENAME
+    #
+    # This command renames the currently opened file in the database.
+    def cmd_rename(self, *args):
+        if __sessions__.is_set():
+            if not __sessions__.current.file.id:
+                self.log('error', "The opened file does not have an ID, have you stored it yet?")
+                return
+
+            self.log('info', "Current name is: {}".format(bold(__sessions__.current.file.name)))
+            
+            new_name = input("New name: ")
+            if not new_name:
+                self.log('error', "File name can't  be empty!")
+                return
+
+            self.db.rename(__sessions__.current.file.id, new_name)
+
+            self.log('info', "Refreshing session to update attributes...")
+            __sessions__.new(__sessions__.current.file.path)
+        else:
+            self.log('error', "No open session")
 
     ##
     # DELETE
     #
-    # This commands deletes the currenlty opened file (only if it's stored in
+    # This command deletes the currenlty opened file (only if it's stored in
     # the local repository) and removes the details from the database
     def cmd_delete(self, *args):
         if __sessions__.is_set():
@@ -537,7 +561,7 @@ class Commands(object):
             os.remove(__sessions__.current.file.path)
             __sessions__.close()
         else:
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
 
     ##
     # FIND
@@ -635,7 +659,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 
@@ -785,7 +809,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 
@@ -826,7 +850,7 @@ class Commands(object):
                 self.log('info', "File exported to {0}".format(store_path))
 
     ##
-    # Stats
+    # STATS
     #
     # This command allows you to generate basic statistics for the stored files.
     def cmd_stats(self, *args):
@@ -935,7 +959,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 

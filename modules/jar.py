@@ -37,7 +37,7 @@ class Jar(Module):
         arg_dump = self.args.dump
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         if not zipfile.is_zipfile(__sessions__.current.file.path):

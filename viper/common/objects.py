@@ -63,6 +63,7 @@ class MispEvent(object):
 class File(object):
 
     def __init__(self, path):
+        self.id = None
         self.path = path
         self.name = ''
         self.size = 0

@@ -39,7 +39,7 @@ class Radare(Module):
                 self.open_radare()
                 return
             else:
-                self.log('error', "No session opened")
+                self.log('error', "No open session")
                 return
 
         if not r2command:
