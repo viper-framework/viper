@@ -334,6 +334,29 @@ class Database:
 
         return True
 
+    def rename(self, id, name):
+        session = self.Session()
+
+        if not name:
+            return False
+
+        try:
+            malware = session.query(Malware).get(id)
+            if not malware:
+                print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
+                return False
+
+            malware.name = name
+            session.commit()
+        except SQLAlchemyError as e:
+            print_error("Unable to rename file: {}".format(e))
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+        return True
+
     def delete_file(self, id):
         session = self.Session()
 
@@ -341,7 +364,7 @@ class Database:
             malware = session.query(Malware).get(id)
             if not malware:
                 print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
-                return
+                return False
 
             session.delete(malware)
             session.commit()
