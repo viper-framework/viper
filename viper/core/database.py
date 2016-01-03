@@ -200,7 +200,7 @@ class Database:
 
         # The tags argument might be a list, a single tag, or a 
         # comma-separated list of tags.
-        if isinstance(tags, str)
+        if isinstance(tags, str):
             tags = tags.strip()
             if ',' in tags:
                 tags = tags.split(',')
