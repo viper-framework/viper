@@ -198,11 +198,14 @@ class Database:
         if not malware_entry:
             return
 
-        tags = tags.strip()
-        if ',' in tags:
-            tags = tags.split(',')
-        else:
-            tags = tags.split()
+        # The tags argument might be a list, a single tag, or a 
+        # comma-separated list of tags.
+        if isinstance(tags, str)
+            tags = tags.strip()
+            if ',' in tags:
+                tags = tags.split(',')
+            else:
+                tags = tags.split()
 
         for tag in tags:
             tag = tag.strip().lower()
