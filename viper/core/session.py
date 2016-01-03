@@ -57,7 +57,7 @@ class Sessions(object):
             # Open a section on the given file.
             session.file = File(path)
             # Try to lookup the file in the database. If it is already present
-            # we get file name and
+            # we get its database ID, file name, and tags.
             row = Database().find(key='sha256', value=session.file.sha256)
             if row:
                 session.file.id = row[0].id
