@@ -54,9 +54,11 @@ class Module(object):
             data=event_data
         ))
         if event_type == 'table':
-            print out.table(event_data['header'], event_data['rows'])
-        else:
+            print(out.table(event_data['header'], event_data['rows']))
+        elif event_type:
             getattr(out, 'print_{0}'.format(event_type))(event_data)
+        else:
+            print(event_data)
 
     def usage(self):
         self.log('', self.parser.format_usage())
