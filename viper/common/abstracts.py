@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import argparse
+import viper.common.out as out
 
 
 class ArgumentErrorCallback(Exception):
@@ -52,6 +53,10 @@ class Module(object):
             type=event_type,
             data=event_data
         ))
+        if event_type == 'table':
+            print out.table(event_data['header'], event_data['rows'])
+        else:
+            getattr(out, 'print_{0}'.format(event_type))(event_data)
 
     def usage(self):
         self.log('', self.parser.format_usage())

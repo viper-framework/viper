@@ -225,7 +225,6 @@ class Console(object):
                         # execute it.
                         if root in self.cmd.commands:
                             self.cmd.commands[root]['obj'](*args)
-                            print_output(self.cmd.output, filename)
                             del(self.cmd.output[:])
                         # If the root command is part of loaded modules, we initialize
                         # the module and execute it.
@@ -234,7 +233,6 @@ class Console(object):
                             module.set_commandline(args)
                             module.run()
 
-                            print_output(module.output, filename)
                             if cfg.modules.store_output and __sessions__.is_set():
                                 try:
                                     Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
