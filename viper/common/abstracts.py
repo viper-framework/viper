@@ -4,9 +4,7 @@
 import argparse
 import viper.common.out as out
 
-
 class ArgumentErrorCallback(Exception):
-
     def __init__(self, message, level=''):
         self.message = message.strip() + '\n'
         self.level = level.strip()
@@ -17,9 +15,7 @@ class ArgumentErrorCallback(Exception):
     def get(self):
         return self.level, self.message
 
-
 class ArgumentParser(argparse.ArgumentParser):
-
     def print_usage(self):
         raise ArgumentErrorCallback(self.format_usage())
 
@@ -32,7 +28,6 @@ class ArgumentParser(argparse.ArgumentParser):
     def exit(self, status, message=None):
         if message is not None:
             raise ArgumentErrorCallback(message)
-
 
 class Module(object):
     cmd = ''
@@ -53,10 +48,12 @@ class Module(object):
             type=event_type,
             data=event_data
         ))
-        if event_type == 'table':
-            print(out.table(event_data['header'], event_data['rows']))
-        elif event_type:
-            getattr(out, 'print_{0}'.format(event_type))(event_data)
+
+        if event_type:
+            if event_type == 'table':
+                print(out.table(event_data['header'], event_data['rows']))
+            else:
+                getattr(out, 'print_{0}'.format(event_type))(event_data)
         else:
             print(event_data)
 
