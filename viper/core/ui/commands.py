@@ -424,6 +424,12 @@ class Commands(object):
                 self.log('warning', "Skip, file \"{0}\" appears to be already stored".format(obj.name))
                 return False
 
+            if __sessions__.is_attached_misp(quiet=True):
+                if tags is not None:
+                    tags += ',misp:{}'.format(__sessions__.current.misp_event.event_id)
+                else:
+                    tags = 'misp:{}'.format(__sessions__.current.misp_event.event_id)
+
             # Try to store file object into database.
             status = self.db.add(obj=obj, tags=tags)
             if status:

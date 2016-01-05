@@ -45,11 +45,9 @@ commands = yara scan -t, triage
 ##
 
 [virustotal]
-virustotal_url = https://www.virustotal.com/vtapi/v2/file/report
-virustotal_url_submit = https://www.virustotal.com/vtapi/v2/file/scan
-virustotal_url_download = https://www.virustotal.com/intelligence/download
-virustotal_url_comment = https://www.virustotal.com/vtapi/v2/comments/put
-virustotal_key = a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088
+virustotal_has_private_key = False
+virustotal_has_intel_key = False
+virustotal_key =
 
 [cuckoo]
 cuckoo_modified = False
@@ -72,6 +70,7 @@ anubis_prefix = https://anubis.iseclab.org/
 misp_url =
 misp_key =
 misp_verify = True
+misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
 
 [pssl]
 pssl_url =

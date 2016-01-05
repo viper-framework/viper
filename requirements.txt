@@ -22,6 +22,7 @@ scandir
 pbkdf2
 r2pipe
 git+https://github.com/crackinglandia/pype32.git#egg=pype32
+virustotal-api
 terminaltables
 cffi
 git+https://github.com/pyca/cryptography.git

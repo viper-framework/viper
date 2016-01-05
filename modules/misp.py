@@ -6,10 +6,10 @@ import argparse
 import copy
 import textwrap
 import os
-import tempfile
 import time
 import glob
 import shutil
+import json
 
 try:
     from pymisp import PyMISP, PyMISPError
@@ -27,12 +27,14 @@ except:
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
+from viper.core.project import __project__
 from viper.core.storage import get_sample_path
 from viper.common.objects import MispEvent
 from viper.common.constants import VIPER_ROOT
 from viper.core.config import Config
 
 cfg = Config()
+
 
 class MISP(Module):
     cmd = 'misp'
@@ -41,6 +43,7 @@ class MISP(Module):
 
     def __init__(self):
         super(MISP, self).__init__()
+        self.cur_path = __project__.get_path()
         self.parser.add_argument("--url", help='URL of the MISP instance')
         self.parser.add_argument("-k", "--key", help='Your key on the MISP instance')
         self.parser.add_argument("-v", "--verify", action='store_false', help='Disable certificate verification (for self-signed)')
@@ -85,6 +88,7 @@ class MISP(Module):
         parser_down = subparsers.add_parser('download', help='Download malware samples from MISP.')
         group = parser_down.add_mutually_exclusive_group()
         group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID.")
+        group.add_argument("-l", "--list", nargs='*', help="Download all the samples related to a list of events. Empty list to download all the samples of all the events stored in the current project.")
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
         # ##### Search in MISP #####
@@ -100,9 +104,9 @@ class MISP(Module):
         parser_checkhashes = subparsers.add_parser('yara', help='Get YARA rules of an event.')
         parser_checkhashes.add_argument("event", nargs='?', default=None, type=int, help="Download the yara rules of that event.")
 
-        # ##### Get an Event #####
+        # ##### Get Events #####
         parser_pull = subparsers.add_parser('pull', help='Initialize the session with an existing MISP event.')
-        parser_pull.add_argument("event", type=int, help="Existing Event ID.")
+        parser_pull.add_argument("event", nargs='+', type=int, help="(List of) Event(s) ID.")
 
         # ##### Create an Event #####
         parser_create_event = subparsers.add_parser('create_event', help='Create a new event on MISP and initialize the session with it.',
@@ -190,51 +194,33 @@ class MISP(Module):
         # ##### Show version #####
         subparsers.add_parser('version', help='Returns the version of the MISP instance.')
 
+        # Store
+        s = subparsers.add_parser('store', help='Store the current MISP event in the current project.')
+        s.add_argument("-l", "--list", action='store_true', help="List stored MISP events")
+        s.add_argument("-u", "--update", action='store_true', help="Update all stored MISP events")
+        s.add_argument("-d", "--delete", type=int, help="Delete a stored MISP event")
+        s.add_argument("-o", "--open", type=int, help="Open a stored MISP event")
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     # ####### Generic Helpers ########
-    def _has_misp_session(self, quiet=False):
-        if not __sessions__.is_set():
-            if not quiet:
-                self.log('error', "No open session")
-            return False
-        if not __sessions__.current.misp_event:
-            if not quiet:
-                self.log('error', "Not attached to a MISP event")
-            return False
-        return True
-
-    def _has_file_session(self, quiet=False):
-        if not __sessions__.is_set():
-            if not quiet:
-                self.log('error', "No open session")
-            return False
-        if not __sessions__.current.file:
-            if not quiet:
-                self.log('error', "Not attached to a file")
-            return False
-        return True
-
     def _get_eventid(self, quiet=False):
         if vars(self.args).get('event'):
             return self.args.event
         else:
             # Get current event ID if possible
-            if not self._has_misp_session(quiet):
+            if not __sessions__.is_attached_misp(quiet):
                 return None
             return __sessions__.current.misp_event.event_id
 
     def _has_error_message(self, result):
-        if result.get('error'):
-            if isinstance(result['error'], list):
-                for e in result['errors']:
-                    self.log('error', e['error']['value'][0])
-            else:
-                self.log('error', result['error'])
+        if result.get('errors'):
+            for message in result['errors']:
+                self.log('error', message)
             return True
         return False
 
-    def _search_local_hashes(self, event):
+    def _search_local_hashes(self, event, open_session=True):
         local = []
         samples_count = 0
         if event.get('Event') is None:
@@ -261,7 +247,9 @@ class MISP(Module):
                 row = Database().find(key='sha256', value=h)
             if row:
                 local.append(row[0])
-        self.log('info', 'This event contains {} samples.'.format(samples_count))
+        self.log('info', 'Event {} contains {} samples.'.format(event['Event']['id'], samples_count))
+        if not open_session:
+            return
         shas = set([l.sha256 for l in local])
         if len(shas) == 1:
             __sessions__.new(get_sample_path(shas.pop()), MispEvent(event))
@@ -354,10 +342,11 @@ class MISP(Module):
 
     def _load_tmp_samples(self):
         tmp_samples = []
-        path = os.path.join(tempfile.gettempdir(), 'viper', 'misp', '*')
+        samples_path = os.path.join(self.cur_path, 'misp_samples')
+        path = os.path.join(samples_path, '*')
         for p in glob.glob(path):
             eid = os.path.basename(p)
-            fullpath = os.path.join(tempfile.gettempdir(), 'viper', 'misp', eid, '*')
+            fullpath = os.path.join(samples_path, eid, '*')
             for p in glob.glob(fullpath):
                 name = os.path.basename(p)
                 tmp_samples.append((eid, p, name))
@@ -365,7 +354,7 @@ class MISP(Module):
 
     def _display_tmp_files(self):
         cureid = None
-        if self._has_misp_session(True):
+        if __sessions__.is_attached_misp(True):
             cureid = self._get_eventid()
         header = ['Sample ID', 'Current', 'Event ID', 'Filename']
         rows = []
@@ -383,7 +372,8 @@ class MISP(Module):
         self.log('table', dict(header=header, rows=rows))
 
     def _clean_tmp_samples(self, eid):
-        to_remove = os.path.join(tempfile.gettempdir(), 'viper', 'misp')
+        samples_path = os.path.join(self.cur_path, 'misp_samples')
+        to_remove = os.path.join(samples_path)
         if eid != 'all':
             to_remove = os.path.join(to_remove, eid)
         if os.path.exists(to_remove):
@@ -416,19 +406,39 @@ class MISP(Module):
         data = None
         if self.args.hash:
             ok, data = self.misp.download_samples(sample_hash=self.args.hash)
+        elif self.args.list is not None:
+            list_events = []
+            if len(self.args.list) == 0:
+                event_path = os.path.join(self.cur_path, 'misp_events')
+                for eid, path, title in self._get_local_events(event_path):
+                    list_events.append(eid)
+            else:
+                list_events = self.args.list
+
+            all_data = []
+            for eid in list_events:
+                event = self.misp.get(eid)
+                ok, data = self.misp.download_samples(event_id=event['Event']['id'])
+                if not ok:
+                    self.log('error', data)
+                    continue
+                if data:
+                    all_data += data
+            data = all_data
         else:
             event_id = self._get_eventid()
             if event_id is None:
                 return
             ok, data = self.misp.download_samples(event_id=event_id)
 
-        if not ok:
-            self.log('error', data)
-            return
+            if not ok:
+                self.log('error', data)
+                return
         to_print = []
+        samples_path = os.path.join(self.cur_path, 'misp_samples')
         for d in data:
             eid, filename, payload = d
-            path = os.path.join(tempfile.gettempdir(), 'viper', 'misp', eid, filename)
+            path = os.path.join(samples_path, eid, filename)
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             with open(path, 'w') as f:
@@ -440,9 +450,11 @@ class MISP(Module):
             event = self.misp.get(to_print[0][0])
             if not self._has_error_message(event):
                 return __sessions__.new(to_print[0][1], MispEvent(event))
-        else:
+        elif len(to_print) > 1:
             self.log('success', 'The following files have been downloaded:')
             self._display_tmp_files()
+        else:
+            self.log('warning', 'No samples available.')
 
     def upload(self):
         categ = self.categories.get(self.args.categ)
@@ -504,7 +516,7 @@ class MISP(Module):
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
             try:
-                response = requests.post(cfg.virustotal._url, data=vt_request)
+                response = requests.post(cfg.misp.misp_vturl, data=vt_request)
             except requests.ConnectionError:
                 self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
                 return
@@ -549,7 +561,7 @@ class MISP(Module):
         if self.args.query:
             self._search(' '.join(self.args.query))
         else:
-            if not self._has_file_session(True):
+            if not __sessions__.is_attached_file(True):
                 self.log('error', "Not attached to a file, nothing to serch for.")
                 return False
             to_search = [__sessions__.current.file.md5, __sessions__.current.file.sha1, __sessions__.current.file.sha256]
@@ -575,9 +587,12 @@ class MISP(Module):
                 e['Event']['info'].encode('utf-8'), nb_samples, nb_hashes, self.url, '/events/view/', e['Event']['id']))
 
     def pull(self):
-        event = self.misp.get(self.args.event)
-        if not self._has_error_message(event):
-            self._search_local_hashes(event)
+        open_session = len(self.args.event) == 1
+        for e in self.args.event:
+            event = self.misp.get(e)
+            if not self._has_error_message(event):
+                self._search_local_hashes(event, open_session)
+                self._dump(event)
 
     def create_event(self):
         # Dirty trick to keep consistency in the module: the threat level in the upload
@@ -620,8 +635,9 @@ class MISP(Module):
             tmp_samples = self._load_tmp_samples()
             try:
                 eid, path, name = tmp_samples[int(self.args.sid)]
-            except:
+            except IndexError:
                 self.log('error', 'Invalid sid, please use misp open -l.')
+                return
             event = self.misp.get(eid)
             if not self._has_error_message(event):
                 return __sessions__.new(path, MispEvent(event))
@@ -642,19 +658,20 @@ class MISP(Module):
             if a.get('RelatedAttribute'):
                 for r in a.get('RelatedAttribute'):
                     idlist.append(r['id'])
-            rows.append([a['type'], a['value'], a['comment'], ', '.join(idlist)])
+            rows.append([a['type'], a['value'], '\n'.join(textwrap.wrap(a['comment'], 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
         self.log('table', dict(header=header, rows=rows))
         if current_event['Event']['published']:
             self.log('info', 'This event has been published')
         else:
             self.log('info', 'This event has not been published')
+        self.log('info', 'Link to Event: {}/events/view/{}'.format(self.url.rstrip('/'), __sessions__.current.misp_event.event_id))
 
     def add(self):
         current_event = copy.deepcopy(__sessions__.current.misp_event.event)
 
         if self.args.add == 'hashes':
             if self.args.filename is None and self.args.md5 is None and self.args.sha1 is None and self.args.sha256 is None:
-                if not self._has_file_session(True):
+                if not __sessions__.is_attached_file(True):
                     self.log('error', "Not attached to a file, please set the hashes manually.")
                     return False
                 event = self.misp.add_hashes(current_event, filename=__sessions__.current.file.name,
@@ -738,6 +755,60 @@ class MISP(Module):
                 else:
                     self.log('warning', 'Your MISP instance is outdated, you should update to avoid issues with the API.')
 
+    def _get_local_events(self, path):
+        tmp_local = []
+        path = os.path.join(path, '*')
+        for p in glob.glob(path):
+            eid = os.path.basename(p).rstrip('.json')
+            e_json = json.loads(open(p, 'r').read())
+            tmp_local.append((eid, p, e_json['Event']['info']))
+        return tmp_local
+
+    def _dump(self, event):
+        event_path = os.path.join(self.cur_path, 'misp_events')
+        if not os.path.exists(event_path):
+            os.makedirs(event_path)
+        path = os.path.join(event_path, '{}.json'.format(event['Event']['id']))
+        with open(path, 'w') as f:
+            f.write(json.dumps(event))
+        self.log('success', '{} stored successfully.'.format(event['Event']['id']))
+
+    def store(self):
+        try:
+            event_path = os.path.join(self.cur_path, 'misp_events')
+            if not os.path.exists(event_path):
+                os.mkdir(event_path)
+            if self.args.list:
+                header = ['Event ID', 'Title']
+                rows = []
+                for eid, path, title in self._get_local_events(event_path):
+                    rows.append((eid, title))
+                self.log('table', dict(header=header, rows=sorted(rows, key=lambda i: (int(i[0])))))
+            elif self.args.update:
+                for eid, path, title in self._get_local_events(event_path):
+                    event = self.misp.get(eid)
+                    with open(path, 'w') as f:
+                        f.write(json.dumps(event))
+                    self.log('success', '{} updated successfully.'.format(eid))
+            elif self.args.delete:
+                path = os.path.join(event_path, '{}.json'.format(self.args.delete))
+                if os.path.exists(path):
+                    os.remove(path)
+                    self.log('success', '{} removed successfully.'.format(self.args.delete))
+                else:
+                    self.log('error', '{} does not exists.'.format(self.args.delete))
+            elif self.args.open:
+                path = os.path.join(event_path, '{}.json'.format(self.args.open))
+                if os.path.exists(path):
+                    e_json = json.loads(open(path, 'r').read())
+                    __sessions__.new(misp_event=MispEvent(e_json))
+                else:
+                    self.log('error', '{} does not exists.'.format(self.args.open))
+            elif __sessions__.is_attached_misp():
+                self._dump(__sessions__.current.misp_event.event)
+        except IOError as e:
+            self.log('error', e.strerror)
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
@@ -776,11 +847,11 @@ class MISP(Module):
             return
 
         # Require an open MISP session
-        if self.args.subname in ['add', 'show', 'publish'] and not self._has_misp_session():
+        if self.args.subname in ['add', 'show', 'publish'] and not __sessions__.is_attached_misp():
             return
 
         # Require an open file session
-        if self.args.subname in ['upload'] and not self._has_file_session():
+        if self.args.subname in ['upload'] and not __sessions__.is_attached_file():
             return
 
         try:
@@ -808,6 +879,8 @@ class MISP(Module):
                 self.publish()
             elif self.args.subname == 'version':
                 self.version()
+            elif self.args.subname == 'store':
+                self.store()
             else:
                 self.log('error', "No calls defined for this command.")
         except requests.exceptions.HTTPError as e:
