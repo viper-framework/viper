@@ -40,8 +40,8 @@ class ELF(Module):
             try:
                 fd = open(__sessions__.current.file.path, 'rb')
                 self.elf = ELFFile(fd)
-            except:
-                self.log('error', "Unable to parse ELF file")
+            except Exception as e:
+                self.log('error', "Unable to parse ELF file: {0}".format(e))
                 return False
 
         return True
