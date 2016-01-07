@@ -15,12 +15,5 @@ args = parser.parse_args()
 if args.project:
     __project__.open(args.project)
 
-config_file = 'viper.conf'
-if not os.path.exists(config_file):
-    print ""
-    print "[!] Unable to find config file at {0}".format(config_file)
-    print ""
-else:
-    c = console.Console()
-    c.start()
-
+c = console.Console()
+c.start()

@@ -766,7 +766,10 @@ class Commands(object):
         except:
             return
 
-        projects_path = os.path.join(os.getcwd(), 'projects')
+        if cfg.paths.store_path != None:
+            projects_path = os.path.join(cfg.paths.store_path, 'projects')
+        else:
+            projects_path = os.path.join(os.getcwd(), 'projects')
 
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")

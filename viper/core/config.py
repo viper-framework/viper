@@ -15,14 +15,14 @@ class Config:
     
         config = ConfigParser.ConfigParser()
         
-        if cfg:
-            test = config.read(cfg)
-        else:
-            test = config.read('viper.conf')
-            
+        if cfg == None:
+            cfg = os.path.expanduser('~/.viper.conf')
+
+        test = config.read(cfg)
+
         # Check for empty config
         if len(test) == 0:
-            print_error("Could not find a valid configuration file. Did you rename viper.conf.sample to viper.conf")
+            print_error("Could not find a valid configuration file. Did you copy viper.conf.sample to ~/.viper.conf?")
             print_info("Trying to create config for you")
             try:
                 shutil.copy('viper.conf.sample', 'viper.conf')
