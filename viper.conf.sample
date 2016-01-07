@@ -9,9 +9,8 @@
 store_output = True
 
 [paths]
-# root path for project storage
-# If blank default is vipers cwd
-store_path =
+# default repository root
+store_path = /path/to/default/repository/root
 
 [database]
 # Configure the database connection type example shown below
