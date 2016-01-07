@@ -178,8 +178,10 @@ class Analysis(Base):
 class Database:
     #__metaclass__ = Singleton
 
-    def __init__(self):
-        db_path = os.path.join(__project__.get_path(), 'viper.db')
+    def __init__(self, repository_root):
+        self._repository_root = repository_root
+
+        db_path = os.path.join(self._repository_root, 'viper.db')
 
         self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
         self.engine.echo = False
