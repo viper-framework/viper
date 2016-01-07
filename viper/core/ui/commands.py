@@ -41,9 +41,12 @@ except NameError:
 class Commands(object):
     output = []
 
-    def __init__(self):
+    def __init__(self, repository_root, database):
+        # save the repository root
+        self._repository_root = repository_root
+
         # Open connection to the database.
-        self.db = Database()
+        self.db = database
 
         # Map commands to their related functions.
         self.commands = dict(
@@ -766,11 +769,7 @@ class Commands(object):
         except:
             return
 
-        if cfg.paths.store_path != None:
-            projects_path = os.path.join(cfg.paths.store_path, 'projects')
-        else:
-            projects_path = os.path.join(os.getcwd(), 'projects')
-
+        projects_path = os.path.join(self._repository_root, 'projects')
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")
             return
@@ -793,11 +792,12 @@ class Commands(object):
                 __sessions__.close()
                 self.log('info', "Closed opened session")
 
-            __project__.open(args.switch)
+            project_absolute_path = os.path.join(self._repository_root, 'projects')
+            project_absolute_path = os.path.join(project_absolute_path, args.switch)
+            __project__.open(project_absolute_path)
+
             self.log('info', "Switched to project {0}".format(bold(args.switch)))
 
-            # Need to re-initialize the Database to open the new SQLite file.
-            self.db = Database()
         else:
             self.log('info', parser.print_usage())
 

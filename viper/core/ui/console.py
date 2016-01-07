@@ -25,45 +25,56 @@ try:
 except NameError:
     pass
 
-
-def logo():
-    print("""         _
-        (_)
-   _   _ _ ____  _____  ____
-  | | | | |  _ \| ___ |/ ___)
-   \ V /| | |_| | ____| |
-    \_/ |_|  __/|_____)_| v1.3-dev
-          |_|
-    """)
-
-    db = Database()
-    count = db.get_sample_count()
-
-    # Handle the New database format
-    try:
-        db.find('all', None)
-    except:
-        print_error("You need to update your viper database. Run 'python update.py -d'")
-        sys.exit()
-
-
-    if __project__.name:
-        name = __project__.name
-    else:
-        name = 'default'
-
-    print(magenta("You have " + bold(count)) +
-          magenta(" files in your " + bold(name) +
-          magenta(" repository".format(bold(name)))))
-    if cfg.autorun.enabled and len(cfg.autorun.commands) == 0:
-        print_warning("You have enabled autorun but not set any commands in viper.conf.")
-
 class Console(object):
 
-    def __init__(self):
+    def __init__(self, repository_root):
         # This will keep the main loop active as long as it's set to True.
         self.active = True
-        self.cmd = Commands()
+
+        if repository_root == None:
+            if cfg.paths.store_path:
+                repository_root = cfg.paths.store_path
+            else:
+                repository_root = os.getcwd()
+
+        self._repository_root = repository_root
+
+        # make sure the repository directory exists
+        if not os.path.exists(self._repository_root):
+            os.makedirs(self._repository_root)
+
+        # make sure the projects directory exists
+        self._projects_folder = os.path.join(self._repository_root, 'projects')
+        if not os.path.exists(self._projects_folder):
+            os.makedirs(self._projects_folder)
+
+        self.db = Database(self._repository_root)
+        self.cmd = Commands(self._repository_root, self.db)
+
+    def logo(self):
+        print("""             _
+            (_)
+       _   _ _ ____  _____  ____
+      | | | | |  _ \| ___ |/ ___)
+       \ V /| | |_| | ____| |
+        \_/ |_|  __/|_____)_| v1.3-dev
+              |_|
+        """)
+
+        count = self.db.get_sample_count()
+
+        # Handle the New database format
+        try:
+            self.db.find('all', None)
+        except:
+            print_error("You need to update your viper database. Run 'python update.py -d'")
+            sys.exit()
+
+        print(magenta("Repository: " + self._repository_root))
+        print(magenta("Stored files: " + bold(count) + "\n"))
+
+        if cfg.autorun.enabled and len(cfg.autorun.commands) == 0:
+            print_warning("You have enabled autorun but not set any commands in viper.conf.")
 
     def parse(self, data):
         root = ''
@@ -99,9 +110,14 @@ class Console(object):
         # Stop main loop.
         self.active = False
 
-    def start(self):
+    def start(self, initial_project_name):
+        # open the initial project
+        if initial_project_name:
+            self.cmd.commands['projects']['obj']('-s', initial_project_name)
+            del(self.cmd.output[:])
+
         # Logo.
-        logo()
+        self.logo()
 
         # Setup shell auto-complete.
         def complete(text, state):
@@ -131,9 +147,8 @@ class Console(object):
 
         # If there is an history file, read from it and load the history
         # so that they can be loaded in the shell.
-        # Now we are storing the history file in the local project folder
-        history_path = os.path.join(__project__.path, 'history')
-
+        # Now we are storing the history file in the repository folder
+        history_path = os.path.join(self._repository_root, 'history')
         if os.path.exists(history_path):
             readline.read_history_file(history_path)
 

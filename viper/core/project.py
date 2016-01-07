@@ -12,33 +12,24 @@ class Project(object):
     def __init__(self):
         self.name = None
         self.path = None
-        if cfg.paths.store_path:
-            self.path = cfg.paths.store_path
-        else:
-            self.path = VIPER_ROOT
+
+    def is_open(self):
+        if self.path == None:
+            return False
+
+        return True
+        
+    def open(self, absolute_project_path):
+        self.path = absolute_project_path
+        self.name = os.path.basename(absolute_project_path).replace(" ", "_")
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
-        
-    def open(self, name):
-        if cfg.paths.store_path:
-            base_path = cfg.paths.store_path
-        else:
-            base_path = VIPER_ROOT
 
-        if name == 'default':
-            path = base_path
-        else:
-            path = os.path.join(base_path, 'projects', name)
-            if not os.path.exists(path):
-                os.makedirs(path)
-        self.name = name
-        self.path = path
+    def get_absolute_path(self):
+        return self.path
 
-    def get_path(self):
-        if self.path and os.path.exists(self.path):
-            return self.path
-        else:
-            return self.path
+    def get_name(self):
+        return self.name
 
 __project__ = Project()
