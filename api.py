@@ -19,6 +19,7 @@ from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.core.ui.commands import Commands
+from viper.common.autorun import autorun_module
 
 db = Database()
 
@@ -48,6 +49,7 @@ def add_file():
         success = db.add(obj=tf_obj, tags=tags)
 
     if success:
+    	autorun_module(tf_obj.sha256)
         return jsonize({'message' : 'added'})
     else:
         response.status = 500
