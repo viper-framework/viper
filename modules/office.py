@@ -410,7 +410,7 @@ class Office(Module):
             return
 
         if not HAVE_OLE:
-            self.log('error', "Missing dependency, install OleFileIO (`pip install olefile`)")
+            self.log('error', "Missing dependency, install OleFileIO (`pip install olefile oletools`)")
             return
 
         file_data = __sessions__.current.file.data
