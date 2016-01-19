@@ -294,7 +294,7 @@ class MISP(Module):
         distrib = curattr['distribution']
         if not link[0]:
             attibutes.append({'type': 'link', 'category': 'External analysis',
-                              'distribution': distrib, 'value': link[1]})
+                              'to_ids': False, 'distribution': distrib, 'value': link[1]})
         return attibutes
 
     def _populate(self, event, attributes):
