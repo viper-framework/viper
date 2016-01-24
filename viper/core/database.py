@@ -387,6 +387,17 @@ class Database:
 
         if key == 'all':
             rows = session.query(Malware).all()
+        if key == 'ssdeep':
+            ssdeep_val = str(value)
+            rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).all()
+        if key == 'any':
+            prefix_val = str(value)
+            rows = session.query(Malware).filter(Malware.name.startswith(prefix_val) |
+                                                 Malware.md5.startswith(prefix_val) |
+                                                 Malware.sha1.startswith(prefix_val) |
+                                                 Malware.sha256.startswith(prefix_val) |
+                                                 Malware.type.contains(prefix_val) |
+                                                 Malware.mime.contains(prefix_val)).all()
         elif key == 'latest':
             if value:
                 try:

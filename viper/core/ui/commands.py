@@ -576,7 +576,7 @@ class Commands(object):
         parser = argparse.ArgumentParser(prog='find', description="Find a file")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-t', '--tags', action='store_true', help="List available tags and quit")
-        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note"], help="Where to search.")
+        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note", "any", "ssdeep"], help="Where to search.")
         parser.add_argument("value", nargs='?', help="String to search.")
         try:
             args = parser.parse_args(args)
@@ -633,6 +633,8 @@ class Commands(object):
         for item in items:
             tag = ', '.join([t.tag for t in item.tag if t.tag])
             row = [count, item.name, item.mime, item.md5, tag]
+            if key == 'ssdeep':
+                row.append(item.ssdeep)
             if key == 'latest':
                 row.append(item.created_at)
 
@@ -646,7 +648,8 @@ class Commands(object):
         header = ['#', 'Name', 'Mime', 'MD5', 'Tags']
         if key == 'latest':
             header.append('Created At')
-
+        if key == 'ssdeep':
+            header.append("Ssdeep")
         self.log("table", dict(header=header, rows=rows))
 
     ##
