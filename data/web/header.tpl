@@ -22,6 +22,8 @@ end
     <meta name="keywords" content="viper,malware,analysis">
     <link href="/static/css/bootstrap.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
+    <script type="text/javascript" src="/static/js/highlight.pack.js"></script>
+    <link href="/static/css/highlight.css" rel="stylesheet">
 </head>
 <body>
 

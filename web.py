@@ -751,6 +751,31 @@ def hex_viewer():
             html_string += '<div class="row"><span class="text-primary mono">{0}</span> <span class="text-muted mono">{1}</span> <span class="text-success mono">{2}</span></div>'.format(off_str, hex_str, asc_str)
     # return the data
     return html_string
+    
+# Script Viewer
+@route('/script', method='POST')
+def script_viewer():
+    # get post data
+    file_hash = request.forms.get('file_hash')
+    
+    # get file path
+    script_path = get_sample_path(file_hash)
+    
+    with open(script_path, "r") as script_file:
+      script_string = script_file.read()
+      script_file.close()
+    # get the output
+    #script_string = commands.getoutput(script_cmd)
+    
+    # Format the data
+    html_string = ''
+    script_string = script_string.replace('"', '&quot;')
+    script_string = script_string.replace('<', '&lt;')
+    script_string = script_string.replace('>', '&gt;')
+    html_string += '<pre><code>{0}</code></pre>'.format(script_string)
+    # return the data
+    return html_string
+
 
 # Cli Commands
 @app.route('/cli')
