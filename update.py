@@ -6,6 +6,7 @@ import sys
 from sqlalchemy import *
 from optparse import OptionParser
 import hashlib
+import time
 try:
     from io import StringIO
 except ImportError:
@@ -103,7 +104,10 @@ def update_db():
     print_item("Backing up Sqlite DB")
 
     try:
-        os.rename('viper.db', 'viper.db.bak')
+    	# backup of database name with a timestamp to avoid to be overwritten
+    	# https://github.com/viper-framework/viper/issues/386
+    	db_backupname = "viper_{0}.db.bak".format(time.strftime("%Y%m%d-%H%M%S"))
+        os.rename('viper.db', db_backupname)
     except Exception as e:
         print_error("Failed to Backup. {0} Stopping".format(e))
         return
@@ -114,7 +118,7 @@ def update_db():
     Database()
 
     print_item("Connecting to Viper Databases")
-    old_engine = create_engine('sqlite:///viper.db.bak')
+    old_engine = create_engine('sqlite:///{0}'.format(db_backupname))
     new_engine = create_engine('sqlite:///viper.db')
 
     print_item("Reading data from Old Database")
