@@ -9,6 +9,11 @@ import argparse
 import tempfile
 import time
 
+# Added to allow zip file uploads
+import shutil 
+import contextlib
+from zipfile import ZipFile
+
 from bottle import route, request, response, run
 from bottle import HTTPError
 
@@ -37,21 +42,46 @@ def add_file():
     tf = tempfile.NamedTemporaryFile()
     tf.write(upload.file.read())
     tf.flush()
-    tf_obj = File(tf.name)
-    tf_obj.name = upload.filename
+    
+    # Added to process zip files
+    if request.headers.get('compression') == 'zip' or request.headers.get('compression') == 'ZIP':
+        with upload_temp() as temp_dir:
+            with ZipFile(tf.name) as zf:
+                zf.extractall(temp_dir, pwd=request.headers.get('compression_password'))
 
-    new_path = store_sample(tf_obj)
+            stored_files = []
+   
+            for root, dirs, files in os.walk(temp_dir, topdown=False):
+                for name in files:
+                    if not name == upload.filename:
+                        tf_obj=File(os.path.join(root,name))
+                        new_path = store_sample(tf_obj)
+                        success = False
+                        
+                        if new_path:
+                            success = db.add(obj=tf_obj, tags=tags)
+                       
+                        if success:
+                            stored_files.append(name)
 
-    success = False
-    if new_path:
-        # Add file to the database.
-        success = db.add(obj=tf_obj, tags=tags)
-
-    if success:
-        return jsonize({'message' : 'added'})
+            if stored_files:
+                return jsonize({'message': 'Files added: %s' % ','.join(stored_files)})
     else:
-        response.status = 500
-        return jsonize({'message':'Unable to store file'})
+        tf_obj = File(tf.name)
+        tf_obj.name = upload.filename
+
+        new_path = store_sample(tf_obj)
+
+        success = False
+        if new_path:
+            # Add file to the database.
+            success = db.add(obj=tf_obj, tags=tags)
+
+        if success:
+            return jsonize({'message' : 'added'})
+        else:
+            response.status = 500
+            return jsonize({'message':'Unable to store file'})
 
 @route('/file/get/<file_hash>', method='GET')
 def get_file(file_hash):
@@ -102,7 +132,7 @@ def delete_file(file_hash):
     if not rows:
         response.code = 404
         return jsonize({'message':'File not found in the database'})
-	
+    
     if rows:
         malware_id = rows[0].id
         path = get_sample_path(rows[0].sha256)
@@ -246,7 +276,6 @@ def run_module():
     results = module_cmdline(cmd_line, sha256)  
     __sessions__.close()
     return jsonize(results)
-
             
 # this will allow complex command line parameters to be passed in via the web gui    
 def module_cmdline(cmd_line, sha256):
@@ -302,8 +331,6 @@ def list_projects():
         rows.append([project, time.ctime(os.path.getctime(project_path))])
     return jsonize(rows)
 
-
-  
 @route('/file/notes/<action>', method='POST')
 def add_notes(action):
     note_title = request.forms.get('title')
@@ -348,6 +375,13 @@ def add_notes(action):
         
     return jsonize({'message':'Unable to complete action'})
 
+# Added to support zip file uploads
+# context manager for file uploader   
+@contextlib.contextmanager
+def upload_temp():
+    temp_dir = tempfile.mkdtemp()
+    yield temp_dir
+    shutil.rmtree(temp_dir)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
