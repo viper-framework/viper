@@ -29,10 +29,10 @@ class Config:
 
         # If no config file is available, we should exit.
         if not config_file:
-            print("Unable to find any config file!")
             # TODO: this is temporary. Need to fix in order to better support
             # the process of making a global installation of Viper.
             shutil.copy('viper.conf.sample', 'viper.conf')
+            config_file = 'viper.conf'
         
         # Pasre the config file.
         config = ConfigParser.ConfigParser()
