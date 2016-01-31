@@ -40,5 +40,6 @@ binaries/
 projects/
 *.db
 *.conf
+*.bak
 
 data/yara/index.yara
