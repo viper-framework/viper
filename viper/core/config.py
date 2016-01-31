@@ -12,8 +12,6 @@ from viper.common.objects import Dictionary
 class Config:
     
     def __init__(self, file_name="viper", cfg=None):
-        config = ConfigParser.ConfigParser()
-
         config_paths = [
             os.path.join(os.getcwd(), 'viper.conf'),
             os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
@@ -30,6 +28,7 @@ class Config:
             print("Unable to find any config file!")
             sys.exit(-1)
         
+        config = ConfigParser.ConfigParser()
         config.read(config_file)
 
         for section in config.sections():
