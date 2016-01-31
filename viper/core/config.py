@@ -11,7 +11,7 @@ from viper.common.objects import Dictionary
 
 class Config:
     
-    def __init__(self, file_name="viper", cfg=None):
+    def __init__(self, cfg=None):
         # Possible paths for the configuration file.
         # This should go in order from local to global.
         config_paths = [
@@ -28,10 +28,11 @@ class Config:
                 break
 
         # If no config file is available, we should exit.
-        # TODO: Re-introduce copy of the sample file?
         if not config_file:
             print("Unable to find any config file!")
-            sys.exit(-1)
+            # TODO: this is temporary. Need to fix in order to better support
+            # the process of making a global installation of Viper.
+            shutil.copy('viper.conf.sample', 'viper.conf')
         
         # Pasre the config file.
         config = ConfigParser.ConfigParser()
