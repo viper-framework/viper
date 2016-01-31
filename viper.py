@@ -15,20 +15,5 @@ args = parser.parse_args()
 if args.project:
     __project__.open(args.project)
 
-config_paths = [
-	os.path.join(os.getcwd(), 'viper.conf'),
-	os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
-	'/etc/viper/viper.conf'
-]
-
-config_file = None
-for config_path in config_paths:
-	if os.path.exists(config_path):
-		config_file = config_path
-		break
-
-if not config_file:
-	print("Unable to find any config file!")
-else:
-	c = console.Console()
-	c.start()
+c = console.Console()
+c.start()
