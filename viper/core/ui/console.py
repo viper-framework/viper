@@ -89,7 +89,6 @@ class Console(object):
 
         return data
 
-
     def stop(self):
         # Stop main loop.
         self.active = False
