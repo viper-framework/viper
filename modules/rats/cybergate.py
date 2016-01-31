@@ -1,11 +1,7 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/DarkComet.py
 
-import sys
-import string
-from struct import unpack
 import pefile
-from binascii import *
 
 def xor(data):
     key = 0xBC
@@ -22,9 +18,7 @@ def extract_config(raw_data):
             rt_string_idx = [
                 entry.id for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries
             ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
-        except ValueError, e:
-            return None
-        except AttributeError, e:
+        except:
             return None
 
         rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]

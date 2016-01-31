@@ -1,11 +1,9 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/NanoCore.py
 
-import os
 import re
 import sys
 import zlib
-import string
 import pefile
 from struct import unpack
 import uuid
@@ -75,7 +73,6 @@ def parse_config(raw_config, ver):
     
     # Some plugins drop in here as exe files. 
     if 'This program cannot be run' in raw_config:
-        self.log('info', "Embedded EXE Plugin found")
         raw_config = raw_config.split('BuildTime')[1]
     #with open('split.bin', 'wb') as out:
         #out.write(raw_config)

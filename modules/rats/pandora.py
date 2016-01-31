@@ -1,8 +1,6 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Pandora.py
 
-import re
-import string
 import pefile
 
 def version_21(raw_config):
@@ -61,14 +59,11 @@ def version_22(raw_config):
 def get_config(data):
     try:
         pe = pefile.PE(data=data)
-        try:
-          rt_string_idx = [
-          entry.id for entry in 
-          pe.DIRECTORY_ENTRY_RESOURCE.entries].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
-        except ValueError, e:
-            sys.exit()
-        except AttributeError, e:
-            sys.exit()
+        
+        rt_string_idx = [
+        entry.id for entry in 
+        pe.DIRECTORY_ENTRY_RESOURCE.entries].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+
         rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
         for entry in rt_string_directory.directory.entries:
             if str(entry.name) == "CFG":

@@ -2,7 +2,6 @@
 # https://github.com/kevthehermit/RATDecoders/blob/master/AdWind.py
 
 import string
-import binascii
 from zipfile import ZipFile
 from cStringIO import StringIO
 from Crypto.Cipher import ARC4, DES

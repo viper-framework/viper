@@ -2,7 +2,6 @@
 # https://github.com/Rurik/Java_IDX_Parser
 # See the file 'LICENSE' for copying permission.
 
-
 import struct
 import time
 import zlib
@@ -11,13 +10,13 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 
-class Idx(Module):
+class IDX(Module):
     cmd = 'idx'
-    description = 'Parse Java idx files'
+    description = 'Parse Java IDX files'
     authors = ['Kevin Breen']
 
     def __init__(self):
-        super(Idx, self).__init__()
+        super(IDX, self).__init__()
 
     def run(self):
 
@@ -56,7 +55,6 @@ class Idx(Module):
             data_URL = data.read(len_URL)
             # keep those 2 unused variables
             namespace_len = struct.unpack('>h', data.read(2))[0]
-            namespace = data.read(namespace_len)
             sec2_fields = struct.unpack('>l', data.read(4))[0]
             sec_two.append(['URL', data_URL])
 
@@ -117,7 +115,7 @@ class Idx(Module):
                         unknowns += 1
             return sec_four
 
-        super(Idx, self).run()
+        super(IDX, self).run()
         if self.args is None:
             return
 
@@ -167,6 +165,7 @@ class Idx(Module):
             elif cache_ver in [603, 604, 605]:
                 # Not used, keep
                 known_to_be_signed = data.read(1)
+
                 sec2_len = struct.unpack('>i', data.read(4))[0]
                 sec3_len = struct.unpack('>i', data.read(4))[0]
                 sec4_len = struct.unpack('>i', data.read(4))[0]
@@ -174,6 +173,7 @@ class Idx(Module):
 
                 blacklist_timestamp = struct.unpack('>q', data.read(8))[0] / 1000
                 cert_expiration_date = struct.unpack('>q', data.read(8))[0] / 1000
+
                 # Not used, keep
                 class_verification_status = data.read(1)
                 reduced_manifest_length = struct.unpack('>l', data.read(4))[0]

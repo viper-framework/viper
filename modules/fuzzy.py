@@ -3,7 +3,7 @@
 
 import collections
 
-from viper.common.out import bold, print_info
+from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
@@ -74,7 +74,6 @@ class Fuzzy(Module):
                                 continue
 
                             member_hash = member[0]
-                            member_name = member[1]
 
                             member_ssdeep = db.find(key='md5', value=member_hash)[0].ssdeep
                             if pydeep.compare(sample.ssdeep, member_ssdeep) > 40:

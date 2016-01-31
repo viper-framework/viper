@@ -29,7 +29,7 @@ try:
 except ImportError:
     HAVE_VERIFYSIGS = False
 
-from viper.common.out import bold, table
+from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.common.utils import get_type, get_md5
 from viper.core.database import Database
@@ -852,7 +852,7 @@ class PE(Module):
 
                 try:
                     cur_pe = pefile.PE(sample_path)
-                except pefile.PEFormatError as e:
+                except pefile.PEFormatError:
                     continue
 
                 cur_packed = ''

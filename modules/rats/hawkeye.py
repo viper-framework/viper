@@ -1,10 +1,6 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/HawkEye.py
 
-import os
-import sys
-import string
-from struct import unpack
 from base64 import b64decode
 
 #Non Standard Imports

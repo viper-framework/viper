@@ -1,10 +1,7 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/BlackNix.py
 
-import os
-import sys
-from zipfile import ZipFile
-from cStringIO import StringIO
+import pefile
 
 def extract_config(raw_data):
     try:

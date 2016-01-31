@@ -7,7 +7,7 @@ from cStringIO import StringIO
 from Crypto.Cipher import ARC4
 import xml.etree.ElementTree as ET
 
-from viper.common.out import *
+from viper.common.out import print_info
 
 def extract_embedded(zip_data):
     raw_embedded = None

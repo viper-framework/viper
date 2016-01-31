@@ -34,7 +34,7 @@ class Triage(Module):
     def run(self):
         super(Triage, self).run()
         db = Database()
-        arg_all = False
+
         if self.args and self.args.all:
             samples = db.find(key='all')
 

@@ -1,7 +1,6 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/LostDoor.py
 
-import re
 import string
 from Crypto.Cipher import ARC4
 

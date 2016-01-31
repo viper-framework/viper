@@ -1,7 +1,6 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Greame.py
 
-import re
 import string
 import pefile
 
@@ -9,14 +8,11 @@ import pefile
 def get_config(data):
     try:
         pe = pefile.PE(data=data)
-        try:
-          rt_string_idx = [
-          entry.id for entry in 
-          pe.DIRECTORY_ENTRY_RESOURCE.entries].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
-        except ValueError, e:
-            sys.exit()
-        except AttributeError, e:
-            sys.exit()
+
+        rt_string_idx = [
+        entry.id for entry in 
+        pe.DIRECTORY_ENTRY_RESOURCE.entries].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+
         rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
         for entry in rt_string_directory.directory.entries:
             if str(entry.name) == "GREAME":
@@ -28,12 +24,14 @@ def get_config(data):
     except:
         return None
 
+
 def xor_decode(data):
     key = 0xBC
     encoded = bytearray(data)
     for i in range(len(encoded)):
         encoded[i] ^= key
     return filter(lambda x: x in string.printable, str(encoded))
+
 
 def parse_config(raw_config):
     if len(raw_config) > 20:
@@ -90,7 +88,8 @@ def parse_config(raw_config):
     else:
         return None
     return config_dict
-    
+
+
 def config(data):
     raw_config = get_config(data)
     if raw_config:

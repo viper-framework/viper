@@ -1,10 +1,7 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/njRat.py
 
-import os
-import sys
 import base64
-import string
 import pype32
 
 
@@ -109,11 +106,7 @@ def parse_config(string_list):
     return config_dict
 
 def config(data):
-    try:
-        pe = pype32.PE(data=data) 
-        string_list = get_strings(pe, 2)
-        config_dict = parse_config(string_list)
-        return config_dict
-    except Exception as e:
-        self.log('error', e)
-        return None
+    pe = pype32.PE(data=data) 
+    string_list = get_strings(pe, 2)
+    config_dict = parse_config(string_list)
+    return config_dict

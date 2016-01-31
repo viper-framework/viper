@@ -1,11 +1,9 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/DarkComet.py
 
-import sys
 import string
-from struct import unpack
 import pefile
-from binascii import *
+from binascii import unhexlify
 
 BASE_CONFIG = {
     'FWB': '',
@@ -24,6 +22,7 @@ BASE_CONFIG = {
     'PWD': ''
 }
 
+
 def rc4crypt(data, key):
     x = 0
     box = range(256)
@@ -41,12 +40,6 @@ def rc4crypt(data, key):
     
     return ''.join(out)
 
-def v3_data(data, key):
-    config = BASE_CONFIG
-    dec = rc4crypt(unhexlify(data), key)
-    config[str(entry.name)] = dec
-
-    return config
 
 def v51_data(data, key):
     config = BASE_CONFIG
@@ -60,6 +53,7 @@ def v51_data(data, key):
         config[key] = clean_value
 
     return config
+
 
 def version_check(raw_data):
     if '#KCMDDC2#' in raw_data:
@@ -76,6 +70,7 @@ def version_check(raw_data):
         return '#KCMDDC51#-890'
     else:
         return None
+
 
 def extract_config(raw_data, key):            
     config = BASE_CONFIG
@@ -101,7 +96,8 @@ def extract_config(raw_data, key):
             config[str(entry.name)] = filter(lambda x: x in string.printable, dec)
 
     return config
-    
+
+
 def config(data):
     versionKey = version_check(data)
     if versionKey:

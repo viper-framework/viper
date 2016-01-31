@@ -1,7 +1,6 @@
 # This file is part of Viper - https://github.com/botherder/viper
 # See the file 'LICENSE' for copying permission.
 
-
 import os
 import datetime
 import tempfile
@@ -14,24 +13,24 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 from viper.core.project import __project__
 from viper.common.objects import File
-from viper.core.storage import store_sample, get_sample_path
+from viper.core.storage import store_sample
 from viper.core.database import Database
 from viper.common.utils import string_clean
 
-class pstParse(Module):
+class PST(Module):
     cmd = 'pst'
     description = 'Process PST Files for Attachment'
     authors = ['Kevin Breen']
 
     def __init__(self):
-        super(pstParse, self).__init__()
+        super(PST, self).__init__()
         self.parser.add_argument('-p', '--proj', action='store_true', default=False, help='Create a New Project')
         self.parser.add_argument('-o', '--output', metavar='path', help='PST Export Path')
         self.parser.add_argument('-k', '--keep', action='store_true', default=False, help='Keep Exported PST Files')
     
     def parse_pst(self, save_path, pst_path):
         self.log('info', "Processing PST")
-        retcode = subprocess.call('pffexport -t {0} {1} > /tmp/report.txt'.format(save_path, pst_path), shell=True)
+        subprocess.call('pffexport -t {0} {1} > /tmp/report.txt'.format(save_path, pst_path), shell=True)
         counter = 0
         for root, dirs, files in os.walk('{0}.export'.format(save_path)):
             for name in dirs:
@@ -45,7 +44,6 @@ class pstParse(Module):
         db = Database()
         email_header = os.path.join(message_folder, 'InternetHeaders.txt')
         email_body = os.path.join(message_folder, 'Message.txt')
-        attachments = []
         
         envelope = headers = email_text = ''
         if os.path.exists(email_header):
@@ -60,10 +58,9 @@ class pstParse(Module):
                     obj = File(os.path.join(message_folder, 'Attachments', filename))
                     sha256 = hashlib.sha256(open(os.path.join(message_folder, 'Attachments', filename), 'rb').read()).hexdigest()
                     new_path = store_sample(obj)
-                    success = False
                     if new_path:
-                            # Add file to the database.
-                            success = db.add(obj=obj, tags=tags)
+                        # Add file to the database.
+                        db.add(obj=obj, tags=tags)
                     # Add Email Details as a Note
                     # To handle duplicates we use multiple notes
                     headers_body = 'Envelope: \n{0}\nHeaders: \n{1}\n'.format(envelope, headers)
@@ -98,7 +95,7 @@ class pstParse(Module):
         
         
     def run(self):
-        super(pstParse, self).run()
+        super(PST, self).run()
         pst_path = __sessions__.current.file.path
         pff_test = subprocess.call('pffexport -V', shell=True)
         if pff_test == 127:

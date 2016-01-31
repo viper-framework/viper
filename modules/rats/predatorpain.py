@@ -1,11 +1,6 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/PredatorPain.py
 
-import os
-import sys
-import base64
-import string
-from struct import unpack
 import pype32
 from Crypto.Cipher import AES
 from base64 import b64decode

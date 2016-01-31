@@ -11,7 +11,6 @@ except ImportError:
 import hashlib
 import tempfile
 
-from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 from viper.core.config import Config

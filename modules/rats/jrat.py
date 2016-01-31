@@ -2,10 +2,7 @@
 # https://github.com/kevthehermit/RATDecoders/blob/master/ClientMesh.py
 
 #Standard Imports Go Here
-import os
-import sys
 from base64 import b64decode
-import string
 from zipfile import ZipFile
 from cStringIO import StringIO
 from Crypto.Cipher import AES, DES3
@@ -29,7 +26,6 @@ def get_parts(data):
                 if name == "config.dat": # this is the encrypted config file
                     conf = zip.read(name)
     except:
-        self.log('error', "Dropped File is not Jar File starts with Hex Chars: {0}".format(data[:5].encode('hex')))
         return None, None
     if enckey and conf:
         return enckey, conf
@@ -45,11 +41,12 @@ def get_dropper(enckey, dropper):
     try:
         split = enckey.split('\x2c')
         key = split[0][:16]
-        for x in split: # grab each line of the config and decode it.
+        # TODO: This loop makes no sense. "drop" isn't used anywhere.
+        """for x in split: # grab each line of the config and decode it.
             try:
                 drop = b64decode(x).decode('hex')
             except:
-                drop = b64decode(x[16:]).decode('hex')
+                drop = b64decode(x[16:]).decode('hex')"""
         new_zipdata = decrypt_aes(key, dropper)
         new_key, conf = get_parts(new_zipdata)
         return new_key, conf

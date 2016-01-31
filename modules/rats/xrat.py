@@ -1,12 +1,10 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Albertino.py
 
-import string
-from optparse import OptionParser
-from base64 import b64decode
-import hashlib
 import re
 import pefile
+import hashlib
+from base64 import b64decode
 from Crypto.Cipher import AES, XOR
 
 def string_print(line):

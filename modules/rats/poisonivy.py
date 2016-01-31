@@ -1,8 +1,6 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/PoisonIvy.py
 
-import os
-import sys
 import string
 from struct import unpack
 

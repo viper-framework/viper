@@ -2,7 +2,6 @@
 # https://github.com/kevthehermit/RATDecoders/blob/master/Arcom.py
 
 import base64
-import string
 from Crypto.Cipher import Blowfish
 
 def decrypt_blowfish(raw_data):

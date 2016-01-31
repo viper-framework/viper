@@ -1,8 +1,6 @@
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Bozok.py
 
-import os
-import sys
 import pefile
 
 def extract_config(raw_data):

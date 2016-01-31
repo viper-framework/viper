@@ -1,9 +1,6 @@
 # Originally written by Brian Wallace (@botnet_hunter):
 # http://blog.cylance.com/a-study-in-bots-blackshades-net
 
-import os
-import sys
-import string
 import re
 
 PRNG_SEED = 0
