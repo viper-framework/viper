@@ -29,8 +29,10 @@ def print_success(message):
 
 def table(header, rows):
     if not HAVE_TERMTAB:
-        self.log('error', "Missing dependency, install terminaltables (`pip install terminaltables`)")
+        print_error("Missing dependency, install terminaltables (`pip install terminaltables`)")
         return
+
+    # TODO: Refactor this function, it is some serious ugly code.
 
     content = [header] + rows
     # Make sure everything is string
@@ -54,11 +56,13 @@ def table(header, rows):
                             temp += l + '\n'
                         content[longest_col] = temp.strip()
                 t.table_data[i] = content
+
     return t.table
 
 def print_output(output, filename=None):
     if not output:
         return
+
     if filename:
         with open(filename.strip(), 'a') as out:
             for entry in output:

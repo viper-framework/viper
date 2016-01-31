@@ -50,8 +50,8 @@ def logo():
         name = 'default'
 
     print(magenta("You have " + bold(count)) +
-          magenta(" files in your " + bold(name) +
-          magenta(" repository".format(bold(name)))))
+          magenta(" files in your " + bold(name)) +
+          magenta(" repository"))
 
 class Console(object):
 
