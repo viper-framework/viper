@@ -46,7 +46,6 @@ def logo():
         print_error("You need to update your viper database. Run 'python update.py -d'")
         sys.exit()
 
-
     if __project__.name:
         name = __project__.name
     else:
@@ -158,9 +157,11 @@ class Console(object):
                     filename = __sessions__.current.file.name
                     if not Database().find(key='sha256', value=__sessions__.current.file.sha256):
                         stored = magenta(' [not stored]', True)
+
                 misp = ''
                 if __sessions__.current.misp_event:
                     misp = ' [MISP {}]'.format(__sessions__.current.misp_event.event_id)
+
                 prompt = (prefix + cyan('viper ', True) +
                           white(filename, True) + blue(misp, True) + stored + cyan(' > ', True))
             # Otherwise display the basic prompt.
