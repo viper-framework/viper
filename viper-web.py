@@ -5,11 +5,8 @@
 import os
 import re
 import sys
-import json
-import time
 import bottle
 import shutil
-import logging
 try:
     from subprocess import getoutput
 except ImportError:
@@ -29,7 +26,7 @@ import tarfile
 from zipfile import ZipFile
 from gzip import GzipFile
 from bz2 import BZ2File
-from bottle import route, request, response, run, get, template, static_file, redirect
+from bottle import request, response, get, template, static_file, redirect
 
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
@@ -316,7 +313,6 @@ def file_info(file_hash, project=False):
     if malware:
         notes = malware[0].note
         if notes:
-            rows = []
             for note in notes:
                 note_list.append([note.title, note.body, note.id])
     contents['notes'] = note_list
@@ -426,8 +422,6 @@ def url_download():
     if upload == None:
         return template('error.tpl', error="server can't download from URL")
     # Set Project
-    project = 'default'
-    db = Database()
     tf = tempfile.NamedTemporaryFile()
     tf.write(upload)
     if tf == None:
@@ -439,10 +433,10 @@ def url_download():
     success = False
     if new_path:
         # Add file to the database.
+        db = Database()
         success = db.add(obj=tf_obj, tags=tags)
 
     if success:
-        #redirect("/project/{0}".format(project))
         redirect("/file/default/"+tf_obj.sha256)
     else:
         return template('error.tpl', error="Unable to Store The File,already in database")
@@ -680,8 +674,7 @@ def cuckoo_submit():
     else:
         __project__.open('default')
         project = 'default'
-    # Open the Database
-    db = Database()
+
     # Open a session
     try:
         path = get_sample_path(file_hash)
@@ -697,7 +690,7 @@ def cuckoo_submit():
             check_result =  dict(check_file.json())
             cuckoo_id = check_result['sample']['id']
             return '<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cuckoo_web, str(cuckoo_id))
-    except Exception as e:
+    except:
         return '<span class="alert alert-danger">Error Connecting To Cuckoo</span>'
     
     # If it doesn't exist, submit it.

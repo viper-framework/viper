@@ -2,17 +2,23 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
 import sys
-from sqlalchemy import *
-from optparse import OptionParser
 import hashlib
+from zipfile import ZipFile
+from optparse import OptionParser
+from sqlalchemy import create_engine
+
 try:
     from io import StringIO
 except ImportError:
     from StringIO import StringIO
-from zipfile import ZipFile, ZIP_STORED
 
-from viper.common.out import *
+from viper.common.out import print_info
+from viper.common.out import print_warning
+from viper.common.out import print_error
+from viper.common.out import print_success
+from viper.common.out import print_item
 from viper.common.network import download
 from viper.common.objects import File
 from viper.common.utils import path_split_all

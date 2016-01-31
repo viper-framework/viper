@@ -4,13 +4,11 @@
 
 import os
 import json
-import copy
+import time
 import argparse
 import tempfile
-import time
 
 from bottle import route, request, response, run
-from bottle import HTTPError
 
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
@@ -348,7 +346,6 @@ def add_notes(action):
         if malware:
             notes = malware[0].note
             if notes:
-                rows = []
                 for note in notes:
                     note_list[note.id] = {'title': note.title, 'body': note.body}
             return jsonize({'message': note_list})
