@@ -12,26 +12,26 @@ from viper.common.objects import Dictionary
 class Config:
     
     def __init__(self, file_name="viper", cfg=None):
-    
         config = ConfigParser.ConfigParser()
+
+        config_paths = [
+            os.path.join(os.getcwd(), 'viper.conf'),
+            os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
+            '/etc/viper/viper.conf'
+        ]
+
+        config_file = None
+        for config_path in config_paths:
+            if os.path.exists(config_path):
+                config_file = config_path
+                break
+
+        if not config_file:
+            print("Unable to find any config file!")
+            sys.exit(-1)
         
-        if cfg:
-            test = config.read(cfg)
-        else:
-            test = config.read('viper.conf')
-            
-        # Check for empty config
-        if len(test) == 0:
-            print_error("Could not find a valid configuration file. Did you rename viper.conf.sample to viper.conf")
-            print_info("Trying to create config for you")
-            try:
-                shutil.copy('viper.conf.sample', 'viper.conf')
-                config.read('viper.conf')
-                print_info("Starting Viper")
-            except:
-                print_error("Failed to Create config file, Exiting")
-                sys.exit()
-            
+        config.read(config_file)
+
         for section in config.sections():
             setattr(self, section, Dictionary())
             for name, raw_value in config.items(section):
