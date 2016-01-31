@@ -12,30 +12,38 @@ from viper.common.objects import Dictionary
 class Config:
     
     def __init__(self, file_name="viper", cfg=None):
+        # Possible paths for the configuration file.
+        # This should go in order from local to global.
         config_paths = [
             os.path.join(os.getcwd(), 'viper.conf'),
             os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
             '/etc/viper/viper.conf'
         ]
 
+        # Try to identify the best location for the config file.
         config_file = None
         for config_path in config_paths:
             if os.path.exists(config_path):
                 config_file = config_path
                 break
 
+        # If no config file is available, we should exit.
+        # TODO: Re-introduce copy of the sample file?
         if not config_file:
             print("Unable to find any config file!")
             sys.exit(-1)
         
+        # Pasre the config file.
         config = ConfigParser.ConfigParser()
         config.read(config_file)
 
+        # Pars ethe config file and attribute for the current instantiated
+        # object.
         for section in config.sections():
             setattr(self, section, Dictionary())
             for name, raw_value in config.items(section):
                 try:
-                    if config.get(section, name) in ["0", "1"]:
+                    if config.get(section, name) in ['0', '1']:
                         raise ValueError
 
                     value = config.getboolean(section, name)
