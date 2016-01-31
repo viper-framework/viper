@@ -17,13 +17,15 @@ from viper.common.network import download
 from viper.common.objects import File
 from viper.common.utils import path_split_all
 
-# For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
+# For python2 & 3 compatibility, a bit dirty,
+# but it seems to be the least bad one.
 try:
     input = raw_input
 except NameError:
     pass
 
 url = 'https://github.com/viper-framework/viper/archive/master.zip'
+
 
 # TODO: this is a first draft, needs more work.
 # - Add a check for current working directory.
@@ -99,6 +101,7 @@ def update():
     zip_file.close()
     zip_data.close()
 
+
 def update_db():
     print_item("Backing up Sqlite DB")
 
@@ -107,7 +110,6 @@ def update_db():
     except Exception as e:
         print_error("Failed to Backup. {0} Stopping".format(e))
         return
-
 
     print_item("Creating New DataBase File")
     from viper.core.database import Database
@@ -125,7 +127,7 @@ def update_db():
 
     print_item(" Adding rows to New Database")
 
-    #add all the rows back in
+    # Add all the rows back in
     for row in notes:
         new_engine.execute("INSERT INTO note VALUES ('{0}', '{1}', '{2}')".format(row[0], row[1], row[2]))
 
@@ -140,7 +142,7 @@ def update_db():
                                                                                                row[9], row[10], row[11])
                            )
 
-    #rebuild association table with foreign keys
+    # Rebuild association table with foreign keys
     for row in association:
         if row[0] == None:
             tag_id = "Null"
@@ -160,9 +162,8 @@ def update_db():
     print_info("Update Complete")
 
 
-
 if __name__ == '__main__':
-    parser = OptionParser(usage='usage: %prog -c|-d' )
+    parser = OptionParser(usage='usage: %prog -c|-d')
     parser.add_option("-d", "--db", action='store_true', default=False, help="Update DB Tables")
     parser.add_option("-c", "--core", action='store_true', default=False, help="Update Core Files")
 

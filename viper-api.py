@@ -22,12 +22,15 @@ from viper.core.ui.commands import Commands
 
 db = Database()
 
+
 def jsonize(data):
     return json.dumps(data, sort_keys=False, indent=4)
 
+
 @route('/test', method='GET')
 def test():
-    return jsonize({'message' : 'test'})
+    return jsonize({'message': 'test'})
+
 
 @route('/file/add', method='POST')
 def add_file():
@@ -48,10 +51,11 @@ def add_file():
         success = db.add(obj=tf_obj, tags=tags)
 
     if success:
-        return jsonize({'message' : 'added'})
+        return jsonize({'message': 'added'})
     else:
         response.status = 500
-        return jsonize({'message':'Unable to store file'})
+        return jsonize({'message': 'Unable to store file'})
+
 
 @route('/file/get/<file_hash>', method='GET')
 def get_file(file_hash):
@@ -62,19 +66,19 @@ def get_file(file_hash):
         key = 'sha256'
     else:
         response.code = 400
-        return jsonize({'message':'Invalid hash format (use md5 or sha256)'})
+        return jsonize({'message': 'Invalid hash format (use md5 or sha256)'})
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
         response.code = 404
-        return jsonize({'message':'File not found in the database'})
+        return jsonize({'message': 'File not found in the database'})
 
     path = get_sample_path(rows[0].sha256)
     if not path:
         response.code = 404
-        return jsonize({'message':'File not found in the repository'})
+        return jsonize({'message': 'File not found in the repository'})
 
     response.content_length = os.path.getsize(path)
     response.content_type = 'application/octet-stream; charset=UTF-8'
@@ -83,6 +87,7 @@ def get_file(file_hash):
         data += chunk
 
     return data
+
 
 @route('/file/delete/<file_hash>', method='GET')
 def delete_file(file_hash):
@@ -94,15 +99,15 @@ def delete_file(file_hash):
         key = 'sha256'
     else:
         response.code = 400
-        return jsonize({'message':'Invalid hash format (use md5 or sha256)'})
+        return jsonize({'message': 'Invalid hash format (use md5 or sha256)'})
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
         response.code = 404
-        return jsonize({'message':'File not found in the database'})
-	
+        return jsonize({'message': 'File not found in the database'})
+
     if rows:
         malware_id = rows[0].id
         path = get_sample_path(rows[0].sha256)
@@ -110,20 +115,21 @@ def delete_file(file_hash):
             success = True
         else:
             response.code = 404
-            return jsonize({'message':'File not found in repository'})
+            return jsonize({'message': 'File not found in repository'})
 
     path = get_sample_path(rows[0].sha256)
     if not path:
         response.code = 404
-        return jsonize({'message':'File not found in file system'})
+        return jsonize({'message': 'File not found in file system'})
     else:
-        success=os.remove(path)
-    
+        success = os.remove(path)
+
     if success:
-        return jsonize({'message' : 'deleted'})
+        return jsonize({'message': 'deleted'})
     else:
         response.code = 500
-        return jsonize({'message':'Unable to delete file'})
+        return jsonize({'message': 'Unable to delete file'})
+
 
 @route('/file/find', method='POST')
 def find_file():
@@ -149,7 +155,7 @@ def find_file():
 
         return entry
 
-    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all','latest']:
+    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all', 'latest']:
         value = request.forms.get(entry)
         if value:
             key = entry
@@ -157,10 +163,10 @@ def find_file():
 
     if not value:
         response.code = 400
-        return jsonize({'message':'Invalid search term'})
+        return jsonize({'message': 'Invalid search term'})
 
     # Get the scope of the search
-    
+
     project_search = request.forms.get('project')
     projects = []
     results = {}
@@ -181,9 +187,7 @@ def find_file():
     # Search each Project in the list
     for project in projects:
         __project__.open(project)
-        # Init DB
         db = Database()
-        #get results
         proj_results = []
         rows = db.find(key=key, value=value)
         for row in rows:
@@ -192,6 +196,7 @@ def find_file():
             proj_results.append(details(row))
         results[project] = proj_results
     return jsonize(results)
+
 
 @route('/tags/list', method='GET')
 def list_tags():
@@ -202,54 +207,59 @@ def list_tags():
         results.append(row.tag)
 
     return jsonize(results)
-    
+
+
 @route('/file/tags/add', method='POST')
 def add_tags():
     tags = request.forms.get('tags')
-    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all','latest']:
+    for entry in ['md5', 'sha256', 'ssdeep', 'tag', 'name', 'all', 'latest']:
         value = request.forms.get(entry)
         if value:
             key = entry
             break
     db = Database()
     rows = db.find(key=key, value=value)
-    
+
     if not rows:
         response.code = 404
-        return jsonize({'message':'File not found in the database'})
-          
+        return jsonize({'message': 'File not found in the database'})
+
     for row in rows:
-        malware_sha256=row.sha256
+        malware_sha256 = row.sha256
         db.add_tags(malware_sha256, tags)
 
-    return jsonize({'message' : 'added'})
+    return jsonize({'message': 'added'})
+
 
 @route('/modules/run', method='POST')
 def run_module():
-    # Optional Project
     project = request.forms.get('project')
-    # Optional sha256   
     sha256 = request.forms.get('sha256')
-    # Not Optional Command Line Args
     cmd_line = request.forms.get('cmdline')
+
     if project:
         __project__.open(project)
     else:
         __project__.open('../')
+
     if sha256:
         file_path = get_sample_path(sha256)
         if file_path:
             __sessions__.new(file_path)
+
     if not cmd_line:
         response.code = 404
-        return jsonize({'message':'Invalid command line'})
-    results = module_cmdline(cmd_line, sha256)  
+        return jsonize({'message': 'Invalid command line'})
+
+    results = module_cmdline(cmd_line, sha256)
     __sessions__.close()
+
     return jsonize(results)
 
-            
-# this will allow complex command line parameters to be passed in via the web gui    
+
 def module_cmdline(cmd_line, sha256):
+    # TODO: refactor this function, it has some ugly code.
+
     json_data = ''
     cmd = Commands()
     split_commands = cmd_line.split(';')
@@ -273,7 +283,8 @@ def module_cmdline(cmd_line, sha256):
                     json_data += str(cmd.output)
                 del(cmd.output[:])
             elif root in __modules__:
-                # if prev commands did not open a session open one on the current file
+                # if prev commands did not open a session open one
+                # on the current file
                 if sha256:
                     path = get_sample_path(sha256)
                     __sessions__.new(path)
@@ -284,18 +295,19 @@ def module_cmdline(cmd_line, sha256):
                 json_data += str(module.output)
                 del(module.output[:])
             else:
-                json_data += "{'message':'{0} is not a valid command'.format(cmd_line)}"
+                json_data += "{'message': '{0} is not a valid command'.format(cmd_line)}"
         except:
-            json_data += "{'message':'Unable to complete the command: {0}'.format(cmd_line)}"
+            json_data += "{'message': 'Unable to complete the command: {0}'.format(cmd_line)}"
     __sessions__.close()
-    return json_data 
- 
+    return json_data
+
+
 @route('/projects/list', method='GET')
 def list_projects():
     projects_path = os.path.join(os.getcwd(), 'projects')
     if not os.path.exists(projects_path):
         response.code = 404
-        return jsonize({'message':'No projects found'})
+        return jsonize({'message': 'No projects found'})
     rows = []
     for project in os.listdir(projects_path):
         project_path = os.path.join(projects_path, project)
@@ -303,7 +315,6 @@ def list_projects():
     return jsonize(rows)
 
 
-  
 @route('/file/notes/<action>', method='POST')
 def add_notes(action):
     note_title = request.forms.get('title')
@@ -315,21 +326,21 @@ def add_notes(action):
         if note_title and note_body:
 
             db.add_note(note_sha, note_title, note_body)
-            return jsonize({'message' : 'Note added'})
+            return jsonize({'message': 'Note added'})
         else:
-            return jsonize({'message':'Missing note_title and / or note_body'})
-    # Delete 
+            return jsonize({'message': 'Missing note_title and / or note_body'})
+    # Delete
     elif action == 'delete':
         if note_id:
             db.delete_note(note_id)
-            return jsonize({'message' : 'deleted'})
+            return jsonize({'message': 'deleted'})
         else:
-            return jsonize({'message' : 'missing note_id'})
+            return jsonize({'message': 'missing note_id'})
     # Update
     elif action == 'update':
         if note_id and note_body:
             db.edit_note(note_id, note_body)
-            return jsonize({'message' : 'Note updated'})
+            return jsonize({'message': 'Note updated'})
     # List
     elif action == 'view':
         note_list = {}
@@ -339,15 +350,14 @@ def add_notes(action):
             if notes:
                 rows = []
                 for note in notes:
-                    note_list[note.id] = {'title':note.title, 'body':note.body}
-            return jsonize({'message' : note_list})
+                    note_list[note.id] = {'title': note.title, 'body': note.body}
+            return jsonize({'message': note_list})
         else:
-            return jsonize({'message' : 'no sample found'})
+            return jsonize({'message': 'no sample found'})
     else:
-        return jsonize({'message':'no action given'})    
-        
-    return jsonize({'message':'Unable to complete action'})
+        return jsonize({'message': 'no action given'})
 
+    return jsonize({'message': 'Unable to complete action'})
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
