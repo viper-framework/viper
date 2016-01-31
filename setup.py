@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-import os
 from setuptools import setup, find_packages
-
-datafiles = [(root, [os.path.join(root, f) for f in files])
-    for root, dirs, files in os.walk('data')]
 
 setup(
     name='viper',
