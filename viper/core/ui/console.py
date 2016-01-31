@@ -25,7 +25,6 @@ try:
 except NameError:
     pass
 
-
 def logo():
     print("""         _
         (_)
@@ -39,11 +38,10 @@ def logo():
     db = Database()
     count = db.get_sample_count()
 
-    # Handle the New database format
     try:
-        db.find('all', None)
+        db.find('all')
     except:
-        print_error("You need to update your viper database. Run 'python update.py -d'")
+        print_error("You need to update your Viper database. Run 'python update.py -d'")
         sys.exit()
 
     if __project__.name:
@@ -54,8 +52,6 @@ def logo():
     print(magenta("You have " + bold(count)) +
           magenta(" files in your " + bold(name) +
           magenta(" repository".format(bold(name)))))
-    if cfg.autorun.enabled and len(cfg.autorun.commands) == 0:
-        print_warning("You have enabled autorun but not set any commands in viper.conf.")
 
 class Console(object):
 
