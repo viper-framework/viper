@@ -387,10 +387,10 @@ class Database:
 
         if key == 'all':
             rows = session.query(Malware).all()
-        if key == 'ssdeep':
+        elif key == 'ssdeep':
             ssdeep_val = str(value)
             rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).all()
-        if key == 'any':
+        elif key == 'any':
             prefix_val = str(value)
             rows = session.query(Malware).filter(Malware.name.startswith(prefix_val) |
                                                  Malware.md5.startswith(prefix_val) |
