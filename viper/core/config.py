@@ -2,11 +2,9 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import sys
 import shutil
 import ConfigParser
 
-from viper.common.out import *
 from viper.common.objects import Dictionary
 
 class Config:

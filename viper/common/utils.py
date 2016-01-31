@@ -2,7 +2,6 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import sys
 import math
 import string
 import hashlib

@@ -1,9 +1,9 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
-import os
 
-from viper.common.out import *
-from viper.common.utils import *
+from viper.common.out import print_info
+from viper.common.out import print_error
+from viper.common.out import print_output
 from viper.core.plugins import __modules__
 from viper.core.session import __sessions__
 from viper.core.database import Database

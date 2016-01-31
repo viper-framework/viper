@@ -2,10 +2,10 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import time
 
-from viper.common.constants import *
+from viper.common.constants import VIPER_ROOT
 from viper.core.config import Config
+
 cfg = Config()
 
 class Project(object):

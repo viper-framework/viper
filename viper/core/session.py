@@ -4,7 +4,7 @@
 import time
 import datetime
 
-from viper.common.out import *
+from viper.common.out import print_info, print_error
 from viper.common.objects import File
 from viper.core.database import Database
 

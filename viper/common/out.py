@@ -10,7 +10,7 @@ except:
 
 import textwrap
 
-from viper.common.colors import *
+from viper.common.colors import cyan, yellow, red, green, bold
 
 def print_info(message):
     print(bold(cyan("[*]")) + " {0}".format(message))

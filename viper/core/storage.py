@@ -3,7 +3,7 @@
 
 import os
 
-from viper.common.out import *
+from viper.common.out import print_warning, print_error
 from viper.core.project import __project__
 
 def store_sample(file_object):

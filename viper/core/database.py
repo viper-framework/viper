@@ -2,17 +2,20 @@
 # See the file 'LICENSE' for copying permission.
 
 from __future__ import unicode_literals  # make all strings unicode in python2
+
+import os
 import json
 from datetime import datetime
 
-from sqlalchemy import *
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Table, Index, create_engine
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from viper.common.out import *
-from viper.common.objects import File, Singleton
+from viper.common.out import print_warning, print_error
+from viper.common.objects import File
 from viper.core.project import __project__
 from viper.core.config import Config
 
@@ -215,7 +218,7 @@ class Database:
             try:
                 malware_entry.tag.append(Tag(tag))
                 session.commit()
-            except IntegrityError as e:
+            except IntegrityError:
                 session.rollback()
                 try:
                     malware_entry.tag.append(session.query(Tag).filter(Tag.tag==tag).first())

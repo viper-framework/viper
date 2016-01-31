@@ -8,12 +8,12 @@ import atexit
 import readline
 import traceback
 
-from viper.common.out import *
+from viper.common.out import print_error
+from viper.common.colors import cyan, magenta, white, bold, blue
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.core.ui.commands import Commands
-from viper.core.storage import get_sample_path
 from viper.core.database import Database
 from viper.core.config import Config
 
@@ -239,6 +239,6 @@ class Console(object):
                             print("Command not recognized.")
                     except KeyboardInterrupt:
                         pass
-                    except Exception as e:
+                    except Exception:
                         print_error("The command {0} raised an exception:".format(bold(root)))
                         traceback.print_exc()

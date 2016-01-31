@@ -17,7 +17,8 @@ except ImportError:
     from os import walk
 
 import viper.common.out as out
-from viper.common.out import *
+from viper.common.out import table
+from viper.common.colors import bold
 from viper.common.utils import convert_size
 from viper.common.objects import File
 from viper.common.network import download
@@ -125,7 +126,7 @@ class Commands(object):
         os.system('"${EDITOR:-nano}" ' + tmp.name)
         __sessions__.new(tmp.name)
         __sessions__.current.file.name = title
-        print_info("New file with title \"{0}\" added to the current session".format(bold(title)))
+        self.log('info', "New file with title \"{0}\" added to the current session".format(bold(title)))
 
     ##
     # OPEN
@@ -871,7 +872,6 @@ class Commands(object):
             return
 
         arg_top = args.top
-        db = Database()
 
         # Set all Counters Dict
         extension_dict = defaultdict(int)
@@ -898,8 +898,8 @@ class Commands(object):
                     tags_dict[t.tag] += 1
 
         avg_size = sum(size_list) / len(size_list)
-        all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
-                     'Avg Size': avg_size, 'Largest': max(size_list), 'Smallest': min(size_list)}
+        #all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
+        #             'Avg Size': avg_size, 'Largest': max(size_list), 'Smallest': min(size_list)}
 
         # Counter for top x
         if arg_top:
