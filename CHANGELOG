@@ -2,8 +2,11 @@ Viper 1.3 (TBD)
 ===============
 
 - Change of the github repository to an own organisation
+- Enabled Viper to be installed globally with setuptools and Makefile
 - Added notes to API
-- Added clustering to ssdeep fuzzy module
+- Added clustering by ssdeep
+- Added clustering by imphash
+- Added clustering by pehash
 - Added submodule to pe command to scan and cluster by AddressOfEntryPoint
 - Added several more Office Formats
 - Added interface for MISP
@@ -19,7 +22,7 @@ Viper 1.3 (TBD)
 - Fixed bug in API when deleting a file
 - Fixed bug with unwanted characters from output
 - Fixed bug in reports module of web interface
-- Fixed bug / typo in HTML parser
+- Fixed bug in HTML parser
 - Fixed bug in database handling
 - Fixed bug in fuzzy help
 - Fixed bugs in web interface
