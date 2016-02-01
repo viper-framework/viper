@@ -12,8 +12,7 @@ from viper.core.storage import get_sample_path
 
 cfg = Config()
 
-# Read a list of command lines from the config file and execute them each time a sample is STORED.
-def parse(data):
+def parse_commands(data):
     root = ''
     args = []
     words = data.split()
@@ -28,9 +27,7 @@ def autorun_module(file_hash):
     if not file_hash:
         return
 
-    # We need an open session
     if not __sessions__.is_set():
-        # Open session
         __sessions__.new(get_sample_path(file_hash))
 
     for cmd_line in cfg.autorun.commands.split(','):
@@ -42,7 +39,7 @@ def autorun_module(file_hash):
             if not split_command:
                 continue
 
-            root, args = parse(split_command)
+            root, args = parse_commands(split_command)
 
             try:
                 if root in __modules__:
