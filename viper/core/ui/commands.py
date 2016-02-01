@@ -770,7 +770,7 @@ class Commands(object):
         except:
             return
 
-        projects_path = os.path.join(os.getcwd(), 'projects')
+        projects_path = os.path.join(os.getenv('HOME'), '.viper', 'projects')
 
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")
