@@ -11,7 +11,7 @@ store_output = True
 [paths]
 # Path to a folder that will be used for storing samples and resources.
 # If left blank, the default will be $HOME/.viper
-store_path =
+storage_path =
 
 [database]
 # Configure the database connection type example shown below
