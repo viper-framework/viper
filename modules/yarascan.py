@@ -32,14 +32,17 @@ class YaraScan(Module):
         super(YaraScan, self).__init__()
         subparsers = self.parser.add_subparsers(dest='subname')
         parser_scan = subparsers.add_parser('scan', help='Scan files with Yara signatures')
-        parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (default will run VIPER_ROOT/data/yara/index.yara)')
+        parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (default will run data/yara/index.yara)')
         parser_scan.add_argument('-a', '--all', action='store_true', help='Scan all stored files (default if no session is open)')
         parser_scan.add_argument('-t', '--tag', action='store_true', help='Tag Files with Rule Name (default is not to)')
 
         parser_rules = subparsers.add_parser('rules', help='Operate on Yara rules')
         parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
 
-        self.rule_path = os.path.join(VIPER_ROOT, 'data/yara')
+        for folder in ['/usr/share/viper/yara', os.path.join(VIPER_ROOT, 'yara')]:
+            if os.path.exists(folder):
+                self.rule_path = folder
+                break
 
     def scan(self):
 

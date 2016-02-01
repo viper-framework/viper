@@ -11,20 +11,6 @@ try:
 except ImportError:
     pass
 
-# Try different folders to find resources and storage.
-def try_different_paths(file_name):
-    roots = [
-        os.getcwd(),
-        os.path.join(os.getenv('HOME'), '.viper'),
-        '/usr/share/viper',
-        '/etc/viper/',
-    ]
-
-    for root in roots:
-        cur_path = os.path.join(root, file_name):
-        if os.path.exists(cur_path):
-            return cur_path
-
 # Taken from the Python Cookbook.
 def path_split_all(path):
     allparts = []

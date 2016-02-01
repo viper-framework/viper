@@ -51,12 +51,17 @@ app = application = bottle.default_app()
 web_port = 9090
 cuckoo_api = 'http://localhost:8090'
 cuckoo_web = 'http://localhost:9191'
-# VIPER_ROOT ='/srv/www/viper' #if not set when using uwsgi, web.py does not correctly set VIPER_ROOT
+
 ##
 # End User Config
 ##
 
-bottle.TEMPLATE_PATH.insert(0,os.path.join(VIPER_ROOT, 'data/web'))
+web_root = None
+for folder in ['/usr/share/viper/web/', os.path.join(VIPER_ROOT, 'data/web')]:
+    if os.path.exists(folder):
+        web_root = folder
+        bottle.TEMPLATE_PATH.insert(0, folder)
+        break
 
 # Module Dicts
 mod_dicts = {}
@@ -236,7 +241,7 @@ def upload_temp():
 #Returns Static files e.g. CSS / JS
 @get('/static/:path#.+#')
 def server_static(path):
-    return static_file(path, root=os.path.join(VIPER_ROOT, 'data/web/static'))
+    return static_file(path, root=os.path.join(web_root, 'static'))
 
 # Index Page
 @app.route("/")

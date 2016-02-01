@@ -6,6 +6,7 @@ import shutil
 import ConfigParser
 
 from viper.common.objects import Dictionary
+from viper.common.constants import VIPER_ROOT
 
 class Config:
     
@@ -25,12 +26,23 @@ class Config:
                 config_file = config_path
                 break
 
-        # If no config file is available, we should exit.
+        # If no config is available, we try to copy it either from the
+        # /etc/viper folder, or from VIPER_ROOT.
         if not config_file:
-            # TODO: this is temporary. Need to fix in order to better support
-            # the process of making a global installation of Viper.
-            shutil.copy('viper.conf.sample', 'viper.conf')
-            config_file = 'viper.conf'
+            etc_viper ='/etc/viper/viper.conf.sample'
+            cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
+
+            # If the local storage folder doesn't exist, we create it.
+            local_storage = os.path.join(os.getenv('HOME'), '.viper')
+            if not os.path.exists(local_storage):
+                os.makedirs(local_storage)
+
+            config_file = os.path.join(local_storage, 'viper.conf')
+
+            if os.path.exists(etc_viper):
+                shutil.copy(etc_viper, config_file)
+            else:
+                shutil.copy(cwd_viper, config_file)            
         
         # Pasre the config file.
         config = ConfigParser.ConfigParser()

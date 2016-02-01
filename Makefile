@@ -8,7 +8,7 @@ install:
 	mkdir -p /usr/share/viper
 	cp -rf data/* /usr/share/viper
 	mkdir -p /etc/viper
-	cp viper.conf.sample /etc/viper/viper.conf
+	cp viper.conf.sample /etc/viper/viper.conf.sample
 
 uninstall:
 	cat installed_files.txt | xargs rm -rf
