@@ -7,8 +7,7 @@ install:
 	python setup.py install --record installed_files.txt
 	mkdir -p /usr/share/viper
 	cp -rf data/* /usr/share/viper
-	mkdir -p /etc/viper
-	cp viper.conf.sample /etc/viper/viper.conf.sample
+	cp viper.conf.sample /usr/share/viper/viper.conf.sample
 
 uninstall:
 	cat installed_files.txt | xargs rm -rf

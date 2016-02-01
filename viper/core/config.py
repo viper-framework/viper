@@ -27,9 +27,9 @@ class Config:
                 break
 
         # If no config is available, we try to copy it either from the
-        # /etc/viper folder, or from VIPER_ROOT.
+        # /usr/share/viper folder, or from VIPER_ROOT.
         if not config_file:
-            etc_viper ='/etc/viper/viper.conf.sample'
+            share_viper ='/usr/share/viper/viper.conf.sample'
             cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
 
             # If the local storage folder doesn't exist, we create it.
@@ -39,8 +39,8 @@ class Config:
 
             config_file = os.path.join(local_storage, 'viper.conf')
 
-            if os.path.exists(etc_viper):
-                shutil.copy(etc_viper, config_file)
+            if os.path.exists(share_viper):
+                shutil.copy(share_viper, config_file)
             else:
                 shutil.copy(cwd_viper, config_file)            
         
