@@ -43,3 +43,5 @@ projects/
 *.bak
 
 data/yara/index.yara
+
+installed_files.txt
