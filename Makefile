@@ -11,6 +11,7 @@ install:
 
 uninstall:
 	cat installed_files.txt | xargs rm -rf
+	rm installed_files
 	rm -rf /usr/share/viper /etc/viper
 
 dist:
@@ -18,4 +19,4 @@ dist:
 
 clean:
 	find . -name '*.pyc' -delete
-	rm -rf dist build viper.egg-info installed_files.txt
+	rm -rf dist build viper.egg-info
