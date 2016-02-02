@@ -32,6 +32,15 @@ Viper can retrieve files remotely through `Tor`_, if you're interested in such f
 
 You will also clearly need a running Tor daemon, refer to the official website for setup instructions.
 
+Installation
+------------
+
+To install Viper::
+
+    $ git clone https://github.com/viper-framework/viper
+    $ cd viper
+    $ sudo make install
+
 Extra dependencies
 ------------------
 
@@ -46,13 +55,13 @@ First launch
 
 If everything worked out fine, you should be able to launch Viper's shell without raising any exceptions, like following::
 
-    nex@nex:~/viper$ ./viper.py 
+    nex@nex:~/$ viper-cli
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v1.2
+        \_/ |_|  __/|_____)_| v1.3
               |_|
         
     You have 0 files in your default repository
