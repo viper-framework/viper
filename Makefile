@@ -19,4 +19,3 @@ dist:
 clean:
 	find . -name '*.pyc' -delete
 	rm -rf dist build viper.egg-info installed_files.txt
-
