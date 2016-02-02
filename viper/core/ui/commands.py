@@ -548,26 +548,47 @@ class Commands(object):
     # This command deletes the currenlty opened file (only if it's stored in
     # the local repository) and removes the details from the database
     def cmd_delete(self, *args):
-        if __sessions__.is_set():
-            while True:
-                choice = input("Are you sure you want to delete this binary? Can't be reverted! [y/n] ")
-                if choice == 'y':
-                    break
-                elif choice == 'n':
-                    return
+        parser = argparse.ArgumentParser(prog='delete', description="Delete a file")
+        parser.add_argument('-a', '--all', action='store_true', help="Delete ALL files in this project")
 
-            rows = self.db.find('sha256', __sessions__.current.file.sha256)
-            if rows:
-                malware_id = rows[0].id
-                if self.db.delete_file(malware_id):
-                    self.log("success", "File deleted")
-                else:
-                    self.log('error', "Unable to delete file")
+        try:
+            args = parser.parse_args(args)
+        except:
+            return
 
-            os.remove(__sessions__.current.file.path)
-            __sessions__.close()
+        while True:
+            choice = input("Are you sure? It can't be reverted! [y/n] ")
+            if choice == 'y':
+                break
+            elif choice == 'n':
+                return
+
+        if args.all:
+            if __sessions__.is_set():
+                __sessions__.close()
+
+            samples = self.db.find('all')
+            for sample in samples:
+                self.db.delete_file(sample.id)
+                os.remove(get_sample_path(sample.sha256))
+
+            self.log('info', "Deleted a total of {} files.".format(len(samples)))
         else:
-            self.log('error', "No open session")
+            if __sessions__.is_set():
+                rows = self.db.find('sha256', __sessions__.current.file.sha256)
+                if rows:
+                    malware_id = rows[0].id
+                    if self.db.delete_file(malware_id):
+                        self.log("success", "File deleted")
+                    else:
+                        self.log('error', "Unable to delete file")
+
+                os.remove(__sessions__.current.file.path)
+                __sessions__.close()
+
+                self.log('info', "Deleted opened file.")
+            else:
+                self.log('error', "No session open, and no --all argument. Nothing to delete.")
 
     ##
     # FIND
