@@ -11,7 +11,7 @@ install:
 
 uninstall:
 	cat installed_files.txt | xargs rm -rf
-	rm installed_files
+	rm installed_files.txt
 	rm -rf /usr/share/viper /etc/viper
 
 dist:
