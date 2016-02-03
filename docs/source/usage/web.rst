@@ -31,14 +31,14 @@ as execute almost all functions that you would normally get through the command-
 
 To start the API::
     
-    user@system:~/scripts/viper$ python api.py
+    user@system:~/$ viper-api
     Bottle server starting up (using WSGIRefServer())...
     Listening on http://127.0.0.1:8080/
     Hit Ctrl-C to quit.
 
 You can bind it on a different IP and port by providing additional options::
 
-    usage: api.py [-h] [-H HOST] [-p PORT]
+    usage: viper-api [-h] [-H HOST] [-p PORT]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -465,14 +465,14 @@ Launch the web interface
 To launch the web application move into the viper directory and run the ``web.py`` script.
 By default it launches a single threaded bottle web server on localhost:9090::
 
-    user@localhost:~/viper$ python web.py
+    user@localhost:~/$ viper-web
     Bottle v0.12.8 server starting up (using WSGIRefServer())...
     Listening on http://localhost:9090/
     Hit Ctrl-C to quit.
 
 You can set the listening IP address and port with options -H and -p ::
     
-    user@localhost:~/viper$ python web.py -H 0.0.0.0 -p 8080
+    user@localhost:~/$ viper-web -H 0.0.0.0 -p 8080
     Bottle v0.12.8 server starting up (using WSGIRefServer())...
     Listening on http://0.0.0.0:8080/
     Hit Ctrl-C to quit.
