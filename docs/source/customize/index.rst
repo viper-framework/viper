@@ -58,6 +58,7 @@ Using the Config File
 
 Viper provides a config file that will allow you to store user editable sections in a single file rather than inside the modules.
 
+    /usr/share/viper/viper.conf.sample
 
 You can easily access the config file:
 
