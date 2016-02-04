@@ -167,7 +167,7 @@ class AndroidPackage(Module):
         # Check for androguard
         if not HAVE_ANDROGUARD:
             self.log('error', "Unable to import AndroGuard")
-            self.log('error', "Install https://code.google.com/p/androguard/downloads/detail?name=androguard-1.9.tar.gz")
+            self.log('error', "Install https://github.com/androguard/androguard/archive/v2.0.tar.gz")
             return
 
         a, vm, vmx = process_apk()
