@@ -17,15 +17,15 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from struct import unpack, pack
-from modules.pymacho.MachOLoadCommand import MachOLoadCommand
-from modules.pymacho.Utils import green
+from struct import unpack
+from viper.modules.pymacho.MachOLoadCommand import MachOLoadCommand
+from viper.modules.pymacho.Utils import green
 
 
-class MachOMainCommand(MachOLoadCommand):
+class MachORPathCommand(MachOLoadCommand):
 
-    entryoff = 0
-    stacksize = 0
+    path_offset = 0
+    path = ""
 
     def __init__(self, macho_file=None, cmd=0):
         self.cmd = cmd
@@ -33,19 +33,27 @@ class MachOMainCommand(MachOLoadCommand):
             self.parse(macho_file)
 
     def parse(self, macho_file):
-        self.entryoff = unpack('<Q', macho_file.read(8))[0]
-        self.stacksize = unpack('<Q', macho_file.read(8))[0]
+        # get cmdsize
+        macho_file.seek(-4, 1)
+        cmdsize = unpack('<I', macho_file.read(4))[0]
+        # get string offset
+        self.path_offset = unpack('<I', macho_file.read(4))[0]
+        strlen = cmdsize - self.path_offset
+        # get path
+        extract = "<%s" % ('s'*strlen)
+        self.path = "".join(unpack(extract, macho_file.read(strlen)))
 
     def write(self, macho_file):
         before = macho_file.tell()
         macho_file.write(pack('<II', self.cmd, 0x0))
-        macho_file.write(pack('<QQ', self.entryoff, self.stacksize))
+        macho_file.write(pack('<I', self.path_offset))
+        extract = "<"+str(len(self.path))+"s"
+        macho_file.write(pack(extract, self.path))
         after = macho_file.tell()
         macho_file.seek(before+4)
         macho_file.write(pack('<I', after-before))
         macho_file.seek(after)
 
     def display(self, before=''):
-        print before + green("[+]")+" LC_MAIN"
-        print before + "\t- entryoff : 0x%x" % self.entryoff
-        print before + "\t- stacksize : 0x%x" % self.stacksize
+        print before + green("[+]")+" LC_RPATH"
+        print before + "\t- path : %s" % repr(self.path)

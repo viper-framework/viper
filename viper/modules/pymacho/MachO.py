@@ -18,22 +18,22 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from struct import unpack
-from modules.pymacho.MachOHeader import MachOHeader
-from modules.pymacho.MachOSegment import MachOSegment
-from modules.pymacho.MachODYLDInfoCommand import MachODYLDInfoCommand
-from modules.pymacho.MachOSymtabCommand import MachOSymtabCommand
-from modules.pymacho.MachODYSymtabCommand import MachODYSymtabCommand
-from modules.pymacho.MachODYLinkerCommand import MachODYLinkerCommand
-from modules.pymacho.MachOUUIDCommand import MachOUUIDCommand
-from modules.pymacho.MachOVersionMinCommand import MachOVersionMinCommand
-from modules.pymacho.MachOThreadCommand import MachOThreadCommand
-from modules.pymacho.MachOMainCommand import MachOMainCommand
-from modules.pymacho.MachOLoadDYLibCommand import MachOLoadDYLibCommand
-from modules.pymacho.MachOLinkeditDataCommand import MachOLinkeditDataCommand
-from modules.pymacho.MachORPathCommand import MachORPathCommand
-from modules.pymacho.MachOSourceVersionCommand import MachOSourceVersionCommand
-from modules.pymacho.MachOEncryptionInfoCommand import MachOEncryptionInfoCommand
-from modules.pymacho.Constants import *
+from viper.modules.pymacho.MachOHeader import MachOHeader
+from viper.modules.pymacho.MachOSegment import MachOSegment
+from viper.modules.pymacho.MachODYLDInfoCommand import MachODYLDInfoCommand
+from viper.modules.pymacho.MachOSymtabCommand import MachOSymtabCommand
+from viper.modules.pymacho.MachODYSymtabCommand import MachODYSymtabCommand
+from viper.modules.pymacho.MachODYLinkerCommand import MachODYLinkerCommand
+from viper.modules.pymacho.MachOUUIDCommand import MachOUUIDCommand
+from viper.modules.pymacho.MachOVersionMinCommand import MachOVersionMinCommand
+from viper.modules.pymacho.MachOThreadCommand import MachOThreadCommand
+from viper.modules.pymacho.MachOMainCommand import MachOMainCommand
+from viper.modules.pymacho.MachOLoadDYLibCommand import MachOLoadDYLibCommand
+from viper.modules.pymacho.MachOLinkeditDataCommand import MachOLinkeditDataCommand
+from viper.modules.pymacho.MachORPathCommand import MachORPathCommand
+from viper.modules.pymacho.MachOSourceVersionCommand import MachOSourceVersionCommand
+from viper.modules.pymacho.MachOEncryptionInfoCommand import MachOEncryptionInfoCommand
+from viper.modules.pymacho.Constants import *
 
 
 class MachO(object):

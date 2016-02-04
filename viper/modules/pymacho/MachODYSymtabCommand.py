@@ -18,8 +18,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from struct import unpack, pack
-from modules.pymacho.MachOLoadCommand import MachOLoadCommand
-from modules.pymacho.Utils import green
+from viper.modules.pymacho.MachOLoadCommand import MachOLoadCommand
+from viper.modules.pymacho.Utils import green
 
 
 class MachODYSymtabCommand(MachOLoadCommand):

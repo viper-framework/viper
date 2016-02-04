@@ -7,7 +7,7 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 try:
-    from modules.pymacho.MachO import MachO
+    from viper.modules.pymacho.MachO import MachO
     HAVE_MACHO = True
 except ImportError:
     HAVE_MACHO = False

@@ -17,37 +17,47 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from struct import unpack
-from modules.pymacho.MachOLoadCommand import MachOLoadCommand
-from modules.pymacho.Utils import green
+from struct import unpack, pack
+from viper.modules.pymacho.MachOLoadCommand import MachOLoadCommand
+from viper.modules.pymacho.Constants import *
+from viper.modules.pymacho.Utils import green
 
 
-class MachOEncryptionInfoCommand(MachOLoadCommand):
+class MachODYLinkerCommand(MachOLoadCommand):
 
-    cryptoff = 0
-    cryptsize = 0
-    cryptid = 0
+    offset = 0
+    path = ""
 
-    def __init__(self, macho_file=None, cmd=0):
+    def __init__(self, macho_file=None, cmd=0, is_64=False):
         self.cmd = cmd
+        if is_64 is True:
+            self.align = 0x8
+        else:
+            self.align = 0x4
         if macho_file is not None:
             self.parse(macho_file)
 
     def parse(self, macho_file):
-        self.cryptoff, self.cryptsize = unpack('<II', macho_file.read(4*2))
-        self.cryptid = unpack('<I', macho_file.read(4))[0]
+        macho_file.seek(-4, 1)
+        cmdsize = unpack('<I', macho_file.read(4))[0]
+        # get the offset
+        self.offset = unpack('<I', macho_file.read(4))[0]
+        # get the string
+        strlen = (cmdsize - self.offset)
+        extract = "<%s" % ('s'*strlen)
+        self.path = "".join(unpack(extract, macho_file.read(strlen)))
 
     def write(self, macho_file):
         before = macho_file.tell()
         macho_file.write(pack('<II', self.cmd, 0x0))
-        macho_file.write(pack('<III', self.cryptoff, self.cryptsize, self.cryptid))
+        macho_file.write(pack('<I', self.offset))
+        extract = "<" + str(len(self.path)) + "s"
+        macho_file.write(pack(extract, self.path))
         after = macho_file.tell()
         macho_file.seek(before+4)
         macho_file.write(pack('<I', after-before))
         macho_file.seek(after)
 
     def display(self, before=''):
-        print before + green("[+]")+" LC_ENCRYPTION_INFO"
-        print before + "\t- cryptoff : 0x%x" % self.cryptoff
-        print before + "\t- cryptsize : 0x%x" % self.cryptsize
-        print before + "\t- crypptid : 0x%x" % self.cryptid
+        print before + green("[+]")+" %s" % ("LC_DYLD_ENVIRONMENT" if self.cmd == LC_DYLD_ENVIRONMENT else "LC_LOAD_DYLINKER")
+        print before + "\t - path : %s" % self.path

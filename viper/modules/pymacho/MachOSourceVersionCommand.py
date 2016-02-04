@@ -17,15 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from struct import unpack
-from modules.pymacho.MachOLoadCommand import MachOLoadCommand
-from modules.pymacho.Utils import green
+from struct import unpack, pack
+from viper.modules.pymacho.MachOLoadCommand import MachOLoadCommand
+from viper.modules.pymacho.Utils import int64_to_version, green
 
 
-class MachORPathCommand(MachOLoadCommand):
+class MachOSourceVersionCommand(MachOLoadCommand):
 
-    path_offset = 0
-    path = ""
+    version = 0
 
     def __init__(self, macho_file=None, cmd=0):
         self.cmd = cmd
@@ -33,27 +32,17 @@ class MachORPathCommand(MachOLoadCommand):
             self.parse(macho_file)
 
     def parse(self, macho_file):
-        # get cmdsize
-        macho_file.seek(-4, 1)
-        cmdsize = unpack('<I', macho_file.read(4))[0]
-        # get string offset
-        self.path_offset = unpack('<I', macho_file.read(4))[0]
-        strlen = cmdsize - self.path_offset
-        # get path
-        extract = "<%s" % ('s'*strlen)
-        self.path = "".join(unpack(extract, macho_file.read(strlen)))
+        self.version = unpack('<Q', macho_file.read(8))[0]
 
     def write(self, macho_file):
         before = macho_file.tell()
         macho_file.write(pack('<II', self.cmd, 0x0))
-        macho_file.write(pack('<I', self.path_offset))
-        extract = "<"+str(len(self.path))+"s"
-        macho_file.write(pack(extract, self.path))
+        macho_file.write(pack('<Q', self.version))
         after = macho_file.tell()
         macho_file.seek(before+4)
         macho_file.write(pack('<I', after-before))
         macho_file.seek(after)
 
     def display(self, before=''):
-        print before + green("[+]")+" LC_RPATH"
-        print before + "\t- path : %s" % repr(self.path)
+        print before + green("[+]")+" LC_SOURCE_VERSION"
+        print before + "\t- version : %s" % int64_to_version(self.version)

@@ -18,13 +18,15 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from struct import unpack, pack
-from modules.pymacho.MachOLoadCommand import MachOLoadCommand
-from modules.pymacho.Utils import green
+from viper.modules.pymacho.MachOLoadCommand import MachOLoadCommand
+from viper.modules.pymacho.Utils import int32_to_version, green
+from viper.modules.pymacho.Constants import *
 
 
-class MachOUUIDCommand(MachOLoadCommand):
+class MachOVersionMinCommand(MachOLoadCommand):
 
-    uuid = ()
+    version = 0
+    sdk = 0
 
     def __init__(self, macho_file=None, cmd=0):
         self.cmd = cmd
@@ -32,22 +34,18 @@ class MachOUUIDCommand(MachOLoadCommand):
             self.parse(macho_file)
 
     def parse(self, macho_file):
-        self.uuid = unpack("<BBBBBBBBBBBBBBBB", macho_file.read(16))
+        self.version, self.sdk = unpack('<II', macho_file.read(4*2))
 
     def write(self, macho_file):
         before = macho_file.tell()
         macho_file.write(pack('<II', self.cmd, 0x0))
-        macho_file.write(pack('<BBBBBBBBBBBBBBBB', self.uuid[0], self.uuid[1], self.uuid[2], self.uuid[3], self.uuid[4], self.uuid[5], self.uuid[6], \
-            self.uuid[7], self.uuid[8], self.uuid[9], self.uuid[10], self.uuid[11], self.uuid[12], \
-            self.uuid[13], self.uuid[14], self.uuid[15]))
+        macho_file.write(pack('<II', self.version, self.sdk))
         after = macho_file.tell()
         macho_file.seek(before+4)
         macho_file.write(pack('<I', after-before))
         macho_file.seek(after)
 
     def display(self, before=''):
-        print before + green("[+]")+" LC_UUID"
-        print before + "\t- uuid : %02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X" \
-            % (self.uuid[0], self.uuid[1], self.uuid[2], self.uuid[3], self.uuid[4], self.uuid[5], self.uuid[6], \
-            self.uuid[7], self.uuid[8], self.uuid[9], self.uuid[10], self.uuid[11], self.uuid[12], \
-            self.uuid[13], self.uuid[14], self.uuid[15])
+        print before + green("[+]")+" %s" % ("LC_VERSION_MIN_MACOSX" if self.cmd == LC_VERSION_MIN_MACOSX else "LC_VERSION_MIN_IPHONEOS")
+        print before + "\t- version : %s" % int32_to_version(self.version)
+        print before + "\t- sdk : %s" % int32_to_version(self.sdk)

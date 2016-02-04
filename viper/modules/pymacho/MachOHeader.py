@@ -18,7 +18,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from struct import unpack, pack
-from modules.pymacho.Constants import *
+from viper.modules.pymacho.Constants import *
 
 
 class MachOHeader(object):
