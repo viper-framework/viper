@@ -139,7 +139,7 @@ class MISP(Module):
         parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
         subparsers_add = parser_add.add_subparsers(dest='add')
         # Hashes
-        h = subparsers_add.add_parser("hashes", help="If no parameters, add add all the hashes of the current session.")
+        h = subparsers_add.add_parser("hashes", help="If no parameters, add all the hashes of the current session.")
         h.add_argument("-f", "--filename", help="Filename")
         h.add_argument("-m", "--md5", help="MD5")
         h.add_argument("-s", "--sha1", help="SHA1")
