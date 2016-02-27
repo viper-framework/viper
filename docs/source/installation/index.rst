@@ -69,3 +69,11 @@ If everything worked out fine, you should be able to launch Viper's shell withou
 
 .. _official website: http://ssdeep.sourceforge.net
 .. _Tor: https://www.torproject.org
+
+Uninstall
+---------
+
+To uninstall Viper::
+
+    $ cd viper
+    $ sudo make uninstall
