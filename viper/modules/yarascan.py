@@ -39,7 +39,7 @@ class YaraScan(Module):
         parser_rules = subparsers.add_parser('rules', help='Operate on Yara rules')
         parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
 
-        for folder in ['/usr/share/viper/yara', os.path.join(VIPER_ROOT, 'yara')]:
+        for folder in ['/usr/share/viper/yara', os.path.join(VIPER_ROOT, 'data/yara')]:
             if os.path.exists(folder):
                 self.rule_path = folder
                 break
