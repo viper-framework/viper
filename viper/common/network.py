@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import socket
+
 try:
     from urllib.request import Request, urlopen
 except:
@@ -11,7 +12,6 @@ try:
     from urllib.error import HTTPError, URLError
 except:
     from urllib2 import HTTPError, URLError
-
 
 try:
     import socks
