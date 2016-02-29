@@ -290,7 +290,16 @@ class PE(Module):
     def peid(self):
 
         def get_signatures():
-            with file(os.path.join(VIPER_ROOT, 'data/peid/UserDB.TXT'), 'rt') as f:
+            userdb_path = None
+            for path_attempt in ['/usr/share/viper/peid/UserDB.TXT', os.path.join(VIPER_ROOT, 'data/peid/UserDB.TXT')]:
+                if os.path.exists(path_attempt):
+                    userdb_path = path_attempt
+                    break
+
+            if not userdb_path:
+                return
+
+            with file(userdb_path, 'rt') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
