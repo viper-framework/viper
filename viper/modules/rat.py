@@ -35,7 +35,7 @@ class RAT(Module):
     def list(self):
         self.log('info', "List of available RAT modules:")
 
-        for folder, folders, files in walk(os.path.join(VIPER_ROOT, 'modules/rats/')):
+        for folder, folders, files in walk(os.path.join(VIPER_ROOT, 'viper/modules/rats/')):
             for file_name in files:
                 if not file_name.endswith('.py') or file_name.startswith('__init__'):
                     continue
@@ -48,7 +48,7 @@ class RAT(Module):
             return
 
         try:
-            module = importlib.import_module('modules.rats.{0}'.format(family))
+            module = importlib.import_module('viper.modules.rats.{0}'.format(family))
         except ImportError:
             self.log('error', "There is no module for family {0}".format(bold(family)))
             return
@@ -76,7 +76,18 @@ class RAT(Module):
             self.log('error', "No open session")
             return
 
-        rules = yara.compile(os.path.join(VIPER_ROOT, 'data/yara/rats.yara'))
+        rules_paths = [
+            '/usr/share/viper/yara/rats.yara',
+            os.path.join(VIPER_ROOT, 'data/yara/rats.yara')
+        ]
+
+        rules_path = None
+        for cur_path in rules_paths:
+            if os.path.exists(cur_path):
+                rules_path = cur_path
+                break
+
+        rules = yara.compile(rules_path)
         for match in rules.match(__sessions__.current.file.path):
             if 'family' in match.meta:
                 self.log('info', "Automatically detected supported RAT {0}".format(match.rule))
