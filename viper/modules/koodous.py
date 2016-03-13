@@ -66,7 +66,7 @@ class Koodous(Module):
         """
             Function to download a sample from Koodous
         """
-        url = '%s/%s/download' % (cfg.koodous.url, sha256)
+        url = '%s/%s/download' % (cfg.koodous.base_url, sha256)
 
         headers = {'Authorization': 'Token %s' % cfg.koodous.token}
 

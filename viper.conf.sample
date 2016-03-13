@@ -83,6 +83,6 @@ pdns_user =
 pdns_pass =
 
 [koodous]
-koodous_url = https://koodous.com/api/apks
-koodous_token = d01d9c845e4b2430682241c5faa55e786c129441
+base_url = https://koodous.com/api/apks
+token = d01d9c845e4b2430682241c5faa55e786c129441
 
