@@ -730,7 +730,7 @@ def hex_viewer():
     hex_path = get_sample_path(file_hash)
     
     # create the command string
-    hex_cmd = 'hd -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
+    hex_cmd = 'hexdump -C -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
     
     # get the output
     hex_string = getoutput(hex_cmd)
