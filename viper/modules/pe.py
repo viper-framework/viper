@@ -40,7 +40,7 @@ from viper.core.session import __sessions__
 class PE(Module):
     cmd = 'pe'
     description = 'Extract information from PE32 headers'
-    authors = ['nex', 'Statixs']
+    authors = ['nex', 'Statixs', 'emdel']
 
     def __init__(self):
         super(PE, self).__init__()
@@ -82,6 +82,11 @@ class PE(Module):
         subparsers.add_parser('sections', help='List PE Sections')
         parser_peh = subparsers.add_parser('pehash', help='Calculate the PEhash and compare them')
         parser_peh.add_argument('-a', '--all', action='store_true', help='Prints the PEhash of all files in the project')
+        parser_peh.add_argument('-c', '--cluster', action='store_true', help='Calculate and cluster all files in the project')
+        parser_peh.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
+
+        parser_peh = subparsers.add_parser('size', help='Show the PE size')
+        parser_peh.add_argument('-a', '--all', action='store_true', help='Print the size of all files in the project')
         parser_peh.add_argument('-c', '--cluster', action='store_true', help='Calculate and cluster all files in the project')
         parser_peh.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
 
@@ -161,7 +166,8 @@ class PE(Module):
 
                 try:
                     cur_ep = pefile.PE(sample_path).OPTIONAL_HEADER.AddressOfEntryPoint
-                except:
+                except Exception as e:
+                    self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
                     continue
 
                 if cur_ep not in cluster:
@@ -174,7 +180,7 @@ class PE(Module):
                 if len(cluster_members) == 1:
                     continue
 
-                self.log('info', "AddressOfEntryPoint cluster {0}".format(bold(cluster_name)))
+                self.log('info', "AddressOfEntryPoint cluster {0} with {1} elements".format(bold(cluster_name), len(cluster_members)))
 
                 self.log('table', dict(header=['MD5', 'Name'],
                     rows=cluster_members))
@@ -503,7 +509,9 @@ class PE(Module):
 
                 try:
                     cur_imphash = pefile.PE(sample_path).get_imphash()
-                except:
+                except Exception as e:
+                    self.log('error', "Error {0} for sample {1}".format(e,
+                    sample.sha256))
                     continue
 
                 if cur_imphash not in cluster:
@@ -513,10 +521,10 @@ class PE(Module):
 
             for cluster_name, cluster_members in cluster.items():
                 # Skipping clusters with only one entry.
-                if len(cluster_members) == 1:
-                    continue
+                #if len(cluster_members) == 1:
+                #    continue
 
-                self.log('info', "Imphash cluster {0}".format(bold(cluster_name)))
+                self.log('info', "Imphash cluster {0} with {1} elements".format(bold(cluster_name), len(cluster_members)))
 
                 self.log('table', dict(header=['MD5', 'Name'],
                     rows=cluster_members))
@@ -936,9 +944,9 @@ class PE(Module):
                 cluster.setdefault(pe_hash, []).append([sample_name, sample_md5])
 
             for item in cluster.items():
-                if len(item[1]) > 1:
-                    self.log('info', "PEhash cluster {0}:".format(bold(item[0])))
-                    self.log('table', dict(header=['Name', 'MD5'], rows=item[1]))
+                #if len(item[1]) > 1:
+                self.log('info', "PEhash cluster {0} with {1} element:".format(bold(item[0]), len(item[1])))
+                self.log('table', dict(header=['Name', 'MD5'], rows=item[1]))
 
         elif self.args.scan:
             if __sessions__.is_set() and current_pehash:
@@ -956,6 +964,100 @@ class PE(Module):
                     self.log('table', dict(header=['Name', 'MD5'], rows=matches))
                 else:
                     self.log('info', "No matches found")
+
+
+    def size(self):
+        if self.args.scan and self.args.cluster:
+            self.log('error', "You selected two exclusive options, pick one")
+            return
+
+        if self.args.all:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_size = os.path.getsize(sample_path)
+                except:
+                    continue
+
+                rows.append([sample.md5, sample.name, cur_size])
+
+            # TODO: handle size (KB, MB)
+            self.log('table', dict(header=['MD5', 'Name', 'Size (Bytes)'], rows=rows))
+
+            return
+
+        if self.args.cluster:
+            db = Database()
+            samples = db.find(key='all')
+
+            cluster = {}
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_size = os.path.getsize(sample_path)
+                except Exception as e:
+                    self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
+                    continue
+
+                if cur_size not in cluster:
+                    cluster[cur_size] = []
+
+                cluster[cur_size].append([sample.md5, sample.name])
+
+            for cluster_name, cluster_members in cluster.items():
+                # Skipping clusters with only one entry.
+                if len(cluster_members) == 1:
+                    continue
+
+                self.log('info', "Size cluster {0} with {1} elements".format(bold(cluster_name), len(cluster_members)))
+
+                self.log('table', dict(header=['MD5', 'Name'],
+                    rows=cluster_members))
+
+            return
+
+        if not self.__check_session():
+            return
+
+        size = __sessions__.current.file.size
+
+        self.log('info', "PE size: {0}".format(size))
+
+        if self.args.scan:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                if sample.sha256 == __sessions__.current.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_size = os.path.getsize(sample_path)
+                except:
+                    continue
+
+                if size == cur_size:
+                    rows.append([sample.md5, sample.name])
+
+            self.log('info', "Following are {0} samples with size {1}".format(len(rows), bold(size)))
+
+            self.log('table', dict(header=['MD5', 'Name'],
+                rows=rows))
 
     def run(self):
         super(PE, self).run()
@@ -988,3 +1090,5 @@ class PE(Module):
             self.pehash()
         elif self.args.subname == 'entrypoint':
             self.entrypoint()
+        elif self.args.subname == 'size':
+            self.size()
