@@ -51,6 +51,12 @@ class ELF(Module):
         parser_type.add_argument('-a', '--all', action='store_true', help='Print the type of all files in the project')
         parser_type.add_argument('-c', '--cluster', action='store_true', help='Cluster all files in the project')
         parser_type.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
+
+        parser_size = subparsers.add_parser('size', help='Show the ELF size')
+        parser_size.add_argument('-a', '--all', action='store_true', help='Print the size of all files in the project')
+        parser_size.add_argument('-c', '--cluster', action='store_true', help='Calculate and cluster all files in the project')
+        parser_size.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
+
         self.elf = None
 
     def __check_session(self):
@@ -244,6 +250,7 @@ class ELF(Module):
                 self.log('info', "Following are samples with Entry point {0}".format(bold(ep)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
+
     def machine(self):
         if not self.__check_session():
             return
@@ -337,6 +344,7 @@ class ELF(Module):
             if len(rows) > 0:
                 self.log('info', "Following are samples with Entry point {0}".format(bold(ep)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
+
 
     def elftype(self):
         if not self.__check_session():
@@ -432,6 +440,97 @@ class ELF(Module):
                 self.log('info', "Following are samples with ELF type {0}".format(bold(e_type)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
+
+    def elfsize(self):
+        if not self.__check_session():
+            return
+
+        elf_size = __sessions__.current.file.size
+        self.log('info', "ELF size: {0} B".format(elf_size))
+
+        if self.args.scan and self.args.cluster:
+            self.log('error', "You selected two exclusive options, pick one")
+            return
+
+        if self.args.all:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_size = os.path.getsize(sample_path)
+                except Exception as e:
+                    self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
+                    continue
+
+                rows.append([sample.md5, sample.name, cur_size])
+
+            self.log('table', dict(header=['MD5', 'Name', 'Size (B)'], rows=rows))
+
+            return
+
+
+        if self.args.cluster:
+            db = Database()
+            samples = db.find(key='all')
+
+            cluster = {}
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try: 
+                    cur_size = os.path.getsize(sample_path)
+                except Exception as e:
+                    self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
+                    continue
+
+                if cur_size not in cluster:
+                    cluster[cur_size] = []
+
+                cluster[cur_size].append([sample.md5, sample.name])
+
+            for cluster_name, cluster_members in cluster.items():
+                # Skipping clusters with only one entry.
+                if len(cluster_members) == 1:
+                    continue
+
+                self.log('info', "ELF size cluster {0} with {1} elements".format(bold(cluster_name), len(cluster_members)))
+
+                self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
+
+        if self.args.scan:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                if sample.sha256 == __sessions__.current.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_size = os.path.getsize(sample_path)
+                except:
+                    continue
+
+                if elf_size == cur_size:
+                    rows.append([sample.md5, sample.name])
+
+            if len(rows) > 0:
+                self.log('info', "Following are samples with ELF size {0}".format(bold(elf_size)))
+                self.log('table', dict(header=['MD5', 'Name'], rows=rows))
+
+
     def run(self):
         super(ELF, self).run()
         if self.args is None:
@@ -457,6 +556,8 @@ class ELF(Module):
             self.machine()
         elif self.args.subname == "type":
             self.elftype()
+        elif self.args.subname == "size":
+            self.elfsize()
         else:
             self.log('error', 'At least one of the parameters is required')
             self.usage()
