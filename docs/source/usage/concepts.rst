@@ -15,8 +15,8 @@ In this way you can for example create different workbenches for each malware ca
 
 As you can see from Viper's help message, you can specify a project name at startup::
 
-    nex@nex:~/viper$ ./viper.py -h
-    usage: viper.py [-h] [-p PROJECT]
+    nex@nex:~/$ viper-cli -h
+    usage: viper-cli [-h] [-p PROJECT]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -28,13 +28,13 @@ When doing so, Viper will try to open an existing project with the given name an
 
 If you opened a project, it will appear both in a startup message as well as in Viper's terminal::
 
-    nex@nex:~/viper$ ./viper.py -p test
+    nex@nex:~/$ viper-cli -p test
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v1.1
+        \_/ |_|  __/|_____)_| v1.3
               |_|
         
     You have 0 files in your test repository
@@ -106,3 +106,17 @@ Modules are instead plugins that are dynamically loaded by Viper at startup and 
 Modules are the most actively developed portion of Viper and they represent the most important avenue for contributions from the community: if you have an idea or you want to re-implement a script that you have lying around, make sure you `submit it`_ to Viper.
 
 .. _submit it: https://github.com/viper-framework/viper
+
+Database
+========
+
+The database that stores all meta inforation is per default an sqlite database stored at::
+   
+    $HOME/.viper/viper.db
+
+Binaries
+========
+
+The files are stored in a folder structure within::
+
+    $HOME/.viper/binaries

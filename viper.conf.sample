@@ -9,9 +9,9 @@
 store_output = True
 
 [paths]
-# root path for project storage
-# If blank default is vipers cwd
-store_path =
+# Path to a folder that will be used for storing samples and resources.
+# If left blank, the default will be $HOME/.viper
+storage_path =
 
 [database]
 # Configure the database connection type example shown below
@@ -37,7 +37,7 @@ verbose = False
 # Enter a comma separated list of command lines, As you would enter them in the CLI. You can use ; to chain commands.
 # Commands are run in sequence and the output of MODULES is stored if store_output is set to True.
 # commands = yara scan -t, fuzzy, pe compiletime
-commands = yara scan -t
+commands = yara scan -t, triage
 
 
 ##
@@ -45,11 +45,9 @@ commands = yara scan -t
 ##
 
 [virustotal]
-virustotal_url = https://www.virustotal.com/vtapi/v2/file/report
-virustotal_url_submit = https://www.virustotal.com/vtapi/v2/file/scan
-virustotal_url_download = https://www.virustotal.com/intelligence/download
-virustotal_url_comment = https://www.virustotal.com/vtapi/v2/comments/put
-virustotal_key = a0283a2c3d55728300d064874239b5346fb991317e8449fe43c902879d758088
+virustotal_has_private_key = False
+virustotal_has_intel_key = False
+virustotal_key =
 
 [cuckoo]
 cuckoo_modified = False
@@ -72,6 +70,7 @@ anubis_prefix = https://anubis.iseclab.org/
 misp_url =
 misp_key =
 misp_verify = True
+misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
 
 [pssl]
 pssl_url =
@@ -84,6 +83,6 @@ pdns_user =
 pdns_pass =
 
 [koodous]
-koodous_url = https://koodous.com/api/apks
-koodous_token = d01d9c845e4b2430682241c5faa55e786c129441
+base_url = https://koodous.com/api/apks
+token = d01d9c845e4b2430682241c5faa55e786c129441
 

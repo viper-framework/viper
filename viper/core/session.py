@@ -4,7 +4,7 @@
 import time
 import datetime
 
-from viper.common.out import *
+from viper.common.out import print_info, print_error
 from viper.common.objects import File
 from viper.core.database import Database
 
@@ -26,6 +26,28 @@ class Sessions(object):
         # Store the results of the last "find" command.
         self.find = None
 
+    def is_attached_misp(self, quiet=False):
+        if not self.is_set():
+            if not quiet:
+                print_error("No session opened")
+            return False
+        if not self.current.misp_event:
+            if not quiet:
+                print_error("Not attached to a MISP event")
+            return False
+        return True
+
+    def is_attached_file(self, quiet=False):
+        if not self.is_set():
+            if not quiet:
+                print_error("No session opened")
+            return False
+        if not self.current.file:
+            if not quiet:
+                print_error("Not attached to a file")
+            return False
+        return True
+
     def close(self):
         self.current = None
 
@@ -41,7 +63,7 @@ class Sessions(object):
         print_info("Switched to session #{0} on {1}".format(self.current.id, self.current.file.path))
 
     def new(self, path=None, misp_event=None):
-        if path is None and misp_event is None:
+        if not path and not misp_event:
             print_error("You have to open a session on a path or on a misp event.")
             return
 
@@ -50,23 +72,27 @@ class Sessions(object):
         total = len(self.sessions)
         session.id = total + 1
 
-        if path is not None:
+        if path:
             if self.is_set() and misp_event is None and self.current.misp_event:
                 session.misp_event = self.current.misp_event
 
             # Open a section on the given file.
             session.file = File(path)
             # Try to lookup the file in the database. If it is already present
-            # we get file name and
+            # we get its database ID, file name, and tags.
             row = Database().find(key='sha256', value=session.file.sha256)
             if row:
+                session.file.id = row[0].id
                 session.file.name = row[0].name
                 session.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
+
                 if row[0].parent:
                     session.file.parent = '{0} - {1}'.format(row[0].parent.name, row[0].parent.sha256)
                 session.file.children = Database().get_children(row[0].id)
+
             print_info("Session opened on {0}".format(path))
-        if misp_event is not None:
+
+        if misp_event:
             if self.is_set() and path is None and self.current.file:
                 session.file = self.current.file
             refresh = False
@@ -79,14 +105,14 @@ class Sessions(object):
             else:
                 print_info("Session opened on MISP event {0}.".format(misp_event.event_id))
 
-        if session.file is not None:
+        if session.file:
             # Loop through all existing sessions and check whether there's another
             # session open on the same file and delete it. This is to avoid
             # duplicates in sessions.
             # NOTE: in the future we might want to remove this if sessions have
             # unique attributes (for example, an history just for each of them).
             for entry in self.sessions:
-                if entry.file is not None and entry.file.sha256 == session.file.sha256:
+                if entry.file and entry.file.sha256 == session.file.sha256:
                     self.sessions.remove(entry)
 
         # Add new session to the list.

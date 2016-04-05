@@ -58,6 +58,7 @@ Using the Config File
 
 Viper provides a config file that will allow you to store user editable sections in a single file rather than inside the modules.
 
+    /usr/share/viper/viper.conf.sample
 
 You can easily access the config file:
 
@@ -132,7 +133,7 @@ Here is an example:
             def run(self):
                 # Check if there is an open session.
                 if not __sessions__.is_set():
-                    # No session opened.
+                    # No open session.
                     return
 
                 # Print attributes of the opened file.

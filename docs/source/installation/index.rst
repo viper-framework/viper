@@ -7,9 +7,9 @@ Before proceeding, you should make sure you have the basic tools installed to be
 
     $ sudo apt-get install gcc python-dev python-pip
 
-In order to have support for certain modules, you will need to install the following dependencies too before proceeding:
+In order to have support for certain modules, you will need to install the following dependencies too before proceeding::
 
-    $ sudo apt-get install libssl-dev swig
+    $ sudo apt-get install libssl-dev swig libffi-dev
 
 Core dependencies
 -----------------
@@ -24,6 +24,7 @@ In addition you should install ssdeep with pydeep. After you downloaded the sour
     $ cd ssdeep-X.XX
     $ ./configure && make
     $ sudo make install
+    $ sudo apt-get install libfuzzy
     $ sudo pip install pydeep
 
 Viper can retrieve files remotely through `Tor`_, if you're interested in such feature you should install SocksiPy::
@@ -31,6 +32,15 @@ Viper can retrieve files remotely through `Tor`_, if you're interested in such f
     $ sudo apt-get install python-socksipy
 
 You will also clearly need a running Tor daemon, refer to the official website for setup instructions.
+
+Installation
+------------
+
+To install Viper::
+
+    $ git clone https://github.com/viper-framework/viper
+    $ cd viper
+    $ sudo make install
 
 Extra dependencies
 ------------------
@@ -46,13 +56,13 @@ First launch
 
 If everything worked out fine, you should be able to launch Viper's shell without raising any exceptions, like following::
 
-    nex@nex:~/viper$ ./viper.py 
+    nex@nex:~/$ viper-cli
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v1.2
+        \_/ |_|  __/|_____)_| v1.3
               |_|
         
     You have 0 files in your default repository
@@ -60,3 +70,11 @@ If everything worked out fine, you should be able to launch Viper's shell withou
 
 .. _official website: http://ssdeep.sourceforge.net
 .. _Tor: https://www.torproject.org
+
+Uninstall
+---------
+
+To uninstall Viper::
+
+    $ cd viper
+    $ sudo make uninstall

@@ -1,13 +1,13 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import argparse
 import os
 import time
 import json
+import shutil
 import fnmatch
 import tempfile
-import shutil
+import argparse
 from zipfile import ZipFile
 from collections import defaultdict
 
@@ -16,7 +16,9 @@ try:
 except ImportError:
     from os import walk
 
-from viper.common.out import *
+import viper.common.out as out
+from viper.common.out import table
+from viper.common.colors import bold
 from viper.common.utils import convert_size
 from viper.common.objects import File
 from viper.common.network import download
@@ -63,6 +65,7 @@ class Commands(object):
             parent=dict(obj=self.cmd_parent, description="Add or remove a parent file"),
             export=dict(obj=self.cmd_export, description="Export the current session to file or zip"),
             analysis=dict(obj=self.cmd_analysis, description="View the stored analysis"),
+            rename=dict(obj=self.cmd_rename, description="Rename the file in the database"),
         )
 
     # Output Logging
@@ -71,6 +74,10 @@ class Commands(object):
             type=event_type,
             data=event_data
         ))
+        if event_type == 'table':
+            print table(event_data['header'], event_data['rows'])
+        else:
+            getattr(out, 'print_{0}'.format(event_type))(event_data)
 
     ##
     # CLEAR
@@ -119,7 +126,7 @@ class Commands(object):
         os.system('"${EDITOR:-nano}" ' + tmp.name)
         __sessions__.new(tmp.name)
         __sessions__.current.file.name = title
-        print_info("New file with title \"{0}\" added to the current session".format(bold(title)))
+        self.log('info', "New file with title \"{0}\" added to the current session".format(bold(title)))
 
     ##
     # OPEN
@@ -260,7 +267,7 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
@@ -353,7 +360,7 @@ class Commands(object):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             return
 
         # check if the file is already stores, otherwise exit
@@ -386,7 +393,6 @@ class Commands(object):
             else:
                 self.log('info', "There is no analysis with ID {0}".format(args.view))
 
-
     ##
     # STORE
     #
@@ -418,6 +424,12 @@ class Commands(object):
             if get_sample_path(obj.sha256):
                 self.log('warning', "Skip, file \"{0}\" appears to be already stored".format(obj.name))
                 return False
+
+            if __sessions__.is_attached_misp(quiet=True):
+                if tags is not None:
+                    tags += ',misp:{}'.format(__sessions__.current.misp_event.event_id)
+                else:
+                    tags = 'misp:{}'.format(__sessions__.current.misp_event.event_id)
 
             # Try to store file object into database.
             status = self.db.add(obj=obj, tags=tags)
@@ -504,34 +516,79 @@ class Commands(object):
                     if cfg.autorun.enabled:
                         autorun_module(__sessions__.current.file.sha256)
             else:
-                self.log('error', "No session opened")
+                self.log('error', "No open session")
+
+    ##
+    # RENAME
+    #
+    # This command renames the currently opened file in the database.
+    def cmd_rename(self, *args):
+        if __sessions__.is_set():
+            if not __sessions__.current.file.id:
+                self.log('error', "The opened file does not have an ID, have you stored it yet?")
+                return
+
+            self.log('info', "Current name is: {}".format(bold(__sessions__.current.file.name)))
+            
+            new_name = input("New name: ")
+            if not new_name:
+                self.log('error', "File name can't  be empty!")
+                return
+
+            self.db.rename(__sessions__.current.file.id, new_name)
+
+            self.log('info', "Refreshing session to update attributes...")
+            __sessions__.new(__sessions__.current.file.path)
+        else:
+            self.log('error', "No open session")
 
     ##
     # DELETE
     #
-    # This commands deletes the currenlty opened file (only if it's stored in
+    # This command deletes the currenlty opened file (only if it's stored in
     # the local repository) and removes the details from the database
     def cmd_delete(self, *args):
-        if __sessions__.is_set():
-            while True:
-                choice = input("Are you sure you want to delete this binary? Can't be reverted! [y/n] ")
-                if choice == 'y':
-                    break
-                elif choice == 'n':
-                    return
+        parser = argparse.ArgumentParser(prog='delete', description="Delete a file")
+        parser.add_argument('-a', '--all', action='store_true', help="Delete ALL files in this project")
 
-            rows = self.db.find('sha256', __sessions__.current.file.sha256)
-            if rows:
-                malware_id = rows[0].id
-                if self.db.delete_file(malware_id):
-                    self.log("success", "File deleted")
-                else:
-                    self.log('error', "Unable to delete file")
+        try:
+            args = parser.parse_args(args)
+        except:
+            return
 
-            os.remove(__sessions__.current.file.path)
-            __sessions__.close()
+        while True:
+            choice = input("Are you sure? It can't be reverted! [y/n] ")
+            if choice == 'y':
+                break
+            elif choice == 'n':
+                return
+
+        if args.all:
+            if __sessions__.is_set():
+                __sessions__.close()
+
+            samples = self.db.find('all')
+            for sample in samples:
+                self.db.delete_file(sample.id)
+                os.remove(get_sample_path(sample.sha256))
+
+            self.log('info', "Deleted a total of {} files.".format(len(samples)))
         else:
-            self.log('error', "No session opened")
+            if __sessions__.is_set():
+                rows = self.db.find('sha256', __sessions__.current.file.sha256)
+                if rows:
+                    malware_id = rows[0].id
+                    if self.db.delete_file(malware_id):
+                        self.log("success", "File deleted")
+                    else:
+                        self.log('error', "Unable to delete file")
+
+                os.remove(__sessions__.current.file.path)
+                __sessions__.close()
+
+                self.log('info', "Deleted opened file.")
+            else:
+                self.log('error', "No session open, and no --all argument. Nothing to delete.")
 
     ##
     # FIND
@@ -541,7 +598,7 @@ class Commands(object):
         parser = argparse.ArgumentParser(prog='find', description="Find a file")
         group = parser.add_mutually_exclusive_group()
         group.add_argument('-t', '--tags', action='store_true', help="List available tags and quit")
-        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note"], help="Where to search.")
+        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note", "any", "ssdeep"], help="Where to search.")
         parser.add_argument("value", nargs='?', help="String to search.")
         try:
             args = parser.parse_args(args)
@@ -598,6 +655,8 @@ class Commands(object):
         for item in items:
             tag = ', '.join([t.tag for t in item.tag if t.tag])
             row = [count, item.name, item.mime, item.md5, tag]
+            if key == 'ssdeep':
+                row.append(item.ssdeep)
             if key == 'latest':
                 row.append(item.created_at)
 
@@ -611,7 +670,8 @@ class Commands(object):
         header = ['#', 'Name', 'Mime', 'MD5', 'Tags']
         if key == 'latest':
             header.append('Created At')
-
+        if key == 'ssdeep':
+            header.append("Ssdeep")
         self.log("table", dict(header=header, rows=rows))
 
     ##
@@ -629,7 +689,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 
@@ -731,7 +791,7 @@ class Commands(object):
         except:
             return
 
-        projects_path = os.path.join(os.getcwd(), 'projects')
+        projects_path = os.path.join(os.getenv('HOME'), '.viper', 'projects')
 
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")
@@ -779,7 +839,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 
@@ -820,7 +880,7 @@ class Commands(object):
                 self.log('info', "File exported to {0}".format(store_path))
 
     ##
-    # Stats
+    # STATS
     #
     # This command allows you to generate basic statistics for the stored files.
     def cmd_stats(self, *args):
@@ -833,7 +893,6 @@ class Commands(object):
             return
 
         arg_top = args.top
-        db = Database()
 
         # Set all Counters Dict
         extension_dict = defaultdict(int)
@@ -860,8 +919,8 @@ class Commands(object):
                     tags_dict[t.tag] += 1
 
         avg_size = sum(size_list) / len(size_list)
-        all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
-                     'Avg Size': avg_size, 'Largest': max(size_list), 'Smallest': min(size_list)}
+        #all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
+        #             'Avg Size': avg_size, 'Largest': max(size_list), 'Smallest': min(size_list)}
 
         # Counter for top x
         if arg_top:
@@ -929,7 +988,7 @@ class Commands(object):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No session opened")
+            self.log('error', "No open session")
             parser.print_usage()
             return
 

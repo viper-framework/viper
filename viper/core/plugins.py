@@ -9,7 +9,7 @@ from viper.common.abstracts import Module
 
 def load_modules():
     # Import modules package.
-    import modules
+    import viper.modules as modules
 
     plugins = dict()
 

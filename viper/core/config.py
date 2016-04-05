@@ -2,41 +2,59 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import sys
 import shutil
 import ConfigParser
 
-from viper.common.out import *
 from viper.common.objects import Dictionary
+from viper.common.constants import VIPER_ROOT
 
 class Config:
     
-    def __init__(self, file_name="viper", cfg=None):
-    
-        config = ConfigParser.ConfigParser()
+    def __init__(self, cfg=None):
+        # Possible paths for the configuration file.
+        # This should go in order from local to global.
+        config_paths = [
+            os.path.join(os.getcwd(), 'viper.conf'),
+            os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
+            '/etc/viper/viper.conf'
+        ]
+
+        # Try to identify the best location for the config file.
+        config_file = None
+        for config_path in config_paths:
+            if os.path.exists(config_path):
+                config_file = config_path
+                break
+
+        # If no config is available, we try to copy it either from the
+        # /usr/share/viper folder, or from VIPER_ROOT.
+        if not config_file:
+            share_viper ='/usr/share/viper/viper.conf.sample'
+            cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
+
+            # If the local storage folder doesn't exist, we create it.
+            local_storage = os.path.join(os.getenv('HOME'), '.viper')
+            if not os.path.exists(local_storage):
+                os.makedirs(local_storage)
+
+            config_file = os.path.join(local_storage, 'viper.conf')
+
+            if os.path.exists(share_viper):
+                shutil.copy(share_viper, config_file)
+            else:
+                shutil.copy(cwd_viper, config_file)            
         
-        if cfg:
-            test = config.read(cfg)
-        else:
-            test = config.read('viper.conf')
-            
-        # Check for empty config
-        if len(test) == 0:
-            print_error("Could not find a valid configuration file. Did you rename viper.conf.sample to viper.conf")
-            print_info("Trying to create config for you")
-            try:
-                shutil.copy('viper.conf.sample', 'viper.conf')
-                config.read('viper.conf')
-                print_info("Starting Viper")
-            except:
-                print_error("Failed to Create config file, Exiting")
-                sys.exit()
-            
+        # Pasre the config file.
+        config = ConfigParser.ConfigParser()
+        config.read(config_file)
+
+        # Pars ethe config file and attribute for the current instantiated
+        # object.
         for section in config.sections():
             setattr(self, section, Dictionary())
             for name, raw_value in config.items(section):
                 try:
-                    if config.get(section, name) in ["0", "1"]:
+                    if config.get(section, name) in ['0', '1']:
                         raise ValueError
 
                     value = config.getboolean(section, name)

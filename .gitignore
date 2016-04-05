@@ -35,9 +35,13 @@ nosetests.xml
 .pydevproject
 .idea
 
+history
 binaries/
 projects/
 *.db
 *.conf
+*.bak
 
 data/yara/index.yara
+
+installed_files.txt

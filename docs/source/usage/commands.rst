@@ -33,7 +33,7 @@ projects
 ========
 
 As anticipated in the :doc:`concepts` section, Viper provides a way to create multiple **projects** which represent isolated collections of files.
-You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper.py``.
+You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper-cli``.
 
 From within the Viper shell, you can list the existing projects and switch from one to another by simply using the ``projects`` command. Following is the help message::
 
@@ -48,7 +48,7 @@ Each project will have its own local file repository, its own ``viper.db`` SQLit
 
 For example, this is how to launch Viper with a specific project::
 
-    nex@nex:~/viper$ ./viper.py --project test1
+    nex@nex:$ viper-cli --project test1
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
