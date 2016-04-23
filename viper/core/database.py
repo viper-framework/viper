@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
-from sqlalchemy import Table, Index, create_engine
+from sqlalchemy import Table, Index, create_engine, and_
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
@@ -419,7 +419,7 @@ class Database:
         elif key == 'sha256':
             rows = session.query(Malware).filter(Malware.sha256 == value).all()
         elif key == 'tag':
-            rows = session.query(Malware).filter(Malware.tag.any(Tag.tag == value.lower())).all()
+            rows = session.query(Malware).filter(self.tag_filter(value)).all()
         elif key == 'name':
             if '*' in value:
                 value = value.replace('*', '%')
@@ -438,7 +438,24 @@ class Database:
             print_error("No valid term specified")
 
         return rows
-        
+
+    def tag_filter(self, value):
+        if not value:
+            return None
+        if "|" in value and "&" in value:
+            print_error("Do not use &' and '|' at the same time.")
+            return None
+        if "|" in value:
+            filt = Malware.tag.any(Tag.tag.in_(value.lower().split("|")))
+        elif "&" in value:
+            tags = []
+            for tt in value.lower().split("&"):
+                tags.append(Malware.tag.any(Tag.tag == tt))
+            filt = and_(*tags)
+        else:
+            filt = Malware.tag.any(Tag.tag == value.lower())
+        return filt
+
     def get_sample_count(self):
         session = self.Session()
         return session.query(Malware.id).count()
