@@ -580,7 +580,7 @@ class Commands(object):
                 for sample in samples:
                     self.db.delete_file(sample.id)
                     os.remove(get_sample_path(sample.sha256))
-                self.log('info', "Deleted a total of {} files.".format(len(samples)))
+                self.log('info', "Deleted {} files.".format(len(samples)))
             else:
                 self.log('error', "No find result")
 
