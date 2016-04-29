@@ -1,7 +1,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
+import os, math
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -51,6 +51,12 @@ class ELF(Module):
         parser_type.add_argument('-a', '--all', action='store_true', help='Print the type of all files in the project')
         parser_type.add_argument('-c', '--cluster', action='store_true', help='Cluster all files in the project')
         parser_type.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
+
+        parser_ent = subparsers.add_parser('entropy', help='Show the ELF entropy')
+        parser_ent.add_argument('-a', '--all', action='store_true', help='Print the entropy of all files in the project')
+        parser_ent.add_argument('-c', '--cluster', action='store_true', help='Calculate and cluster all files in the project')
+        parser_ent.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
+
         self.elf = None
 
     def __check_session(self):
@@ -79,11 +85,11 @@ class ELF(Module):
                 segment['p_vaddr'],
                 hex(segment['p_filesz']),
                 hex(segment['p_memsz']),
-                describe_p_flags(segment['p_flags'])
+                describe_p_flags(segment['p_flags']),
+                self.get_entropy(segment.data())
             ])
-
         self.log('info', "ELF Segments:")
-        self.log('table', dict(header=['Type', 'VirtAddr', 'FileSize', 'MemSize', 'Flags'], rows=rows))
+        self.log('table', dict(header=['Type', 'VirtAddr', 'FileSize', 'MemSize', 'Flags', 'Entropy'], rows=rows))
 
     def sections(self):
         if not self.__check_session():
@@ -97,11 +103,12 @@ class ELF(Module):
                 hex(section['sh_addr']),
                 hex(section['sh_size']),
                 section['sh_type'],
-                describe_sh_flags(section['sh_flags'])
+                describe_sh_flags(section['sh_flags']),
+                self.get_entropy(section.data())
             ])
 
         self.log('info', "ELF Sections:")
-        self.log('table', dict(header=['Name', 'Addr', 'Size', 'Type', 'Flags'], rows=rows))
+        self.log('table', dict(header=['Name', 'Addr', 'Size', 'Type', 'Flags', 'Entropy'], rows=rows))
 
     def symbols(self):
         if not self.__check_session():
@@ -244,6 +251,7 @@ class ELF(Module):
                 self.log('info', "Following are samples with Entry point {0}".format(bold(ep)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
+
     def machine(self):
         if not self.__check_session():
             return
@@ -337,6 +345,7 @@ class ELF(Module):
             if len(rows) > 0:
                 self.log('info', "Following are samples with Entry point {0}".format(bold(ep)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
+
 
     def elftype(self):
         if not self.__check_session():
@@ -432,6 +441,113 @@ class ELF(Module):
                 self.log('info', "Following are samples with ELF type {0}".format(bold(e_type)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
+
+    def elfentropy(self):
+        if not self.__check_session():
+            return
+
+        fd = open(__sessions__.current.file.path, 'rb')
+        ent = self.get_entropy(fd.read())
+        self.log('info', "Entropy {0}".format(ent))
+        if ent > 7:
+            self.log('warning', "Probably packed. High entropy.")
+
+        if self.args.scan and self.args.cluster:
+            self.log('error', "You selected two exclusive options, pick one")
+            return
+
+        if self.args.all:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    fd = open(sample_path, 'rb')
+                    cur_ent = self.get_entropy(fd.read())
+                except Exception as e:
+                    self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
+                    continue
+
+                rows.append([sample.md5, sample.name, cur_ent])
+
+            self.log('table', dict(header=['MD5', 'Name', 'Entropy'], rows=rows))
+
+            return
+
+
+        if self.args.cluster:
+            db = Database()
+            samples = db.find(key='all')
+
+            cluster = {}
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try: 
+                    fd = open(sample_path, 'rb')
+                    cur_ent = self.get_entropy(fd.read())
+                except Exception as e:
+                    self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
+                    continue
+
+                if cur_ent not in cluster:
+                    cluster[cur_ent] = []
+
+                cluster[cur_ent].append([sample.md5, sample.name])
+
+            for cluster_name, cluster_members in cluster.items():
+                # Skipping clusters with only one entry.
+                if len(cluster_members) == 1:
+                    continue
+
+                self.log('info', "ELF entropy cluster {0} with {1} elements".format(bold(cluster_name), len(cluster_members)))
+
+                self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
+
+        if self.args.scan:
+            db = Database()
+            samples = db.find(key='all')
+
+            rows = []
+            for sample in samples:
+                if sample.sha256 == __sessions__.current.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    fd = open(sample_path, 'rb')
+                    cur_ent = self.get_entropy(fd.read())
+                except:
+                    continue
+
+                if ent == cur_ent:
+                    rows.append([sample.md5, sample.name])
+
+            if len(rows) > 0:
+                self.log('info', "Following are samples with entropy {0}".format(bold(ent)))
+                self.log('table', dict(header=['MD5', 'Name'], rows=rows))
+
+
+    def get_entropy(self, data):
+        if not data: return 0
+        entropy = 0 
+        for x in range(256):
+            p_x = float(data.count(chr(x)))/len(data)
+            if p_x > 0:
+                entropy += - p_x*math.log(p_x, 2)
+        ent = "%.2f" % entropy
+        return float(ent)
+
     def run(self):
         super(ELF, self).run()
         if self.args is None:
@@ -457,6 +573,8 @@ class ELF(Module):
             self.machine()
         elif self.args.subname == "type":
             self.elftype()
+        elif self.args.subname == "entropy":
+            self.elfentropy()
         else:
             self.log('error', 'At least one of the parameters is required')
             self.usage()
