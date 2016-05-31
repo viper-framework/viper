@@ -550,6 +550,7 @@ class Commands(object):
     def cmd_delete(self, *args):
         parser = argparse.ArgumentParser(prog='delete', description="Delete a file")
         parser.add_argument('-a', '--all', action='store_true', help="Delete ALL files in this project")
+        parser.add_argument('-f', '--find', action="store_true", help="Delete ALL files from last find")
 
         try:
             args = parser.parse_args(args)
@@ -573,6 +574,16 @@ class Commands(object):
                 os.remove(get_sample_path(sample.sha256))
 
             self.log('info', "Deleted a total of {} files.".format(len(samples)))
+        elif args.find:
+            if __sessions__.find:
+                samples = __sessions__.find
+                for sample in samples:
+                    self.db.delete_file(sample.id)
+                    os.remove(get_sample_path(sample.sha256))
+                self.log('info', "Deleted {} files.".format(len(samples)))
+            else:
+                self.log('error', "No find result")
+
         else:
             if __sessions__.is_set():
                 rows = self.db.find('sha256', __sessions__.current.file.sha256)
