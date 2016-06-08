@@ -60,12 +60,6 @@ malwr_pass =
 malwr_search = https://malwr.com/analysis/search/
 malwr_prefix = https://malwr.com
 
-anubis_login = https://anubis.iseclab.org/?action=login
-anubis_user = 
-anubis_pass = 
-anubis_search = https://anubis.iseclab.org/?action=hashquery
-anubis_prefix = https://anubis.iseclab.org/
-
 [misp]
 misp_url =
 misp_key =
