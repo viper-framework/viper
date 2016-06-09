@@ -81,6 +81,7 @@ class MISP(Module):
         parser_up.add_argument("-ids", action='store_true', help="Is eligible for automatically creating IDS signatures.")
         parser_up.add_argument("-c", "--categ", type=int, choices=[0, 1, 2, 3], default=1, help="Category of the samples.")
         parser_up.add_argument("-i", "--info", nargs='+', help="Event info field of a new event.")
+        parser_up.add_argument("-o", "--comment", nargs='+', help="Comment associated to the sample.")
         parser_up.add_argument("-a", "--analysis", type=int, choices=[0, 1, 2], help="Analysis level a new event.")
         parser_up.add_argument("-t", "--threat", type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
 
@@ -292,8 +293,9 @@ class MISP(Module):
             attibutes.append(dict(curattr, **{'type': 'md5', 'value': md5}))
 
         distrib = curattr['distribution']
+        comment = curattr['comment']
         if not link[0]:
-            attibutes.append({'type': 'link', 'category': 'External analysis',
+            attibutes.append({'type': 'link', 'category': 'External analysis', 'comment': comment,
                               'to_ids': False, 'distribution': distrib, 'value': link[1]})
         return attibutes
 
@@ -462,11 +464,15 @@ class MISP(Module):
             info = ' '.join(self.args.info)
         else:
             info = None
+        if self.args.comment is not None:
+            comment = ' '.join(self.args.comment)
+        else:
+            comment = None
         # No need to check the output: is the event_id is none, we create a new one.
         event_id = self._get_eventid(True)
         try:
             result = self.misp.upload_sample(__sessions__.current.file.name, __sessions__.current.file.path,
-                                             event_id, self.args.distrib, self.args.ids, categ, info,
+                                             event_id, self.args.distrib, self.args.ids, categ, info, comment,
                                              self.args.analysis, self.args.threat)
         except Exception as e:
             self.log('error', e)
