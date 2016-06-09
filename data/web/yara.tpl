@@ -1,6 +1,6 @@
 % include("header.tpl", title="Yara Rules")
 
-<h3> Yara Rules <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#editRule">Add New Rule</button> </h3>
+<h3> Yara Rules <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#editRule">Add new rule</button> </h3>
 
 <div class="row">
     <div class="col-md-6">

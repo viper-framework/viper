@@ -1,9 +1,9 @@
-# This file is part of Viper - https://github.com/botherder/viper
+# This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import os
 
-from viper.common.out import *
+from viper.common.out import print_warning, print_error
 from viper.core.project import __project__
 
 def store_sample(file_object):
@@ -13,9 +13,17 @@ def store_sample(file_object):
         print_error("No hash")
         return None
     
-    folder = os.path.join(__project__.get_path(), 'binaries', sha256[0], sha256[1], sha256[2], sha256[3])
+    folder = os.path.join(
+        __project__.get_path(),
+        'binaries',
+        sha256[0],
+        sha256[1],
+        sha256[2],
+        sha256[3]
+    )
+
     if not os.path.exists(folder):
-        os.makedirs(folder, 0750)
+        os.makedirs(folder, 0o750)
 
     file_path = os.path.join(folder, sha256)
 
@@ -30,7 +38,17 @@ def store_sample(file_object):
     return file_path
 
 def get_sample_path(sha256):
-    path = os.path.join(__project__.get_path(), 'binaries', sha256[0], sha256[1], sha256[2], sha256[3], sha256)
+    path = os.path.join(
+        __project__.get_path(),
+        'binaries',
+        sha256[0],
+        sha256[1],
+        sha256[2],
+        sha256[3],
+        sha256
+    )
+
     if not os.path.exists(path):
         return None
+
     return path

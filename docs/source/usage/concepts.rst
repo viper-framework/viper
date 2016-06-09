@@ -1,10 +1,11 @@
+========
 Concepts
 ========
 
 Before proceeding in learning the functioning of each available command and module, you need to understand some fundamental design concept that represent the foundation of Viper itself.
 
 Projects
---------
+========
 
 Viper allows you to create and operate on a collection of files. One collection represent one **project**.
 
@@ -14,8 +15,8 @@ In this way you can for example create different workbenches for each malware ca
 
 As you can see from Viper's help message, you can specify a project name at startup::
 
-    nex@nex:~/viper$ ./viper.py -h
-    usage: viper.py [-h] [-p PROJECT]
+    nex@nex:~/$ viper-cli -h
+    usage: viper-cli [-h] [-p PROJECT]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -27,13 +28,13 @@ When doing so, Viper will try to open an existing project with the given name an
 
 If you opened a project, it will appear both in a startup message as well as in Viper's terminal::
 
-    nex@nex:~/viper$ ./viper.py -p test
+    nex@nex:~/$ viper-cli -p test
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |    
-        \_/ |_|  __/|_____)_| v1.1
+        \_/ |_|  __/|_____)_| v1.3
               |_|
         
     You have 0 files in your test repository
@@ -56,7 +57,7 @@ From within the terminal, you can see which projects exist and eventually you ca
 More details on the ``projects`` command are available in the :doc:`commands` chapter.
 
 Sessions
---------
+========
 
 Most of commands and especially modules provided by Viper, are designed to operate on a single file, being a Windows executable or a PDF or whatever else.
 
@@ -96,7 +97,7 @@ A session will also keep track of the results of the last ``find`` command so th
 Please note that if you switch to a whole different project, you'll lose the opened sessions.
 
 Commands & Modules
--------------------
+==================
 
 The operations you can execute within Viper are fundamentally distinguished between **commands** and **modules**. Commands are functions that are provided by the Viper's core and enable you to interact with the file repository (by adding, searching, tagging and removing files), with projects and with sessions. They are static and they should not be modified.
 
@@ -104,4 +105,18 @@ Modules are instead plugins that are dynamically loaded by Viper at startup and 
 
 Modules are the most actively developed portion of Viper and they represent the most important avenue for contributions from the community: if you have an idea or you want to re-implement a script that you have lying around, make sure you `submit it`_ to Viper.
 
-.. _submit it: https://github.com/botherder/viper
+.. _submit it: https://github.com/viper-framework/viper
+
+Database
+========
+
+The database that stores all meta inforation is per default an sqlite database stored at::
+   
+    $HOME/.viper/viper.db
+
+Binaries
+========
+
+The files are stored in a folder structure within::
+
+    $HOME/.viper/binaries

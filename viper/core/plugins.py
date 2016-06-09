@@ -1,4 +1,4 @@
-# This file is part of Viper - https://github.com/botherder/viper
+# This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import pkgutil
@@ -9,7 +9,7 @@ from viper.common.abstracts import Module
 
 def load_modules():
     # Import modules package.
-    import modules
+    import viper.modules as modules
 
     plugins = dict()
 

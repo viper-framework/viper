@@ -7,27 +7,16 @@
             </div>
             <div class="modal-body">
                 <p>The Web interface replicates the most common functions of Viper. It is project aware and most search functions are capable of spanning all projects.</p>
-                <p>It does not allow for <strong>ALL</strong> the functionality of the Command Line Console</p>
+                <p>It does not allow for <strong>ALL</strong> the functionality of the Command Line Interface</p>
                 <p>The Web and CLI are not independent, Files stored in one are visible to the other.</p>
-                <div class="alert alert-warning">
-                    <h4>ToDo</h4>
-                    <ul>
-                        <li>AutoPopulate More Tabs</li>
-                        <ul>
-                            <li>Strings</li>
-                            <li>Hex</li>
-                            <li>Yara</li>
-                            <li>VirusTotal</li>
-                        </ul>
-                        <li>Add From URL</li>
-                        <li>Module Export Functions</li>
-                    </ul>
-                </div>
+
                 <div class="alert alert-danger">
                     <h4>Warning</h4>
                     <p>Viper is designed to read and in some cases export files to your environment. The modules interface does not prevent this kind of action</p>
                     <p>Avoid unauthenticated access to the web interface</p>
                 </div>
+
+                <p>Viper web interface was originally created by <a href="http://techanarchy.net/">Kevin Breen</a>.</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

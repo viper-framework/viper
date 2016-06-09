@@ -1,36 +1,39 @@
+========
 Commands
 ========
 
-Viper provides a set of core command used to interact repositories of files you want to collect. In order to see which commands are available, type ``help``::
+Viper provides a set of core commands used to interact repositories of files you want to collect. In order to see which commands are available, type ``help``::
 
     shell > help
     Commands:
-    +----------+-----------------------------------------------+
-    | Command  | Description                                   |
-    +----------+-----------------------------------------------+
-    | clear    | Clear the console                             |
-    | close    | Close the current session                     |
-    | delete   | Delete the opened file                        |
-    | export   | Export the current session to file or zip     |
-    | find     | Find a file                                   |
-    | help     | Show this help message                        |
-    | info     | Show information on the opened file           |
-    | notes    | View, add and edit notes on the opened file   |
-    | open     | Open a file                                   |
-    | projects | List or switch existing projects              |
-    | sessions | List or switch sessions                       |
-    | store    | Store the opened file to the local repository |
-    | tags     | Modify tags of the opened file                |
-    +----------+-----------------------------------------------+
+    +------------+-----------------------------------------------+
+    | Command    | Description                                   |
+    +------------+-----------------------------------------------+
+    | clear      | Clear the console                             |
+    | close      | Close the current session                     |
+    | delete     | Delete the opened file                        |
+    | exit, quit | Exit Viper                                    |
+    | export     | Export the current session to file or zip     |
+    | find       | Find a file                                   |
+    | help       | Show this help message                        |
+    | info       | Show information on the opened file           |
+    | new        | Create new file                               |
+    | notes      | View, add and edit notes on the opened file   |
+    | open       | Open a file                                   |
+    | projects   | List or switch existing projects              |
+    | sessions   | List or switch sessions                       |
+    | store      | Store the opened file to the local repository |
+    | tags       | Modify tags of the opened file                |
+    +----------+-------------------------------------------------+
 
 Following are details for all the currently available commands.
 
 
 projects
---------
+========
 
 As anticipated in the :doc:`concepts` section, Viper provides a way to create multiple **projects** which represent isolated collections of files.
-You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper.py``.
+You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper-cli``.
 
 From within the Viper shell, you can list the existing projects and switch from one to another by simply using the ``projects`` command. Following is the help message::
 
@@ -45,7 +48,7 @@ Each project will have its own local file repository, its own ``viper.db`` SQLit
 
 For example, this is how to launch Viper with a specific project::
 
-    nex@nex:~/viper$ ./viper.py --project test1
+    nex@nex:$ viper-cli --project test1
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
@@ -77,7 +80,7 @@ Note that if you specify a name of a project that doesn't exist to the ``--switc
 
 
 open
-----
+====
 
 As explained in the :doc:`concepts` chapter, Viper supports the concept of **session**, which is an execution context created when a specific file is opened and closed only when requested by the user. In order to create a session, you need to issue an ``open`` command. Following is the help message::
 
@@ -132,7 +135,7 @@ Through the ``open`` command you can also directly open one of the entries from 
 
 
 sessions
---------
+========
 
 You can see which sessions are currently active and eventually switch from one to another through the ``sessions`` command. Following is the help message::
 
@@ -160,7 +163,7 @@ An example of execution is the following::
 
 
 export
-------
+======
 
 The ``export`` command is used to export the currently opened file to the target path or archive name. You can zip up the file in a new archive too::
 
@@ -172,13 +175,13 @@ The ``export`` command is used to export the currently opened file to the target
 
 
 close
------
+=====
 
 This command simply abandon a session that was previously opened. Note that the session will actually remain available in case you want to re-open it later.
 
 
 store
------
+=====
 
 The ``store`` command is used to store the currently opened file to the local repository. There are many options and filters you can apply, as shown in the following help message::
 
@@ -212,7 +215,7 @@ Following is an example::
 
 
 find
-----
+====
 
 In order to quickly recover files you previously stored in the local repository, you can use the ``find`` command. Following is its help message::
 
@@ -243,7 +246,7 @@ For example::
 
 
 info
-----
+====
 
 The ``info`` command will return you some basic information on the file you currently have opened, for example::
 
@@ -267,7 +270,7 @@ The ``info`` command will return you some basic information on the file you curr
 
 
 notes
------
+=====
 
 During an analysis you might want to keep track of your discoveries and results. Instead of having unorganized text files lying around, Viper allows you to create notes directly linked to the relevant files and even search across them.
 When you have a file opened, you can add any number of text notes associated to it through the ``notes`` command. This is the help message::
@@ -307,7 +310,7 @@ Now you can see the new note in the list and view its content::
 
 
 tags
-----
+====
 
 In order to easily group and identify files, Viper allows you to create one or more tags to be associated with them. This is the help message::
 
@@ -347,7 +350,7 @@ Once added, the session will be refreshed so that the new attributes will be vis
 
 
 delete
-------
+======
 
 The ``delete`` command you simply remove the currently opened file from the local repository::
 

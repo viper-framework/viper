@@ -1,8 +1,17 @@
-# This file is part of Viper - https://github.com/botherder/viper
+# This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import socket
-import urllib2
+
+try:
+    from urllib.request import Request, urlopen
+except:
+    from urllib2 import Request, urlopen
+
+try:
+    from urllib.error import HTTPError, URLError
+except:
+    from urllib2 import HTTPError, URLError
 
 try:
     import socks
@@ -28,14 +37,14 @@ def download(url, tor=False):
         socket.create_connection = create_connection
 
     try:
-        req = urllib2.Request(url)
+        req = Request(url)
         req.add_header('User-agent', 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)')
-        res = urllib2.urlopen(req)
+        res = urlopen(req)
 
         data = res.read()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         print_error(e)
-    except urllib2.URLError as e:
+    except URLError as e:
         if tor and e.reason.errno == 111:
             print_error("Connection refused, maybe Tor is not running?")
         else:

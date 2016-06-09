@@ -2,7 +2,7 @@
 # This gets a list of Projects for the nav bar
 import os
 projects_path = os.path.join(os.getcwd(), 'projects')
-projects = []
+projects = ['default']
 if os.path.exists(projects_path):
     for project in os.listdir(projects_path):
         project_path = os.path.join(projects_path, project)
@@ -20,21 +20,14 @@ end
     <meta charset="UTF-8">
     <meta name="description" content="Viper Web Interface">
     <meta name="keywords" content="viper,malware,analysis">
-    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
     <link href="/static/css/style.css" rel="stylesheet">
-    <script type="text/javascript" src="/static/js/jquery-1.11.1.min.js"></script>
-    <script>
-        $(function () {
-        var activeTab = $('[href=' + location.hash + ']');
-        activeTab && activeTab.tab('show');
-        });
-    </script>
 </head>
 <body>
 
 <!-- Nav Bar -->
 
-<nav class="navbar navbar-inverse" role="navigation">
+<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
@@ -57,6 +50,7 @@ end
                 </ul>
                 </li>
                 <li ><a href="/yara?action=list">Yara Rules</a></li>
+                <li ><a href="/cli">CLI</a></li>
             </ul>
 
             <ul class="nav navbar-nav navbar-right">
@@ -70,7 +64,7 @@ end
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Help <span class="caret"></span></a>
                     <ul class="dropdown-menu" role="menu">
                         <li><a href="http://viper-framework.readthedocs.org/en/latest/" target="_blank">Docs</a></li>
-                        <li><a href="https://github.com/botherder/viper/issues" target="_blank">Issues</a></li>
+                        <li><a href="https://github.com/viper-framework/viper/issues" target="_blank">Issues</a></li>
                         <li class="divider"></li>
                         <li><a href="#" data-toggle="modal" data-target="#aboutModal">About</a></li>
                     </ul>

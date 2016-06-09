@@ -1,4 +1,4 @@
-Copyright (c) 2013, Claudio "nex" Guarnieri
+Copyright (c) 2013-2016, Claudio "nex" Guarnieri
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -30,3 +30,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Individual Licenses for modules
 
 IDX Module Licensed under the Apache License, Version 2.0. Original Copyright @bbaskin
+pymacho Licensed under the GNU License Copyright 2013 Jérémie BOUTOILLE
+

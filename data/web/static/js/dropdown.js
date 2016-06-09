@@ -32,7 +32,7 @@ if (chosen == "editdistance") {
 if (chosen == "elf") {
   selbox.options[selbox.options.length] = new Option('Sections','sections');
   selbox.options[selbox.options.length] = new Option('Segments','segments');
-  selbox.options[selbox.options.length] = new Option('Symobols','symbols');
+  selbox.options[selbox.options.length] = new Option('Symbols','symbols');
   selbox.options[selbox.options.length] = new Option('Interpreter','interp');
   selbox.options[selbox.options.length] = new Option('Dynamic','dynamic');
 }

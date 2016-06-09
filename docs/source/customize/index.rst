@@ -29,34 +29,63 @@ Any module needs to have some basic attributes that will make it recognizable. I
 Arguments
 ---------
 
-When a module is invoked from the Viper shell it can be provided with a number of arguments. These are made accessible to the module through the ``self.args`` attribute, which is simply a Python list.
-
-You will need to take care of parsing and interpreting the arguments, for example using Python's ``getopt`` module:
+When a module is invoked from the Viper shell it can be provided with a number of arguments and options. These should be parsed with the python ``argparse`` module as show in the example below.
 
 
     .. code-block:: python
         :linenos:
 
-        import getopt
-
         from viper.common.abstracts import Module
 
-        class MyModule(Module):
+        class MyModule(ModuleName):
             cmd = 'mycmd'
             description = 'This module does this and that'
+            authors = ['YourName']
+
+            def __init__(self):
+                super(ModuleName, self).__init__()
+                self.parser.add_argument('-t', '--this', action='store_true', help='Do This Thing')
+                self.parser.add_argument('-b', '--that', action='store_true', help='Do That')
 
             def run(self):
-                try:
-                    opts, argv = getopt.getopt(self.args[0:], 'hs', ['help', 'something'])
-                except getopt.GetoptError as e:
-                    print(e)
-                    return
+                if self.args.this:
+                    print("This is FOO")
+                elif self.args.that:
+                    print("That is FOO")
 
-                for opt, value in opts:
-                    if opt in ('-h', '--help'):
-                        help()
-                    elif opt in ('-s', '--something'):
-                        print("Do something.")
+Using the Config File
+---------------------
+
+Viper provides a config file that will allow you to store user editable sections in a single file rather than inside the modules.
+
+    /usr/share/viper/viper.conf.sample
+
+You can easily access the config file:
+
+    .. code-block:: python
+        :linenos:
+
+        from viper.core.config import Config
+
+        cfg = Config()
+
+
+From here you can access any element in the config file by name:
+
+    .. code-block:: python
+        :linenos:
+
+        from viper.core.config import Config
+
+        cfg = Config()
+
+        config_item = cfg.modulename.config_item
+
+        # Example Getting VirusTotal Key
+
+        vt_key = cfg.virustotal.virustotal_key
+
+
 
 
 Accessing the session
@@ -104,7 +133,7 @@ Here is an example:
             def run(self):
                 # Check if there is an open session.
                 if not __sessions__.is_set():
-                    # No session opened.
+                    # No open session.
                     return
 
                 # Print attributes of the opened file.
@@ -150,13 +179,15 @@ You can then use the ``find()`` function, specify a key and an optional value an
 Printing results
 ----------------
 
-Viper provides few functions to facilitate and standardize the output of your modules. Following are the functions available from ``viper.common.out``:
+Viper provides several function to facilitate and standardize the output of your modules. Viper uses a logging function to return the output to the console or web application.
+The format is ``self.log('type', "Your Text")`` and the following types are made available in Viper.
 
-    * ``print_info()``: prints the message with a ``[*]`` prefix.
-    * ``print_warning()``: prints the message with a yellow ``[!]`` prefix.
-    * ``print_error()``: prints the message with a red ``[!]`` prefix.
-    * ``print_success()``: prints the message with a green ``[+]`` prefix.
-    * ``print_item()``: prints an item from a list.
+    * ``info``: prints the message with a ``[*]`` prefix.
+    * ``warning``: prints the message with a yellow ``[!]`` prefix.
+    * ``error``: prints the message with a red ``[!]`` prefix.
+    * ``success``: prints the message with a green ``[+]`` prefix.
+    * ``item``: prints an item from a list.
+    * ``table``: prints a table with headers and rows.
 
 You can also easily print tables, such as in the following example:
 
@@ -164,14 +195,14 @@ You can also easily print tables, such as in the following example:
         :linenos:
 
         from viper.common.abstracts import Module
-        from viper.common.out import *
 
         class MyModule(Module):
             cmd = 'mycmd'
             description = 'This module does this and that'
 
             def run(self):
-                print_info("Do something.")
+                self.log('info', "This is Something")
+                self.log('warning', "This is the warning Text")
 
                 # This is the header of the table.
                 header = ['Column 1', 'Column 2']
@@ -181,4 +212,5 @@ You can also easily print tables, such as in the following example:
                     ['Row 2', 'Row 2']
                 ]
 
-                print(table(header=header, rows=rows))
+                self.log('table', dict(header=header, rows=rows))
+
