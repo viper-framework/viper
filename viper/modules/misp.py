@@ -219,6 +219,9 @@ class MISP(Module):
             for message in result['errors']:
                 self.log('error', message)
             return True
+        elif result.get('error'):
+            self.log('error', result.get('error'))
+            return True
         return False
 
     def _search_local_hashes(self, event, open_session=True):
