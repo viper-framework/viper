@@ -219,6 +219,9 @@ class MISP(Module):
             for message in result['errors']:
                 self.log('error', message)
             return True
+        elif result.get('error'):
+            self.log('error', result.get('error'))
+            return True
         return False
 
     def _search_local_hashes(self, event, open_session=True):
@@ -320,8 +323,8 @@ class MISP(Module):
             return []
         related = []
         for events in event.get('RelatedEvent'):
-            for info in events['Event']:
-                related.append((int(info['id']), info['info'].encode('utf-8')))
+            info = events['Event']
+            related.append((int(info['id']), info['info'].encode('utf-8')))
         to_return = list(set(related))
         to_return.sort(key=lambda tup: tup[0])
         return to_return
@@ -663,7 +666,7 @@ class MISP(Module):
             idlist = []
             if a.get('RelatedAttribute'):
                 for r in a.get('RelatedAttribute'):
-                    idlist.append(r['id'])
+                    idlist.append(r['Attribute']['id'])
             rows.append([a['type'], a['value'], '\n'.join(textwrap.wrap(a['comment'], 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
         self.log('table', dict(header=header, rows=rows))
         if current_event['Event']['published']:
