@@ -49,7 +49,7 @@ def add_file():
         success = db.add(obj=tf_obj, tags=tags)
 
     if success:
-        return jsonize({'message': 'added'})
+        return jsonize({'message': 'added', 'sha256': tf_obj.sha256})
     else:
         response.status = 500
         return jsonize({'message': 'Unable to store file'})

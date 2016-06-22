@@ -10,9 +10,9 @@ from optparse import OptionParser
 from sqlalchemy import create_engine
 
 try:
-    from io import StringIO
+    from io import BytesIO
 except ImportError:
-    from StringIO import StringIO
+    from BytesIO import BytesIO
 
 from viper.common.out import print_info
 from viper.common.out import print_warning
@@ -47,8 +47,8 @@ def update():
 
     # Download the latest Zip archive from GitHub's master branch.
     master = download(url)
-    # Instantiate a StringIO, we will store the master.zip data in here.
-    zip_data = StringIO()
+    # Instantiate a BytesIO, we will store the master.zip data in here.
+    zip_data = BytesIO()
     zip_data.write(master)
     # Initialize the Zip archive.
     zip_file = ZipFile(zip_data, 'r')

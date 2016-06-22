@@ -155,6 +155,27 @@ class AndroidPackage(Module):
                 self.log('error', "Error: {0}".format(e))
                 return False, False, False
 
+        def _load_params():
+            a = None
+            vm = None
+            vmx = None
+
+            if hasattr(__sessions__.current, 'param_a'):
+                a = __sessions__.current.param_a
+            if hasattr(__sessions__.current, 'param_vm'):
+                vm = __sessions__.current.param_vm
+            if hasattr(__sessions__.current, 'param_vmx'):
+                vmx = __sessions__.current.param_vmx
+
+            if not a or not vm or not vmx:
+                a, vm, vmx = process_apk()
+                __sessions__.current.param_a = a
+                __sessions__.current.param_vm = vm
+                __sessions__.current.param_vmx = vmx
+
+            return a, vm, vmx
+
+
         super(AndroidPackage, self).run()
         if self.args is None:
             return
@@ -167,13 +188,14 @@ class AndroidPackage(Module):
         # Check for androguard
         if not HAVE_ANDROGUARD:
             self.log('error', "Unable to import AndroGuard")
-            self.log('error', "Install https://code.google.com/p/androguard/downloads/detail?name=androguard-1.9.tar.gz")
+            self.log('error', "Install https://github.com/androguard/androguard/archive/v2.0.tar.gz")
             return
 
-        a, vm, vmx = process_apk()
+
+
+        a, vm, vmx = _load_params()
         if not a:
             return
-
         if self.args.dump is not None:
             self.log('info', "Decompiling Code")
             andro_dump(vm, vmx, self.args.dump)

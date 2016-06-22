@@ -730,7 +730,7 @@ def hex_viewer():
     hex_path = get_sample_path(file_hash)
     
     # create the command string
-    hex_cmd = 'hd -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
+    hex_cmd = 'hexdump -C -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
     
     # get the output
     hex_string = getoutput(hex_cmd)
@@ -761,7 +761,7 @@ def vt_download():
     vt_hash = request.forms.get('vt_hash')
     project = request.forms.get('project')
     tags = request.forms.get('tag_list')
-    cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
+    cmd_line = 'virustotal --search {0} -d; virustotal -don {0};store; tags -a {1}'.format(vt_hash, tags)
     module_results = module_cmdline(cmd_line, False)
     if 'Stored' in module_results:
         redirect('/file/{0}/{1}'.format(project, vt_hash))

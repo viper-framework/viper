@@ -49,6 +49,7 @@ class VirusTotal(Module):
         self.parser.add_argument('-d', '--download', action='store_true', help='Hash of the file to download')
         self.parser.add_argument('-dl', '--download_list', action='store_true', help='List the downloaded files')
         self.parser.add_argument('-do', '--download_open', type=int, help='Open a file from the list of the DL files (ID)')
+        self.parser.add_argument('-don', '--download_open_name', help='Open a file by name from the list of the DL files (NAMe)')
         self.parser.add_argument('-dd', '--download_delete', help='Delete a file from the list of the DL files can be an ID or all.')
         self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file or a URL to VirusTotal (by default it only looks up the hash/url)')
 
@@ -360,6 +361,23 @@ class VirusTotal(Module):
                     else:
                         self.log('warning', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))
                 return __sessions__.new(path)
+            except IndexError:
+                self.log('error', 'Invalid id, please use virustotal -dl.')
+        elif self.args.download_open_name is not None:
+            tmp_samples = self._load_tmp_samples()
+            try:
+                for tmp_sample in tmp_samples:
+                    eid, path, name = tmp_sample
+                    if name == self.args.download_open_name:
+                        if eid:
+                            if __sessions__.is_attached_misp(quiet=True):
+                                if __sessions__.current.misp_event.event_id != eid:
+                                    self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
+                                else:
+                                    self.log('success', 'You opened a sample related to the current MISP event.')
+                            else:
+                                self.log('warning', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))
+                        return __sessions__.new(path)
             except IndexError:
                 self.log('error', 'Invalid id, please use virustotal -dl.')
         elif self.args.download_delete is not None:

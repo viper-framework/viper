@@ -345,7 +345,7 @@ class Office(Module):
         self.log('info', "Macro's Detected")
         #try:
         if True:
-            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex String':[], 'VBA string':[]}
+            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex string':[], 'VBA string':[]}
             for (filename, stream_path, vba_filename, vba_code) in vbaparser.extract_macros():
                 self.log('info', "Stream Details")
                 self.log('item', "OLE Stream: {0}".format(string_clean(stream_path)))
@@ -381,8 +381,8 @@ class Office(Module):
             self.log('info', "Base64 Strings")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Base64 String']))
             
-            self.log('info', "Dridex String")
-            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Dridex String']))
+            self.log('info', "Dridex string")
+            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Dridex string']))
             
             self.log('info', "VBA string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['VBA string']))
