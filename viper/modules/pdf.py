@@ -178,8 +178,12 @@ class PDF(Module):
             return False
 
         if 'PDF' not in __sessions__.current.file.type:
-            self.log('error', "The opened file doesn't appear to be a PDF document")
-            return
+            # A file with '%PDF' signature inside first 1024 bytes is a valid
+            # PDF file. magic lib doesn't detect it if there is an offset
+            header = open(__sessions__.current.file.path, 'rb').read(1024)
+            if '%PDF' not in header:
+                self.log('error', "The opened file doesn't appear to be a PDF document")
+                return
 
         if self.args.subname == 'id':
             self.pdf_id()
