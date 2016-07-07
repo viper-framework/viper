@@ -184,7 +184,7 @@ class Database:
     def __init__(self):
         db_path = os.path.join(__project__.get_path(), 'viper.db')
 
-        self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
+        self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool, connect_args={'check_same_thread':False})
         self.engine.echo = False
         self.engine.pool_timeout = 60
 
