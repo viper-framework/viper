@@ -188,7 +188,7 @@ class Database:
         else:
             self._connect_database("")
 
-        self.engine.echo = True
+        self.engine.echo = False
         self.engine.pool_timeout = 60
 
         Base.metadata.create_all(self.engine)
