@@ -15,7 +15,13 @@ storage_path =
 
 [database]
 # Configure the database connection type example shown below
-# reserved for future use
+# Examples:
+# sqlite:///foo.db
+# postgresql://foo:bar@localhost:5432/mydatabase
+# mysql://foo:bar@localhost/mydatabase
+# mysql+pymysql://foo:bar@localhost/mydatabase
+# If empty, default is a SQLite in $storage_path/viper.db
+connection =
 
 [web]
 host = 0.0.0.0
