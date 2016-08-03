@@ -17,7 +17,7 @@ pycrypto==2.6.1
 pydeep==0.2
 pyelftools==0.23
 pylzma==0.4.8
-pymisp==2.2
+pymisp==2.4.49
 pypdns==1.3
 pypssl==2.1
 python-dateutil==2.4.2
