@@ -21,13 +21,9 @@ from viper.core.ui.commands import Commands
 db = Database()
 
 
-def jsonize(data):
-    return json.dumps(data, sort_keys=False, indent=4)
-
-
 @route('/test', method='GET')
 def test():
-    return jsonize({'message': 'test'})
+    return {'message': 'test'}
 
 
 @route('/file/add', method='POST')
@@ -47,36 +43,34 @@ def add_file():
     if new_path:
         # Add file to the database.
         success = db.add(obj=tf_obj, tags=tags)
-
     if success:
-        return jsonize({'message': 'added', 'sha256': tf_obj.sha256})
+        return {'message': 'added', 'sha256': tf_obj.sha256}
     else:
         response.status = 500
-        return jsonize({'message': 'Unable to store file'})
+        return {'message': 'Unable to store file'}
 
 
 @route('/file/get/<file_hash>', method='GET')
 def get_file(file_hash):
-    key = ''
     if len(file_hash) == 32:
         key = 'md5'
     elif len(file_hash) == 64:
         key = 'sha256'
     else:
         response.code = 400
-        return jsonize({'message': 'Invalid hash format (use md5 or sha256)'})
+        return {'message': 'Invalid hash format (use md5 or sha256)'}
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
         response.code = 404
-        return jsonize({'message': 'File not found in the database'})
+        return {'message': 'File not found in the database'}
 
     path = get_sample_path(rows[0].sha256)
     if not path:
         response.code = 404
-        return jsonize({'message': 'File not found in the repository'})
+        return {'message': 'File not found in the repository'}
 
     response.content_length = os.path.getsize(path)
     response.content_type = 'application/octet-stream; charset=UTF-8'
@@ -97,14 +91,14 @@ def delete_file(file_hash):
         key = 'sha256'
     else:
         response.code = 400
-        return jsonize({'message': 'Invalid hash format (use md5 or sha256)'})
+        return {'message': 'Invalid hash format (use md5 or sha256)'}
 
     db = Database()
     rows = db.find(key=key, value=file_hash)
 
     if not rows:
         response.code = 404
-        return jsonize({'message': 'File not found in the database'})
+        return {'message': 'File not found in the database'}
 
     if rows:
         malware_id = rows[0].id
@@ -113,24 +107,25 @@ def delete_file(file_hash):
             success = True
         else:
             response.code = 404
-            return jsonize({'message': 'File not found in repository'})
+            return {'message': 'File not found in repository'}
 
     path = get_sample_path(rows[0].sha256)
     if not path:
         response.code = 404
-        return jsonize({'message': 'File not found in file system'})
+        return {'message': 'File not found in file system'}
     else:
         success = os.remove(path)
 
     if success:
-        return jsonize({'message': 'deleted'})
+        return {'message': 'deleted'}
     else:
         response.code = 500
-        return jsonize({'message': 'Unable to delete file'})
+        return {'message': 'Unable to delete file'}
 
 
 @route('/file/find', method='POST')
 def find_file():
+
     def details(row):
         tags = []
         for tag in row.tag:
@@ -161,7 +156,7 @@ def find_file():
 
     if not value:
         response.code = 400
-        return jsonize({'message': 'Invalid search term'})
+        return {'message': 'Invalid search term'}
 
     # Get the scope of the search
 
@@ -193,7 +188,7 @@ def find_file():
                 project = 'default'
             proj_results.append(details(row))
         results[project] = proj_results
-    return jsonize(results)
+    return {"results": results}
 
 
 @route('/tags/list', method='GET')
@@ -204,7 +199,7 @@ def list_tags():
     for row in rows:
         results.append(row.tag)
 
-    return jsonize(results)
+    return {"results": results}
 
 
 @route('/file/tags/add', method='POST')
@@ -220,13 +215,13 @@ def add_tags():
 
     if not rows:
         response.code = 404
-        return jsonize({'message': 'File not found in the database'})
+        return {'message': 'File not found in the database'}
 
     for row in rows:
         malware_sha256 = row.sha256
         db.add_tags(malware_sha256, tags)
 
-    return jsonize({'message': 'added'})
+    return {'message': 'added'}
 
 
 @route('/modules/run', method='POST')
@@ -247,25 +242,23 @@ def run_module():
 
     if not cmd_line:
         response.code = 404
-        return jsonize({'message': 'Invalid command line'})
+        return {'message': 'Invalid command line'}
 
     results = module_cmdline(cmd_line, sha256)
     __sessions__.close()
 
-    return jsonize(results)
+    return {"results": results}
 
 
 def module_cmdline(cmd_line, sha256):
     # TODO: refactor this function, it has some ugly code.
-
-    json_data = ''
+    command_outputs = []
     cmd = Commands()
     split_commands = cmd_line.split(';')
     for split_command in split_commands:
         split_command = split_command.strip()
         if not split_command:
             continue
-        root = ''
         args = []
         # Split words by white space.
         words = split_command.split()
@@ -278,7 +271,7 @@ def module_cmdline(cmd_line, sha256):
             if root in cmd.commands:
                 cmd.commands[root]['obj'](*args)
                 if cmd.output:
-                    json_data += str(cmd.output)
+                    command_outputs += cmd.output
                 del(cmd.output[:])
             elif root in __modules__:
                 # if prev commands did not open a session open one
@@ -290,14 +283,15 @@ def module_cmdline(cmd_line, sha256):
                 module.set_commandline(args)
                 module.run()
 
-                json_data += str(module.output)
+                command_outputs += module.output
+                print type(module.output)
                 del(module.output[:])
             else:
-                json_data += "{'message': '{0} is not a valid command'.format(cmd_line)}"
+                command_outputs.append({'message': '{0} is not a valid command'.format(cmd_line)})
         except:
-            json_data += "{'message': 'Unable to complete the command: {0}'.format(cmd_line)}"
+            command_outputs.append({'message': 'Unable to complete the command: {0}'.format(cmd_line)})
     __sessions__.close()
-    return json_data
+    return command_outputs
 
 
 @route('/projects/list', method='GET')
@@ -305,12 +299,12 @@ def list_projects():
     projects_path = os.path.join(os.getcwd(), 'projects')
     if not os.path.exists(projects_path):
         response.code = 404
-        return jsonize({'message': 'No projects found'})
+        return {'message': 'No projects found'}
     rows = []
     for project in os.listdir(projects_path):
         project_path = os.path.join(projects_path, project)
         rows.append([project, time.ctime(os.path.getctime(project_path))])
-    return jsonize(rows)
+    return {"results": rows}
 
 
 @route('/file/notes/<action>', method='POST')
@@ -324,21 +318,21 @@ def add_notes(action):
         if note_title and note_body:
 
             db.add_note(note_sha, note_title, note_body)
-            return jsonize({'message': 'Note added'})
+            return {'message': 'Note added'}
         else:
-            return jsonize({'message': 'Missing note_title and / or note_body'})
+            return {'message': 'Missing note_title and / or note_body'}
     # Delete
     elif action == 'delete':
         if note_id:
             db.delete_note(note_id)
-            return jsonize({'message': 'deleted'})
+            return {'message': 'deleted'}
         else:
-            return jsonize({'message': 'missing note_id'})
+            return {'message': 'missing note_id'}
     # Update
     elif action == 'update':
         if note_id and note_body:
             db.edit_note(note_id, note_body)
-            return jsonize({'message': 'Note updated'})
+            return {'message': 'Note updated'}
     # List
     elif action == 'view':
         note_list = {}
@@ -348,13 +342,13 @@ def add_notes(action):
             if notes:
                 for note in notes:
                     note_list[note.id] = {'title': note.title, 'body': note.body}
-            return jsonize({'message': note_list})
+            return {'message': note_list}
         else:
-            return jsonize({'message': 'no sample found'})
+            return {'message': 'no sample found'}
     else:
-        return jsonize({'message': 'no action given'})
+        return {'message': 'no action given'}
 
-    return jsonize({'message': 'Unable to complete action'})
+    return {'message': 'Unable to complete action'}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
