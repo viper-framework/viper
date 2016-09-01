@@ -182,9 +182,12 @@ class Database:
     #__metaclass__ = Singleton
 
     def __init__(self):
-        db_path = os.path.join(__project__.get_path(), 'viper.db')
+        
+        if hasattr(cfg, "database") and cfg.database.connection:
+            self._connect_database(cfg.database.connection)
+        else:
+            self._connect_database("")
 
-        self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
         self.engine.echo = False
         self.engine.pool_timeout = 60
 
@@ -193,6 +196,17 @@ class Database:
 
     def __del__(self):
         self.engine.dispose()
+    
+    def _connect_database(self, connection):
+        if connection.startswith("mysql+pymysql"):
+            self.engine = create_engine(connection)
+        elif connection.startswith("mysql"):
+            self.engine = create_engine(connection, connect_args={"check_same_thread": False})
+        elif connection.startswith("postgresql"):
+            self.engine = create_engine(connection, connect_args={"sslmode": "disable"})
+        else:
+            db_path = os.path.join(__project__.get_path(), 'viper.db')
+            self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
 
     def add_tags(self, sha256, tags):
         session = self.Session()
