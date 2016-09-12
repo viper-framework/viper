@@ -4,6 +4,7 @@
 
 import os
 import json
+import bottle
 import time
 import argparse
 import tempfile
@@ -19,6 +20,8 @@ from viper.core.project import __project__
 from viper.core.ui.commands import Commands
 
 db = Database()
+
+app = application = bottle.default_app()
 
 
 @route('/test', method='GET')
@@ -358,4 +361,4 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--port', help='Port to bind the API server on', default=8080, action='store', required=False)
     args = parser.parse_args()
 
-    run(host=args.host, port=args.port)
+    app.run(host=args.host, port=args.port)
