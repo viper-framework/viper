@@ -23,7 +23,7 @@ db = Database()
 
 app = application = bottle.default_app()
 
-web_port = 8089
+web_port = 8080
 
 @route('/test', method='GET')
 def test():
