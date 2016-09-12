@@ -29,7 +29,8 @@ def test():
 @route('/file/add', method='POST')
 def add_file():
     tags = request.forms.get('tags')
-    notes = request.forms.get('notes')
+    notes_body = request.forms.get('notes_body')
+    notes_title = request.forms.get('notes_title')
     upload = request.files.get('file')
 
     tf = tempfile.NamedTemporaryFile()
@@ -43,7 +44,7 @@ def add_file():
     success = False
     if new_path:
         # Add file to the database.
-        success = db.add(obj=tf_obj, tags=tags, notes=notes)
+        success = db.add(obj=tf_obj, tags=tags, notes_body=notes_body, notes_title=notes_title)
     if success:
         return {'message': 'added', 'sha256': tf_obj.sha256}
     else:

@@ -317,7 +317,7 @@ class Database:
         finally:
             session.close()
 
-    def add(self, obj, name=None, tags=None, parent_sha=None, notes=None):
+    def add(self, obj, name=None, tags=None, parent_sha=None, notes_body=None, notes_title=None):
         session = self.Session()
 
         if not name:
@@ -352,8 +352,8 @@ class Database:
         if tags:
             self.add_tags(sha256=obj.sha256, tags=tags)
 
-        if notes:
-            self.add_note(sha256=obj.sha256, title="test", body=notes)
+        if notes_body and notes_title:
+            self.add_note(sha256=obj.sha256, title=notes_title, body=notes_body)
 
         return True
 
