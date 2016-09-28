@@ -88,6 +88,8 @@ mod_dicts['swf'] = {'decom': 'decompress'}
 mod_dicts['virustotal'] = {'scan': '', 'submit': '-s'}
 mod_dicts['xor'] = {'xor': '', 'rot': '-r', 'all': '-a', 'export': '-o'}
 mod_dicts['yara'] = {'scan': 'scan -t', 'all': 'scan -a -t'}
+mod_dicts['surface'] = {'run': ''}
+mod_dicts['metascan'] = {'run': '-v'}
 
 
 ##

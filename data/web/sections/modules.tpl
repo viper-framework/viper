@@ -16,6 +16,7 @@
                   <option value="idx">IDX - Parse Java IDX Files</option>
                   <option value="image">Image - Perfom analysis on images</option>
                   <option value="jar">JAR - Parse Java archives</option>
+                  <option value="metascan">Metascan - Upload and scan on local Metascan server</option>
                   <option value="office">Office - Office document parser</option>
                   <option value="pdf">PDF - PDF document parser</option>
                   <option value="pe">PE - Parse PE32 files</option>
@@ -23,6 +24,7 @@
                   <option value="reports">Reports - Online sandbox reports</option>
                   <option value="shellcode">ShellCode - Identify shellCode patterns</option>
                   <option value="strings">Strings - Extract strings</option>
+                  <option value="surface">Surface - Surface analysis</option>
                   <option value="swf">SWF - Parse SWF files</option>
                   <option value="virustotal">VirusTotal</option>
                   <option value="xor">XOR - Encoded strings</option>

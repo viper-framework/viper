@@ -143,4 +143,12 @@ if (chosen == "yara") {
   selbox.options[selbox.options.length] = new Option('Scan','scan');
 }
 
+if (chosen == "metascan") {
+  selbox.options[selbox.options.length] = new Option('Upload & Scan','run');
+}
+
+if (chosen == "surface") {
+  selbox.options[selbox.options.length] = new Option('Scan','run');
+}
+
 }
