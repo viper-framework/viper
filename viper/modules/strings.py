@@ -156,7 +156,7 @@ class Strings(Module):
             return
 
         if os.path.exists(__sessions__.current.file.path):
-            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:\x2f\x40\x5c\x5c]{4,}'
+            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:\x2f\x40\x28\x29\x3b\x5c\x5c]{4,}'
             strings = re.findall(regexp, __sessions__.current.file.data)
 
         if arg_all:
