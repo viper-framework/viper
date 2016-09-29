@@ -87,10 +87,7 @@ class Strings(Module):
         results = []
         for entry in strings:
             to_add = False
-            if DOMAIN_REGEX.search(entry) and not IPV4_REGEX.search(entry):
-                if entry[entry.rfind('.') + 1:].upper() in TLD:
-                    to_add = True
-            elif IPV4_REGEX.search(entry):
+            if IPV4_REGEX.search(entry):
                 to_add = True
             elif IPV6_REGEX.search(entry):
                 try:
@@ -98,6 +95,9 @@ class Strings(Module):
                 except socket_error:
                     continue
                 else:
+                    to_add = True
+            elif DOMAIN_REGEX.search(entry):
+                if entry[entry.rfind('.') + 1:].upper() in TLD:
                     to_add = True
 
             if to_add:
