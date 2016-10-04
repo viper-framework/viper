@@ -213,19 +213,31 @@ class Strings(Module):
             return
 
         if os.path.exists(__sessions__.current.file.path):
-            strings = self.get_strings()
+            strings = list(self.get_strings())
 
+        extracted = False
         if arg_all:
+            self.log('success', 'All strings:')
             for entry in strings:
                 self.log('', entry)
-        elif arg_hosts:
+            extracted = True
+        if arg_hosts:
+            self.log('success', 'IP addresses and domains:')
             self.extract_hosts(strings)
-        elif arg_network:
+            extracted = True
+        if arg_network:
+            self.log('success', 'Network related:')
             self.extract_network(strings)
-        elif arg_files:
+            extracted = True
+        if arg_files:
+            self.log('success', 'Filenames:')
             self.extract_files(strings)
-        elif arg_interesting:
+            extracted = True
+        if arg_interesting:
+            self.log('success', 'Various interesting strings:')
             self.extract_interesting(strings)
-        else:
+            extracted = True
+        
+        if not extracted:
             self.log('error', 'At least one of the parameters is required')
             self.usage()
