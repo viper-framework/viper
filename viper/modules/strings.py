@@ -26,9 +26,13 @@ IPV6_REGEX = re.compile('((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-F
                         '\d|[1-9]?\d)){3}))|:)))(%.+)?', re.IGNORECASE | re.S)
 PDB_REGEX = re.compile('\.pdb$', re.IGNORECASE)
 URL_REGEX = re.compile('http(s){0,1}://', re.IGNORECASE)
+GET_POST_REGEX = re.compile('(GET|POST) ')
+HOST_REGEX = re.compile('Host: ')
 USERAGENT_REGEX = re.compile('(Mozilla|curl|Wget|Opera)/.+\(.+\;.+\)', re.IGNORECASE)
 EMAIL_REGEX = re.compile('[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}', re.IGNORECASE)
-REGKEY_REGEX = re.compile('(HKEY_CLASSES_ROOT|HKEY_CURRENT_USER|HKEY_LOCAL_MACHINE|HKEY_USERS|HKEY_CURRENT_CONFIG|HKCR|HKCU|HKLM|HKU|HKCC)/', re.IGNORECASE)
+REGKEY_REGEX = re.compile('(HKEY_CLASSES_ROOT|HKEY_CURRENT_USER|HKEY_LOCAL_MACHINE|HKEY_USERS|HKEY_CURRENT_CONFIG|HKCR|HKCU|HKLM|HKU|HKCC)(/|\x5c\x5c)', re.IGNORECASE)
+REGKEY2_REGEX = re.compile('(CurrentVersion|Software\\Microsoft|Windows NT|Microsoft\\Interface)')
+FILE_REGEX = re.compile('\w+\.(EXE|DLL|BAT|PS|INI|PIF|SCR|DOC|DOCX|PPT|PPTX|PPTS|XLS|XLSX|ZIP|RAR)', re.U | re.IGNORECASE)
 
 TLD = [
     'AC', 'ACADEMY', 'ACTOR', 'AD', 'AE', 'AERO', 'AF', 'AG', 'AGENCY', 'AI', 'AL', 'AM', 'AN', 'AO', 'AQ', 'AR',
@@ -80,9 +84,10 @@ class Strings(Module):
     def __init__(self):
         super(Strings, self).__init__()
         self.parser.add_argument('-a', '--all', action='store_true', help='Print all strings')
+        self.parser.add_argument('-F', '--files', action='store_true', help='Extract filenames from strings')
         self.parser.add_argument('-H', '--hosts', action='store_true', help='Extract IP addresses and domains from strings')
-        self.parser.add_argument('-N', '--network', action='store_true', help='Extract various network related strings')
         self.parser.add_argument('-I', '--interesting', action='store_true', help='Extract various interesting strings')
+        self.parser.add_argument('-N', '--network', action='store_true', help='Extract various network related strings')
 
     def extract_hosts(self, strings):
         results = []
@@ -114,11 +119,28 @@ class Strings(Module):
             to_add = False
             if URL_REGEX.search(entry):
                 to_add = True
+            if GET_POST_REGEX.search(entry):
+                to_add = True
+            if HOST_REGEX.search(entry):
+                to_add = True
             if USERAGENT_REGEX.search(entry):
                 to_add = True
             if EMAIL_REGEX.search(entry):
                 if entry[entry.rfind('.') + 1:].upper() in TLD:
                     to_add = True
+            if to_add:
+                if entry not in results:
+                    results.append(entry)
+
+        for result in results:
+            self.log('item', result)
+
+    def extract_files(self, strings):
+        results = []
+        for entry in strings:
+            to_add = False
+            if FILE_REGEX.search(entry):
+                to_add = True
             if to_add:
                 if entry not in results:
                     results.append(entry)
@@ -134,7 +156,8 @@ class Strings(Module):
                 to_add = True
             if REGKEY_REGEX.search(entry):
                 to_add = True
-
+            if REGKEY2_REGEX.search(entry):
+                to_add = True
             if to_add:
                 if entry not in results:
                     results.append(entry)
@@ -182,6 +205,7 @@ class Strings(Module):
         arg_all = self.args.all
         arg_hosts = self.args.hosts
         arg_network = self.args.network
+        arg_files = self.args.files
         arg_interesting = self.args.interesting
 
         if not __sessions__.is_set():
@@ -198,6 +222,8 @@ class Strings(Module):
             self.extract_hosts(strings)
         elif arg_network:
             self.extract_network(strings)
+        elif arg_files:
+            self.extract_files(strings)
         elif arg_interesting:
             self.extract_interesting(strings)
         else:
