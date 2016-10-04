@@ -148,19 +148,30 @@ class Strings(Module):
         Extended with Unicode support
         '''
         result = ""
-        null_seen = False
+        counter = 1
+        wide_word = False
         for c in __sessions__.current.file.data:
-            if c == "\x00" and not null_seen:
-                null_seen = True
+            # already have something, check if the second byte is a null
+            if counter == 2 and c == "\x00":
+                wide_word = True
+                counter += 1
                 continue
-            null_seen = False
-            if c in string.printable :
+            # every 2 chars we allow a 00
+            if wide_word and c == "\x00" and not counter % 2:
+                counter += 1
+                continue
+            # valid char, go to next
+            if c in string.printable:
                 result += c
+                counter += 1
                 continue
             if len(result) >= min:
                 yield result
+            # reset the variables
             result = ""
-        if len(result)>= min:  # catch result at EOF
+            counter = 1
+            wide_word = False
+        if len(result) >= min:  # catch result at EOF
             yield result
 
     def run(self):
