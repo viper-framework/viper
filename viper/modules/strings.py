@@ -3,6 +3,7 @@
 
 import os
 import re
+import string
 from socket import inet_pton, AF_INET6, error as socket_error
 
 from viper.common.abstracts import Module
@@ -141,6 +142,27 @@ class Strings(Module):
         for result in results:
             self.log('item', result)
 
+    def get_strings(self, min=4):
+        '''
+        String implementation see http://stackoverflow.com/a/17197027/6880819
+        Extended with Unicode support
+        '''
+        result = ""
+        null_seen = False
+        for c in __sessions__.current.file.data:
+            if c == "\x00" and not null_seen:
+                null_seen = True
+                continue
+            null_seen = False
+            if c in string.printable :
+                result += c
+                continue
+            if len(result) >= min:
+                yield result
+            result = ""
+        if len(result)>= min:  # catch result at EOF
+            yield result
+
     def run(self):
         super(Strings, self).run()
         if self.args is None:
@@ -156,8 +178,7 @@ class Strings(Module):
             return
 
         if os.path.exists(__sessions__.current.file.path):
-            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:\x2f\x40\x28\x29\x3b\x5c\x5c]{4,}'
-            strings = re.findall(regexp, __sessions__.current.file.data)
+            strings = self.get_strings()
 
         if arg_all:
             for entry in strings:
