@@ -3,6 +3,7 @@
 
 import os
 import re
+import string
 from socket import inet_pton, AF_INET6, error as socket_error
 
 from viper.common.abstracts import Module
@@ -23,6 +24,16 @@ IPV6_REGEX = re.compile('((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-F
                         '\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7}'
                         ')|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d'
                         '\d|[1-9]?\d)){3}))|:)))(%.+)?', re.IGNORECASE | re.S)
+PDB_REGEX = re.compile('\.pdb$', re.IGNORECASE)
+URL_REGEX = re.compile('http(s){0,1}://', re.IGNORECASE)
+GET_POST_REGEX = re.compile('(GET|POST) ')
+HOST_REGEX = re.compile('Host: ')
+USERAGENT_REGEX = re.compile('(Mozilla|curl|Wget|Opera)/.+\(.+\;.+\)', re.IGNORECASE)
+EMAIL_REGEX = re.compile('[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}', re.IGNORECASE)
+REGKEY_REGEX = re.compile('(HKEY_CLASSES_ROOT|HKEY_CURRENT_USER|HKEY_LOCAL_MACHINE|HKEY_USERS|HKEY_CURRENT_CONFIG|HKCR|HKCU|HKLM|HKU|HKCC)(/|\x5c\x5c)', re.IGNORECASE)
+REGKEY2_REGEX = re.compile('(CurrentVersion|Software\\Microsoft|Windows NT|Microsoft\\Interface)')
+FILE_REGEX = re.compile('\w+\.(EXE|DLL|BAT|PS|INI|PIF|SCR|DOC|DOCX|PPT|PPTX|PPTS|XLS|XLSX|ZIP|RAR)', re.U | re.IGNORECASE)
+
 TLD = [
     'AC', 'ACADEMY', 'ACTOR', 'AD', 'AE', 'AERO', 'AF', 'AG', 'AGENCY', 'AI', 'AL', 'AM', 'AN', 'AO', 'AQ', 'AR',
     'ARPA', 'AS', 'ASIA', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BAR', 'BARGAINS', 'BB', 'BD', 'BE', 'BERLIN', 'BEST',
@@ -68,21 +79,21 @@ TLD = [
 class Strings(Module):
     cmd = 'strings'
     description = 'Extract strings from file'
-    authors = ['nex', 'Brian Wallace']
+    authors = ['nex', 'Brian Wallace', 'Christophe Vandeplas']
 
     def __init__(self):
         super(Strings, self).__init__()
         self.parser.add_argument('-a', '--all', action='store_true', help='Print all strings')
+        self.parser.add_argument('-F', '--files', action='store_true', help='Extract filenames from strings')
         self.parser.add_argument('-H', '--hosts', action='store_true', help='Extract IP addresses and domains from strings')
+        self.parser.add_argument('-I', '--interesting', action='store_true', help='Extract various interesting strings')
+        self.parser.add_argument('-N', '--network', action='store_true', help='Extract various network related strings')
 
     def extract_hosts(self, strings):
         results = []
         for entry in strings:
             to_add = False
-            if DOMAIN_REGEX.search(entry) and not IPV4_REGEX.search(entry):
-                if entry[entry.rfind('.') + 1:].upper() in TLD:
-                    to_add = True
-            elif IPV4_REGEX.search(entry):
+            if IPV4_REGEX.search(entry):
                 to_add = True
             elif IPV6_REGEX.search(entry):
                 try:
@@ -90,6 +101,9 @@ class Strings(Module):
                 except socket_error:
                     continue
                 else:
+                    to_add = True
+            elif DOMAIN_REGEX.search(entry):
+                if entry[entry.rfind('.') + 1:].upper() in TLD:
                     to_add = True
 
             if to_add:
@@ -99,6 +113,90 @@ class Strings(Module):
         for result in results:
             self.log('item', result)
 
+    def extract_network(self, strings):
+        results = []
+        for entry in strings:
+            to_add = False
+            if URL_REGEX.search(entry):
+                to_add = True
+            if GET_POST_REGEX.search(entry):
+                to_add = True
+            if HOST_REGEX.search(entry):
+                to_add = True
+            if USERAGENT_REGEX.search(entry):
+                to_add = True
+            if EMAIL_REGEX.search(entry):
+                if entry[entry.rfind('.') + 1:].upper() in TLD:
+                    to_add = True
+            if to_add:
+                if entry not in results:
+                    results.append(entry)
+
+        for result in results:
+            self.log('item', result)
+
+    def extract_files(self, strings):
+        results = []
+        for entry in strings:
+            to_add = False
+            if FILE_REGEX.search(entry):
+                to_add = True
+            if to_add:
+                if entry not in results:
+                    results.append(entry)
+
+        for result in results:
+            self.log('item', result)
+
+    def extract_interesting(self, strings):
+        results = []
+        for entry in strings:
+            to_add = False
+            if PDB_REGEX.search(entry):
+                to_add = True
+            if REGKEY_REGEX.search(entry):
+                to_add = True
+            if REGKEY2_REGEX.search(entry):
+                to_add = True
+            if to_add:
+                if entry not in results:
+                    results.append(entry)
+
+        for result in results:
+            self.log('item', result)
+
+    def get_strings(self, min=4):
+        '''
+        String implementation see http://stackoverflow.com/a/17197027/6880819
+        Extended with Unicode support
+        '''
+        result = ""
+        counter = 1
+        wide_word = False
+        for c in __sessions__.current.file.data:
+            # already have something, check if the second byte is a null
+            if counter == 2 and c == "\x00":
+                wide_word = True
+                counter += 1
+                continue
+            # every 2 chars we allow a 00
+            if wide_word and c == "\x00" and not counter % 2:
+                counter += 1
+                continue
+            # valid char, go to next
+            if c in string.printable:
+                result += c
+                counter += 1
+                continue
+            if len(result) >= min:
+                yield result
+            # reset the variables
+            result = ""
+            counter = 1
+            wide_word = False
+        if len(result) >= min:  # catch result at EOF
+            yield result
+
     def run(self):
         super(Strings, self).run()
         if self.args is None:
@@ -106,20 +204,40 @@ class Strings(Module):
 
         arg_all = self.args.all
         arg_hosts = self.args.hosts
+        arg_network = self.args.network
+        arg_files = self.args.files
+        arg_interesting = self.args.interesting
 
         if not __sessions__.is_set():
             self.log('error', "No open session")
             return
 
         if os.path.exists(__sessions__.current.file.path):
-            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
-            strings = re.findall(regexp, __sessions__.current.file.data)
+            strings = list(self.get_strings())
 
+        extracted = False
         if arg_all:
+            self.log('success', 'All strings:')
             for entry in strings:
                 self.log('', entry)
-        elif arg_hosts:
+            extracted = True
+        if arg_hosts:
+            self.log('success', 'IP addresses and domains:')
             self.extract_hosts(strings)
-        else:
+            extracted = True
+        if arg_network:
+            self.log('success', 'Network related:')
+            self.extract_network(strings)
+            extracted = True
+        if arg_files:
+            self.log('success', 'Filenames:')
+            self.extract_files(strings)
+            extracted = True
+        if arg_interesting:
+            self.log('success', 'Various interesting strings:')
+            self.extract_interesting(strings)
+            extracted = True
+        
+        if not extracted:
             self.log('error', 'At least one of the parameters is required')
             self.usage()
