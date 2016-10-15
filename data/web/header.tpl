@@ -4,7 +4,7 @@ import os
 projects_path = os.path.join(os.getcwd(), 'projects')
 projects = ['default']
 if os.path.exists(projects_path):
-    for project in os.listdir(projects_path):
+    for project in sorted(os.listdir(projects_path)):
         project_path = os.path.join(projects_path, project)
         if os.path.isdir(project_path):
             projects.append(project)
