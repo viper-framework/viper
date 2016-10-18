@@ -30,7 +30,7 @@ Viper provides a REST-based API interface through which you can operate on the r
 as execute almost all functions that you would normally get through the command-line interface.
 
 To start the API::
-    
+
     user@system:~/$ viper-api
     Bottle server starting up (using WSGIRefServer())...
     Listening on http://127.0.0.1:8080/
@@ -167,39 +167,39 @@ available.
             {
                 "default": [
                     {
-                        "sha1": "13da502ab0d75daca5e5075c60e81bfe3b7a637f", 
-                        "name": "darkcomet.exe", 
+                        "sha1": "13da502ab0d75daca5e5075c60e81bfe3b7a637f",
+                        "name": "darkcomet.exe",
                         "tags": [
-                            "rat", 
+                            "rat",
                             "darkcomet"
-                        ], 
-                        "sha512": "7e81e0c4f49f1884ebebdf6e53531e7836721c2ae41729cf5bc0340f3369e7d37fe4168a7434b2b0420b299f5c1d9a4f482f1bda8e66e40345757d97e5602b2d", 
-                        "created_at": "2015-03-30 23:13:20.595238", 
-                        "crc32": "2238B48E", 
-                        "ssdeep": "12288:D9HFJ9rJxRX1uVVjoaWSoynxdO1FVBaOiRZTERfIhNkNCCLo9Ek5C/hlg:NZ1xuVVjfFoynPaVBUR8f+kN10EB/g", 
-                        "sha256": "2d79fcc6b02a2e183a0cb30e0e25d103f42badda9fbf86bbee06f93aa3855aff", 
-                        "type": "PE32 executable (GUI) Intel 80386, for MS Windows", 
-                        "id": 10, 
-                        "md5": "9f2520a3056543d49bb0f822d85ce5dd", 
+                        ],
+                        "sha512": "7e81e0c4f49f1884ebebdf6e53531e7836721c2ae41729cf5bc0340f3369e7d37fe4168a7434b2b0420b299f5c1d9a4f482f1bda8e66e40345757d97e5602b2d",
+                        "created_at": "2015-03-30 23:13:20.595238",
+                        "crc32": "2238B48E",
+                        "ssdeep": "12288:D9HFJ9rJxRX1uVVjoaWSoynxdO1FVBaOiRZTERfIhNkNCCLo9Ek5C/hlg:NZ1xuVVjfFoynPaVBUR8f+kN10EB/g",
+                        "sha256": "2d79fcc6b02a2e183a0cb30e0e25d103f42badda9fbf86bbee06f93aa3855aff",
+                        "type": "PE32 executable (GUI) Intel 80386, for MS Windows",
+                        "id": 10,
+                        "md5": "9f2520a3056543d49bb0f822d85ce5dd",
                         "size": 774144
-                    }, 
+                    },
                     {
-                        "sha1": "dbcea714f43aa06a7f1c3d11cbfd67e4f8e0c23e", 
-                        "name": "poisonivy3.exe", 
+                        "sha1": "dbcea714f43aa06a7f1c3d11cbfd67e4f8e0c23e",
+                        "name": "poisonivy3.exe",
                         "tags": [
-                            "rat", 
+                            "rat",
                             "poisonivy"
-                        ], 
-                        "sha512": "4b2d61211b059400d5f8701908c6f4cb25a70a44882c67f887301dfc3e02d29b562032fc11333cca29f8bb9a31f0b4679760b0161a63cfc848da1e718dadcd58", 
-                        "created_at": "2015-03-30 23:13:20.595238", 
-                        "crc32": "BCD8287D", 
-                        "ssdeep": "3072:lR+yF1aa8hCqTevS0IjhAPCoGm3vkazsW2mq:lR+KrWCqavSFhmCoGm3h0mq", 
-                        "sha256": "15846af22582f06fde215a0e506fdf5f88d3262b3d62d1eabd6bdf00f91e0df7", 
-                        "type": "PE32 executable (GUI) Intel 80386 (stripped to external PDB), for MS Windows", 
-                        "id": 28, 
-                        "md5": "23c3b61ecdff3d67479d70b5d4d91dea", 
+                        ],
+                        "sha512": "4b2d61211b059400d5f8701908c6f4cb25a70a44882c67f887301dfc3e02d29b562032fc11333cca29f8bb9a31f0b4679760b0161a63cfc848da1e718dadcd58",
+                        "created_at": "2015-03-30 23:13:20.595238",
+                        "crc32": "BCD8287D",
+                        "ssdeep": "3072:lR+yF1aa8hCqTevS0IjhAPCoGm3vkazsW2mq:lR+KrWCqavSFhmCoGm3h0mq",
+                        "sha256": "15846af22582f06fde215a0e506fdf5f88d3262b3d62d1eabd6bdf00f91e0df7",
+                        "type": "PE32 executable (GUI) Intel 80386 (stripped to external PDB), for MS Windows",
+                        "id": 28,
+                        "md5": "23c3b61ecdff3d67479d70b5d4d91dea",
                         "size": 143560
-                    }, 
+                    },
                     ...
                 ]
             }
@@ -212,7 +212,7 @@ available.
             * ``tag``: search by tag
             * ``name``: search by name
             * ``all``: retrieve all files
-            * ``latest``: retrieve only the most recently added files
+            * ``latest``: retrieve only the most recently added files (specify 1 as the value)
             * ``project``: a project name to search the file in (default is none, you can also specify "all" to search across all projects)
 
         **Status codes**:
@@ -269,12 +269,12 @@ available.
         **Example response**::
 
             [
-                "rat", 
-                "darkcomet", 
-                "poisonivy", 
-                "njrat", 
-                "embedded_win_api", 
-                "nettraveler", 
+                "rat",
+                "darkcomet",
+                "poisonivy",
+                "njrat",
+                "embedded_win_api",
+                "nettraveler",
                 "xtreme"
             ]
 
@@ -326,7 +326,7 @@ available.
             {
                 "message": {
                     "1": {
-                        "body": "bodddy", 
+                        "body": "bodddy",
                         "title": "asd"
                     }
                 }
@@ -441,7 +441,7 @@ available.
 
             * ``200`` - no error
             * ``404`` - invalid command line
-    
+
 Web Interface
 =============
 
@@ -458,7 +458,7 @@ Its main features are:
     * Enter Notes
     * Add / Delete / Modify Yara rules
     * Add / Delete / Modify Tags
-    
+
 Launch the web interface
 ------------------------
 
@@ -471,7 +471,7 @@ By default it launches a single threaded bottle web server on localhost:9090::
     Hit Ctrl-C to quit.
 
 You can set the listening IP address and port with options -H and -p ::
-    
+
     user@localhost:~/$ viper-web -H 0.0.0.0 -p 8080
     Bottle v0.12.8 server starting up (using WSGIRefServer())...
     Listening on http://0.0.0.0:8080/
@@ -488,7 +488,7 @@ To make this work, we are using uwsgi and nginx as stack.
 To use nginx as the webserver serving web.py,::
 
 $ sudo apt-get remove apache2 #avoid conflicts
-$ sudo apt-get install nginx-full uwsgi uwsgi-plugin-python 
+$ sudo apt-get install nginx-full uwsgi uwsgi-plugin-python
 
 Move (or copy) the source to the web directory and make sure the permissions match ::
 
@@ -496,7 +496,7 @@ $ sudo mv viper-* /srv/www/viper
 $ chown -R www-data:www-data /srv/www/viper
 
 Change the VIPER_ROOT variable in web.py to reflect your installation.::
- 
+
  $ sudo vi /srv/www/viper/web.py
 
 Modify the user section, and uncomment and change the following line to reflect your environment::
@@ -517,16 +517,16 @@ Create a file /etc/uwsgi/apps-available/bottle.ini::
 Link the /etc/uwsgi/apps-available/bottle.ini file to apps-enabled::
 
  $ sudo  ln -s /etc/uwsgi/apps-available/bottle.ini /etc/uwsgi/apps-enabled/bottle.ini
- 
+
 Restart nginx and uwsgi::
 
  $ sudo service nginx restart
  $ sudo service uwsgi restart
- 
+
 Tail the uwsgi logfile to make sure everything works ok: ::
-   
+
  $ tail -f /var/log/uwsgi/app/bottle.log
 
-And browse to the default port 80 interface of the webserver. You should be greeted with the viper webpage. 
+And browse to the default port 80 interface of the webserver. You should be greeted with the viper webpage.
 
 Setting up SSL and web-based authentication is out of scope for this document, but infromation can be found in the nginx manual and in one of the many tutorials on the web.
