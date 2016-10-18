@@ -79,7 +79,9 @@ class PE(Module):
         parser_lang = subparsers.add_parser('language', help='Guess PE language')
         parser_lang.add_argument('-s', '--scan', action='store_true', help='Scan the repository')
 
-        subparsers.add_parser('sections', help='List PE Sections')
+        parser_sect = subparsers.add_parser('sections', help='List PE Sections')
+        parser_sect.add_argument('-d', '--dump', metavar='folder', help='Destionation directory to dump all sections in')
+
         parser_peh = subparsers.add_parser('pehash', help='Calculate the PEhash and compare them')
         parser_peh.add_argument('-a', '--all', action='store_true', help='Prints the PEhash of all files in the project')
         parser_peh.add_argument('-c', '--cluster', action='store_true', help='Calculate and cluster all files in the project')
@@ -891,16 +893,30 @@ class PE(Module):
 
         rows = []
         for section in self.pe.sections:
+            if self.args.dump:
+                with open(__sessions__.current.file.path, 'rb') as file_handle:
+                    file_handle.seek(int(section.PointerToRawData))
+                    section_data = file_handle.read(int(section.SizeOfRawData))
+
+                    dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
+                        __sessions__.current.file.md5, section.Name.replace('\x00', '')))
+
+                    with open(dump_path, 'wb') as dump_handle:
+                        dump_handle.write(section_data)
+
+                    self.log('info', "Dumped section to {}".format(dump_path))
+
             rows.append([
                 section.Name,
                 hex(section.VirtualAddress),
                 hex(section.Misc_VirtualSize),
+                section.PointerToRawData,
                 section.SizeOfRawData,
                 section.get_entropy()
             ])
 
         self.log('info', "PE Sections:")
-        self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'RawDataSize', 'Entropy'], rows=rows))
+        self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'PointerToRawData', 'RawDataSize', 'Entropy'], rows=rows))
 
     def pehash(self):
         if not HAVE_PEHASH:
