@@ -6,7 +6,10 @@ import re
 from socket import inet_pton, AF_INET6, error as socket_error
 
 from viper.common.abstracts import Module
+from viper.common.objects import File
 from viper.core.session import __sessions__
+from viper.core.database import Database
+from viper.core.storage import get_sample_path
 
 DOMAIN_REGEX = re.compile('([a-z0-9][a-z0-9\-]{0,61}[a-z0-9]\.)+[a-z0-9][a-z0-9\-]*[a-z0-9]', re.IGNORECASE)
 IPV4_REGEX = re.compile('[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]')
@@ -74,6 +77,7 @@ class Strings(Module):
         super(Strings, self).__init__()
         self.parser.add_argument('-a', '--all', action='store_true', help='Print all strings')
         self.parser.add_argument('-H', '--hosts', action='store_true', help='Extract IP addresses and domains from strings')
+        self.parser.add_argument('-s', '--scan', action='store_true', help='Scan all files in the project')
 
     def extract_hosts(self, strings):
         results = []
@@ -96,30 +100,53 @@ class Strings(Module):
                 if entry not in results:
                     results.append(entry)
 
-        for result in results:
-            self.log('item', result)
+        return results
 
     def run(self):
+        # TODO: this function needs to be refactored.
+
         super(Strings, self).run()
         if self.args is None:
             return
 
         arg_all = self.args.all
         arg_hosts = self.args.hosts
+        arg_scan = self.args.scan
 
-        if not __sessions__.is_set():
-            self.log('error', "No open session")
-            return
+        regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
 
-        if os.path.exists(__sessions__.current.file.path):
-            regexp = '[\x20\x30-\x39\x41-\x5a\x61-\x7a\-\.:]{4,}'
-            strings = re.findall(regexp, __sessions__.current.file.data)
+        if arg_scan:
+            db = Database()
+            samples = db.find(key='all')
 
-        if arg_all:
-            for entry in strings:
-                self.log('', entry)
-        elif arg_hosts:
-            self.extract_hosts(strings)
+            rows = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+
+                strings = re.findall(regexp, File(sample_path).data)
+                results = self.extract_hosts(strings)
+
+                if results:
+                    self.log('info', sample.name)
+
+                    for result in results:
+                        self.log('item', result)
         else:
+            if not __sessions__.is_set():
+                self.log('error', "No open session")
+                return
+
+            if os.path.exists(__sessions__.current.file.path):
+                strings = re.findall(regexp, __sessions__.current.file.data)
+
+            if arg_all:
+                for entry in strings:
+                    self.log('', entry)
+            elif arg_hosts:
+                results = self.extract_hosts(strings)
+                for result in results:
+                    self.log('item', result)
+        
+        if not arg_all and not arg_hosts and not arg_scan:
             self.log('error', 'At least one of the parameters is required')
             self.usage()
