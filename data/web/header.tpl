@@ -1,7 +1,8 @@
 <%
 # This gets a list of Projects for the nav bar
 import os
-projects_path = os.path.join(os.getcwd(), 'projects')
+from viper.core.project import __project__
+projects_path = __project__.get_projects_path()
 projects = ['default']
 if os.path.exists(projects_path):
     for project in sorted(os.listdir(projects_path)):
