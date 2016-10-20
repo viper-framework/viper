@@ -184,8 +184,8 @@ class Strings(Module):
             if wide_word and c == "\x00" and not counter % 2:
                 counter += 1
                 continue
-            # valid char, go to next
-            if c in string.printable:
+            # valid char, go to next - newlines are to be considered as the end of the string
+            if c in string.printable and c not in ['\n', '\r']:
                 result += c
                 counter += 1
                 continue
