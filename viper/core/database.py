@@ -182,7 +182,7 @@ class Database:
     #__metaclass__ = Singleton
 
     def __init__(self):
-        
+
         if hasattr(cfg, "database") and cfg.database.connection:
             self._connect_database(cfg.database.connection)
         else:
@@ -196,7 +196,7 @@ class Database:
 
     def __del__(self):
         self.engine.dispose()
-    
+
     def _connect_database(self, connection):
         if connection.startswith("mysql+pymysql"):
             self.engine = create_engine(connection)
@@ -215,7 +215,7 @@ class Database:
         if not malware_entry:
             return
 
-        # The tags argument might be a list, a single tag, or a 
+        # The tags argument might be a list, a single tag, or a
         # comma-separated list of tags.
         if isinstance(tags, str):
             tags = tags.strip()
@@ -247,7 +247,7 @@ class Database:
 
     def delete_tag(self, tag_name, sha256):
         session = self.Session()
-        
+
         try:
             # First remove the tag from the sample
             malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
@@ -258,7 +258,7 @@ class Database:
                 session.commit()
             except:
                 print_error("Tag {0} does not exist for this sample".format(tag_name))
-            
+
             # If tag has no entries drop it
             count = len(self.find('tag', tag_name))
             if count == 0:
@@ -317,7 +317,7 @@ class Database:
         finally:
             session.close()
 
-    def add(self, obj, name=None, tags=None, parent_sha=None):
+    def add(self, obj, name=None, tags=None, parent_sha=None, notes_body=None, notes_title=None):
         session = self.Session()
 
         if not name:
@@ -351,6 +351,9 @@ class Database:
 
         if tags:
             self.add_tags(sha256=obj.sha256, tags=tags)
+
+        if notes_body and notes_title:
+            self.add_note(sha256=obj.sha256, title=notes_title, body=notes_body)
 
         return True
 
@@ -424,7 +427,7 @@ class Database:
                     return None
             else:
                 value = 5
-            
+
             rows = session.query(Malware).order_by(Malware.id.desc()).limit(value).offset(offset)
         elif key == 'md5':
             rows = session.query(Malware).filter(Malware.md5 == value).all()
@@ -435,6 +438,10 @@ class Database:
         elif key == 'tag':
             rows = session.query(Malware).filter(self.tag_filter(value)).all()
         elif key == 'name':
+            if not value:
+                print_error("You need to specify a valid file name pattern (you can use wildcards)")
+                return None
+
             if '*' in value:
                 value = value.replace('*', '%')
             else:

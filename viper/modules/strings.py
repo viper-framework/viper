@@ -7,7 +7,10 @@ import string
 from socket import inet_pton, AF_INET6, error as socket_error
 
 from viper.common.abstracts import Module
+from viper.common.objects import File
 from viper.core.session import __sessions__
+from viper.core.database import Database
+from viper.core.storage import get_sample_path
 
 DOMAIN_REGEX = re.compile('([a-z0-9][a-z0-9\-]{0,61}[a-z0-9]\.)+[a-z0-9][a-z0-9\-]*[a-z0-9]', re.IGNORECASE)
 IPV4_REGEX = re.compile('[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]\.[1-2]?[0-9]?[0-9]')
@@ -86,8 +89,9 @@ class Strings(Module):
         self.parser.add_argument('-a', '--all', action='store_true', help='Print all strings')
         self.parser.add_argument('-F', '--files', action='store_true', help='Extract filenames from strings')
         self.parser.add_argument('-H', '--hosts', action='store_true', help='Extract IP addresses and domains from strings')
-        self.parser.add_argument('-I', '--interesting', action='store_true', help='Extract various interesting strings')
         self.parser.add_argument('-N', '--network', action='store_true', help='Extract various network related strings')
+        self.parser.add_argument('-I', '--interesting', action='store_true', help='Extract various interesting strings')
+        self.parser.add_argument('-s', '--scan', action='store_true', help='Scan all files in the project with all the scanners')
 
     def extract_hosts(self, strings):
         results = []
@@ -110,8 +114,7 @@ class Strings(Module):
                 if entry not in results:
                     results.append(entry)
 
-        for result in results:
-            self.log('item', result)
+        return results
 
     def extract_network(self, strings):
         results = []
@@ -132,8 +135,7 @@ class Strings(Module):
                 if entry not in results:
                     results.append(entry)
 
-        for result in results:
-            self.log('item', result)
+        return results
 
     def extract_files(self, strings):
         results = []
@@ -145,8 +147,7 @@ class Strings(Module):
                 if entry not in results:
                     results.append(entry)
 
-        for result in results:
-            self.log('item', result)
+        return results
 
     def extract_interesting(self, strings):
         results = []
@@ -162,18 +163,18 @@ class Strings(Module):
                 if entry not in results:
                     results.append(entry)
 
-        for result in results:
-            self.log('item', result)
+        return results
 
-    def get_strings(self, min=4):
+    def get_strings(self, f, min=4):
         '''
         String implementation see http://stackoverflow.com/a/17197027/6880819
         Extended with Unicode support
         '''
+        results = []
         result = ""
         counter = 1
         wide_word = False
-        for c in __sessions__.current.file.data:
+        for c in f.data:
             # already have something, check if the second byte is a null
             if counter == 2 and c == "\x00":
                 wide_word = True
@@ -189,15 +190,18 @@ class Strings(Module):
                 counter += 1
                 continue
             if len(result) >= min:
-                yield result
+                results.append(result)
             # reset the variables
             result = ""
             counter = 1
             wide_word = False
         if len(result) >= min:  # catch result at EOF
-            yield result
+            results.append(result)
+        return results
 
     def run(self):
+        # TODO: this function needs to be refactored.
+
         super(Strings, self).run()
         if self.args is None:
             return
@@ -207,37 +211,83 @@ class Strings(Module):
         arg_network = self.args.network
         arg_files = self.args.files
         arg_interesting = self.args.interesting
+        arg_scan = self.args.scan
 
-        if not __sessions__.is_set():
-            self.log('error', "No open session")
-            return
+        if arg_scan:
+            db = Database()
+            samples = db.find(key='all')
 
-        if os.path.exists(__sessions__.current.file.path):
-            strings = list(self.get_strings())
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+                strings = self.get_strings(File(sample_path))
 
-        extracted = False
-        if arg_all:
-            self.log('success', 'All strings:')
-            for entry in strings:
-                self.log('', entry)
-            extracted = True
-        if arg_hosts:
-            self.log('success', 'IP addresses and domains:')
-            self.extract_hosts(strings)
-            extracted = True
-        if arg_network:
-            self.log('success', 'Network related:')
-            self.extract_network(strings)
-            extracted = True
-        if arg_files:
-            self.log('success', 'Filenames:')
-            self.extract_files(strings)
-            extracted = True
-        if arg_interesting:
-            self.log('success', 'Various interesting strings:')
-            self.extract_interesting(strings)
-            extracted = True
-        
-        if not extracted:
-            self.log('error', 'At least one of the parameters is required')
-            self.usage()
+                results = self.extract_hosts(strings)
+                if results:
+                    self.log('success', '{} - IP addresses and domains:'.format(sample.name))
+                    for result in results:
+                        self.log('item', result)
+                results = self.extract_network(strings)
+                print(len(results))
+                if results:
+                    self.log('success', '{} - Network related:'.format(sample.name))
+                    for result in results:
+                        self.log('item', result)
+                results = self.extract_files(strings)
+                print(len(results))
+                if results:
+                    self.log('success', '{} - Filenames:'.format(sample.name))
+                    for result in results:
+                        self.log('item', result)
+                results = self.extract_interesting(strings)
+                print(len(results))
+                if results:
+                    self.log('success', '{} - Various interesting strings:'.format(sample.name))
+                    for result in results:
+                        self.log('item', result)
+
+        else:
+            if not __sessions__.is_set():
+                self.log('error', "No open session")
+                return
+
+            if os.path.exists(__sessions__.current.file.path):
+                strings = self.get_strings(__sessions__.current.file)
+
+            args_valid = False
+            if arg_all:
+                self.log('success', 'All strings:')
+                for entry in strings:
+                    self.log('', entry)
+                args_valid = True
+            if arg_hosts:
+                results = self.extract_hosts(strings)
+                if results:
+                    self.log('success', 'IP addresses and domains:')
+                    for result in results:
+                        self.log('item', result)
+                args_valid = True
+            if arg_network:
+                results = self.extract_network(strings)
+                if results:
+                    self.log('success', 'Network related:')
+                    for result in results:
+                        self.log('item', result)
+                args_valid = True
+            if arg_files:
+                results = self.extract_files(strings)
+                if results:
+                    self.log('success', 'Filenames:')
+                    for result in results:
+                        self.log('item', result)
+                args_valid = True
+            if arg_interesting:
+                results = self.extract_interesting(strings)
+                if results:
+                    self.log('success', 'Various interesting strings:')
+                    for result in results:
+                        self.log('item', result)
+                args_valid = True
+
+            if not args_valid:
+                self.log('error', 'At least one of the parameters is required')
+                self.usage()

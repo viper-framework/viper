@@ -4,6 +4,7 @@
 
 import os
 import json
+import bottle
 import time
 import argparse
 import tempfile
@@ -20,6 +21,9 @@ from viper.core.ui.commands import Commands
 
 db = Database()
 
+app = application = bottle.default_app()
+
+web_port = 8080
 
 @route('/test', method='GET')
 def test():
@@ -29,6 +33,8 @@ def test():
 @route('/file/add', method='POST')
 def add_file():
     tags = request.forms.get('tags')
+    notes_body = request.forms.get('notes_body')
+    notes_title = request.forms.get('notes_title')
     upload = request.files.get('file')
 
     tf = tempfile.NamedTemporaryFile()
@@ -42,7 +48,7 @@ def add_file():
     success = False
     if new_path:
         # Add file to the database.
-        success = db.add(obj=tf_obj, tags=tags)
+        success = db.add(obj=tf_obj, tags=tags, notes_body=notes_body, notes_title=notes_title)
     if success:
         return {'message': 'added', 'sha256': tf_obj.sha256}
     else:
@@ -353,7 +359,10 @@ def add_notes(action):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-H', '--host', help='Host to bind the API server on', default='localhost', action='store', required=False)
-    parser.add_argument('-p', '--port', help='Port to bind the API server on', default=8080, action='store', required=False)
+    parser.add_argument('-p', '--port', help='Port to bind the API server on', action='store', required=False)
     args = parser.parse_args()
 
-    run(host=args.host, port=args.port)
+    if args.port:
+        web_port = args.port
+
+    app.run(host=args.host, port=web_port)

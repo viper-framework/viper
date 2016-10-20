@@ -80,7 +80,7 @@ class File(object):
         self.children = ''
 
         if self.is_valid():
-            self.name = os.path.basename(self.path)
+            self.name = os.path.basename(self.path).encode('utf-8')
             self.size = os.path.getsize(self.path)
             self.type = self.get_type()
             self.mime = self.get_mime()
@@ -95,7 +95,12 @@ class File(object):
         return os.path.exists(self.path) and os.path.isfile(self.path)# and os.path.getsize(self.path) != 0
 
     def get_chunks(self):
-        fd = open(self.path, 'rb')
+        try:
+            fd = open(self.path, 'rb')
+        # TODO: fix this up better.
+        except Exception as e:
+            return
+
         while True:
             chunk = fd.read(16 * 1024)
             if not chunk:
