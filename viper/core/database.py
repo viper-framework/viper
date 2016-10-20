@@ -435,6 +435,10 @@ class Database:
         elif key == 'tag':
             rows = session.query(Malware).filter(self.tag_filter(value)).all()
         elif key == 'name':
+            if not value:
+                print_error("You need to specify a valid file name pattern (you can use wildcards)")
+                return None
+
             if '*' in value:
                 value = value.replace('*', '%')
             else:
