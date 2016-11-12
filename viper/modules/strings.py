@@ -199,95 +199,60 @@ class Strings(Module):
             results.append(result)
         return results
 
-    def run(self):
-        # TODO: this function needs to be refactored.
+    def process_strings(self, strings, sample_name=""):
+        if sample_name:
+            prefix = '{} - '.format(sample_name)
+        else:
+            prefix = ''
 
+        if self.args.all:
+            self.log('success', '{}All strings:'.format(prefix))
+            for entry in strings:
+                self.log('', entry)
+        if self.args.hosts:
+            results = self.extract_hosts(strings)
+            if results:
+                self.log('success', '{}IP addresses and domains:'.format(prefix))
+                for result in results:
+                    self.log('item', result)
+        if self.args.network:
+            results = self.extract_network(strings)
+            if results:
+                self.log('success', '{}Network related:'.format(prefix))
+                for result in results:
+                    self.log('item', result)
+        if self.args.files:
+            results = self.extract_files(strings)
+            if results:
+                self.log('success', '{}Filenames:'.format(prefix))
+                for result in results:
+                    self.log('item', result)
+        if self.args.interesting:
+            results = self.extract_interesting(strings)
+            if results:
+                self.log('success', '{}Various interesting strings:'.format(prefix))
+                for result in results:
+                    self.log('item', result)
+
+    def run(self):
         super(Strings, self).run()
-        if self.args is None:
+
+        if not (self.args.all or self.args.files or self.args.hosts or self.args.network or self.args.interesting):
+            self.log('error', 'At least one of the parameters is required')
+            self.usage()
             return
 
-        arg_all = self.args.all
-        arg_hosts = self.args.hosts
-        arg_network = self.args.network
-        arg_files = self.args.files
-        arg_interesting = self.args.interesting
-        arg_scan = self.args.scan
-
-        if arg_scan:
+        if self.args.scan:
             db = Database()
             samples = db.find(key='all')
-
             for sample in samples:
                 sample_path = get_sample_path(sample.sha256)
                 strings = self.get_strings(File(sample_path))
-
-                results = self.extract_hosts(strings)
-                if results:
-                    self.log('success', '{} - IP addresses and domains:'.format(sample.name))
-                    for result in results:
-                        self.log('item', result)
-                results = self.extract_network(strings)
-                print(len(results))
-                if results:
-                    self.log('success', '{} - Network related:'.format(sample.name))
-                    for result in results:
-                        self.log('item', result)
-                results = self.extract_files(strings)
-                print(len(results))
-                if results:
-                    self.log('success', '{} - Filenames:'.format(sample.name))
-                    for result in results:
-                        self.log('item', result)
-                results = self.extract_interesting(strings)
-                print(len(results))
-                if results:
-                    self.log('success', '{} - Various interesting strings:'.format(sample.name))
-                    for result in results:
-                        self.log('item', result)
-
+                self.process_strings(strings, sample.name)
         else:
             if not __sessions__.is_set():
                 self.log('error', "No open session")
                 return
-
             if os.path.exists(__sessions__.current.file.path):
                 strings = self.get_strings(__sessions__.current.file)
-
-            args_valid = False
-            if arg_all:
-                self.log('success', 'All strings:')
-                for entry in strings:
-                    self.log('', entry)
-                args_valid = True
-            if arg_hosts:
-                results = self.extract_hosts(strings)
-                if results:
-                    self.log('success', 'IP addresses and domains:')
-                    for result in results:
-                        self.log('item', result)
-                args_valid = True
-            if arg_network:
-                results = self.extract_network(strings)
-                if results:
-                    self.log('success', 'Network related:')
-                    for result in results:
-                        self.log('item', result)
-                args_valid = True
-            if arg_files:
-                results = self.extract_files(strings)
-                if results:
-                    self.log('success', 'Filenames:')
-                    for result in results:
-                        self.log('item', result)
-                args_valid = True
-            if arg_interesting:
-                results = self.extract_interesting(strings)
-                if results:
-                    self.log('success', 'Various interesting strings:')
-                    for result in results:
-                        self.log('item', result)
-                args_valid = True
-
-            if not args_valid:
-                self.log('error', 'At least one of the parameters is required')
-                self.usage()
+                self.process_strings(strings)
