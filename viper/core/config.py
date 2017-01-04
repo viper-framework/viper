@@ -12,6 +12,7 @@ except ImportError:
 from viper.common.objects import Dictionary
 from viper.common.constants import VIPER_ROOT
 
+
 class Config:
 
     def __init__(self, cfg=None):
@@ -24,7 +25,7 @@ class Config:
             # This should go in order from local to global.
             config_paths = [
                 os.path.join(os.getcwd(), 'viper.conf'),
-                os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
+                os.path.join(expanduser("~"), '.viper', 'viper.conf'),
                 '/etc/viper/viper.conf'
             ]
 
@@ -38,9 +39,8 @@ class Config:
             # If no config is available, we try to copy it either from the
             # /usr/share/viper folder, or from VIPER_ROOT.
             if not config_file:
-                share_viper ='/usr/share/viper/viper.conf.sample'
+                share_viper = '/usr/share/viper/viper.conf.sample'
                 cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
-
 
                 # If the local storage folder doesn't exist, we create it.
                 local_storage = os.path.join(os.getenv('HOME'), '.viper')
@@ -49,12 +49,10 @@ class Config:
 
                 config_file = os.path.join(local_storage, 'viper.conf')
 
-
                 if os.path.exists(share_viper):
                     shutil.copy(share_viper, config_file)
                 else:
-                    shutil.copy(cwd_viper, config_file)            
-
+                    shutil.copy(cwd_viper, config_file)
         # Pasre the config file.
         config = ConfigParser()
         config.read(config_file)
@@ -85,7 +83,7 @@ class Config:
         try:
             return getattr(self, section)
         except AttributeError as e:
-            print e
+            print(e)
 
 
 console_output = {}
