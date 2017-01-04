@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 import time
 import json
 import shutil
@@ -802,7 +803,7 @@ class Commands(object):
         except:
             return
 
-        projects_path = os.path.join(os.getenv('HOME'), '.viper', 'projects')
+        projects_path = os.path.join(expanduser("~"), '.viper', 'projects')
 
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")
