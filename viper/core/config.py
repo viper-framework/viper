@@ -43,7 +43,7 @@ class Config:
                 cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
 
                 # If the local storage folder doesn't exist, we create it.
-                local_storage = os.path.join(os.getenv('HOME'), '.viper')
+                local_storage = os.path.join(expanduser("~"), '.viper')
                 if not os.path.exists(local_storage):
                     os.makedirs(local_storage)
 
