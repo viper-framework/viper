@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 import shutil
 import ConfigParser
 
@@ -15,7 +16,7 @@ class Config:
         # This should go in order from local to global.
         config_paths = [
             os.path.join(os.getcwd(), 'viper.conf'),
-            os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
+            os.path.join(expanduser("~"), '.viper', 'viper.conf'),
             '/etc/viper/viper.conf'
         ]
 
