@@ -328,6 +328,10 @@ class Database:
 
         if isinstance(obj, File):
             try:
+                if isinstance(name, str):
+                    name_unicode = name.decode('utf-8')
+                else:
+                    name_unicode = name
                 malware_entry = Malware(md5=obj.md5,
                                         crc32=obj.crc32,
                                         sha1=obj.sha1,
@@ -337,7 +341,7 @@ class Database:
                                         type=obj.type,
                                         mime=obj.mime,
                                         ssdeep=obj.ssdeep,
-                                        name=name,
+                                        name=name_unicode,
                                         parent=parent_sha)
                 session.add(malware_entry)
                 session.commit()

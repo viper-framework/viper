@@ -80,7 +80,7 @@ class File(object):
         self.children = ''
 
         if self.is_valid():
-            self.name = os.path.basename(self.path).encode('utf-8')
+            self.name = os.path.basename(self.path)
             self.size = os.path.getsize(self.path)
             self.type = self.get_type()
             self.mime = self.get_mime()
