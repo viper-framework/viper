@@ -97,13 +97,13 @@ class Sessions(object):
                 session.file = self.current.file
             refresh = False
             if self.current is not None and self.current.misp_event is not None \
-                    and self.current.misp_event.event_id == misp_event.event_id:
+                    and self.current.misp_event.event.id == misp_event.event.id:
                 refresh = True
             session.misp_event = misp_event
             if refresh:
-                print_info("Session on MISP event {0} refreshed.".format(misp_event.event_id))
+                print_info("Session on MISP event {0} refreshed.".format(misp_event.event.id))
             else:
-                print_info("Session opened on MISP event {0}.".format(misp_event.event_id))
+                print_info("Session opened on MISP event {0}.".format(misp_event.event.id))
 
         if session.file:
             # Loop through all existing sessions and check whether there's another
