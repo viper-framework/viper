@@ -155,10 +155,14 @@ class Console(object):
 
                 misp = ''
                 if __sessions__.current.misp_event:
-                    if __sessions__.current.misp_event.off:
-                        misp = ' [MISP {} (Offline)]'.format(__sessions__.current.misp_event.event.id)
+                    misp = '[MISP'
+                    if __sessions__.current.misp_event.event.id:
+                        misp += ' {}'.format(__sessions__.current.misp_event.event.id)
                     else:
-                        misp = ' [MISP {}]'.format(__sessions__.current.misp_event.event.id)
+                        misp += ' New Event'
+                    if __sessions__.current.misp_event.off:
+                        misp += ' (Offline)'
+                    misp += ']'
 
                 prompt = (prefix + cyan('viper ', True) +
                           white(filename, True) + blue(misp, True) + stored + cyan(' > ', True))

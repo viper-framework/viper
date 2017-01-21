@@ -33,13 +33,17 @@ class Singleton(type):
 
 class MispEvent(object):
 
-    def __init__(self, event):
+    def __init__(self, event, offline=False):
         if isinstance(event, MISPEvent):
             self.event = event
         else:
             self.event = MISPEvent()
             self.event.load(event)
-        self.off = False
+        self.off = offline
+        if self.event.id:
+            self.current_dump_file = '{}.json'.format(self.event.id)
+        else:
+            self.current_dump_file = None
 
     def online(self):
         self.off = False

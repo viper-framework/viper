@@ -96,12 +96,15 @@ class Sessions(object):
             if self.is_set() and path is None and self.current.file:
                 session.file = self.current.file
             refresh = False
-            if self.current is not None and self.current.misp_event is not None \
-                    and self.current.misp_event.event.id == misp_event.event.id:
+            if (self.current is not None and self.current.misp_event is not None and
+                    self.current.misp_event.event.id is not None and
+                    self.current.misp_event.event.id == misp_event.event.id):
                 refresh = True
             session.misp_event = misp_event
             if refresh:
                 print_info("Session on MISP event {0} refreshed.".format(misp_event.event.id))
+            elif not misp_event.event.id:
+                print_info("Session opened on a new local MISP event.")
             else:
                 print_info("Session opened on MISP event {0}.".format(misp_event.event.id))
 
