@@ -17,6 +17,13 @@ except:
     HAVE_PYMISP = False
 
 try:
+    from pytaxonomies import Taxonomies
+    HAVE_PYTAX = True
+except:
+    HAVE_PYTAX = True
+
+
+try:
     import requests
     HAVE_REQUESTS = True
 except:
@@ -177,6 +184,13 @@ class MISP(Module):
         s.add_argument("-s", "--sync", action='store_true', help="Sync all MISP Events with the remote MISP instance")
         s.add_argument("-d", "--delete", type=int, help="Delete a stored MISP event")
         s.add_argument("-o", "--open", help="Open a stored MISP event")
+
+        # Tags
+        s = subparsers.add_parser('tag', help='Tag managment using MISP taxonomies.')
+        s.add_argument("--path", default='./misp-taxonomies', help="Local path to the taxonomies.")
+        s.add_argument("-l", "--list", action='store_true', help="List Existing taxonomies.")
+        s.add_argument("-d", "--details", help="Display all values of a taxonomy.")
+        s.add_argument("-s", "--search", help="Search all tags matching a value.")
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
@@ -891,6 +905,48 @@ class MISP(Module):
         except IOError as e:
             self.log('error', e.strerror)
 
+    def tag(self):
+        taxonomies = Taxonomies(manifest_path=os.path.join(self.args.path, 'MANIFEST.json'))
+        if self.args.list:
+            self.log('table', dict(header=['Name', 'Description'], rows=[(title, tax.description)
+                                                                         for title, tax in taxonomies.items()]))
+        elif self.args.search:
+            matches = taxonomies.search(self.args.search)
+            if not matches:
+                self.log('error', 'No tags matching "{}".'.format(self.args.search))
+                return
+            self.log('success', 'Tags matching "{}":'.format(self.args.search))
+            for t in taxonomies.search(self.args.search):
+                self.log('item', t)
+        elif self.args.details:
+            taxonomy = taxonomies.get(self.args.details)
+            if taxonomy:
+                self.log('info', taxonomy.description)
+                if taxonomy.refs:
+                    self.log('info', 'References:')
+                    for r in taxonomy.refs:
+                        self.log('item', r)
+                if not taxonomy.has_entries():
+                    header = ['Description', 'Predicate', 'Machinetag']
+                    rows = []
+                    for p in taxonomy.predicates.values():
+                        rows.append([p.description, p.predicate, taxonomy.make_machinetag(p)])
+                    self.log('table', dict(header=header, rows=rows))
+                else:
+                    for p in taxonomy.predicates.values():
+                        if not p.entries:
+                            self.log('info', p.predicate)
+                            self.log('item', p.description)
+                            self.log('item', taxonomy.make_machinetag(p))
+                        else:
+                            header = ['Description', 'Predicate', 'Machinetag']
+                            self.log('info', p.description)
+                            self.log('info', p.predicate)
+                            rows = []
+                            for e in p.entries.values():
+                                rows.append([e.description, e.value, taxonomy.make_machinetag(p, e)])
+                            self.log('table', dict(header=header, rows=rows))
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
@@ -974,8 +1030,8 @@ class MISP(Module):
                 self.version()
             elif self.args.subname == 'store':
                 self.store()
-            elif self.args.subname == 'sync':
-                self.sync()
+            elif self.args.subname == 'tag':
+                self.tag()
             else:
                 self.log('error', "No calls defined for this command.")
         except requests.exceptions.HTTPError as e:
