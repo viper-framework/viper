@@ -36,7 +36,7 @@ port = 9090
 [autorun]
 enabled = True
 
-# Verbose True will print the output of each command. 
+# Verbose True will print the output of each command.
 # False will tell you a command has been run but not display the output
 verbose = False
 
@@ -71,6 +71,9 @@ misp_url =
 misp_key =
 misp_verify = True
 misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
+# To use the misp taxonomies, you need to clone https://github.com/MISP/misp-taxonomies
+# and set the path to the directory here:
+misp_taxonomies_directory = ./misp-taxonomies
 
 [pssl]
 pssl_url =

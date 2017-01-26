@@ -187,10 +187,11 @@ class MISP(Module):
 
         # Tags
         s = subparsers.add_parser('tag', help='Tag managment using MISP taxonomies.')
-        s.add_argument("--path", default='./misp-taxonomies', help="Local path to the taxonomies.")
         s.add_argument("-l", "--list", action='store_true', help="List Existing taxonomies.")
         s.add_argument("-d", "--details", help="Display all values of a taxonomy.")
         s.add_argument("-s", "--search", help="Search all tags matching a value.")
+        s.add_argument("-e", "--event", help="Add tag to the current event.")
+        s.add_argument("-a", "--attribute", nargs='+', help="Add tag to an attribute of the current event. Syntax: <identifier for the attribute> <machinetag>")
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
@@ -682,6 +683,23 @@ class MISP(Module):
         if __sessions__.current.misp_event.event.id:
             self.log('info', u'Link to Event: {}/events/view/{}'.format(self.url.rstrip('/'), __sessions__.current.misp_event.event.id))
 
+    def _change_event(self):
+        if self.offline_mode:
+            self._dump()
+        else:
+            if __sessions__.current.misp_event.event.id:
+                event = self.misp.update(__sessions__.current.misp_event.event._json())
+            else:
+                event = self.misp.add_event(json.dumps(__sessions__.current.misp_event.event, cls=EncodeUpdate))
+            if self._has_error_message(event):
+                return
+            try:
+                me = MISPEvent()
+                me.load(event)
+                self._check_add(me)
+            except Exception as e:
+                self.log('error', e)
+
     def add_hashes(self):
         if self.args.filename is None and self.args.md5 is None and self.args.sha1 is None and self.args.sha256 is None:
             if not __sessions__.is_attached_file(True):
@@ -711,41 +729,11 @@ class MISP(Module):
                     __sessions__.current.misp_event.event.add_attribute('sha1', self.args.sha1)
                 if self.args.sha256:
                     __sessions__.current.misp_event.event.add_attribute('sha256', self.args.sha256)
-
-        if self.offline_mode:
-            self._dump()
-        else:
-            if __sessions__.current.misp_event.event.id:
-                event = self.misp.update(__sessions__.current.misp_event.event._json())
-            else:
-                event = self.misp.add_event(json.dumps(__sessions__.current.misp_event.event, cls=EncodeUpdate))
-            if self._has_error_message(event):
-                return
-            try:
-                me = MISPEvent()
-                me.load(event)
-                self._check_add(me)
-            except Exception as e:
-                self.log('error', e)
+        self._change_event()
 
     def add(self):
         __sessions__.current.misp_event.event.add_attribute(self.args.add, ' '.join(vars(self.args).get(self.args.add)))
-
-        if self.offline_mode:
-            self._dump()
-        else:
-            if __sessions__.current.misp_event.event.id:
-                event = self.misp.update(__sessions__.current.misp_event.event._json())
-            else:
-                event = self.misp.add_event(json.dumps(__sessions__.current.misp_event.event, cls=EncodeUpdate))
-            if self._has_error_message(event):
-                return
-            try:
-                me = MISPEvent()
-                me.load(event)
-                self._check_add(me)
-            except Exception as e:
-                self.log('error', e)
+        self._change_event()
 
     def version(self):
         if self.offline_mode:
@@ -906,7 +894,16 @@ class MISP(Module):
             self.log('error', e.strerror)
 
     def tag(self):
-        taxonomies = Taxonomies(manifest_path=os.path.join(self.args.path, 'MANIFEST.json'))
+        if not HAVE_PYTAX:
+            self.log('error', "Missing dependency, install PyTaxonomies (`pip install git+https://github.com/MISP/PyTaxonomies.git`)")
+            return
+
+        try:
+            taxonomies = Taxonomies(manifest_path=os.path.join(self.local_dir_taxonomies, 'MANIFEST.json'))
+        except Exception as e:
+            self.log('error', 'Unable to open the taxonomies, please fix the config file ([misp] - misp_taxonomies_directory): {}'.format(e))
+            return
+
         if self.args.list:
             self.log('table', dict(header=['Name', 'Description'], rows=[(title, tax.description)
                                                                          for title, tax in taxonomies.items()]))
@@ -920,32 +917,65 @@ class MISP(Module):
                 self.log('item', t)
         elif self.args.details:
             taxonomy = taxonomies.get(self.args.details)
-            if taxonomy:
+            if not taxonomy:
+                self.log('error', 'No taxonomy called "{}".'.format(self.args.details))
+                return
+            if taxonomy.description:
                 self.log('info', taxonomy.description)
-                if taxonomy.refs:
-                    self.log('info', 'References:')
-                    for r in taxonomy.refs:
-                        self.log('item', r)
-                if not taxonomy.has_entries():
-                    header = ['Description', 'Predicate', 'Machinetag']
-                    rows = []
-                    for p in taxonomy.predicates.values():
-                        rows.append([p.description, p.predicate, taxonomy.make_machinetag(p)])
-                    self.log('table', dict(header=header, rows=rows))
-                else:
-                    for p in taxonomy.predicates.values():
-                        if not p.entries:
-                            self.log('info', p.predicate)
-                            self.log('item', p.description)
-                            self.log('item', taxonomy.make_machinetag(p))
-                        else:
-                            header = ['Description', 'Predicate', 'Machinetag']
-                            self.log('info', p.description)
-                            self.log('info', p.predicate)
-                            rows = []
-                            for e in p.entries.values():
-                                rows.append([e.description, e.value, taxonomy.make_machinetag(p, e)])
-                            self.log('table', dict(header=header, rows=rows))
+            elif taxonomy.expanded:
+                self.log('info', taxonomy.expanded)
+            if taxonomy.refs:
+                self.log('info', 'References:')
+                for r in taxonomy.refs:
+                    self.log('item', r)
+            if not taxonomy.has_entries():
+                header = ['Description', 'Predicate', 'Machinetag']
+                rows = []
+                for p in taxonomy.predicates.values():
+                    rows.append([p.description, p.predicate, taxonomy.make_machinetag(p)])
+                self.log('table', dict(header=header, rows=rows))
+            else:
+                for p in taxonomy.predicates.values():
+                    if p.description:
+                        self.log('info', p.description)
+                    elif p.expanded:
+                        self.log('info', p.expanded)
+                    else:
+                        self.log('info', p.predicate)
+
+                    if not p.entries:
+                        self.log('item', taxonomy.make_machinetag(p))
+                    else:
+                        header = ['Description', 'Predicate', 'Machinetag']
+                        rows = []
+                        for e in p.entries.values():
+                            if e.description:
+                                descr = e.description
+                            else:
+                                descr = e.expanded
+                            rows.append([descr, e.value, taxonomy.make_machinetag(p, e)])
+                        self.log('table', dict(header=header, rows=rows))
+        elif self.args.event:
+            if not __sessions__.is_attached_misp():
+                return
+            try:
+                taxonomies.revert_machinetag(self.args.event)
+            except:
+                self.log('error', 'Not a valid machine tag available in misp-taxonomies: "{}".'.format(self.args.event))
+                return
+            __sessions__.current.misp_event.event.add_tag(self.args.event)
+            self._change_event()
+        elif self.args.attribute:
+            if not __sessions__.is_attached_misp():
+                return
+            identifier, tag = self.args.attribute
+            try:
+                taxonomies.revert_machinetag(tag)
+            except:
+                self.log('error', 'Not a valid machine tag available in misp-taxonomies: "{}".'.format(tag))
+                return
+            __sessions__.current.misp_event.event.add_attribute_tag(tag, identifier)
+            self._change_event()
 
     def run(self):
         super(MISP, self).run()
@@ -985,6 +1015,9 @@ class MISP(Module):
             verify = False
         else:
             verify = cfg.misp.misp_verify
+
+        if cfg.misp.misp_taxonomies_directory:
+            self.local_dir_taxonomies = cfg.misp.misp_taxonomies_directory
 
         if not self.offline_mode:
             try:
