@@ -755,6 +755,16 @@ class MISP(Module):
             else:
                 self.log('warning', 'The MISP API installed is outdated, you should update to avoid issues.')
 
+        pymisp_recommended = self.misp.get_recommended_api_version()
+        if self._has_error_message(pymisp_recommended):
+            self.log('warning', "The MISP instance you're using doesn't have a recomended PyMISP version, update recommended.")
+        else:
+            self.log('info', 'The recommended version of PyMISP: {}'.format(pymisp_recommended['version']))
+            for a, b in zip(pymisp_recommended['version'].split('.'), api_version['version'].split('.')):
+                if a != b:
+                    self.log('warning', "You're not using the recommended PyMISP version for this instance.")
+                    break
+
         instance_ok = True
 
         misp_version = self.misp.get_version()
