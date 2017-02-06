@@ -499,6 +499,7 @@ class MISP(Module):
                 base_new_attributes[h] = {"category": a.category,
                                           "comment": u'{} - Xchecked via VT: {}'.format(a.comment, h),
                                           "to_ids": a.to_ids,
+                                          "Tag": a.Tag,
                                           "distribution": a.distribution}
 
         unk_vt_hashes = []
