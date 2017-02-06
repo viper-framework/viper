@@ -52,13 +52,13 @@ class MispEvent(object):
         self.off = True
 
     def get_all_ips(self):
-        return [a.value for a in self.event.attributes if a.type in ['ip-dst' 'ip-src']]
+        return [a.value for a in self.event.attributes if a.type in [u'ip-dst', u'ip-src']]
 
     def get_all_domains(self):
-        return [a.value for a in self.event.attributes if a.type in ['domain', 'hostname']]
+        return [a.value for a in self.event.attributes if a.type in [u'domain', u'hostname']]
 
     def get_all_urls(self):
-        return [a.value for a in self.event.attribute if a.type == 'url']
+        return [a.value for a in self.event.attribute if a.type == u'url']
 
     def get_all_hashes(self):
         event_hashes = []
