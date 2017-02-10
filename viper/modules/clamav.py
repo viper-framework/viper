@@ -88,7 +88,7 @@ class ClamAV(Module):
             else:
                 self.log('error', "Unable to connect to the daemon")
         except Exception as ex:
-            msg = 'Unable to scan with antivirus daemon, {0}'.format(ex)
+            msg = 'Unable to scan file {0} with antivirus daemon, {1}'.format(sha256, ex)
             self.log('error', msg)
             return
 
