@@ -283,6 +283,7 @@ class MISP(Module):
 
         if not link[0]:
             curattr['to_ids'] = False
+            curattr['category'] = 'External analysis'
             misp_event.add_attribute('link', link[1], **curattr)
         return misp_event
 
