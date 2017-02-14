@@ -4,13 +4,16 @@
 import os
 from os.path import expanduser
 import shutil
-import ConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 
 from viper.common.objects import Dictionary
 from viper.common.constants import VIPER_ROOT
 
 class Config:
-    
+
     def __init__(self, cfg=None):
         # Possible paths for the configuration file.
         # This should go in order from local to global.
@@ -43,10 +46,10 @@ class Config:
             if os.path.exists(share_viper):
                 shutil.copy(share_viper, config_file)
             else:
-                shutil.copy(cwd_viper, config_file)            
-        
+                shutil.copy(cwd_viper, config_file)
+
         # Pasre the config file.
-        config = ConfigParser.ConfigParser()
+        config = ConfigParser()
         config.read(config_file)
 
         # Pars ethe config file and attribute for the current instantiated
@@ -75,4 +78,4 @@ class Config:
         try:
             return getattr(self, section)
         except AttributeError as e:
-            print e
+            print(e)

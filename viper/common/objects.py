@@ -16,6 +16,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from pymisp import MISPEvent
+except ImportError:
+    pass
+
 
 class Singleton(type):
     _instances = {}
@@ -28,34 +33,46 @@ class Singleton(type):
 
 class MispEvent(object):
 
-    def __init__(self, event):
-        self.event_id = event['Event']['id']
-        self.event = event
+    def __init__(self, event, offline=False):
+        if isinstance(event, MISPEvent):
+            self.event = event
+        else:
+            self.event = MISPEvent()
+            self.event.load(event)
+        self.off = offline
+        if self.event.id:
+            self.current_dump_file = '{}.json'.format(self.event.id)
+        else:
+            self.current_dump_file = None
+
+    def online(self):
+        self.off = False
+
+    def offline(self):
+        self.off = True
 
     def get_all_ips(self):
-        return [a['value'] for a in self.event['Event']['Attribute']
-                if a['type'] == 'ip-dst' or a['type'] == 'ip-src']
+        return [a.value for a in self.event.attributes if a.type in [u'ip-dst', u'ip-src']]
 
     def get_all_domains(self):
-        return [a['value'] for a in self.event['Event']['Attribute']
-                if a['type'] == 'domain' or a['type'] == 'hostname']
+        return [a.value for a in self.event.attributes if a.type in [u'domain', u'hostname']]
 
     def get_all_urls(self):
-        return [a['value'] for a in self.event['Event']['Attribute'] if a['type'] == 'url']
+        return [a.value for a in self.event.attribute if a.type == u'url']
 
     def get_all_hashes(self):
         event_hashes = []
         sample_hashes = []
-        for a in self.event['Event']['Attribute']:
+        for a in self.event.attributes:
             h = None
-            if a['type'] in ('md5', 'sha1', 'sha256'):
-                h = a['value']
+            if a.type in ('md5', 'sha1', 'sha256'):
+                h = a.value
                 event_hashes.append(h)
-            elif a['type'] in ('filename|md5', 'filename|sha1', 'filename|sha256'):
-                h = a['value'].split('|')[1]
+            elif a.type in ('filename|md5', 'filename|sha1', 'filename|sha256'):
+                h = a.value.split('|')[1]
                 event_hashes.append(h)
-            elif a['type'] == 'malware-sample':
-                h = a['value'].split('|')[1]
+            elif a.type == 'malware-sample':
+                h = a.value.split('|')[1]
                 sample_hashes.append(h)
         return event_hashes, sample_hashes
 
