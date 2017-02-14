@@ -193,6 +193,61 @@ class MISP(Module):
         s.add_argument("-e", "--event", help="Add tag to the current event.")
         s.add_argument("-a", "--attribute", nargs='+', help="Add tag to an attribute of the current event. Syntax: <identifier for the attribute> <machinetag>")
 
+        # Admin
+        s = subparsers.add_parser('admin', help='Administration options.')
+        admin = s.add_subparsers(dest='admin')
+        # Organisation
+        org = admin.add_parser('org', help="Organisation managment.")
+        subparsers_org = org.add_subparsers(dest='org')
+        # Get
+        display = subparsers_org.add_parser('display', help="Display an organisation.")
+        display.add_argument('uuid', help='ID/UUID of the organisation to display. Use "all" to display all local organisations.')
+        # Add
+        add = subparsers_org.add_parser('add', help="Add an organisation.")
+        add.add_argument('name', help='Organisation name.')
+        add.add_argument('-u', '--uuid', help='UUID of the organisation.')
+        add.add_argument('-d', '--description', nargs='+', help='Description of the organisation.')
+        add.add_argument('-t', '--type', nargs='+', help='Type of the organisation.')
+        add.add_argument('-n', '--nationality', help='Nationality of the organisation.')
+        add.add_argument('-s', '--sector', nargs='+', help='Sector of the organisation.')
+        add.add_argument('-c', '--contact', nargs='+', help='Contact point(s) in the organisation.')
+        add.add_argument('--not-local', default=True, action='store_false', help='**Not** a local organisation.')
+        # Delete
+        delete = subparsers_org.add_parser('delete', help="Delete an organisation.")
+        delete.add_argument('uuid', help='ID/UUID of the organisation to delete.')
+        # Edit
+        edit = subparsers_org.add_parser('edit', help="Edit an organisation.")
+        edit.add_argument('uuid', help='ID/UUID of the organisation to edit.')
+        edit.add_argument('-n', '--name', required=True, help='Organisation name.')
+        edit.add_argument('-u', '--uuid', help='UUID of the organisation.')
+        edit.add_argument('-d', '--description', nargs='+', help='Description of the organisation.')
+        edit.add_argument('-t', '--type', nargs='+', help='Type of the organisation.')
+        edit.add_argument('-s', '--sector', nargs='+', help='Sector of the organisation.')
+        edit.add_argument('-c', '--contact', nargs='+', help='Contact point(s) in the organisation.')
+        edit.add_argument('--nationality', help='Nationality of the organisation.')
+        edit.add_argument('--not-local', default=True, action='store_false', help='**Not** a local organisation.')
+
+        # User
+        user = admin.add_parser('user', help="User managment.")
+        subparsers_user = user.add_subparsers(dest='user')
+        # Get
+        display = subparsers_user.add_parser('display', help="Display a user.")
+        display.add_argument('uuid', help='ID/UUID of the user to display. Use "all" to display all users.')
+        # Add
+        add = subparsers_org.add_parser('add', help="Add a user.")
+        add.add_argument('name', help='User name.')
+        # TODO
+        # Delete
+        delete = subparsers_user.add_parser('delete', help="Delete a user.")
+        delete.add_argument('uuid', help='ID/UUID of the user to delete.')
+        # Edit
+        edit = subparsers_user.add_parser('edit', help="Edit a user.")
+        edit.add_argument('uuid', help='ID/UUID of the user to edit.')
+        # TODO
+
+        # Role
+        # Tags
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     # ####### Generic Helpers ########
@@ -990,6 +1045,53 @@ class MISP(Module):
             __sessions__.current.misp_event.event.add_attribute_tag(tag, identifier)
             self._change_event()
 
+    def admin(self):
+        # self.log('info', self.args)
+        if self.args.admin == 'org':
+            if self.args.org == 'display':
+                if self.args.uuid == 'all':
+                    header = ['ID', 'Name', 'Local', 'Users', 'Created', 'UUID']
+                    rows = []
+                    for org in self.misp.get_organisations_list():
+                        org = org['Organisation']
+                        rows.append([org['id'], org['name'], org['local'], org.get('user_count'), org['uuid'], org['date_created']])
+                    self.log('table', dict(header=header, rows=sorted(rows, key=lambda x: int(x[0]))))
+                else:
+                    org = self.misp.get_organisation(self.args.uuid)
+                    org = org['Organisation']
+                    self.log('success', org['name'])
+                    for k, v in org.items():
+                        if k != 'name' and v:
+                            self.log('item', '{}: {}'.format(k, v))
+            elif self.args.org == 'add':
+                pass
+            elif self.args.org == 'delete':
+                pass
+            elif self.args.org == 'edit':
+                pass
+        elif self.args.admin == 'user':
+            if self.args.user == 'display':
+                if self.args.uuid == 'all':
+                    header = ['ID', 'E-Mail', 'Organisation', 'authkey']
+                    rows = []
+                    for user in self.misp.get_users_list():
+                        user = user['User']
+                        rows.append([user['id'], user['email'], user['org_ci'], user['authkey']])
+                    self.log('table', dict(header=header, rows=sorted(rows, key=lambda x: int(x[0]))))
+                else:
+                    user = self.misp.get_user(self.args.uuid)
+                    user = user['User']
+                    self.log('success', user['email'])
+                    for k, v in user.items():
+                        if k not in ['email', 'certif_public', 'gpgkey'] and v:
+                            self.log('item', '{}: {}'.format(k, v))
+            elif self.args.org == 'add':
+                pass
+            elif self.args.org == 'delete':
+                pass
+            elif self.args.org == 'edit':
+                pass
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
@@ -1078,6 +1180,8 @@ class MISP(Module):
                 self.store()
             elif self.args.subname == 'tag':
                 self.tag()
+            elif self.args.subname == 'admin':
+                self.admin()
             else:
                 self.log('error', "No calls defined for this command.")
         except requests.exceptions.HTTPError as e:
