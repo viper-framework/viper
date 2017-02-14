@@ -3,7 +3,7 @@
 
 import string
 from zipfile import ZipFile
-from cStringIO import StringIO
+from io import StringIO
 from Crypto.Cipher import ARC4
 import xml.etree.ElementTree as ET
 
@@ -42,7 +42,7 @@ def decrypt_arc4(enckey, data):
 
 def parse_config(config):
     #try:
-        xml = filter(lambda x: x in string.printable, config)
+        xml = [x for x in config if x in string.printable]
         root = ET.fromstring(xml)
         raw_config = {}
         for child in root:

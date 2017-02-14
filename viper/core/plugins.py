@@ -3,9 +3,11 @@
 
 import pkgutil
 import inspect
+import importlib
 
 from viper.common.out import print_warning
 from viper.common.abstracts import Module
+
 
 def load_modules():
     # Import modules package.
@@ -18,10 +20,9 @@ def load_modules():
         # If current item is a package, skip.
         if ispkg:
             continue
-
         # Try to import the module, otherwise skip.
         try:
-            module = __import__(module_name, globals(), locals(), ['dummy'], -1)
+            module = importlib.import_module(module_name)
         except ImportError as e:
             print_warning("Something wrong happened while importing the module {0}: {1}".format(module_name, e))
             continue

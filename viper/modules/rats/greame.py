@@ -30,7 +30,7 @@ def xor_decode(data):
     encoded = bytearray(data)
     for i in range(len(encoded)):
         encoded[i] ^= key
-    return filter(lambda x: x in string.printable, str(encoded))
+    return [x for x in str(encoded) if x in string.printable]
 
 
 def parse_config(raw_config):

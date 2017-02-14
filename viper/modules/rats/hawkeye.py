@@ -13,7 +13,7 @@ from pbkdf2 import PBKDF2
 
 def string_clean(line):
     return ''.join((char for char in line if 32< ord(char) < 127))
-    
+
 # Crypto Stuffs
 def decrypt_string(key, salt, coded):
     #try:
@@ -35,11 +35,11 @@ def get_strings(pe, dir_type):
     string_list = []
     m = pe.ntHeaders.optionalHeader.dataDirectory[14].info
     for s in m.netMetaDataStreams[dir_type].info:
-        for offset, value in s.iteritems():
+        for offset, value in s.items():
             string_list.append(value)
         counter += 1
     return string_list
-        
+
 #Turn the strings in to a python config_dict
 
 # Duplicate strings dont seem to be duplicated so we need to catch them
@@ -54,7 +54,7 @@ def config_1(key, salt, string_list):
             except:
                 config_dict["Config String {0}".format(i)] = string_list[i]
     return config_dict
-    
+
 def config(data):
     pe = pype32.PE(data=data)
     string_list = get_strings(pe, 2)

@@ -5,7 +5,7 @@ import os
 import zlib
 import struct
 import tempfile
-from StringIO import StringIO
+from io import StringIO
 
 try:
     import pylzma
@@ -93,11 +93,11 @@ class SWF(Module):
             # Skip the header.
             compressed.read(3)
             # Decompress with pylzma and reconstruct the Flash object.
-            ## ZWS(LZMA)
-            ## | 4 bytes       | 4 bytes    | 4 bytes       | 5 bytes    | n bytes    | 6 bytes         |
-            ## | 'ZWS'+version | scriptLen  | compressedLen | LZMA props | LZMA data  | LZMA end marker |
+            # # ZWS(LZMA)
+            # # | 4 bytes       | 4 bytes    | 4 bytes       | 5 bytes    | n bytes    | 6 bytes         |
+            # # | 'ZWS'+version | scriptLen  | compressedLen | LZMA props | LZMA data  | LZMA end marker |
             decompressed = 'FWS' + compressed.read(5)
-            compressed.read(4) # skip compressedLen
+            compressed.read(4)  # skip compressedLen
             decompressed += pylzma.decompress(compressed.read())
 
         # If we obtained some decompressed data, we print it and eventually

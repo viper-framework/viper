@@ -9,8 +9,8 @@ from viper.common.abstracts import Module
 from viper.common.utils import get_type
 from viper.core.session import __sessions__
 
-from pdftools.pdfid import PDFiD, PDFiD2JSON
-from peepdf.PDFCore import PDFParser
+from .pdftools.pdfid import PDFiD, PDFiD2JSON
+from .peepdf.PDFCore import PDFParser
 
 
 class PDF(Module):

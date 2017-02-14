@@ -32,6 +32,7 @@ association_table = Table(
     Column('analysis_id', Integer, ForeignKey('analysis.id'))
 )
 
+
 class Malware(Base):
     __tablename__ = 'malware'
 
@@ -111,6 +112,7 @@ class Malware(Base):
         self.name = name
         self.parent = parent
 
+
 class Tag(Base):
     __tablename__ = 'tag'
 
@@ -130,6 +132,7 @@ class Tag(Base):
 
     def __init__(self, tag):
         self.tag = tag
+
 
 class Note(Base):
     __tablename__ = 'note'
@@ -179,7 +182,7 @@ class Analysis(Base):
 
 
 class Database:
-    #__metaclass__ = Singleton
+    # __metaclass__ = Singleton
 
     def __init__(self):
 
@@ -194,8 +197,9 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
-    def __del__(self):
-        self.engine.dispose()
+    # FIXME: dies with an exception with python3
+    # def __del__(self):
+    #    self.engine.dispose()
 
     def _connect_database(self, connection):
         if connection.startswith("mysql+pymysql"):
@@ -235,7 +239,7 @@ class Database:
             except IntegrityError:
                 session.rollback()
                 try:
-                    malware_entry.tag.append(session.query(Tag).filter(Tag.tag==tag).first())
+                    malware_entry.tag.append(session.query(Tag).filter(Tag.tag == tag).first())
                     session.commit()
                 except SQLAlchemyError:
                     session.rollback()
@@ -251,7 +255,7 @@ class Database:
         try:
             # First remove the tag from the sample
             malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
-            tag = session.query(Tag).filter(Tag.tag==tag_name).first()
+            tag = session.query(Tag).filter(Tag.tag == tag_name).first()
             try:
                 malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
                 malware_entry.tag.remove(tag)

@@ -25,7 +25,7 @@ BASE_CONFIG = {
 
 def rc4crypt(data, key):
     x = 0
-    box = range(256)
+    box = list(range(256))
     for i in range(256):
         x = (x + box[i] + ord(key[i % len(key)])) % 256
         box[i], box[x] = box[x], box[i]
@@ -49,7 +49,7 @@ def v51_data(data, key):
         key, value = entries.split('=')
         key = key.strip()
         value = value.rstrip()[1:-1]
-        clean_value = filter(lambda x: x in string.printable, value)
+        clean_value = [x for x in value if x in string.printable]
         config[key] = clean_value
 
     return config
@@ -88,12 +88,12 @@ def extract_config(raw_data, key):
             size = entry.directory.entries[0].data.struct.Size
             data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
             config = v51_data(data, key)
-        elif str(entry.name) in config.keys():
+        elif str(entry.name) in list(config.keys()):
             data_rva = entry.directory.entries[0].data.struct.OffsetToData
             size = entry.directory.entries[0].data.struct.Size
             data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
             dec = rc4crypt(unhexlify(data), key)
-            config[str(entry.name)] = filter(lambda x: x in string.printable, dec)
+            config[str(entry.name)] = [x for x in dec if x in string.printable]
 
     return config
 

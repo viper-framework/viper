@@ -38,7 +38,7 @@ class Reports(Module):
         self.parser.add_argument('--meta', action='store_true', help='Find reports on metascan')
 
     def authenticate(self):
-        username = raw_input('Username: ')
+        username = input('Username: ')
         password = getpass.getpass('Password: ')
 
         return (username, password)
@@ -62,7 +62,7 @@ class Reports(Module):
 
     def malwr(self):
         if not cfg.reports.malwr_user or not cfg.reports.malwr_pass:
-            choice = raw_input("You need to specify a valid username/password, login now? [y/N] ")
+            choice = input("You need to specify a valid username/password, login now? [y/N] ")
             if choice == 'y':
                 username, password = self.authenticate()
             else:
@@ -83,7 +83,7 @@ class Reports(Module):
                 headers=dict(Referer=cfg.reports.malwr_login),
                 verify=False,
                 timeout=60
-                )
+            )
         except:
             self.log('info', "Error while connecting to malwr")
             return
@@ -124,8 +124,8 @@ class Reports(Module):
         page = requests.get(url)
         if '<h2>404 - File Not Found</h2>' in page.text or 'Apparently the requested URL could not be found' in page.text:
             self.log('info', "No reports for opened file")
-	elif '403 Forbidden' in page.text:
-	    self.log('info', "Permission to joe denied")
+        elif '403 Forbidden' in page.text:
+            self.log('info', "Permission to joe denied")
         else:
             self.log('info', "Report found at {0}".format(url))
 

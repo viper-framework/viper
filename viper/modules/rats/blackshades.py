@@ -23,10 +23,10 @@ def decrypt_configuration(hex):
     tail = ascii[0x20:]
 
     pre_check = []
-    for x in xrange(3):
+    for x in range(3):
         pre_check.append(ord(tail[x]) ^ 0x0c)
 
-    for x in xrange(0xffffff):
+    for x in range(0xffffff):
         PRNG_SEED = x
         if get_next_rng_value() != pre_check[0] or get_next_rng_value() != pre_check[1] or get_next_rng_value() != pre_check[2]:
             continue

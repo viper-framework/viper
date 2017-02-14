@@ -1,0 +1,8 @@
+[submodule "viper/modules/Mach-O"]
+    path = viper/modules/Mach-O
+    url = https://github.com/MISP/Mach-O.git
+    branch = master
+[submodule "viper/modules/peepdf"]
+    path = viper/modules/peepdf
+    url = https://github.com/MISP/peepdf.git
+    branch = master

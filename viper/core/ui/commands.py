@@ -76,7 +76,7 @@ class Commands(object):
             data=event_data
         ))
         if event_type == 'table':
-            print table(event_data['header'], event_data['rows'])
+            print(table(event_data['header'], event_data['rows']))
         else:
             getattr(out, 'print_{0}'.format(event_type))(event_data)
 
@@ -717,7 +717,7 @@ class Commands(object):
         db = Database()
         if not db.find(key='sha256', value=__sessions__.current.file.sha256):
             self.log('error', "The opened file is not stored in the database. "
-                "If you want to add it use the `store` command.")
+                     "If you want to add it use the `store` command.")
             return
 
         if args.add:
@@ -931,7 +931,7 @@ class Commands(object):
                     tags_dict[t.tag] += 1
 
         avg_size = sum(size_list) / len(size_list)
-        #all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
+        # all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
         #             'Avg Size': avg_size, 'Largest': max(size_list), 'Smallest': min(size_list)}
 
         # Counter for top x
@@ -960,7 +960,6 @@ class Commands(object):
         for k in sorted(extension_dict, key=extension_dict.get, reverse=True)[:counter]:
             rows.append([k, extension_dict[k]])
         self.log('table', dict(header=header, rows=rows))
-
 
         # Mimes
         self.log('info', "{0}Mime Types".format(prefix))
@@ -1004,7 +1003,6 @@ class Commands(object):
             parser.print_usage()
             return
 
-
         # If no arguments are specified, there's not much to do.
         if args.add is None and args.delete is None and args.open is None:
             parser.print_usage()
@@ -1039,4 +1037,3 @@ class Commands(object):
                 __sessions__.new(get_sample_path(__sessions__.current.file.parent[-64:]))
             else:
                 self.log('info', "No parent set for this sample")
-

@@ -4,7 +4,7 @@
 #Standard Imports Go Here
 from base64 import b64decode
 from zipfile import ZipFile
-from cStringIO import StringIO
+from io import StringIO
 from Crypto.Cipher import AES, DES3
 
 

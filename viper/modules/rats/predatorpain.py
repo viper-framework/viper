@@ -10,7 +10,7 @@ from pbkdf2 import PBKDF2
 
 def string_clean(line):
     return ''.join((char for char in line if 32< ord(char) < 127))
-    
+
 # Crypto Stuffs
 def decrypt_string(key, salt, coded):
     #try:
@@ -32,11 +32,11 @@ def get_strings(pe, dir_type):
     string_list = []
     m = pe.ntHeaders.optionalHeader.dataDirectory[14].info
     for s in m.netMetaDataStreams[dir_type].info:
-        for offset, value in s.iteritems():
+        for offset, value in s.items():
             string_list.append(value)
         counter += 1
     return string_list
-    
+
 # Find Version
 def get_version(string_list):
     # Pred v12
@@ -55,7 +55,7 @@ def get_version(string_list):
         return
 
 
-        
+
 def config_12(string_list):
     config_dict = {}
     config_dict["Version"] = "Predator Pain v12"
@@ -68,7 +68,7 @@ def config_12(string_list):
         config_dict['BindFile1'] = 'False'
     else:
         config_dict['BindFile1'] = 'True'
-    
+
     if string_list[10].startswith('ReplaceBind'):
         config_dict['BindFile2'] = 'False'
     else:
@@ -78,15 +78,15 @@ def config_12(string_list):
 #Turn the strings in to a python config_dict
 def config_13(key, salt, string_list):
     '''
-    Identical Strings are not stored multiple times. 
+    Identical Strings are not stored multiple times.
     We need to check for duplicate passwords which mess up the positionl arguemnts.
     '''
-    
+
     if 'email' in string_list[13]:
         dup = True
     elif 'email' in string_list[14]:
         dup = False
-    
+
     config_dict = {}
     config_dict["Version"] = "Predator Pain v13"
     config_dict["Email Address"] = decrypt_string(key, salt, string_list[4])
@@ -119,11 +119,11 @@ def config_13(key, salt, string_list):
         else:
             config_dict["Bound Files"] = 'True'
     return config_dict
-        
+
 #Turn the strings in to a python config_dict
 def config_14(key, salt, string_list):
     '''
-    Identical Strings are not stored multiple times. 
+    Identical Strings are not stored multiple times.
     possible pass and date dupes make it harder to test
     '''
 
@@ -132,9 +132,9 @@ def config_14(key, salt, string_list):
         dup = True
     elif 'email' in string_list[19]:
         dup = False
-    
-    
-    
+
+
+
     config_dict = {}
     config_dict["Version"] = "Predator Pain v14"
     config_dict["Email Address"] = decrypt_string(key, salt, string_list[4])
@@ -171,7 +171,7 @@ def config(data):
         pe = pype32.PE(data=data)
         string_list = get_strings(pe, 2)
         vers = get_version(string_list)
-        
+
         if vers == 'v12':
             config_dict = config_12(string_list)
         elif vers == 'v13':
@@ -180,6 +180,6 @@ def config(data):
         elif vers == 'v14':
             key, salt = 'EncryptedCredentials', '3000390039007500370038003700390037003800370038003600'.decode('hex')
             config_dict = config_14(key, salt, string_list)
-        else:   
+        else:
             return
         return config_dict

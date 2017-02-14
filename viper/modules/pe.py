@@ -17,15 +17,15 @@ except ImportError:
     HAVE_PEFILE = False
 
 try:
-    from viper.modules.pehash.pehasher import calculate_pehash
+    from .pehash.pehasher import calculate_pehash
     HAVE_PEHASH = True
 except ImportError:
     HAVE_PEHASH = False
 
 try:
-    from viper.modules.verifysigs.verifysigs import get_auth_data
-    from verifysigs.asn1 import dn
-    HAVE_VERIFYSIGS= True
+    from .sigs_helper.verifysigs import get_auth_data
+    from verifysigs.asn1utils import dn
+    HAVE_VERIFYSIGS = True
 except ImportError:
     HAVE_VERIFYSIGS = False
 
@@ -178,8 +178,7 @@ class PE(Module):
 
                 self.log('info', "AddressOfEntryPoint cluster {0}".format(bold(cluster_name)))
 
-                self.log('table', dict(header=['MD5', 'Name'],
-                    rows=cluster_members))
+                self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
 
             return
 
@@ -213,8 +212,7 @@ class PE(Module):
 
             self.log('info', "Following are samples with AddressOfEntryPoint {0}".format(bold(ep)))
 
-            self.log('table', dict(header=['MD5', 'Name'],
-                rows=rows))
+            self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
     def compiletime(self):
 
@@ -301,7 +299,7 @@ class PE(Module):
             if not userdb_path:
                 return
 
-            with file(userdb_path, 'rt') as f:
+            with open(userdb_path, 'rt') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
@@ -520,8 +518,7 @@ class PE(Module):
 
                 self.log('info', "Imphash cluster {0}".format(bold(cluster_name)))
 
-                self.log('table', dict(header=['MD5', 'Name'],
-                    rows=cluster_members))
+                self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
 
             return
 
@@ -677,7 +674,7 @@ class PE(Module):
                 auth.ValidateHashes(computed_content_hash)
                 auth.ValidateSignatures()
                 auth.ValidateCertChains(time.gmtime())
-            except Exception, e:
+            except Exception as e:
                 self.log('error', "Unable to validate PE certificate: {0}".format(str(e)))
                 return
 
@@ -687,7 +684,7 @@ class PE(Module):
 
             if auth.has_countersignature:
                 self.log('info', bold('Countersignature is present. Timestamp: {0} UTC'.format(
-                        time.asctime(time.gmtime(auth.counter_timestamp)))))
+                         time.asctime(time.gmtime(auth.counter_timestamp)))))
             else:
                 self.log('info', bold('Countersignature is not present.'))
 
@@ -696,17 +693,17 @@ class PE(Module):
 
             self.log('info', '{0}'.format(auth.cert_chain_head[2][0]))
             self.log('info', 'Chain not before: {0} UTC'.format(
-                    time.asctime(time.gmtime(auth.cert_chain_head[0]))))
+                     time.asctime(time.gmtime(auth.cert_chain_head[0]))))
             self.log('info', 'Chain not after: {0} UTC'.format(
-                    time.asctime(time.gmtime(auth.cert_chain_head[1]))))
+                     time.asctime(time.gmtime(auth.cert_chain_head[1]))))
 
             if auth.has_countersignature:
                 self.log('info', bold('Countersig chain head issued by:'))
                 self.log('info', '{0}'.format(auth.counter_chain_head[2]))
                 self.log('info', 'Countersig not before: {0} UTC'.format(
-                        time.asctime(time.gmtime(auth.counter_chain_head[0]))))
+                         time.asctime(time.gmtime(auth.counter_chain_head[0]))))
                 self.log('info', 'Countersig not after: {0} UTC'.format(
-                        time.asctime(time.gmtime(auth.counter_chain_head[1]))))
+                         time.asctime(time.gmtime(auth.counter_chain_head[1]))))
 
             self.log('info', bold('Certificates:'))
             for (issuer, serial), cert in auth.certificates.items():
@@ -720,13 +717,13 @@ class PE(Module):
                 not_before_time = not_before.ToPythonEpochTime()
                 not_after_time = not_after.ToPythonEpochTime()
                 self.log('info', 'Not Before: {0} UTC ({1})'.format(
-                        time.asctime(time.gmtime(not_before_time)), not_before[0]))
+                         time.asctime(time.gmtime(not_before_time)), not_before[0]))
                 self.log('info', 'Not After: {0} UTC ({1})'.format(
-                        time.asctime(time.gmtime(not_after_time)), not_after[0]))
+                         time.asctime(time.gmtime(not_after_time)), not_after[0]))
 
             if auth.trailing_data:
                 self.log('info', 'Signature Blob had trailing (unvalidated) data ({0} bytes): {1}'.format(
-                        len(auth.trailing_data), auth.trailing_data.encode('hex')))
+                         len(auth.trailing_data), auth.trailing_data.encode('hex')))
 
     def language(self):
 

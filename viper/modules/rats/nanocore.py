@@ -15,7 +15,7 @@ def derive_key(guid, coded_key):
     try:
         from pbkdf2 import PBKDF2
     except:
-        print "[!] Unable to derive a key. requires 'sudo pip install pbkdf2'"
+        print("[!] Unable to derive a key. requires 'sudo pip install pbkdf2'")
         sys.exit()
     generator = PBKDF2(guid, guid, 8)
     aes_iv = generator.read(16)

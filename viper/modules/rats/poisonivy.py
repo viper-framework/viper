@@ -11,7 +11,7 @@ def calc_length(byte_str):
         return None
 
 def clean_string(line):
-    return filter(lambda x: x in string.printable, line)
+    return [x for x in line if x in string.printable]
 
 def first_split(data):
     splits = data.split('Software\\Microsoft\\Active Setup\\Installed Components\\')

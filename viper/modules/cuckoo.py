@@ -12,7 +12,7 @@ import shutil
 import tempfile
 import tarfile
 import contextlib
-from cStringIO import StringIO
+from io import StringIO
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -23,12 +23,14 @@ from viper.core.storage import store_sample
 
 cfg = Config()
 
+
 # context manager for dropped files
 @contextlib.contextmanager
 def create_temp():
     temp_dir = tempfile.mkdtemp()
     yield temp_dir
     shutil.rmtree(temp_dir)
+
 
 class Cuckoo(Module):
     cmd = 'cuckoo'
@@ -41,10 +43,9 @@ class Cuckoo(Module):
         self.parser.add_argument('-f', '--file', action='store_true', help='Submit File for analysis')
         self.parser.add_argument('-r', '--resubmit', action='store_true', help='Resubmit Analysis of File')
         self.parser.add_argument('-d', '--dropped', type=int, help='Get all Dropped Samples from task id')
-        self.parser.add_argument('-m', '--machine',  help='Name of Machine or all')
-        self.parser.add_argument('-p', '--package',  help='Select a package type to run')
-        self.parser.add_argument('-o', '--options',  help='Options in the format "procmemdump=yes,nohuman=yes"')
-
+        self.parser.add_argument('-m', '--machine', help='Name of Machine or all')
+        self.parser.add_argument('-p', '--package', help='Select a package type to run')
+        self.parser.add_argument('-o', '--options', help='Options in the format "procmemdump=yes,nohuman=yes"')
 
     def add_file(self, file_path, tags, parent):
         obj = File(file_path)
@@ -54,7 +55,6 @@ class Cuckoo(Module):
             db = Database()
             db.add(obj=obj, tags=tags, parent_sha=parent)
             return obj.sha256
-
 
     def api_query(self, api_method, api_uri, files=None, params=None):
         if files:
@@ -146,7 +146,6 @@ class Cuckoo(Module):
             self.log('item', "Reported: {0}".format(tasks[2]))
             self.log('item', "Running: {0}".format(tasks[3]))
             self.log('item', "Total: {0}".format(tasks[4]))
-
 
         if self.args.file:
             if not __sessions__.is_set():

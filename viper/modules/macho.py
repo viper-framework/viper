@@ -7,7 +7,7 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 try:
-    from viper.modules.pymacho.MachO import MachO
+    from .pymacho.MachO import MachO
     HAVE_MACHO = True
 except ImportError:
     HAVE_MACHO = False
@@ -38,7 +38,7 @@ class Macho(Module):
         if not HAVE_MACHO:
             self.log('error', "Missing dependency")
             return
-            
+
         # List general info
         def macho_headers(m):
             self.log('info', "Headers: ")
@@ -59,11 +59,11 @@ class Macho(Module):
             if m.header.is_64():
                 reserved="reserved : 0x%x" % (m.header.reserved)
                 self.log('item',reserved)
-            
+
             #self.log('item', "filetype: 0x{0}".format(m.header.display_filetype()))
             #self.log('item', "ncmds: 0x{0}".format(m.header.ncmds))
-            
-    
+
+
         #print all load commands
         #TODO replace display method
         def macho_load_commands(m):
@@ -71,7 +71,7 @@ class Macho(Module):
             self.log('info', load_commands)
             for lc in m.commands:
                 lc.display("\t")
-    
+
         #print all segments
         #TODO replace display method
         def macho_segments(m):
@@ -79,24 +79,23 @@ class Macho(Module):
             self.log('info', segments)
             for segment in m.segments:
                 segment.display(before="\t")
-        
-        
+
+
         try:
             m = MachO(__sessions__.current.file.path)
         except Exception as e:
             self.log('error', "No Mach0 file, {0}".format(e))
             return
-                
+
         if self.args is None:
             return
         elif self.args.all:
             macho_headers(m)
             macho_segments(m)
-            macho_load_commands(m)   
+            macho_load_commands(m)
         elif self.args.headers:
             macho_headers(m)
         elif self.args.segments:
             macho_segments(m)
         elif self.args.load_commands:
-            macho_load_commands(m)   
-            
+            macho_load_commands(m)

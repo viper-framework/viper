@@ -3,7 +3,7 @@
 
 import string
 from zipfile import ZipFile
-from cStringIO import StringIO
+from io import StringIO
 from Crypto.Cipher import ARC4, DES
 import xml.etree.ElementTree as ET
 
@@ -60,7 +60,7 @@ def config(data):
                 except:
                     config = zip.read(name)
                     result = decrypt_rc4(Key, config)                                
-                xml = filter(lambda x: x in string.printable, result)
+                xml = [x for x in result if x in string.printable]
                 root = ET.fromstring(xml)
                 for child in root:
                     if child.text.startswith("Adwind RAT"):

@@ -21,7 +21,7 @@ def get_unicode_string(buf,pos):
 
 def rc4crypt(data, key):
     x = 0
-    box = range(256)
+    box = list(range(256))
     for i in range(256):
         x = (x + box[i] + ord(key[i % 6])) % 256
         box[i], box[x] = box[x], box[i]

@@ -8,7 +8,7 @@ from base64 import b64decode
 
 
 def string_print(line):
-    return filter(lambda x: x in string.printable, line)
+    return [x for x in line if x in string.printable]
 
 def get_config(data):
     m = re.search('\x01\x96\x01(.*)@@', data)

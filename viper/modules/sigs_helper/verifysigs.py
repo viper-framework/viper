@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # Author: caronni@google.com (Germano Caronni)
-# 
+#
 # Viper adaptation: jahrome11@gmail.com (Jerome Marty)
 
 
@@ -33,10 +33,9 @@ import time
 
 from pyasn1.codec.der import encoder as der_encoder
 
-import auth_data
-import fingerprint
-import pecoff_blob
-from asn1 import dn
+from verifysigs.utils import auth_data
+from verifysigs.utils import fingerprint
+from verifysigs.utils import pecoff_blob
 
 
 # EVIL EVIL -- Monkeypatch to extend accessor

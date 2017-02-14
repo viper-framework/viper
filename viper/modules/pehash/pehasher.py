@@ -24,11 +24,11 @@ from viper.common.out import *
 
 def calculate_pehash(file_path=None):
     if not HAVE_PEFILE:
-        self.log('error', "Missing dependency, install pefile (`pip install pefile`)") 
-	return ''
+        self.log('error', "Missing dependency, install pefile (`pip install pefile`)")
+        return ''
 
     if not HAVE_BITSTRING:
-	self.log('error', "Missing dependency, install bitstring (`pip install bitstring`)")
+        self.log('error', "Missing dependency, install bitstring (`pip install bitstring`)")
         return ''
 
 
@@ -37,7 +37,7 @@ def calculate_pehash(file_path=None):
 
     try:
         exe = pefile.PE(file_path)
-    
+
         #image characteristics
         img_chars = bitstring.BitArray(hex(exe.FILE_HEADER.Characteristics))
         #pad to 16 bits
@@ -47,7 +47,7 @@ def calculate_pehash(file_path=None):
         #start to build pehash
         pehash_bin = bitstring.BitArray(img_chars_xor)
 
-        #subsystem - 
+        #subsystem -
         sub_chars = bitstring.BitArray(hex(exe.FILE_HEADER.Machine))
         #pad to 16 bits
         sub_chars = bitstring.BitArray(bytes=sub_chars.tobytes())
@@ -101,7 +101,7 @@ def calculate_pehash(file_path=None):
             address = section.VirtualAddress
             size = section.SizeOfRawData
             raw = exe.write()[address+size:]
-            if size == 0: 
+            if size == 0:
                 kolmog = bitstring.BitArray(float=1, length=32)
                 pehash_bin.append(kolmog[0:8])
                 continue

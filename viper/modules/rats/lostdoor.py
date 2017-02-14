@@ -5,7 +5,7 @@ import string
 from Crypto.Cipher import ARC4
 
 def string_print(line):
-    return filter(lambda x: x in string.printable, line)
+    return [x for x in line if x in string.printable]
 
 def decrypt_rc4(enckey, data):
     cipher = ARC4.new(enckey) # set the ciper
@@ -16,14 +16,14 @@ def ver_detect(data):
     if len(first) == 2:
         second = first[1].split("\r\n")
         if len(second) > 14 < 30:
-            print "[+] Found Version < 8"
+            print("[+] Found Version < 8")
             return new_decoder(second)
     first = data.split("[DATA]")
     if len(first) == 21:
-        print "[+] Found Version 8"
+        print("[+] Found Version 8")
         return ver_80(first)
     if len(first) == 30:
-        print "[+] Found Version 8.01"
+        print("[+] Found Version 8.01")
         return ver_801(first)
     return None
         
@@ -40,7 +40,7 @@ def new_decoder(split_list):
 
 def config_cleaner(raw_dict):
     clean_dict = {}
-    for k,v in raw_dict.iteritems():
+    for k,v in raw_dict.items():
         if k == 'ip':
             clean_dict['Domain'] = decrypt_rc4('oussamio', v)
         if k == 'fire':

@@ -3,7 +3,7 @@
 
 import string
 from zipfile import ZipFile
-from cStringIO import StringIO
+from io import StringIO
 from Crypto.Cipher import AES
 
 
@@ -22,7 +22,7 @@ def decrypt_conf(conFile):
     
 def extract_config(raw_conf):
     conf = {}
-    clean = filter(lambda x: x in string.printable, raw_conf)
+    clean = [x for x in raw_conf if x in string.printable]
     fields = clean.split('<separator>')
 
     conf['Domain'] = fields[0]
