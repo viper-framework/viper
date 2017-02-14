@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -6,7 +5,7 @@ import os
 import zlib
 import struct
 import tempfile
-from io import BytesIO, open
+from io import StringIO
 
 try:
     import pylzma
@@ -32,7 +31,7 @@ class SWF(Module):
     def parse_swf(self):
         # Open an handle to the opened file so that we can more easily
         # walk through it.
-        swf = BytesIO(__sessions__.current.file.data)
+        swf = open(__sessions__.current.file.path, 'rb')
         # Extract the file header, so we can detect the compression.
         header = swf.read(3)
         # Extract the Flash version, not really important.
@@ -67,21 +66,21 @@ class SWF(Module):
         decompressed = None
 
         # Check if the file is already a decompressed Flash object.
-        if header == b'FWS':
+        if header == 'FWS':
             self.log('info', "The opened file doesn't appear to be compressed")
             return
         # Check if the file is compressed with zlib.
-        elif header == b'CWS':
+        elif header == 'CWS':
             self.log('info', "The opened file appears to be compressed with Zlib")
 
             # Open an handle on the compressed data.
-            compressed = BytesIO(data)
+            compressed = StringIO(data)
             # Skip the header.
             compressed.read(3)
             # Decompress and reconstruct the Flash object.
-            decompressed = b'FWS' + compressed.read(5) + zlib.decompress(compressed.read())
+            decompressed = 'FWS' + compressed.read(5) + zlib.decompress(compressed.read())
         # Check if the file is compressed with lzma.
-        elif header == b'ZWS':
+        elif header == 'ZWS':
             self.log('info', "The opened file appears to be compressed with Lzma")
 
             # We need an third party library to decompress this.
@@ -90,14 +89,14 @@ class SWF(Module):
                 return
 
             # Open and handle on the compressed data.
-            compressed = BytesIO(data)
+            compressed = StringIO(data)
             # Skip the header.
             compressed.read(3)
             # Decompress with pylzma and reconstruct the Flash object.
             # # ZWS(LZMA)
             # # | 4 bytes       | 4 bytes    | 4 bytes       | 5 bytes    | n bytes    | 6 bytes         |
             # # | 'ZWS'+version | scriptLen  | compressedLen | LZMA props | LZMA data  | LZMA end marker |
-            decompressed = b'FWS' + compressed.read(5)
+            decompressed = 'FWS' + compressed.read(5)
             compressed.read(4)  # skip compressedLen
             decompressed += pylzma.decompress(compressed.read())
 

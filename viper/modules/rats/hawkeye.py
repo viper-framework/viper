@@ -1,36 +1,33 @@
-# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/HawkEye.py
 
 from base64 import b64decode
 
-# Non Standard Imports
+#Non Standard Imports
 import pype32
 from Crypto.Cipher import AES
 from pbkdf2 import PBKDF2
 
 
-# Helper Functions Go Here
+#Helper Functions Go Here
 
 def string_clean(line):
-    return ''.join((char for char in line if 32 < ord(char) < 127))
-
+    return ''.join((char for char in line if 32< ord(char) < 127))
 
 # Crypto Stuffs
 def decrypt_string(key, salt, coded):
-    # try:
-    # Derive key
-    generator = PBKDF2(key, salt)
-    aes_iv = generator.read(16)
-    aes_key = generator.read(32)
-    # Crypto
-    mode = AES.MODE_CBC
-    cipher = AES.new(aes_key, mode, IV=aes_iv)
-    value = cipher.decrypt(b64decode(coded)).replace('\x00', '')
-    return value  # .encode('hex')
-    # except:
-    # return False
-
+    #try:
+        # Derive key
+        generator = PBKDF2(key, salt)
+        aes_iv = generator.read(16)
+        aes_key = generator.read(32)
+        # Crypto
+        mode = AES.MODE_CBC
+        cipher = AES.new(aes_key, mode, IV=aes_iv)
+        value = cipher.decrypt(b64decode(coded)).replace('\x00', '')
+        return value#.encode('hex')
+    #except:
+        #return False
 
 # Get a list of strings from a section
 def get_strings(pe, dir_type):
@@ -43,8 +40,7 @@ def get_strings(pe, dir_type):
         counter += 1
     return string_list
 
-
-# Turn the strings in to a python config_dict
+#Turn the strings in to a python config_dict
 
 # Duplicate strings dont seem to be duplicated so we need to catch them
 def config_1(key, salt, string_list):
@@ -58,7 +54,6 @@ def config_1(key, salt, string_list):
             except:
                 config_dict["Config String {0}".format(i)] = string_list[i]
     return config_dict
-
 
 def config(data):
     pe = pype32.PE(data=data)

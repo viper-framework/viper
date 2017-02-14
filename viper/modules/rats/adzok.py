@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-#  Originally written by Kevin Breen (@KevTheHermit):
+# Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Adzok.py
 
 import re
@@ -7,12 +6,10 @@ import string
 from zipfile import ZipFile
 from io import StringIO
 
-
-# Helper Functions Go Here
+#Helper Functions Go Here
 def string_print(line):
     return [x for x in line if x in string.printable]
-
-
+    
 def parse_config(raw_config):
     config_dict = {}
     for line in raw_config.split('\n'):
@@ -56,3 +53,4 @@ def config(data):
                 raw_config = jar.read(name)
     if raw_config:
         return parse_config(raw_config)
+

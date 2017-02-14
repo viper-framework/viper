@@ -1,19 +1,15 @@
-# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/LostDoor.py
 
 import string
 from Crypto.Cipher import ARC4
 
-
 def string_print(line):
     return [x for x in line if x in string.printable]
 
-
 def decrypt_rc4(enckey, data):
-    cipher = ARC4.new(enckey)  # set the ciper
-    return cipher.decrypt(data.decode('hex'))  # decrpyt the data
-
+    cipher = ARC4.new(enckey) # set the ciper
+    return cipher.decrypt(data.decode('hex')) # decrpyt the data
 
 def ver_detect(data):
     first = data.split("*EDIT_SERVER*")
@@ -30,22 +26,21 @@ def ver_detect(data):
         print("[+] Found Version 8.01")
         return ver_801(first)
     return None
-
+        
 
 def new_decoder(split_list):
     raw_dict = {}
     for line in split_list:
         try:
-            k, v = line.split(' = ')
+            k,v = line.split(' = ')
             raw_dict[k[1:-1]] = v[1:-1]
         except:
             continue
     return config_cleaner(raw_dict)
 
-
 def config_cleaner(raw_dict):
     clean_dict = {}
-    for k, v in raw_dict.items():
+    for k,v in raw_dict.items():
         if k == 'ip':
             clean_dict['Domain'] = decrypt_rc4('oussamio', v)
         if k == 'fire':
@@ -74,7 +69,6 @@ def config_cleaner(raw_dict):
             clean_dict['CampaignID'] = v
     return clean_dict
 
-
 def ver_80(conf):
     conf_dict = {}
     conf_dict['Domain'] = decrypt_rc4('UniQue OussamiO', conf[1])
@@ -91,8 +85,8 @@ def ver_80(conf):
     conf_dict['Enable Error Message'] = conf[7]
     conf_dict['Error Message'] = conf[8]
     conf_dict['Disable Firewall'] = conf[9]
-    # conf_dict[''] = conf[10]
-    # conf_dict[''] = conf[11]
+    #conf_dict[''] = conf[10]
+    #conf_dict[''] = conf[11]
     conf_dict['USB Spread'] = conf[12]
     conf_dict['MSN Spread'] = conf[13]
     conf_dict['P2P Spread'] = conf[14]
@@ -101,11 +95,10 @@ def ver_80(conf):
     conf_dict['Connection Delay'] = conf[17]
     conf_dict['Set Hidden'] = conf[18]
     conf_dict['Protect Process'] = conf[19]
-    # conf_dict[''] = conf[20]
+    #conf_dict[''] = conf[20]
 
     return conf_dict
-
-
+    
 def ver_801(conf):
     conf_dict = {}
     conf_dict['Domain'] = decrypt_rc4('UniQue OussamiO', conf[1])
@@ -141,8 +134,8 @@ def ver_801(conf):
     conf_dict['Disable RegEdit'] = conf[28]
     return conf_dict
 
-
 def config(data):
     config_dict = ver_detect(data)
     if config_dict:
         return config_dict
+

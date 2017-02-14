@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -7,7 +6,6 @@ import re
 import datetime
 import tempfile
 import time
-from io import BytesIO, open
 
 from viper.common.constants import VIPER_ROOT
 
@@ -25,8 +23,16 @@ except ImportError:
     HAVE_PEHASH = False
 
 try:
+<<<<<<< HEAD
     from .sigs_helper.sigs_helper import get_auth_data
     from .verifysigs.asn1utils import dn
+||||||| parent of 5302faa... Initial refactoring for python3 support
+    from .sigs_helper.sigs_helper import get_auth_data
+    from verifysigs.asn1utils import dn
+=======
+    from .sigs_helper.verifysigs import get_auth_data
+    from verifysigs.asn1utils import dn
+>>>>>>> 5302faa... Initial refactoring for python3 support
     HAVE_VERIFYSIGS = True
 except ImportError:
     HAVE_VERIFYSIGS = False
@@ -98,7 +104,7 @@ class PE(Module):
 
         if not self.pe:
             try:
-                self.pe = pefile.PE(data=__sessions__.current.file.data)
+                self.pe = pefile.PE(__sessions__.current.file.path)
             except pefile.PEFormatError as e:
                 self.log('error', "Unable to parse PE file: {0}".format(e))
                 return False
@@ -112,17 +118,9 @@ class PE(Module):
         if hasattr(self.pe, 'DIRECTORY_ENTRY_IMPORT'):
             for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
                 try:
-                    if isinstance(entry.dll, bytes):
-                        dll = entry.dll.decode()
-                    else:
-                        dll = entry.dll
-                    self.log('info', "DLL: {0}".format(dll))
+                    self.log('info', "DLL: {0}".format(entry.dll))
                     for symbol in entry.imports:
-                        if isinstance(symbol.name, bytes):
-                            name = symbol.name.decode()
-                        else:
-                            name = symbol.name
-                        self.log('item', "{0}: {1}".format(hex(symbol.address), name))
+                        self.log('item', "{0}: {1}".format(hex(symbol.address), symbol.name))
                 except:
                     continue
 
@@ -309,7 +307,7 @@ class PE(Module):
             if not userdb_path:
                 return
 
-            with open(userdb_path, 'rb') as f:
+            with open(userdb_path, 'rt') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
@@ -747,14 +745,14 @@ class PE(Module):
 
         def check_module(iat, match):
             for imp in iat:
-                if imp.find(match.encode()) != -1:
+                if imp.find(match) != -1:
                     return True
 
             return False
 
         def is_cpp(data, cpp_count):
             for line in data:
-                if b'type_info' in line or b'RTTI' in line:
+                if 'type_info' in line or 'RTTI' in line:
                     cpp_count += 1
                     break
 
@@ -765,25 +763,25 @@ class PE(Module):
 
         def is_delphi(data):
             for line in data:
-                if b'Borland' in line:
-                    path = line.split(b'\\')
+                if 'Borland' in line:
+                    path = line.split('\\')
                     for p in path:
-                        if b'Delphi' in p:
+                        if 'Delphi' in p:
                             return True
             return False
 
         def is_vbdotnet(data):
             for line in data:
-                if b'Compiler' in line:
-                    stuff = line.split(b'.')
-                    if b'VisualBasic' in stuff:
+                if 'Compiler' in line:
+                    stuff = line.split('.')
+                    if 'VisualBasic' in stuff:
                         return True
 
             return False
 
         def is_autoit(data):
             for line in data:
-                if b'AU3!' in line:
+                if 'AU3!' in line:
                     return True
 
             return False
@@ -796,7 +794,7 @@ class PE(Module):
             return False
 
         def get_strings(content):
-            regexp = b'[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
+            regexp = '[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
             return re.findall(regexp, content)
 
         def find_language(iat, sample, content):
@@ -900,25 +898,21 @@ class PE(Module):
 
         rows = []
         for section in self.pe.sections:
-            if isinstance(section.Name, bytes):
-                section_name = section.Name.decode()
-            else:
-                section_name = section.Name
-            section_name = section_name.replace('\x00', '')
             if self.args.dump:
-                file_handle = BytesIO(__sessions__.current.file.data)
-                file_handle.seek(int(section.PointerToRawData))
-                section_data = file_handle.read(int(section.SizeOfRawData))
+                with open(__sessions__.current.file.path, 'rb') as file_handle:
+                    file_handle.seek(int(section.PointerToRawData))
+                    section_data = file_handle.read(int(section.SizeOfRawData))
 
-                dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
-                    __sessions__.current.file.md5, section_name))
+                    dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
+                        __sessions__.current.file.md5, section.Name.replace('\x00', '')))
 
-                with open(dump_path, 'wb') as dump_handle:
-                    dump_handle.write(section_data)
+                    with open(dump_path, 'wb') as dump_handle:
+                        dump_handle.write(section_data)
 
-                self.log('info', "Dumped section to {}".format(dump_path))
+                    self.log('info', "Dumped section to {}".format(dump_path))
+
             rows.append([
-                section_name,
+                section.Name,
                 hex(section.VirtualAddress),
                 hex(section.Misc_VirtualSize),
                 section.PointerToRawData,
@@ -936,7 +930,7 @@ class PE(Module):
 
         current_pehash = None
         if __sessions__.is_set():
-            current_pehash = calculate_pehash(data=__sessions__.current.file.data)
+            current_pehash = calculate_pehash(__sessions__.current.file.path)
             self.log('info', "PEhash: {0}".format(bold(current_pehash)))
 
         if self.args.all or self.args.cluster or self.args.scan:

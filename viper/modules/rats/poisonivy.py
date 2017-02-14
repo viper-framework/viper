@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/PoisonIvy.py
 
 import string
 from struct import unpack
-
 
 def calc_length(byte_str):
     try:
@@ -12,10 +10,8 @@ def calc_length(byte_str):
     except:
         return None
 
-
 def clean_string(line):
     return [x for x in line if x in string.printable]
-
 
 def first_split(data):
     splits = data.split('Software\\Microsoft\\Active Setup\\Installed Components\\')
@@ -23,12 +19,10 @@ def first_split(data):
         return splits[1]
     else:
         return None
-
-
+        
 def bytetohex(byte_str):
     return ''.join(['%02X' % ord(x) for x in byte_str]).strip()
-
-
+    
 def walk_data(data):
     # Byte array to make things easier.
     stream = bytearray(data)
@@ -40,18 +34,17 @@ def walk_data(data):
     max_count = 0
     while offset < EOF and max_count < 22:
         try:
-            length = calc_length(stream[offset + 2:offset + 4])
+            length = calc_length(stream[offset+2:offset+4])
             temp = []
-            for i in range(offset + 4, offset + 4 + length):
+            for i in range(offset+4, offset+4+length):
                 temp.append(chr(stream[i]))
-            date_type = bytetohex(data[offset] + data[offset + 1])
-            this.append((date_type, ''.join(temp)))
-            offset += length + 4
+            date_type = bytetohex(data[offset]+data[offset+1])
+            this.append((date_type,''.join(temp)))
+            offset += length+4
             max_count += 1
         except:
             return this
     return this
-
 
 def walk_domain(raw_stream):
     domains = ''
@@ -60,15 +53,14 @@ def walk_domain(raw_stream):
     while offset < len(stream):
         length = stream[offset]
         temp = []
-        for i in range(offset + 1, offset + 1 + length):
+        for i in range(offset+1, offset+1+length):
             temp.append(chr(stream[i]))
         domain = ''.join(temp)
 
-        port = calc_length(raw_stream[offset + length + 2:offset + length + 4])
-        offset += length + 4
+        port = calc_length(raw_stream[offset+length+2:offset+length+4])
+        offset += length+4
         domains += '{0}:{1}|'.format(domain, port)
-    return domains
-
+    return domains    
 
 def extract_config(config_raw):
     config = {}
@@ -116,7 +108,6 @@ def extract_config(config_raw):
             config['Enable KeyLogger'] = bytetohex(field[1])
 
     return config
-
 
 def config(data):
     try:

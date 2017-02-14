@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Albertino.py
 
@@ -11,13 +10,11 @@ from base64 import b64decode
 def string_print(line):
     return [x for x in line if x in string.printable]
 
-
 def get_config(data):
     m = re.search('\x01\x96\x01(.*)@@', data)
-    raw_config = m.group(0).replace('@', '')[3:]
+    raw_config = m.group(0).replace('@','')[3:]
     return raw_config
-
-
+        
 def decrypt_des(data):
     key = '&%#@?,:*'
     iv = '\x12\x34\x56\x78\x90\xab\xcd\xef'
@@ -45,7 +42,6 @@ def parsed_config(clean_config):
         config_dict['Port2'] = sections[3]
         config_dict['AntiDebug'] = sections[4]
     return config_dict
-
 
 def config(data):
     coded_config = get_config(data)
