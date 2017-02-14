@@ -294,7 +294,7 @@ class MISP(Module):
         event.timestamp = int(time.time())
         result = self.misp.update(event._json())
         if not self._has_error_message(result):
-            self.log('success', "All attributes updated sucessfully")
+            self.log('success', "All attributes updated successfully")
             __sessions__.new(misp_event=MispEvent(result, self.offline_mode))
 
     # ####### Helpers for add ########
@@ -466,7 +466,7 @@ class MISP(Module):
             self.log('error', e)
             return
         if not self._has_error_message(result):
-            self.log('success', "File uploaded sucessfully")
+            self.log('success', "File uploaded successfully")
             if event_id is None:
                 event_id = result['id']
             full_event = self.misp.get(event_id)
@@ -644,7 +644,7 @@ class MISP(Module):
                     self.log('error', 'You can only delete all the samples of the samples of a specific event ID.')
                     return
             if self._clean_tmp_samples(self.args.delete):
-                self.log('success', 'Sucessfully removed.')
+                self.log('success', 'Successfully removed.')
             else:
                 self.log('error', 'Nothing to remove.')
         else:
