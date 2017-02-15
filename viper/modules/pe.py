@@ -110,9 +110,17 @@ class PE(Module):
         if hasattr(self.pe, 'DIRECTORY_ENTRY_IMPORT'):
             for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
                 try:
-                    self.log('info', "DLL: {0}".format(entry.dll))
+                    if isinstance(entry.dll, bytes):
+                        dll = entry.dll.decode()
+                    else:
+                        dll = entry.dll
+                    self.log('info', "DLL: {0}".format(dll))
                     for symbol in entry.imports:
-                        self.log('item', "{0}: {1}".format(hex(symbol.address), symbol.name))
+                        if isinstance(symbol.name, bytes):
+                            name = symbol.name.decode()
+                        else:
+                            name = symbol.name
+                        self.log('item', "{0}: {1}".format(hex(symbol.address), name))
                 except:
                     continue
 
@@ -299,7 +307,7 @@ class PE(Module):
             if not userdb_path:
                 return
 
-            with open(userdb_path, 'rt') as f:
+            with open(userdb_path, 'rb') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
@@ -890,21 +898,25 @@ class PE(Module):
 
         rows = []
         for section in self.pe.sections:
+            if isinstance(section.Name, bytes):
+                section_name = section.Name.decode()
+            else:
+                section_name = section.Name
+            section_name = section_name.replace('\x00', '')
             if self.args.dump:
                 with open(__sessions__.current.file.path, 'rb') as file_handle:
                     file_handle.seek(int(section.PointerToRawData))
                     section_data = file_handle.read(int(section.SizeOfRawData))
 
                     dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
-                        __sessions__.current.file.md5, section.Name.replace('\x00', '')))
+                        __sessions__.current.file.md5, section_name))
 
                     with open(dump_path, 'wb') as dump_handle:
                         dump_handle.write(section_data)
 
                     self.log('info', "Dumped section to {}".format(dump_path))
-
             rows.append([
-                section.Name,
+                section_name,
                 hex(section.VirtualAddress),
                 hex(section.Misc_VirtualSize),
                 section.PointerToRawData,
