@@ -6,3 +6,6 @@
     path = viper/modules/peepdf
     url = https://github.com/MISP/peepdf.git
     branch = master
+[submodule "viper/modules/pdftools"]
+	path = viper/modules/pdftools
+	url = https://github.com/MISP/pdftools.git
