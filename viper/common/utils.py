@@ -77,8 +77,10 @@ def hexdump(src, length=16, maxlines=None):
     lines = []
     for c in range(0, len(src), length):
         chars = src[c:c+length]
-        hex = ' '.join(["%02x" % ord(x) for x in chars])
-        printable = ''.join(["%s" % ((ord(x) <= 127 and FILTER[ord(x)]) or '.') for x in chars])
+        if isinstance(chars, str):
+            chars = [ord(x) for x in chars]
+        hex = ' '.join(["%02x" % x for x in chars])
+        printable = ''.join(["%s" % ((x <= 127 and FILTER[x]) or '.') for x in chars])
         lines.append("%04x  %-*s  %s\n" % (c, length*3, hex, printable))
 
         if maxlines:
