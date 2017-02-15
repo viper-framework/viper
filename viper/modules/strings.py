@@ -34,7 +34,7 @@ HOST_REGEX = re.compile('Host: ')
 USERAGENT_REGEX = re.compile('(Mozilla|curl|Wget|Opera)/.+\(.+\;.+\)', re.IGNORECASE)
 EMAIL_REGEX = re.compile('[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}', re.IGNORECASE)
 REGKEY_REGEX = re.compile('(HKEY_CLASSES_ROOT|HKEY_CURRENT_USER|HKEY_LOCAL_MACHINE|HKEY_USERS|HKEY_CURRENT_CONFIG|HKCR|HKCU|HKLM|HKU|HKCC)(/|\x5c\x5c)', re.IGNORECASE)
-REGKEY2_REGEX = re.compile('(CurrentVersion|Software\\Microsoft|Windows NT|Microsoft\\Interface)')
+REGKEY2_REGEX = re.compile('(CurrentVersion|Software\\\Microsoft|Windows NT|Microsoft\\\Interface)')
 FILE_REGEX = re.compile('\w+\.(EXE|DLL|BAT|PS|INI|PIF|SCR|DOC|DOCX|DOCM|PPT|PPTX|PPTS|XLS|XLT|XLSX|XLTX|XLSM|XLTM|ZIP|RAR)$', re.U | re.IGNORECASE)
 
 TLD = [
@@ -236,7 +236,7 @@ class Strings(Module):
 
     def run(self):
         super(Strings, self).run()
-        
+
         if self.args is None:
             return
 
