@@ -236,6 +236,9 @@ class Strings(Module):
 
     def run(self):
         super(Strings, self).run()
+        
+        if self.args is None:
+            return
 
         if not (self.args.all or self.args.files or self.args.hosts or self.args.network or self.args.interesting):
             self.log('error', 'At least one of the parameters is required')

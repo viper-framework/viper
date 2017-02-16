@@ -2,20 +2,24 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 import shutil
-import ConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 
 from viper.common.objects import Dictionary
 from viper.common.constants import VIPER_ROOT
 
 class Config:
-    
+
     def __init__(self, cfg=None):
         # Possible paths for the configuration file.
         # This should go in order from local to global.
         config_paths = [
             os.path.join(os.getcwd(), 'viper.conf'),
-            os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
+            os.path.join(expanduser("~"), '.viper', 'viper.conf'),
             '/etc/viper/viper.conf'
         ]
 
@@ -33,7 +37,7 @@ class Config:
             cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
 
             # If the local storage folder doesn't exist, we create it.
-            local_storage = os.path.join(os.getenv('HOME'), '.viper')
+            local_storage = os.path.join(expanduser("~"), '.viper')
             if not os.path.exists(local_storage):
                 os.makedirs(local_storage)
 
@@ -42,10 +46,10 @@ class Config:
             if os.path.exists(share_viper):
                 shutil.copy(share_viper, config_file)
             else:
-                shutil.copy(cwd_viper, config_file)            
-        
+                shutil.copy(cwd_viper, config_file)
+
         # Pasre the config file.
-        config = ConfigParser.ConfigParser()
+        config = ConfigParser()
         config.read(config_file)
 
         # Pars ethe config file and attribute for the current instantiated

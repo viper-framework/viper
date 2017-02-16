@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 import sys
 import glob
 import atexit
@@ -111,7 +112,7 @@ class Console(object):
 
             # Then autocomplete paths.
             if text.startswith("~"):
-                text = "{0}{1}".format(os.getenv("HOME"), text[1:])
+                text = "{0}{1}".format(expanduser("~"), text[1:])
             return (glob.glob(text+'*')+[None])[state]
 
         # Auto-complete on tabs.
@@ -155,7 +156,14 @@ class Console(object):
 
                 misp = ''
                 if __sessions__.current.misp_event:
-                    misp = ' [MISP {}]'.format(__sessions__.current.misp_event.event_id)
+                    misp = '[MISP'
+                    if __sessions__.current.misp_event.event.id:
+                        misp += ' {}'.format(__sessions__.current.misp_event.event.id)
+                    else:
+                        misp += ' New Event'
+                    if __sessions__.current.misp_event.off:
+                        misp += ' (Offline)'
+                    misp += ']'
 
                 prompt = (prefix + cyan('viper ', True) +
                           white(filename, True) + blue(misp, True) + stored + cyan(' > ', True))

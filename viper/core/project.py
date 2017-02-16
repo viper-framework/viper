@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 
 from viper.core.config import Config
 
@@ -16,8 +17,8 @@ class Project(object):
             self.path = cfg.paths.storage_path
             self.base_path = cfg.paths.storage_path
         else:
-            self.path = os.path.join(os.getenv('HOME'), '.viper')
-            self.base_path = os.path.join(os.getenv('HOME'), '.viper')
+            self.path = os.path.join(expanduser("~"), '.viper')
+            self.base_path = os.path.join(expanduser("~"), '.viper')
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)

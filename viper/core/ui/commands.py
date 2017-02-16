@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 import time
 import json
 import shutil
@@ -425,9 +426,9 @@ class Commands(object):
 
             if __sessions__.is_attached_misp(quiet=True):
                 if tags is not None:
-                    tags += ',misp:{}'.format(__sessions__.current.misp_event.event_id)
+                    tags += ',misp:{}'.format(__sessions__.current.misp_event.event.id)
                 else:
-                    tags = 'misp:{}'.format(__sessions__.current.misp_event.event_id)
+                    tags = 'misp:{}'.format(__sessions__.current.misp_event.event.id)
 
             # Try to store file object into database.
             status = self.db.add(obj=obj, tags=tags)
@@ -527,7 +528,7 @@ class Commands(object):
                 return
 
             self.log('info', "Current name is: {}".format(bold(__sessions__.current.file.name)))
-            
+
             new_name = input("New name: ")
             if not new_name:
                 self.log('error', "File name can't  be empty!")
@@ -800,7 +801,7 @@ class Commands(object):
         except:
             return
 
-        projects_path = os.path.join(os.getenv('HOME'), '.viper', 'projects')
+        projects_path = os.path.join(expanduser("~"), '.viper', 'projects')
 
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")

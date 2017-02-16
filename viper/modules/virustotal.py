@@ -66,7 +66,7 @@ class VirusTotal(Module):
         return [json.loads(open(p, 'r').read()) for p in glob.glob(os.path.join(path, '*'))]
 
     def _download_hashes(self, misp_event, verbose):
-        eid = misp_event.event_id
+        eid = misp_event.event.id
         ehashes, shashes = misp_event.get_all_hashes()
         to_dl = sorted(ehashes, key=len)
         while to_dl:
@@ -186,7 +186,7 @@ class VirusTotal(Module):
     def _display_tmp_files(self):
         cureid = None
         if __sessions__.is_attached_misp(True):
-            cureid = __sessions__.current.misp_event.event_id
+            cureid = __sessions__.current.misp_event.event.id
         header = ['Sample ID', 'Current', 'Event ID', 'Filename']
         rows = []
         i = 0
@@ -217,7 +217,7 @@ class VirusTotal(Module):
         # FIXME: private and intel API are inconsistent to save a file.
         samples_path = os.path.join(self.cur_path, 'vt_samples')
         if __sessions__.is_attached_misp(True):
-            samples_path = os.path.join(samples_path, __sessions__.current.misp_event.event_id)
+            samples_path = os.path.join(samples_path, __sessions__.current.misp_event.event.id)
         elif force_eid:
             samples_path = os.path.join(samples_path, force_eid)
 
@@ -354,7 +354,7 @@ class VirusTotal(Module):
                 eid, path, name = tmp_samples[self.args.download_open]
                 if eid:
                     if __sessions__.is_attached_misp(quiet=True):
-                        if __sessions__.current.misp_event.event_id != eid:
+                        if __sessions__.current.misp_event.event.id != int(eid):
                             self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
                         else:
                             self.log('success', 'You opened a sample related to the current MISP event.')
@@ -371,7 +371,7 @@ class VirusTotal(Module):
                     if name == self.args.download_open_name:
                         if eid:
                             if __sessions__.is_attached_misp(quiet=True):
-                                if __sessions__.current.misp_event.event_id != eid:
+                                if __sessions__.current.misp_event.event.id != int(eid):
                                     self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
                                 else:
                                     self.log('success', 'You opened a sample related to the current MISP event.')
