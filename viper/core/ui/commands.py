@@ -28,7 +28,7 @@ from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
-from viper.core.config import Config
+from viper.core.config import Config, console_output
 from viper.common.autorun import autorun_module
 
 cfg = Config()
@@ -75,10 +75,8 @@ class Commands(object):
             type=event_type,
             data=event_data
         ))
-        if event_type == 'table':
-            print table(event_data['header'], event_data['rows'])
-        else:
-            getattr(out, 'print_{0}'.format(event_type))(event_data)
+        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
+
 
     ##
     # CLEAR

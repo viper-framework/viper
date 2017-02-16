@@ -78,4 +78,8 @@ class Config:
         try:
             return getattr(self, section)
         except AttributeError as e:
-            print(e)
+            print e
+
+
+console_output = {}
+console_output['filename'] = False

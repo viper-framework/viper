@@ -84,7 +84,6 @@ def print_output(output, filename=None):
                     out.write('\n')
                 else:
                     out.write('{0}\n'.format(entry['data']))
-        print_success("Output written to {0}".format(filename))
     else:
         for entry in output:
             if entry['type'] == 'info':

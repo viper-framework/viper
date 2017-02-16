@@ -3,6 +3,8 @@
 
 import argparse
 import viper.common.out as out
+from viper.core.config import console_output
+
 
 class ArgumentErrorCallback(Exception):
     def __init__(self, message, level=''):
@@ -48,14 +50,7 @@ class Module(object):
             type=event_type,
             data=event_data
         ))
-
-        if event_type:
-            if event_type == 'table':
-                print(out.table(event_data['header'], event_data['rows']))
-            else:
-                getattr(out, 'print_{0}'.format(event_type))(event_data)
-        else:
-            print(event_data)
+        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
 
     def usage(self):
         self.log('', self.parser.format_usage())
