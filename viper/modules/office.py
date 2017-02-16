@@ -334,7 +334,7 @@ class Office(Module):
     ##
     # VBA Functions
     #
-    
+
     def parse_vba(self, save_path):
         save = False
         vbaparser = VBA_Parser(__sessions__.current.file.path)
@@ -355,7 +355,7 @@ class Office(Module):
                 analysis = vba_scanner.scan(include_decoded_strings=True)
                 for kw_type, keyword, description in analysis:
                     an_results[kw_type].append([string_clean_hex(keyword), description])
-                    
+
                 # Save the code to external File
                 if save_path:
                     try:
@@ -368,37 +368,34 @@ class Office(Module):
             # Print all Tables together
             self.log('info', "AutoRun Macros Found")
             self.log('table', dict(header=['Method', 'Description'], rows=an_results['AutoExec']))
-            
+
             self.log('info', "Suspicious Keywords Found")
             self.log('table', dict(header=['KeyWord', 'Description'], rows=an_results['Suspicious']))
-            
+
             self.log('info', "Possible IOC's")
             self.log('table', dict(header=['IOC', 'Type'], rows=an_results['IOC']))
-            
+
             self.log('info', "Hex Strings")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Hex String']))
-            
+
             self.log('info', "Base64 Strings")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Base64 String']))
-            
+
             self.log('info', "Dridex string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Dridex string']))
-            
+
             self.log('info', "VBA string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['VBA string']))
-            
-            
-            
+
+
+
             if save:
                 self.log('success', "Writing VBA Code to {0}".format(save_path))
         #except:
             #self.log('error', "Unable to Process File")
         # Close the file
         vbaparser.close()
-        
-        
-        
-        
+
     # Main starts here
     def run(self):
         super(Office, self).run()
@@ -414,12 +411,19 @@ class Office(Module):
             return
 
         file_data = __sessions__.current.file.data
-        if file_data.startswith('<?xml'):
+        if isinstance(file_data, bytes):
+            xml_start = b'<?xml'
+            mso_start = b'MIME-Version:'
+        else:
+            # PY2SUPPORT
+            xml_start = '<?xml'
+            mso_start = 'MIME-Version:'
+        if file_data.startswith(xml_start):
             OLD_XML = file_data
         else:
             OLD_XML = False
 
-        if file_data.startswith('MIME-Version:') and 'application/x-mso' in file_data:
+        if file_data.startswith(mso_start) and 'application/x-mso' in file_data:
             MHT_FILE = file_data
         else:
             MHT_FILE = False
