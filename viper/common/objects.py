@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -7,13 +6,8 @@ import hashlib
 import binascii
 import sys
 
-if sys.version_info < (3, 4):
-    # Make sure the read method returns a byte stream
-    from io import open
-
 try:
     import pydeep
-
     HAVE_SSDEEP = True
 except ImportError:
     HAVE_SSDEEP = False
@@ -39,6 +33,7 @@ class Singleton(type):
 
 
 class MispEvent(object):
+
     def __init__(self, event, offline=False):
         if isinstance(event, MISPEvent):
             self.event = event
@@ -84,6 +79,7 @@ class MispEvent(object):
 
 
 class File(object):
+
     def __init__(self, path):
         self.id = None
         self.path = path
@@ -115,17 +111,16 @@ class File(object):
 
     @property
     def data(self):
-        with open(self.path, 'rb') as f:
-            return f.read()
+        return open(self.path, 'rb').read()
 
     def is_valid(self):
-        return os.path.exists(self.path) and os.path.isfile(self.path)  # and os.path.getsize(self.path) != 0
+        return os.path.exists(self.path) and os.path.isfile(self.path)# and os.path.getsize(self.path) != 0
 
     def get_chunks(self):
         try:
             fd = open(self.path, 'rb')
         # TODO: fix this up better.
-        except Exception:  # as e:  <- this need to be fixed anyway!
+        except Exception as e:
             return
 
         while True:
@@ -151,7 +146,7 @@ class File(object):
             sha256.update(chunk)
             sha512.update(chunk)
 
-        self.crc32 = ''.join('%02X' % ((crc >> i) & 0xff) for i in [24, 16, 8, 0])
+        self.crc32 = ''.join('%02X' % ((crc>>i)&0xff) for i in [24, 16, 8, 0])
         self.md5 = md5.hexdigest()
         self.sha1 = sha1.hexdigest()
         self.sha256 = sha256.hexdigest()
@@ -177,7 +172,7 @@ class File(object):
             except:
                 try:
                     import subprocess
-                    file_process = subprocess.Popen(['file', '-b', self.path], stdout=subprocess.PIPE)
+                    file_process = subprocess.Popen(['file', '-b', self.path], stdout = subprocess.PIPE)
                     file_type = file_process.stdout.read().strip()
                 except:
                     return ''
