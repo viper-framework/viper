@@ -290,7 +290,7 @@ def module_cmdline(cmd_line, sha256):
                 module.run()
 
                 command_outputs += module.output
-                print type(module.output)
+                print(type(module.output))
                 del(module.output[:])
             else:
                 command_outputs.append({'message': '{0} is not a valid command'.format(cmd_line)})

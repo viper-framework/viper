@@ -156,7 +156,7 @@ class Console(object):
 
                 misp = ''
                 if __sessions__.current.misp_event:
-                    misp = '[MISP'
+                    misp = ' [MISP'
                     if __sessions__.current.misp_event.event.id:
                         misp += ' {}'.format(__sessions__.current.misp_event.event.id)
                     else:
