@@ -12,6 +12,7 @@ except ImportError:
 from viper.common.objects import Dictionary
 from viper.common.constants import VIPER_ROOT
 
+
 class Config:
 
     def __init__(self, cfg=None):
@@ -33,7 +34,7 @@ class Config:
         # If no config is available, we try to copy it either from the
         # /usr/share/viper folder, or from VIPER_ROOT.
         if not config_file:
-            share_viper ='/usr/share/viper/viper.conf.sample'
+            share_viper = '/usr/share/viper/viper.conf.sample'
             cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
 
             # If the local storage folder doesn't exist, we create it.
@@ -78,7 +79,7 @@ class Config:
         try:
             return getattr(self, section)
         except AttributeError as e:
-            print e
+            print(e)
 
 
 console_output = {}
