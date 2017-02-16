@@ -23,7 +23,7 @@ except ImportError:
     HAVE_PEHASH = False
 
 try:
-    from .sigs_helper.verifysigs import get_auth_data
+    from .sigs_helper.sigs_helper import get_auth_data
     from verifysigs.asn1utils import dn
     HAVE_VERIFYSIGS = True
 except ImportError:
