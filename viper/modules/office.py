@@ -276,6 +276,7 @@ class Office(Module):
         media_list = []
         embedded_list = []
         vba_list = []
+        activex_list = []
         for name in zip_xml.namelist():
             if name == 'docProps/app.xml':
                 meta1 = self.meta_data(zip_xml.read(name))
@@ -288,6 +289,8 @@ class Office(Module):
                 embedded_list.append(name.split('/')[-1])
             if name == 'word/vbaProject.bin':
                 vba_list.append(name.split('/')[-1])
+            if name.startswith('word/activeX/'):
+                activex_list.append(name.split('/')[-1])
 
         # Print the results.
         self.log('info', "App MetaData:")
@@ -301,6 +304,10 @@ class Office(Module):
         if len(vba_list) > 0:
             self.log('info', "Macro Objects")
             for item in vba_list:
+                self.log('item', item)
+        if len(activex_list) > 0:
+            self.log('info', "ActiveX Objects")
+            for item in activex_list:
                 self.log('item', item)
         if len(media_list) > 0:
             self.log('info', "Media Objects")
