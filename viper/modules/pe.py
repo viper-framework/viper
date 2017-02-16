@@ -24,6 +24,7 @@ except ImportError:
 
 try:
 <<<<<<< HEAD
+<<<<<<< HEAD
     from .sigs_helper.sigs_helper import get_auth_data
     from .verifysigs.asn1utils import dn
 ||||||| parent of 5302faa... Initial refactoring for python3 support
@@ -31,6 +32,11 @@ try:
     from verifysigs.asn1utils import dn
 =======
     from .sigs_helper.verifysigs import get_auth_data
+||||||| parent of 23be87f... Make python2 happy
+    from .sigs_helper.verifysigs import get_auth_data
+=======
+    from .sigs_helper.sigs_helper import get_auth_data
+>>>>>>> 23be87f... Make python2 happy
     from verifysigs.asn1utils import dn
 >>>>>>> 5302faa... Initial refactoring for python3 support
     HAVE_VERIFYSIGS = True
