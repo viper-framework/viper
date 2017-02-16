@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -20,11 +19,7 @@ from viper.core.session import __sessions__
 
 try:
     import olefile
-
-    try:
-        from oletools.olevba3 import VBA_Parser, VBA_Scanner
-    except:
-        from oletools.olevba import VBA_Parser, VBA_Scanner
+    from oletools.olevba import VBA_Parser, VBA_Scanner
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
@@ -50,7 +45,7 @@ class Office(Module):
 
     def detect_flash(self, data):
         matches = []
-        for match in re.finditer(b'CWS|FWS', data):
+        for match in re.finditer('CWS|FWS', data):
             start = match.start()
             if (start + 8) > len(data):
                 # Header size larger than remaining data,
@@ -78,7 +73,7 @@ class Office(Module):
             swf = data[start:start + size]
             is_compressed = False
             swf_deflate = None
-            if b'CWS' in header:
+            if 'CWS' in header:
                 is_compressed = True
                 # Data after header (8 bytes) until the end is compressed
                 # with zlib. Attempt to decompress it to check if it is valid.
@@ -281,7 +276,6 @@ class Office(Module):
         media_list = []
         embedded_list = []
         vba_list = []
-        activex_list = []
         for name in zip_xml.namelist():
             if name == 'docProps/app.xml':
                 meta1 = self.meta_data(zip_xml.read(name))
@@ -294,8 +288,6 @@ class Office(Module):
                 embedded_list.append(name.split('/')[-1])
             if name == 'word/vbaProject.bin':
                 vba_list.append(name.split('/')[-1])
-            if name.startswith('word/activeX/'):
-                activex_list.append(name.split('/')[-1])
 
         # Print the results.
         self.log('info', "App MetaData:")
@@ -309,10 +301,6 @@ class Office(Module):
         if len(vba_list) > 0:
             self.log('info', "Macro Objects")
             for item in vba_list:
-                self.log('item', item)
-        if len(activex_list) > 0:
-            self.log('info', "ActiveX Objects")
-            for item in activex_list:
                 self.log('item', item)
         if len(media_list) > 0:
             self.log('info', "Media Objects")
@@ -355,9 +343,9 @@ class Office(Module):
             self.log('error', "No Macro's Detected")
             return
         self.log('info', "Macro's Detected")
-        # try:
+        #try:
         if True:
-            an_results = {'AutoExec': [], 'Suspicious': [], 'IOC': [], 'Hex String': [], 'Base64 String': [], 'Dridex string': [], 'VBA string': []}
+            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex string':[], 'VBA string':[]}
             for (filename, stream_path, vba_filename, vba_code) in vbaparser.extract_macros():
                 self.log('info', "Stream Details")
                 self.log('item', "OLE Stream: {0}".format(string_clean(stream_path)))
@@ -399,10 +387,12 @@ class Office(Module):
             self.log('info', "VBA string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['VBA string']))
 
+
+
             if save:
                 self.log('success', "Writing VBA Code to {0}".format(save_path))
-                # except:
-                # self.log('error', "Unable to Process File")
+        #except:
+            #self.log('error', "Unable to Process File")
         # Close the file
         vbaparser.close()
 
@@ -421,12 +411,19 @@ class Office(Module):
             return
 
         file_data = __sessions__.current.file.data
-        if file_data.startswith(b'<?xml'):
+        if isinstance(file_data, bytes):
+            xml_start = b'<?xml'
+            mso_start = b'MIME-Version:'
+        else:
+            # PY2SUPPORT
+            xml_start = '<?xml'
+            mso_start = 'MIME-Version:'
+        if file_data.startswith(xml_start):
             OLD_XML = file_data
         else:
             OLD_XML = False
 
-        if file_data.startswith(b'MIME-Version:') and 'application/x-mso' in file_data:
+        if file_data.startswith(mso_start) and 'application/x-mso' in file_data:
             MHT_FILE = file_data
         else:
             MHT_FILE = False
