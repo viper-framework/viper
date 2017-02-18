@@ -12,7 +12,7 @@ import shutil
 import tempfile
 import tarfile
 import contextlib
-from io import StringIO
+from io import BytesIO
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -192,7 +192,7 @@ class Cuckoo(Module):
             if self.args.options:
                 params['options'] = self.args.options
 
-            files = {'file': (__sessions__.current.file.name, open(__sessions__.current.file.path, 'rb').read())}
+            files = {'file': (__sessions__.current.file.name, BytesIO(__sessions__.current.file.data))}
             submit_file = self.api_query('post', submit_file_url, files=files, params=params).json()
             try:
                 self.log('info', "Task Submitted ID: {0}".format(submit_file['task_id']))
@@ -218,7 +218,7 @@ class Cuckoo(Module):
 
             if dropped_result.content.startswith('BZ'):
                 # explode BZ
-                with tarfile.open(fileobj=StringIO(dropped_result.content)) as bz_file:
+                with tarfile.open(fileobj=BytesIO(dropped_result.content)) as bz_file:
                     for item in bz_file:
                         # Write Files to tmp dir
                         if item.isreg():

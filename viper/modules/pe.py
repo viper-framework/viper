@@ -6,6 +6,7 @@ import re
 import datetime
 import tempfile
 import time
+from io import BytesIO, open
 
 from viper.common.constants import VIPER_ROOT
 
@@ -110,7 +111,7 @@ class PE(Module):
 
         if not self.pe:
             try:
-                self.pe = pefile.PE(__sessions__.current.file.path)
+                self.pe = pefile.PE(data=__sessions__.current.file.data)
             except pefile.PEFormatError as e:
                 self.log('error', "Unable to parse PE file: {0}".format(e))
                 return False
@@ -759,14 +760,14 @@ class PE(Module):
 
         def check_module(iat, match):
             for imp in iat:
-                if imp.find(match) != -1:
+                if imp.find(match.encode()) != -1:
                     return True
 
             return False
 
         def is_cpp(data, cpp_count):
             for line in data:
-                if 'type_info' in line or 'RTTI' in line:
+                if b'type_info' in line or b'RTTI' in line:
                     cpp_count += 1
                     break
 
@@ -777,25 +778,25 @@ class PE(Module):
 
         def is_delphi(data):
             for line in data:
-                if 'Borland' in line:
-                    path = line.split('\\')
+                if b'Borland' in line:
+                    path = line.split(b'\\')
                     for p in path:
-                        if 'Delphi' in p:
+                        if b'Delphi' in p:
                             return True
             return False
 
         def is_vbdotnet(data):
             for line in data:
-                if 'Compiler' in line:
-                    stuff = line.split('.')
-                    if 'VisualBasic' in stuff:
+                if b'Compiler' in line:
+                    stuff = line.split(b'.')
+                    if b'VisualBasic' in stuff:
                         return True
 
             return False
 
         def is_autoit(data):
             for line in data:
-                if 'AU3!' in line:
+                if b'AU3!' in line:
                     return True
 
             return False
@@ -808,7 +809,7 @@ class PE(Module):
             return False
 
         def get_strings(content):
-            regexp = '[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
+            regexp = b'[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
             return re.findall(regexp, content)
 
         def find_language(iat, sample, content):
@@ -918,17 +919,17 @@ class PE(Module):
                 section_name = section.Name
             section_name = section_name.replace('\x00', '')
             if self.args.dump:
-                with open(__sessions__.current.file.path, 'rb') as file_handle:
-                    file_handle.seek(int(section.PointerToRawData))
-                    section_data = file_handle.read(int(section.SizeOfRawData))
+                file_handle = BytesIO(__sessions__.current.file.data)
+                file_handle.seek(int(section.PointerToRawData))
+                section_data = file_handle.read(int(section.SizeOfRawData))
 
-                    dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
-                        __sessions__.current.file.md5, section_name))
+                dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
+                    __sessions__.current.file.md5, section_name))
 
-                    with open(dump_path, 'wb') as dump_handle:
-                        dump_handle.write(section_data)
+                with open(dump_path, 'wb') as dump_handle:
+                    dump_handle.write(section_data)
 
-                    self.log('info', "Dumped section to {}".format(dump_path))
+                self.log('info', "Dumped section to {}".format(dump_path))
             rows.append([
                 section_name,
                 hex(section.VirtualAddress),
@@ -948,7 +949,7 @@ class PE(Module):
 
         current_pehash = None
         if __sessions__.is_set():
-            current_pehash = calculate_pehash(__sessions__.current.file.path)
+            current_pehash = calculate_pehash(data=__sessions__.current.file.data)
             self.log('info', "PEhash: {0}".format(bold(current_pehash)))
 
         if self.args.all or self.args.cluster or self.args.scan:

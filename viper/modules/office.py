@@ -19,7 +19,10 @@ from viper.core.session import __sessions__
 
 try:
     import olefile
-    from oletools.olevba import VBA_Parser, VBA_Scanner
+    try:
+        from oletools.olevba3 import VBA_Parser, VBA_Scanner
+    except:
+        from oletools.olevba import VBA_Parser, VBA_Scanner
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
@@ -411,19 +414,12 @@ class Office(Module):
             return
 
         file_data = __sessions__.current.file.data
-        if isinstance(file_data, bytes):
-            xml_start = b'<?xml'
-            mso_start = b'MIME-Version:'
-        else:
-            # PY2SUPPORT
-            xml_start = '<?xml'
-            mso_start = 'MIME-Version:'
-        if file_data.startswith(xml_start):
+        if file_data.startswith(b'<?xml'):
             OLD_XML = file_data
         else:
             OLD_XML = False
 
-        if file_data.startswith(mso_start) and 'application/x-mso' in file_data:
+        if file_data.startswith(b'MIME-Version:') and 'application/x-mso' in file_data:
             MHT_FILE = file_data
         else:
             MHT_FILE = False

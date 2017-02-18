@@ -22,7 +22,7 @@ except ImportError:
 
 from viper.common.out import *
 
-def calculate_pehash(file_path=None):
+def calculate_pehash(file_path=None, data=None):
     if not HAVE_PEFILE:
         self.log('error', "Missing dependency, install pefile (`pip install pefile`)")
         return ''
@@ -32,11 +32,14 @@ def calculate_pehash(file_path=None):
         return ''
 
 
-    if not file_path:
+    if not file_path and not data:
         return ''
 
     try:
-        exe = pefile.PE(file_path)
+        if file_path:
+            exe = pefile.PE(file_path)
+        elif data:
+            exe = pefile.PE(data=data)
 
         #image characteristics
         img_chars = bitstring.BitArray(hex(exe.FILE_HEADER.Characteristics))
@@ -56,7 +59,7 @@ def calculate_pehash(file_path=None):
 
         #Stack Commit Size
         stk_size = bitstring.BitArray(hex(exe.OPTIONAL_HEADER.SizeOfStackCommit))
-        stk_size_bits = string.zfill(stk_size.bin, 32)
+        stk_size_bits = stk_size.bin.zfill(32)
         #now xor the bits
         stk_size = bitstring.BitArray(bin=stk_size_bits)
         stk_size_xor = stk_size[8:16] ^ stk_size[16:24] ^ stk_size[24:32]
@@ -66,7 +69,7 @@ def calculate_pehash(file_path=None):
 
         #Heap Commit Size
         hp_size = bitstring.BitArray(hex(exe.OPTIONAL_HEADER.SizeOfHeapCommit))
-        hp_size_bits = string.zfill(hp_size.bin, 32)
+        hp_size_bits = hp_size.bin.zfill(32)
         #now xor the bits
         hp_size = bitstring.BitArray(bin=hp_size_bits)
         hp_size_xor = hp_size[8:16] ^ hp_size[16:24] ^ hp_size[24:32]
@@ -85,7 +88,7 @@ def calculate_pehash(file_path=None):
             #rawsize
             sect_rs =  bitstring.BitArray(hex(section.SizeOfRawData))
             sect_rs = bitstring.BitArray(bytes=sect_rs.tobytes())
-            sect_rs_bits = string.zfill(sect_rs.bin, 32)
+            sect_rs_bits = sect_rs.bin.zfill(32)
             sect_rs = bitstring.BitArray(bin=sect_rs_bits)
             sect_rs = bitstring.BitArray(bytes=sect_rs.tobytes())
             sect_rs_bits = sect_rs[8:32]
