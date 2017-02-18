@@ -132,7 +132,7 @@ class HTMLParse(Module):
             return
 
         try:
-            html_data = open(__sessions__.current.file.path).read()
+            html_data = __sessions__.current.file.data
             self.soup = BeautifulSoup(html_data)
         except Exception as e:
             self.log('error', "Something went wrong: {0}".format(e))

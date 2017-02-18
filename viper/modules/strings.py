@@ -174,7 +174,7 @@ class Strings(Module):
         result = ""
         counter = 1
         wide_word = False
-        for c in f.data:
+        for c in f.data.decode('utf-8', 'ignore'):
             # already have something, check if the second byte is a null
             if counter == 2 and c == "\x00":
                 wide_word = True

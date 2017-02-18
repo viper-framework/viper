@@ -46,3 +46,6 @@ git+https://github.com/sebdraven/verify-sigs.git
 # office module
 olefile
 git+https://github.com/viper-framework/oletools.git
+
+# clamd module
+pyclamd

@@ -6,6 +6,10 @@ import hashlib
 import binascii
 import sys
 
+if sys.version_info < (3, 4):
+    # Make sure the read method returns a byte stream
+    from io import open
+
 try:
     import pydeep
     HAVE_SSDEEP = True
@@ -111,7 +115,8 @@ class File(object):
 
     @property
     def data(self):
-        return open(self.path, 'rb').read()
+        with open(self.path, 'rb') as f:
+            return f.read()
 
     def is_valid(self):
         return os.path.exists(self.path) and os.path.isfile(self.path)# and os.path.getsize(self.path) != 0

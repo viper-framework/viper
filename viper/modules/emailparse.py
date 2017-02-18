@@ -429,13 +429,11 @@ class EmailParse(Module):
 
         # Try to open as an ole msg, if not treat as email string
         try:
-            ole = olefile.OleFileIO(__sessions__.current.file.path)
+            ole = olefile.OleFileIO(__sessions__.current.file.data)
             ole_flag = True
         except:
             ole_flag = False
-            email_handle = open(__sessions__.current.file.path)
-            msg = email.message_from_file(email_handle)
-            email_handle.close()
+            msg = email.message_from_bytes(__sessions__.current.file.data)
 
         if self.args.open is not None:
             if ole_flag:
