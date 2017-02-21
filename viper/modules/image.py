@@ -1,6 +1,8 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from io import BytesIO
+
 try:
     import requests
     HAVE_REQUESTS = True
@@ -27,7 +29,7 @@ class Image(Module):
             return
 
         payload = dict(private='true', json='true')
-        files = dict(image=open(__sessions__.current.file.path, 'rb'))
+        files = dict(image=BytesIO(__sessions__.current.file.data))
 
         response = requests.post('http://www.imageforensic.org/api/submit/', data=payload, files=files)
         results = response.json()
@@ -40,6 +42,15 @@ class Image(Module):
 
                 for signature in report['signatures']:
                     self.log('item', signature['description'])
+            for k, v in report.items():
+                if k == 'signatures':
+                    continue
+                if isinstance(v, dict):
+                    for k1, v1 in v.items():
+                        self.log('info', '{}: {}'.format(k1, v1))
+                else:
+                    self.log('info', '{}: {}'.format(k, v))
+
         else:
             self.log('error', "The analysis failed")
 
