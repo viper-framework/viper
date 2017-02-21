@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # and developed by Koodous Team.
 # See the file 'LICENSE' for copying permission.
 
 try:
     import requests
-
     HAVE_REQUESTS = True
 except ImportError:
     HAVE_REQUESTS = False
@@ -104,7 +102,7 @@ class Koodous(Module):
         response = requests.get(url=url, headers=headers)
         if response.status_code == 200:
             upload_url = response.json().get('upload_url', None)
-            files = {'file': BytesIO(__sessions__.current.file.data)}
+            files = {'file': ByteIO(__sessions__.current.file.data)}
             response = requests.post(url=upload_url, files=files)
             if response == 200:
                 self.log("File uploaded correctly.")
