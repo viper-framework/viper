@@ -34,11 +34,10 @@ class HTMLParse(Module):
         self.soup = None
 
     def string_clean(self, value):
-        try:
-            value = filter(lambda x: x in string.printable, value)
-            return re.sub('[\n\t\r]', '', value)
-        except:
-            return value
+        if not value:
+            return
+        value = ''.join(filter(lambda x: x in string.printable, value))
+        return re.sub('[\n\t\r]', '', value)
 
     def shannon_entropy(self, s):
         s = str(s)
@@ -133,7 +132,7 @@ class HTMLParse(Module):
 
         try:
             html_data = __sessions__.current.file.data
-            self.soup = BeautifulSoup(html_data)
+            self.soup = BeautifulSoup(html_data, "html.parser")
         except Exception as e:
             self.log('error', "Something went wrong: {0}".format(e))
             return
