@@ -48,7 +48,7 @@ class Office(Module):
 
     def detect_flash(self, data):
         matches = []
-        for match in re.finditer('CWS|FWS', data):
+        for match in re.finditer(b'CWS|FWS', data):
             start = match.start()
             if (start + 8) > len(data):
                 # Header size larger than remaining data,
@@ -76,7 +76,7 @@ class Office(Module):
             swf = data[start:start + size]
             is_compressed = False
             swf_deflate = None
-            if 'CWS' in header:
+            if b'CWS' in header:
                 is_compressed = True
                 # Data after header (8 bytes) until the end is compressed
                 # with zlib. Attempt to decompress it to check if it is valid.
