@@ -8,6 +8,7 @@ try:
 except ImportError:
     HAVE_REQUESTS = False
 
+from io import BytesIO
 import hashlib
 import tempfile
 
@@ -89,8 +90,8 @@ class Koodous(Module):
             Function to upload the session file to Koodous
         """
 
-        content_file = open(__sessions__.current.file.path, 'rb').read()
-        if content_file[:2] != 'PK':
+        content_file = __sessions__.current.file.data
+        if content_file[:2] != b'PK':
             self.log('info', 'Koodous only accepts APKs, try with VirusTotal.')
             return
         sha256 = hashlib.sha256(content_file).hexdigest()
@@ -101,7 +102,7 @@ class Koodous(Module):
         response = requests.get(url=url, headers=headers)
         if response.status_code == 200:
             upload_url = response.json().get('upload_url', None)
-            files = {'file': open(__sessions__.current.file.path, 'rb')}
+            files = {'file': ByteIO(__sessions__.current.file.data)}
             response = requests.post(url=upload_url, files=files)
             if response == 200:
                 self.log("File uploaded correctly.")
@@ -118,7 +119,7 @@ class Koodous(Module):
         headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         try:
-            content_file = open(__sessions__.current.file.path, 'rb').read()
+            content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
         except:
             self.log('error', 'You have no file loaded')
@@ -141,7 +142,7 @@ class Koodous(Module):
         headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         try:
-            content_file = open(__sessions__.current.file.path, 'rb').read()
+            content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
         except:
             self.log('error', 'You have no file loaded')
