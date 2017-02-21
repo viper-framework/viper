@@ -21,11 +21,11 @@ class Jar(Module):
 
         def read_manifest(manifest):
             rows = []
-            lines = manifest.split('\r\n')
+            lines = manifest.split(b'\r\n')
             for line in lines:
                 if len(line) > 1:
-                    item, value = line.split(':')
-                    rows.append([item, value])
+                    item, value = line.split(b':')
+                    rows.append([item.decode(), value.decode()])
 
             self.log('info', "Manifest File:")
             self.log('table', dict(header=['Item', 'Value'], rows=rows))

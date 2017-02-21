@@ -145,7 +145,7 @@ class EmailParse(Module):
 
                         if data:
                             tmp_path = os.path.join(tempfile.gettempdir(), filename)
-                            with open(tmp_path, 'w') as tmp:
+                            with open(tmp_path, 'wb') as tmp:
                                 tmp.write(data)
                             __sessions__.new(tmp_path)
                             return
@@ -368,7 +368,7 @@ class EmailParse(Module):
 
                     if content_type in ('text/plain', 'text/html'):
                         part_content = part.get_payload(decode=True)
-                        for link in re.findall(r'(https?://[^"<>\s]+)', part_content):
+                        for link in re.findall(rb'(https?://[^"<>\s]+)', part_content):
                             if link not in links:
                                 links.append(link)
 
