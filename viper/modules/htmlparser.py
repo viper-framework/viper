@@ -35,6 +35,7 @@ class HTMLParse(Module):
 
     def string_clean(self, value):
 <<<<<<< HEAD
+<<<<<<< HEAD
         if not value:
             return
         value = ''.join([x for x in value if x in string.printable])
@@ -51,6 +52,18 @@ class HTMLParse(Module):
         except:
             return value
 >>>>>>> 04b0726... Improve python3 support, remove dependency on peepdf
+||||||| parent of d63e566... More python 2/3 fixes
+        try:
+            value = filter(lambda x: x in string.printable, value)
+            return re.sub('[\n\t\r]', '', value)
+        except:
+            return value
+=======
+        if not value:
+            return
+        value = ''.join(filter(lambda x: x in string.printable, value))
+        return re.sub('[\n\t\r]', '', value)
+>>>>>>> d63e566... More python 2/3 fixes
 
     def shannon_entropy(self, s):
         s = str(s)
@@ -145,7 +158,7 @@ class HTMLParse(Module):
 
         try:
             html_data = __sessions__.current.file.data
-            self.soup = BeautifulSoup(html_data)
+            self.soup = BeautifulSoup(html_data, "html.parser")
         except Exception as e:
             self.log('error', "Something went wrong: {0}".format(e))
             return
