@@ -5,6 +5,7 @@
 import struct
 import time
 import zlib
+from io import BytesIO
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -28,9 +29,9 @@ class IDX(Module):
             sec_two = []
             data.seek(128)
             len_URL = struct.unpack('>l', data.read(4))[0]
-            data_URL = data.read(len_URL)
+            data_URL = data.read(len_URL).decode()
             len_IP = struct.unpack('>l', data.read(4))[0]
-            data_IP = data.read(len_IP)
+            data_IP = data.read(len_IP).decode()
             sec2_fields = struct.unpack('>l', data.read(4))[0]
 
             sec_two.append(['URL', data_URL])
@@ -40,7 +41,7 @@ class IDX(Module):
                 field = data.read(len_field)
                 len_value = struct.unpack('>h', data.read(2))[0]
                 value = data.read(len_value)
-                sec_two.append([field, value])
+                sec_two.append([field.decode(), value.decode()])
             return sec_two
 
         def sec2_parse_602():
@@ -63,7 +64,7 @@ class IDX(Module):
                 field = data.read(len_field)
                 len_value = struct.unpack('>h', data.read(2))[0]
                 value = data.read(len_value)
-                sec_two.append([field, value])
+                sec_two.append([field.decode(), value.decode()])
 
             return sec_two
 
@@ -76,12 +77,12 @@ class IDX(Module):
             data.seek(128 + sec2_len)
             sec3_data = data.read(sec3_len)
 
-            if sec3_data[0:3] == '\x1F\x8B\x08':  # Valid GZIP header
+            if sec3_data[0:3] == b'\x1F\x8B\x08':  # Valid GZIP header
                 sec3_unc = zlib.decompress(sec3_data, 15 + 32)  # Trick to force bitwindow size
-                sec_split = sec3_unc.strip().split('\n')
+                sec_split = sec3_unc.strip().split(b'\n')
                 for line in sec_split:
-                    k, v = line.split(':')
-                    sec_three.append([k, v.replace('\x0d', '')])
+                    k, v = line.split(b':')
+                    sec_three.append([k.decode(), v.replace(b'\x0d', b'').decode()])
             return sec_three
 
         def sec4_parse():
@@ -124,7 +125,7 @@ class IDX(Module):
             return
 
         # Main starts here
-        data = open(__sessions__.current.file.path)
+        data = BytesIO(__sessions__.current.file.data)
         file_size = __sessions__.current.file.size
 
         # Keep those 2 unused variables
