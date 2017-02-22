@@ -106,7 +106,7 @@ def update_db():
     try:
     	# backup of database name with a timestamp to avoid to be overwritten
     	# https://github.com/viper-framework/viper/issues/386
-    	db_backupname = "viper_{0}.db.bak".format(time.strftime("%Y%m%d-%H%M%S"))
+        db_backupname = "viper_{0}.db.bak".format(time.strftime("%Y%m%d-%H%M%S"))
         os.rename('viper.db', db_backupname)
     except Exception as e:
         print_error("Failed to Backup. {0} Stopping".format(e))
