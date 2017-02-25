@@ -58,6 +58,8 @@ class EmailParse(Module):
 
             # need to get a unique stream id for each att
             # its in the streamname as an 8 digit number.
+            header = ['#', 'Size', 'MD5', 'Filename', 'MimeType']
+            rows = []
             for i in range(20):  # arbitrary count of emails. i dont expecet this many
                 stream_number = str(i).zfill(8)
                 stream_name = '__attach_version1.0_#' + stream_number
@@ -68,7 +70,7 @@ class EmailParse(Module):
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
-                    print(i, att_size, att_md5, att_filename, att_mime)
+                    rows.append([i, att_size, att_md5, att_filename, att_mime])
                 except:
                     pass
                 # ASCII
@@ -78,9 +80,10 @@ class EmailParse(Module):
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
-                    print(i, att_size, att_md5, att_filename, att_mime)
+                    rows.append([i, att_size, att_md5, att_filename, att_mime])
                 except:
                     pass
+            self.log('table', dict(header=header, rows=rows))
 
         def att_session(att_id, msg, ole_flag):
             att_count = 0
