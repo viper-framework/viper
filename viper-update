@@ -142,7 +142,7 @@ def update_db():
     print_item("Connecting to Viper Databases")
     old_engine = create_engine('sqlite:///viper.db.bak')
     db_path = os.path.join(__project__.get_path(), 'viper.db')
-    new_engine = create_engine('sqlite:///{0}'.format(db_path)
+    new_engine = create_engine('sqlite:///{0}'.format(db_path))
 
     print_item("Reading data from Old Database")
     malware = old_engine.execute('SELECT * FROM malware').fetchall()
