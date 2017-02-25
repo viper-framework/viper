@@ -190,7 +190,6 @@ class HTMLParse(Module):
                 if len(java) > 0:
                     self.log('info', "Embedded Java Objects")
                     self.log('table', dict(header=['Archive', 'Code', ], rows=java))
-                    print("")
                 if len(flash) > 0:
                     self.log('info', "Embedded Flash Objects")
                     self.log('table', dict(header=['Swf Src'], rows=flash))

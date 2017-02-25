@@ -313,9 +313,9 @@ class MISP(Module):
         old_related_ids = [i[0] for i in old_related]
         for related, title in new_related:
             if related not in old_related_ids:
-                self.log('success', u'New related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
+                self.log('success', 'New related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
             else:
-                self.log('info', u'Related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
+                self.log('info', 'Related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
         __sessions__.new(misp_event=MispEvent(new_event, self.offline_mode))
 
     # ####### Helpers for open ########
@@ -499,7 +499,7 @@ class MISP(Module):
                 event_hashes.append(h)
             if h is not None:
                 base_new_attributes[h] = {"category": a.category,
-                                          "comment": u'{} - Xchecked via VT: {}'.format(a.comment, h),
+                                          "comment": '{} - Xchecked via VT: {}'.format(a.comment, h),
                                           "to_ids": a.to_ids,
                                           "Tag": a.Tag,
                                           "distribution": a.distribution}
@@ -572,7 +572,7 @@ class MISP(Module):
 
         if self._has_error_message(result):
             return
-        self.log('success', u'{} matches on the following events:'.format(query))
+        self.log('success', '{} matches on the following events:'.format(query))
         for e in result['response']:
             nb_samples = 0
             nb_hashes = 0
@@ -583,7 +583,7 @@ class MISP(Module):
                     nb_samples += 1
                 if a.type in ('md5', 'sha1', 'sha256', 'filename|md5', 'filename|sha1', 'filename|sha256'):
                     nb_hashes += 1
-            self.log('item', u'{} ({} samples, {} hashes) - {}{}{}'.format(me.info, nb_samples, nb_hashes, self.url, '/events/view/', me.id))
+            self.log('item', '{} ({} samples, {} hashes) - {}{}{}'.format(me.info, nb_samples, nb_hashes, self.url, '/events/view/', me.id))
 
     def pull(self):
         if self.offline_mode:
@@ -665,7 +665,7 @@ class MISP(Module):
         if len(related) > 0:
             self.log('info', 'Related events:')
             for r, title in related:
-                self.log('item', u'{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
+                self.log('item', '{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
 
         header = ['type', 'value', 'comment', 'related']
         rows = []
@@ -684,7 +684,7 @@ class MISP(Module):
         else:
             self.log('info', 'This event has not been published')
         if __sessions__.current.misp_event.event.id:
-            self.log('info', u'Link to Event: {}/events/view/{}'.format(self.url.rstrip('/'), __sessions__.current.misp_event.event.id))
+            self.log('info', 'Link to Event: {}/events/view/{}'.format(self.url.rstrip('/'), __sessions__.current.misp_event.event.id))
 
     def _change_event(self):
         if self.offline_mode:

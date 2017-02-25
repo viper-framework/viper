@@ -27,7 +27,7 @@ class Radare(Module):
 
     def command(self, command):
         r = r2pipe.open(__sessions__.current.file.path)
-        print(r.cmd(command))
+        self.log('info', r.cmd(command))
 
     def run(self):
         super(Radare, self).run()
