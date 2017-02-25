@@ -17,6 +17,7 @@ from viper.core.storage import store_sample
 from viper.core.database import Database
 from viper.common.utils import string_clean
 
+
 class PST(Module):
     cmd = 'pst'
     description = 'Process PST Files for Attachment'
@@ -27,7 +28,7 @@ class PST(Module):
         self.parser.add_argument('-p', '--proj', action='store_true', default=False, help='Create a New Project')
         self.parser.add_argument('-o', '--output', metavar='path', help='PST Export Path')
         self.parser.add_argument('-k', '--keep', action='store_true', default=False, help='Keep Exported PST Files')
-    
+
     def parse_pst(self, save_path, pst_path):
         self.log('info', "Processing PST")
         subprocess.call('pffexport -t {0} {1} > /tmp/report.txt'.format(save_path, pst_path), shell=True)
@@ -44,13 +45,13 @@ class PST(Module):
         db = Database()
         email_header = os.path.join(message_folder, 'InternetHeaders.txt')
         email_body = os.path.join(message_folder, 'Message.txt')
-        
+
         envelope = headers = email_text = ''
         if os.path.exists(email_header):
             envelope, headers = self.email_headers(email_header)
         if os.path.exists(email_body):
             email_text = open(email_body, 'rb').read()
-        
+
         tags = 'pst, {0}'.format(message_folder)
         if os.path.exists(os.path.join(message_folder, 'Attachments')):
             for filename in os.listdir(os.path.join(message_folder, 'Attachments')):
@@ -65,7 +66,7 @@ class PST(Module):
                     # To handle duplicates we use multiple notes
                     headers_body = 'Envelope: \n{0}\nHeaders: \n{1}\n'.format(envelope, headers)
                     db.add_note(sha256, 'Headers', headers_body)
-                    
+
                     # Add a note with email body
                     db.add_note(sha256, 'Email Body', string_clean(email_text))
 
@@ -77,14 +78,13 @@ class PST(Module):
         # Leaving us an RFC compliant email to parse
         msg = email.message_from_string(new_mail)
         # Envelope
-        envelope = [
-                    string_clean(msg.get("Subject")),
+        envelope = [string_clean(msg.get("Subject")),
                     string_clean(msg.get("To")),
                     string_clean(msg.get("From")),
                     string_clean(msg.get("Cc")),
-                    string_clean( msg.get("Bcc")),
+                    string_clean(msg.get("Bcc")),
                     string_clean(msg.get("Date"))
-                   ]
+                    ]
         # headers
         headers = []
         for x in msg.keys():
@@ -92,19 +92,22 @@ class PST(Module):
                 headers.append([x, msg.get(x)])
         headers = sorted(headers, key=lambda entry: entry[0])
         return envelope, headers
-        
-        
+
     def run(self):
         super(PST, self).run()
+        if not __sessions__.is_set():
+            self.log('error', "No open session")
+            return
+
         pst_path = __sessions__.current.file.path
         pff_test = subprocess.call('pffexport -V', shell=True)
         if pff_test == 127:
-            self.log('error', "pffexport not install. Try: 'sudo apt-get install pff-tools'")
+            self.log('error', "pffexport not installed. Try: 'sudo apt-get install pff-tools'")
             return
 
         new_proj = self.args.proj
         save_path = self.args.output
-            
+
         if new_proj:
             self.log('info', "Creating New Project")
             project_name = str(datetime.date.today())
@@ -116,11 +119,11 @@ class PST(Module):
             save_path = tempfile.mkdtemp()
 
         self.log('info', "Temp Dir created at {0}".format(save_path))
-        
+
         self.log('info', "Processing Attachments, this might take a while...")
         counter = self.parse_pst(save_path, pst_path)
         self.log('success', "Stored {0} Email attachments".format(counter))
-        
+
         if not self.args.keep:
             try:
                 shutil.rmtree('{0}.export'.format(save_path))
@@ -128,9 +131,3 @@ class PST(Module):
                 self.log('info', "Removing Temp Dir")
             except OSError as e:
                 self.log('error', "Unable to delete tmpdir: {0}".format(e))
-        
-        
-        
-        
-        
-        
