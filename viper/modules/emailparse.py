@@ -68,7 +68,7 @@ class EmailParse(Module):
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
-                    print i, att_size, att_md5, att_filename, att_mime
+                    print(i, att_size, att_md5, att_filename, att_mime)
                 except:
                     pass
                 # ASCII
@@ -78,7 +78,7 @@ class EmailParse(Module):
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
-                    print i, att_size, att_md5, att_filename, att_mime
+                    print(i, att_size, att_md5, att_filename, att_mime)
                 except:
                     pass
 

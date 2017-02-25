@@ -2,20 +2,21 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 import sys
 import glob
 import atexit
 import readline
 import traceback
 
-from viper.common.out import print_error
+from viper.common.out import print_error, print_output
 from viper.common.colors import cyan, magenta, white, bold, blue
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.core.ui.commands import Commands
 from viper.core.database import Database
-from viper.core.config import Config
+from viper.core.config import Config, console_output
 
 cfg = Config()
 
@@ -111,7 +112,7 @@ class Console(object):
 
             # Then autocomplete paths.
             if text.startswith("~"):
-                text = "{0}{1}".format(os.getenv("HOME"), text[1:])
+                text = "{0}{1}".format(expanduser("~"), text[1:])
             return (glob.glob(text+'*')+[None])[state]
 
         # Auto-complete on tabs.
@@ -155,7 +156,14 @@ class Console(object):
 
                 misp = ''
                 if __sessions__.current.misp_event:
-                    misp = ' [MISP {}]'.format(__sessions__.current.misp_event.event_id)
+                    misp = '[MISP'
+                    if __sessions__.current.misp_event.event.id:
+                        misp += ' {}'.format(__sessions__.current.misp_event.event.id)
+                    else:
+                        misp += ' New Event'
+                    if __sessions__.current.misp_event.off:
+                        misp += ' (Offline)'
+                    misp += ']'
 
                 prompt = (prefix + cyan('viper ', True) +
                           white(filename, True) + blue(misp, True) + stored + cyan(' > ', True))
@@ -184,9 +192,10 @@ class Console(object):
 
                 # Check for output redirection
                 # If there is a > in the string, we assume the user wants to output to file.
-                filename = False
                 if '>' in data:
-                    data, filename = data.split('>')
+                    data, console_output['filename'] = data.split('>')
+                    print("Writing output to {0}".format(console_output['filename'].strip()))
+
 
                 # If the input starts with an exclamation mark, we treat the
                 # input as a bash command and execute it.
@@ -242,3 +251,5 @@ class Console(object):
                     except Exception:
                         print_error("The command {0} raised an exception:".format(bold(root)))
                         traceback.print_exc()
+
+                console_output['filename'] = None   # reset output to stdout

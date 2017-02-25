@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from os.path import expanduser
 
 from viper.core.config import Config
 
@@ -11,28 +12,26 @@ class Project(object):
     def __init__(self):
         self.name = None
         self.path = None
+        self.base_path = None
         if cfg.paths.storage_path:
             self.path = cfg.paths.storage_path
+            self.base_path = cfg.paths.storage_path
         else:
-            self.path = os.path.join(os.getenv('HOME'), '.viper')
+            self.path = os.path.join(expanduser("~"), '.viper')
+            self.base_path = os.path.join(expanduser("~"), '.viper')
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
         
     def open(self, name):
-        if cfg.paths.storage_path:
-            base_path = cfg.paths.storage_path
-        else:
-            base_path = os.path.join(os.getenv('HOME'), '.viper')
-
-        if not os.path.exists(base_path):
+        if not os.path.exists(self.base_path):
             raise Exception("The local storage folder does not exist at path {}".format(
                 base_path))
 
         if name == 'default':
-            path = base_path
+            path = self.base_path
         else:
-            path = os.path.join(base_path, 'projects', name)
+            path = os.path.join(self.base_path, 'projects', name)
             if not os.path.exists(path):
                 os.makedirs(path)
 
@@ -45,4 +44,7 @@ class Project(object):
         else:
             return self.path
 
+    def get_projects_path(self):
+        return os.path.join(self.base_path, 'projects')
+    
 __project__ = Project()

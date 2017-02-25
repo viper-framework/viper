@@ -15,7 +15,13 @@ storage_path =
 
 [database]
 # Configure the database connection type example shown below
-# reserved for future use
+# Examples:
+# sqlite:///foo.db
+# postgresql://foo:bar@localhost:5432/mydatabase
+# mysql://foo:bar@localhost/mydatabase
+# mysql+pymysql://foo:bar@localhost/mydatabase
+# If empty, default is a SQLite in $storage_path/viper.db
+connection =
 
 [web]
 host = 0.0.0.0
@@ -30,7 +36,7 @@ port = 9090
 [autorun]
 enabled = True
 
-# Verbose True will print the output of each command. 
+# Verbose True will print the output of each command.
 # False will tell you a command has been run but not display the output
 verbose = False
 
@@ -60,17 +66,14 @@ malwr_pass =
 malwr_search = https://malwr.com/analysis/search/
 malwr_prefix = https://malwr.com
 
-anubis_login = https://anubis.iseclab.org/?action=login
-anubis_user = 
-anubis_pass = 
-anubis_search = https://anubis.iseclab.org/?action=hashquery
-anubis_prefix = https://anubis.iseclab.org/
-
 [misp]
 misp_url =
 misp_key =
 misp_verify = True
 misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
+# To use the misp taxonomies, you need to clone https://github.com/MISP/misp-taxonomies
+# and set the path to the directory here:
+misp_taxonomies_directory = ./misp-taxonomies
 
 [pssl]
 pssl_url =

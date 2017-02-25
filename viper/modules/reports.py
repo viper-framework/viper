@@ -33,7 +33,6 @@ class Reports(Module):
     def __init__(self):
         super(Reports, self).__init__()
         self.parser.add_argument('--malwr', action='store_true', help='Find reports on Malwr')
-        self.parser.add_argument('--anubis', action='store_true', help='Find reports on Anubis')
         self.parser.add_argument('--threat', action='store_true', help='Find reports on ThreatExchange')
         self.parser.add_argument('--joe', action='store_true', help='Find reports on Joe Sandbox')
         self.parser.add_argument('--meta', action='store_true', help='Find reports on metascan')
@@ -105,52 +104,6 @@ class Reports(Module):
 
         self.log('table', dict(header=['Time', 'URL'], rows=reports))
 
-    def anubis_parse(self, page):
-        reports = []
-        soup = BeautifulSoup(page)
-        tables = soup.findAll('table')
-
-        if len(tables) >= 5:
-            table = tables[4]
-            cols = table.findAll('td')
-            time = cols[1].string.strip()
-            link = cols[4].find('a')
-            url = '{0}{1}'.format(cfg.reports.anubis_prefix, link.get('href'))
-            reports.append([time, url])
-            return reports
-
-    def anubis(self):
-        if not cfg.reports.anubis_user or not cfg.reports.anubis_pass:
-            choice = raw_input("You need to specify a valid username/password, login now? [y/N] ")
-            if choice == 'y':
-                username, password = self.authenticate()
-            else:
-                return
-        else:
-            username = cfg.reports.anubis_user
-            password = cfg.reports.anubis_pass
-
-        sess = requests.Session()
-        sess.auth = (username, password)
-
-        res = sess.post(
-            cfg.reports.anubis_login,
-            {'username': username, 'password': password},
-            verify=False
-        )
-        res = sess.post(
-            cfg.reports.anubis_search,
-            {'hashlist': __sessions__.current.file.sha256},
-            verify=False
-        )
-
-        reports = self.anubis_parse(res.text)
-        if not reports:
-            self.log('info', "No reports for opened file")
-            return
-
-        self.log('table', dict(header=['Time', 'URL'], rows=reports))
-
     def threat(self):
         # need the URL and the date
         url = 'http://www.threatexpert.com/report.aspx?md5={0}'.format(__sessions__.current.file.md5)
@@ -195,7 +148,7 @@ class Reports(Module):
                 return
 
     def usage(self):
-        self.log('', "Usage: reports <malwr|anubis|threat|joe|meta>")
+        self.log('', "Usage: reports <malwr|threat|joe|meta>")
 
     def run(self):
         super(Reports, self).run()
@@ -212,8 +165,6 @@ class Reports(Module):
 
         if self.args.malwr:
             self.malwr()
-        elif self.args.anubis:
-            self.anubis()
         elif self.args.threat:
             self.threat()
         elif self.args.joe:

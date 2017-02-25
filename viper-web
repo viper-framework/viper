@@ -81,7 +81,7 @@ mod_dicts['office'] = {'meta':'-m', 'oleid':'-o', 'streams':'-s', 'export':'-e'}
 mod_dicts['pdf'] = {'id':'id', 'streams':'streams'}
 mod_dicts['pe'] = {'imports':'imports', 'exports':'exports', 'res':'resources', 'imp':'imphash', 'compile':'compiletime', 'peid':'peid', 'security':'security', 'language':'language', 'sections':'sections', 'pehash':'pehash'}
 mod_dicts['rat'] = {'auto':'-a', 'list': '-l'}
-mod_dicts['reports'] = {'malwr':'--malwr', 'anubis':'--anubis', 'threat':'--threat', 'joe':'--joe', 'meta':'--meta'}
+mod_dicts['reports'] = {'malwr':'--malwr', 'threat':'--threat', 'joe':'--joe', 'meta':'--meta'}
 mod_dicts['shellcode'] = {'run':''}
 mod_dicts['strings'] = {'all':'-a', 'hosts':'-H'}
 mod_dicts['swf'] = {'decom':'decompress'}
@@ -162,7 +162,7 @@ def parse_text(module_text):
 
 def project_list():
     # Get a list of projects 
-    projects_path = os.path.join(os.getcwd(), 'projects')
+    projects_path = __project__.get_projects_path()
     p_list = []
     if os.path.exists(projects_path):
         for project in os.listdir(projects_path):
@@ -341,6 +341,7 @@ def add_file():
     else:
         __project__.open('default')
         project = 'default'
+
     db = Database()
     file_list = []
     # Write temp file to disk
@@ -486,7 +487,7 @@ def find_file():
     projects = []
     if project_search:
         # Get list of project paths
-        projects_path = os.path.join(os.getcwd(), 'projects')
+        projects_path = __project__.get_projects_path()
         if os.path.exists(projects_path):
             for name in os.listdir(projects_path):
                 projects.append(name)
