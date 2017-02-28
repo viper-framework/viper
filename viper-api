@@ -57,7 +57,7 @@ def add_file():
         return {'message': 'Unable to store file'}
 
 
-@app.route('/file/addurl', method='POST')
+@app.route('/file/add_url', method='POST')
 def addurl():
     url = request.forms.get('url')
     tags = request.forms.get('tag_list')
@@ -89,7 +89,7 @@ def addurl():
         return {'message': 'added', 'sha256': tf_obj.sha256}
     else:
         response.status = 500
-        return {'message': 'Unable to store file'}
+        return {'message': 'Unable to store file, alredy exists.', 'sha256': tf_obj.sha256}
 
 
 @route('/file/get/<file_hash>', method='GET')
