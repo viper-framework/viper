@@ -11,6 +11,7 @@ import tempfile
 
 from bottle import route, request, response, run
 
+from viper.common import network
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
@@ -54,6 +55,41 @@ def add_file():
     else:
         response.status = 500
         return {'message': 'Unable to store file'}
+
+
+@app.route('/file/add_url', method='POST')
+def addurl():
+    url = request.forms.get('url')
+    tags = request.forms.get('tags') or ""
+    tags = "url,"+tags
+    if request.forms.get("tor"):
+        upload = network.download(url,tor=True)
+    else:
+        upload = network.download(url,tor=False)
+    if upload == None:
+        response.status = 500
+        return {'message': 'server can\'t download from URL'}
+    # Set Project
+    tf = tempfile.NamedTemporaryFile()
+    tf.write(upload)
+    if tf == None:
+        response.status = 500
+        return {'message': 'server can\'t download from URL'}
+    tf.flush()
+    tf_obj = File(tf.name)
+    tf_obj.name = tf_obj.sha256
+    new_path = store_sample(tf_obj)
+    success = False
+    if new_path:
+        # Add file to the database.
+        db = Database()
+        success = db.add(obj=tf_obj, tags=tags)
+
+    if success:
+        return {'message': 'added', 'sha256': tf_obj.sha256}
+    else:
+        response.status = 500
+        return {'message': 'Unable to store file, alredy exists.', 'sha256': tf_obj.sha256}
 
 
 @route('/file/get/<file_hash>', method='GET')
