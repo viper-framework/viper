@@ -9,6 +9,12 @@ import time
 import argparse
 import tempfile
 
+# Added to allow zip file uploads
+import shutil 
+import contextlib
+from zipfile import ZipFile
+
+
 from bottle import route, request, response, run
 
 from viper.common.objects import File
@@ -43,17 +49,48 @@ def add_file():
     tf_obj = File(tf.name)
     tf_obj.name = upload.filename
 
-    new_path = store_sample(tf_obj)
 
-    success = False
-    if new_path:
-        # Add file to the database.
-        success = db.add(obj=tf_obj, tags=tags, notes_body=notes_body, notes_title=notes_title)
-    if success:
-        return {'message': 'added', 'sha256': tf_obj.sha256}
+    # Added to support the ability to provide zip file password
+    if request.headers.get('compression') == 'zip' or request.headers.get('compression') == 'ZIP':
+        with upload_temp() as temp_dir:
+            with ZipFile(tf.name) as zf:
+                zf.extractall(temp_dir, pwd=request.headers.get('compression_password'))
+
+            stored_files = []
+
+            for root, dirs, files in os.walk(temp_dir, topdown=False):
+                for name in files:
+                    if not name == upload.filename:
+                        tf_obj=File(os.path.join(root,name))
+                        new_path = store_sample(tf_obj)
+                        success = False
+                        
+                        if new_path:
+                            success = db.add(obj=tf_obj, tags=tags)
+                       
+                        if success:
+                            stored_files.append({"filename":name,"sha256": tf_obj.sha256, "message": "added"})
+                        else:
+                            stored_files.append({"filename": name, "sha256": "", "message": "not added"})
+
+            if stored_files:
+                #return jsonize({'message': 'Files added: %s' % ','.join(stored_files)})
+                return {'files': stored_files}
     else:
-        response.status = 500
-        return {'message': 'Unable to store file'}
+        tf_obj = File(tf.name)
+        tf_obj.name = upload.filename
+        new_path = store_sample(tf_obj)
+
+
+        success = False
+        if new_path:
+            # Add file to the database.
+            success = db.add(obj=tf_obj, tags=tags, notes_body=notes_body, notes_title=notes_title)
+        if success:
+            return {'message': 'added', 'sha256': tf_obj.sha256}
+        else:
+            response.status = 500
+            return {'message': 'Unable to store file'}
 
 
 @route('/file/get/<file_hash>', method='GET')
@@ -355,6 +392,15 @@ def add_notes(action):
         return {'message': 'no action given'}
 
     return {'message': 'Unable to complete action'}
+
+# Added to support zip file uploads
+# context manager for file uploader   
+@contextlib.contextmanager
+def upload_temp():
+    temp_dir = tempfile.mkdtemp()
+    yield temp_dir
+    shutil.rmtree(temp_dir)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
