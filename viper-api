@@ -60,7 +60,7 @@ def add_file():
 @app.route('/file/add_url', method='POST')
 def addurl():
     url = request.forms.get('url')
-    tags = request.forms.get('tag_list')
+    tags = request.forms.get('tags') or ""
     tags = "url,"+tags
     if request.forms.get("tor"):
         upload = network.download(url,tor=True)
