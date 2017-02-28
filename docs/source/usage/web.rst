@@ -103,6 +103,36 @@ available.
             * ``500`` - something failed when adding the file
 
 
+/file/add_url
+---------
+
+    **POST /file/add_url**
+
+        Submit a url to Viper.
+
+        **Example request**::
+
+            curl -F url='http://google.com' -F tags='foo,bar' -F tor='true' -X POST http://127.0.0.1:8080/file/add_url
+
+        **Example response**::
+
+            {
+                "message": "added"
+                "sha256": "a28a9ca63e8460b03dff84b5645c6c2a30f48149c0e5b273525cf4b80fe8a8ca"
+            }
+
+        **Parameters**:
+
+            * ``url``: url of the file to download
+            * ``tags``: comma separated list of tags
+            * ``tor``: if a value is set, tor will be used to download the file
+
+        **Status codes**:
+
+            * ``200`` - no errors
+            * ``500`` - something failed when adding the file
+
+
 /file/get
 ---------
 
