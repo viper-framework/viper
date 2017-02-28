@@ -29,37 +29,35 @@ class ClamAV(Module):
             self.log('error', "Missing dependency, install requests (`pip install pyclamd`)")
             return
 
-        daemon = None
-        socket = None
-
-        if self.args.socket is not None:
-            socket = self.args.socket
-            self.log('info', "Using socket {0} to connect to ClamAV daemon".format(socket))
-            try:
-                daemon = pyclamd.ClamdUnixSocket(socket)
-            except Exception as e:
-                self.log('error', "Daemon connection failure, {0}".format(e))
-                return
-
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', 'No open session')
             return
 
+        daemon = None
+        socket = None
+        socket = self.args.socket
+
         try:
-            if not daemon:
+            if socket is not None:
+                daemon = pyclamd.ClamdUnixSocket(socket)
+                self.log('info', 'Using socket {0} to scan'.format(socket))
+            else:
                 daemon = pyclamd.ClamdUnixSocket()
                 socket = 'Clamav'
-        except Exception as e:
-            self.log('error', "Daemon connection failure, {0}".format(e))
+        except Exception as ex:
+            msg = 'Daemon connection failure, {0}'.format(ex)
+            self.log('error,', msg)
             return
 
         try:
             if daemon.ping():
-                results = daemon.scan_file(__sessions__.current.file.path)
+                with open(__sessions__.current.file.path, 'r') as fd:
+                    results = daemon.scan_stream(fd.read())
             else:
                 self.log('error', "Unable to connect to the daemon")
-        except Exception as e:
-            self.log('error', "Unable to scan with antivirus daemon, {0}".format(e))
+        except Exception as ex:
+            msg = 'Unable to scan with antivirus daemon, {0}'.format(ex)
+            self.log('error', msg)
             return
 
         found = None
