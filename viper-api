@@ -193,7 +193,11 @@ def delete_file(file_hash):
         response.code = 404
         return {'message': 'File not found in file system'}
     else:
-        success = os.remove(path)
+        try:
+            os.remove(path)
+            success = True
+        except OSError:
+            success = False
 
     if success:
         return {'message': 'deleted'}
