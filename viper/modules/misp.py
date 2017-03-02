@@ -724,7 +724,7 @@ class MISP(Module):
                         self.args.filename, self.args.sha1))
                 if self.args.sha256:
                     __sessions__.current.misp_event.event.add_attribute('filename|sha256', '{}|{}'.format(
-                        self.args._filename, self.args.sha256))
+                        self.args.filename, self.args.sha256))
             else:
                 if self.args.md5:
                     __sessions__.current.misp_event.event.add_attribute('md5', self.args.md5)
