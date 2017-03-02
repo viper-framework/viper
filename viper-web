@@ -37,12 +37,18 @@ from viper.core.database import Database
 from viper.common import network
 from viper.core.ui.commands import Commands
 from viper.common.constants import VIPER_ROOT
+from viper.core.config import Config
 
 ###
 # Needed for bottle (and correct uwsgi handling)
 ###
 app = application = bottle.default_app()
 
+###
+# Viper Global Config
+###
+
+cfg = Config()
 
 ##
 # User Config
@@ -51,6 +57,11 @@ app = application = bottle.default_app()
 web_port = 9090
 cuckoo_api = 'http://localhost:8090'
 cuckoo_web = 'http://localhost:9191'
+if cfg.cuckoo.cuckoo_host is not None:
+    cuckoo_api = cfg.cuckoo.cuckoo_host
+if cfg.cuckoo.cuckoo_web is not None:
+    cuckoo_web = cfg.cuckoo.cuckoo_web
+
 
 ##
 # End User Config
