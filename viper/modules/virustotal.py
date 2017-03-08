@@ -219,7 +219,7 @@ class VirusTotal(Module):
         if __sessions__.is_attached_misp(True):
             samples_path = os.path.join(samples_path, __sessions__.current.misp_event.event.id)
         elif force_eid:
-            samples_path = os.path.join(samples_path, force_eid)
+            samples_path = os.path.join(samples_path, str(force_eid))
 
         if not os.path.exists(samples_path):
             os.makedirs(samples_path)
