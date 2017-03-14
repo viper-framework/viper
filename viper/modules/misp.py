@@ -523,7 +523,6 @@ class MISP(Module):
             try:
                 result = response.json()
             except:
-                # FIXME: support rate-limiting (4/min)
                 self.log('error', 'Unable to get the report of {}'.format(vt_request['resource']))
                 continue
             if result['response_code'] == 1:
@@ -543,6 +542,8 @@ class MISP(Module):
                 if self.args.populate:
                     misp_event = self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes, sample_hashes, misp_event)
                 self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(link[1], md5, sha1, sha256))
+                if cfg.virustotal.virustotal_has_private_key == False:
+                    time.sleep(15)
             else:
                 unk_vt_hashes.append(vt_request['resource'])
 
