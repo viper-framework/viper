@@ -86,5 +86,6 @@ class Config:
         except AttributeError as e:
             print(e)
 
+
 console_output = {}
 console_output['filename'] = False

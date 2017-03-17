@@ -57,5 +57,6 @@ def cyan(text, readline=False):
 def white(text, readline=False):
     return color(text, 37, readline)
 
+
 def bold(text, readline=False):
     return color(text, 1, readline)
