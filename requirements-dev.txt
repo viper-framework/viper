@@ -8,8 +8,6 @@ dnspython
 enum34
 idna
 ipaddress
-olefile
-oletools
 pbkdf2
 pyasn1
 pycparser
