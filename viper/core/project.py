@@ -26,8 +26,7 @@ class Project(object):
 
     def open(self, name):
         if not os.path.exists(self.base_path):
-            raise Exception("The local storage folder does not exist at path {}".format(
-                base_path))
+            raise Exception("The local storage folder does not exist at path {}".format(self.base_path))
 
         if name == 'default':
             path = self.base_path
