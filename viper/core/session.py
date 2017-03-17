@@ -8,6 +8,7 @@ from viper.common.out import print_info, print_error
 from viper.common.objects import File
 from viper.core.database import Database
 
+
 class Session(object):
     def __init__(self):
         self.id = None
@@ -18,6 +19,7 @@ class Session(object):
         self.created_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         # MISP event associated to the object
         self.misp_event = None
+
 
 class Sessions(object):
     def __init__(self):

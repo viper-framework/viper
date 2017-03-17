@@ -6,13 +6,14 @@ import os
 from viper.common.out import print_warning, print_error
 from viper.core.project import __project__
 
+
 def store_sample(file_object):
     sha256 = file_object.sha256
 
     if not sha256:
         print_error("No hash")
         return None
-    
+
     folder = os.path.join(
         __project__.get_path(),
         'binaries',
@@ -36,6 +37,7 @@ def store_sample(file_object):
         return None
 
     return file_path
+
 
 def get_sample_path(sha256):
     path = os.path.join(

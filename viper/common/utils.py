@@ -10,6 +10,7 @@ try:
 except ImportError:
     pass
 
+
 # Taken from the Python Cookbook.
 def path_split_all(path):
     allparts = []
@@ -26,6 +27,7 @@ def path_split_all(path):
             allparts.insert(0, parts[1])
 
     return allparts
+
 
 # The following couple of functions are redundant.
 # TODO: find a way to better integrate these generic methods
@@ -48,16 +50,19 @@ def get_type(data):
 
     return file_type
 
+
 def get_md5(data):
     md5 = hashlib.md5()
     md5.update(data)
     return md5.hexdigest()
+
 
 def string_clean(line):
     try:
         return ''.join([x for x in line if x in string.printable])
     except:
         return line
+
 
 def string_clean_hex(line):
     line = str(line)
@@ -88,6 +93,7 @@ def hexdump(src, length=16, maxlines=None):
                 break
 
     return ''.join(lines)
+
 
 # Snippet taken from:
 # http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size

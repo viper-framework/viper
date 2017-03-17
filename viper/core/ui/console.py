@@ -26,6 +26,7 @@ try:
 except NameError:
     pass
 
+
 def logo():
     print("""         _
         (_)
@@ -53,6 +54,7 @@ def logo():
     print(magenta("You have " + bold(count)) +
           magenta(" files in your " + bold(name)) +
           magenta(" repository"))
+
 
 class Console(object):
 
@@ -195,7 +197,6 @@ class Console(object):
                 if '>' in data:
                     data, console_output['filename'] = data.split('>')
                     print("Writing output to {0}".format(console_output['filename'].strip()))
-
 
                 # If the input starts with an exclamation mark, we treat the
                 # input as a bash command and execute it.

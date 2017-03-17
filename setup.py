@@ -13,4 +13,3 @@ setup(
     scripts=['viper-cli', 'viper-api', 'viper-web', 'viper-update'],
     packages=find_packages(),
 )
-
