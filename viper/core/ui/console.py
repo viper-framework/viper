@@ -9,7 +9,8 @@ import atexit
 import readline
 import traceback
 
-from viper.common.out import print_error, print_output
+from viper.common.out import print_error
+# from viper.common.out import print_output  # currently not used
 from viper.common.colors import cyan, magenta, white, bold, blue
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__

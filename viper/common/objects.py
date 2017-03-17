@@ -124,7 +124,7 @@ class File(object):
         try:
             fd = open(self.path, 'rb')
         # TODO: fix this up better.
-        except Exception as e:
+        except Exception:  # as e:  <- this need to be fixed anyway!
             return
 
         while True:
