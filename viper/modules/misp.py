@@ -513,6 +513,10 @@ class MISP(Module):
             vt_request['resource'] = hashes_to_check.pop()
             try:
                 response = requests.post(cfg.misp.misp_vturl, data=vt_request)
+                if cfg.virustotal.virustotal_has_private_key == False and response != None:
+                    self.log('alert', 'Fetching data...')
+                    time.sleep(17)
+                    
             except requests.ConnectionError:
                 self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
                 return
@@ -542,8 +546,6 @@ class MISP(Module):
                 if self.args.populate:
                     misp_event = self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes, sample_hashes, misp_event)
                 self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(link[1], md5, sha1, sha256))
-                if cfg.virustotal.virustotal_has_private_key == False:
-                    time.sleep(17)
             else:
                 unk_vt_hashes.append(vt_request['resource'])
 
