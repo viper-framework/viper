@@ -513,8 +513,10 @@ class MISP(Module):
             vt_request['resource'] = hashes_to_check.pop()
             try:
                 response = requests.post(cfg.misp.misp_vturl, data=vt_request)
-                if cfg.virustotal.virustotal_has_private_key == False:
+                if cfg.virustotal.virustotal_has_private_key == False and response != None:
+                    self.log('alert', 'Fetching data...')
                     time.sleep(17)
+                    
             except requests.ConnectionError:
                 self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
                 return
