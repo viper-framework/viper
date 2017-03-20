@@ -12,20 +12,26 @@ import textwrap
 
 from viper.common.colors import cyan, yellow, red, green, bold
 
+
 def print_info(message):
     print(bold(cyan("[*]")) + " {0}".format(message))
+
 
 def print_item(message, tabs=0):
     print(" {0}".format("  " * tabs) + cyan("-") + " {0}".format(message))
 
+
 def print_warning(message):
     print(bold(yellow("[!]")) + " {0}".format(message))
+
 
 def print_error(message):
     print(bold(red("[!]")) + " {0}".format(message))
 
+
 def print_success(message):
     print(bold(green("[+]")) + " {0}".format(message))
+
 
 def table(header, rows):
     if not HAVE_TERMTAB:
@@ -58,6 +64,7 @@ def table(header, rows):
                 t.table_data[i] = content
 
     return t.table
+
 
 def print_output(output, filename=None):
     if not output:

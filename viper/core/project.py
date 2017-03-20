@@ -8,6 +8,7 @@ from viper.core.config import Config
 
 cfg = Config()
 
+
 class Project(object):
     def __init__(self):
         self.name = None
@@ -22,11 +23,10 @@ class Project(object):
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
-        
+
     def open(self, name):
         if not os.path.exists(self.base_path):
-            raise Exception("The local storage folder does not exist at path {}".format(
-                base_path))
+            raise Exception("The local storage folder does not exist at path {}".format(self.base_path))
 
         if name == 'default':
             path = self.base_path
@@ -46,5 +46,6 @@ class Project(object):
 
     def get_projects_path(self):
         return os.path.join(self.base_path, 'projects')
-    
+
+
 __project__ = Project()

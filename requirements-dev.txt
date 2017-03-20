@@ -6,11 +6,11 @@ bottle
 cffi
 dnspython
 enum34
+flake8
 idna
 ipaddress
-olefile
-oletools
 pbkdf2
+py3kwarn
 pyasn1
 pycparser
 pycrypto
@@ -27,6 +27,7 @@ requests-cache
 scandir
 six
 terminaltables
+tox
 virustotal-api
 git+https://github.com/viper-framework/pefile.git#egg=pefile
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool

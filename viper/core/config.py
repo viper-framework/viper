@@ -2,7 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-from os.path import expanduser
+# from os.path import expanduser  # currently not used
 import shutil
 try:
     from configparser import ConfigParser
@@ -42,7 +42,6 @@ class Config:
                 share_viper = '/usr/share/viper/viper.conf.sample'
                 cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
 
-
                 # If the local storage folder doesn't exist, we create it.
                 local_storage = os.path.join(os.getenv('HOME'), '.viper')
                 if not os.path.exists(local_storage):
@@ -50,13 +49,12 @@ class Config:
 
                 config_file = os.path.join(local_storage, 'viper.conf')
 
-
                 if os.path.exists(share_viper):
                     shutil.copy(share_viper, config_file)
                 else:
-                    shutil.copy(cwd_viper, config_file)     
+                    shutil.copy(cwd_viper, config_file)
 
-        # Pasre the config file.
+        # Parse the config file.
         config = ConfigParser()
         config.read(config_file)
 

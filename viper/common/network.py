@@ -21,6 +21,7 @@ except ImportError:
 
 from viper.common.out import print_error
 
+
 def download(url, tor=False):
     def create_connection(address, timeout=None, source_address=None):
         sock = socks.socksocket()
