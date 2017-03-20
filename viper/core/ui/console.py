@@ -9,7 +9,8 @@ import atexit
 import readline
 import traceback
 
-from viper.common.out import print_error, print_output
+from viper.common.out import print_error
+# from viper.common.out import print_output  # currently not used
 from viper.common.colors import cyan, magenta, white, bold, blue
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
@@ -25,6 +26,7 @@ try:
     input = raw_input
 except NameError:
     pass
+
 
 def logo():
     print("""         _
@@ -53,6 +55,7 @@ def logo():
     print(magenta("You have " + bold(count)) +
           magenta(" files in your " + bold(name)) +
           magenta(" repository"))
+
 
 class Console(object):
 
@@ -195,7 +198,6 @@ class Console(object):
                 if '>' in data:
                     data, console_output['filename'] = data.split('>')
                     print("Writing output to {0}".format(console_output['filename'].strip()))
-
 
                 # If the input starts with an exclamation mark, we treat the
                 # input as a bash command and execute it.

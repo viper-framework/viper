@@ -17,6 +17,7 @@ class ArgumentErrorCallback(Exception):
     def get(self):
         return self.level, self.message
 
+
 class ArgumentParser(argparse.ArgumentParser):
     def print_usage(self):
         raise ArgumentErrorCallback(self.format_usage())
@@ -30,6 +31,7 @@ class ArgumentParser(argparse.ArgumentParser):
     def exit(self, status, message=None):
         if message is not None:
             raise ArgumentErrorCallback(message)
+
 
 class Module(object):
     cmd = ''

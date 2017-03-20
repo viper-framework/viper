@@ -18,7 +18,7 @@ except ImportError:
     from os import walk
 
 import viper.common.out as out
-from viper.common.out import table
+# from viper.common.out import table  # currently not used
 from viper.common.colors import bold
 from viper.common.utils import convert_size
 from viper.common.objects import File
