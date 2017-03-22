@@ -141,7 +141,7 @@ class Reports(Module):
         raw_results = match.group(0)[13:-1]
         json_results = json.loads(raw_results)
         unprocessed = json_results['scan_results']['scan_details']
-        for vendor, results in unprocessed.iteritems():
+        for vendor, results in unprocessed.items():
             if results['scan_result_i'] == 1:
                 reports.append([vendor, string_clean(results['threat_found']), results['def_time']])
                 self.log('table', dict(header=['Vendor', 'Result', 'Time'], rows=reports))

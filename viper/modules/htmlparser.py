@@ -36,7 +36,7 @@ class HTMLParse(Module):
     def string_clean(self, value):
         if not value:
             return
-        value = ''.join(filter(lambda x: x in string.printable, value))
+        value = ''.join([x for x in value if x in string.printable])
         return re.sub('[\n\t\r]', '', value)
 
     def shannon_entropy(self, s):
