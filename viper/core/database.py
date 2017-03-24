@@ -85,7 +85,7 @@ class Malware(Base):
         return row_dict
 
     def __repr__(self):
-        return "<Malware('{0}','{1}')>".format(self.id, self.md5)
+        return "<Malware ('{0}','{1}')>".format(self.id, self.md5)
 
     def __init__(self,
                  md5,
