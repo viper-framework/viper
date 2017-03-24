@@ -1,4 +1,5 @@
-# Originally written by Kevin Breen (@KevTheHermit):
+# -*- coding: utf-8 -*-
+#  Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/BlueBanana.py
 
 import string
@@ -19,7 +20,7 @@ def decrypt_conf(conFile):
     second = decrypt_aes(key2, first[:-16].decode('hex'))
     return second
 
-    
+
 def extract_config(raw_conf):
     conf = {}
     clean = [x for x in raw_conf if x in string.printable]

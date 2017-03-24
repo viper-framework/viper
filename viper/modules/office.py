@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -19,6 +20,7 @@ from viper.core.session import __sessions__
 
 try:
     import olefile
+
     try:
         from oletools.olevba3 import VBA_Parser, VBA_Scanner
     except:
@@ -353,9 +355,9 @@ class Office(Module):
             self.log('error', "No Macro's Detected")
             return
         self.log('info', "Macro's Detected")
-        #try:
+        # try:
         if True:
-            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex string':[], 'VBA string':[]}
+            an_results = {'AutoExec': [], 'Suspicious': [], 'IOC': [], 'Hex String': [], 'Base64 String': [], 'Dridex string': [], 'VBA string': []}
             for (filename, stream_path, vba_filename, vba_code) in vbaparser.extract_macros():
                 self.log('info', "Stream Details")
                 self.log('item', "OLE Stream: {0}".format(string_clean(stream_path)))
@@ -397,12 +399,10 @@ class Office(Module):
             self.log('info', "VBA string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['VBA string']))
 
-
-
             if save:
                 self.log('success', "Writing VBA Code to {0}".format(save_path))
-        #except:
-            #self.log('error', "Unable to Process File")
+                # except:
+                # self.log('error', "Unable to Process File")
         # Close the file
         vbaparser.close()
 

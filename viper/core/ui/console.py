@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -116,7 +117,7 @@ class Console(object):
             # Then autocomplete paths.
             if text.startswith("~"):
                 text = "{0}{1}".format(expanduser("~"), text[1:])
-            return (glob.glob(text+'*')+[None])[state]
+            return (glob.glob(text + '*') + [None])[state]
 
         # Auto-complete on tabs.
         readline.set_completer_delims(' \t\n;')

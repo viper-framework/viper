@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -11,6 +12,7 @@ try:
     from androguard.core.analysis.analysis import *
     from androguard.core.analysis.ganalysis import *
     from androguard.decompiler.decompiler import *
+
     HAVE_ANDROGUARD = True
 except Exception:
     HAVE_ANDROGUARD = False
@@ -89,9 +91,12 @@ class AndroidPackage(Module):
             if decompiler is not None:
                 decompiler = decompiler.lower()
                 if decompiler == "dex2jad":
-                    d.set_decompiler(DecompilerDex2Jad(d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"], androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"], androconf.CONF["TMP_DIRECTORY"]))
+                    d.set_decompiler(DecompilerDex2Jad(d, androconf.CONF["PATH_DEX2JAR"], androconf.CONF["BIN_DEX2JAR"],
+                                                       androconf.CONF["PATH_JAD"], androconf.CONF["BIN_JAD"],
+                                                       androconf.CONF["TMP_DIRECTORY"]))
                 elif decompiler == "ded":
-                    d.set_decompiler(DecompilerDed(d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"], androconf.CONF["TMP_DIRECTORY"]))
+                    d.set_decompiler(DecompilerDed(d, androconf.CONF["PATH_DED"], androconf.CONF["BIN_DED"],
+                                                   androconf.CONF["TMP_DIRECTORY"]))
                 elif decompiler == "dad":
                     d.set_decompiler(DecompilerDAD(d, dx))
                 else:
@@ -175,7 +180,6 @@ class AndroidPackage(Module):
 
             return a, vm, vmx
 
-
         super(AndroidPackage, self).run()
         if self.args is None:
             return
@@ -190,8 +194,6 @@ class AndroidPackage(Module):
             self.log('error', "Unable to import AndroGuard")
             self.log('error', "Install https://github.com/androguard/androguard/archive/v2.0.tar.gz")
             return
-
-
 
         a, vm, vmx = _load_params()
         if not a:

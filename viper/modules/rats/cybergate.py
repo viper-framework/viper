@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/DarkComet.py
 
 import pefile
+
 
 def xor(data):
     key = 0xBC
@@ -10,6 +12,7 @@ def xor(data):
         encoded[i] ^= key
     return str(encoded).decode('ascii', 'replace')
 
+
 def extract_config(raw_data):
     try:
         pe = pefile.PE(data=raw_data)
@@ -17,7 +20,7 @@ def extract_config(raw_data):
         try:
             rt_string_idx = [
                 entry.id for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries
-            ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+                ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
         except:
             return None
 
@@ -27,12 +30,13 @@ def extract_config(raw_data):
             if str(entry.name) == 'XX-XX-XX-XX' or str(entry.name) == 'CG-CG-CG-CG':
                 data_rva = entry.directory.entries[0].data.struct.OffsetToData
                 size = entry.directory.entries[0].data.struct.Size
-                data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
+                data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
                 config = data.split('####@####')
                 return config
     except:
         return None
-    
+
+
 def config(data):
     conf = {}
     raw_conf = extract_config(data)
@@ -40,14 +44,14 @@ def config(data):
         if len(raw_conf) > 20:
             domains = ''
             ports = ''
-            #Config sections 0 - 19 contain a list of Domains and Ports
-            for i in range(0,19):
+            # Config sections 0 - 19 contain a list of Domains and Ports
+            for i in range(0, 19):
                 if len(raw_conf[i]) > 1:
                     domains += xor(raw_conf[i]).split(':')[0]
                     domains += ','
                     ports += xor(raw_conf[i]).split(':')[1]
                     ports += ','
-                
+
             conf['Domain'] = domains
             conf['Port'] = ports
             conf['CampaignID'] = xor(raw_conf[20])
@@ -75,15 +79,15 @@ def config(data):
             conf['Persistance'] = xor(raw_conf[59])
             conf['HideFile'] = xor(raw_conf[60])
             conf['ChangeCreationDate'] = xor(raw_conf[61])
-            conf['Mutex'] = xor(raw_conf[62])        
+            conf['Mutex'] = xor(raw_conf[62])
             conf['MeltFile'] = xor(raw_conf[63])
-            conf['CyberGateVersion'] = xor(raw_conf[67])        
+            conf['CyberGateVersion'] = xor(raw_conf[67])
             conf['StartupPolicies'] = xor(raw_conf[69])
             conf['USBSpread'] = xor(raw_conf[70])
             conf['P2PSpread'] = xor(raw_conf[71])
             conf['GoogleChromePasswords'] = xor(raw_conf[73])
 
-        if xor(raw_conf[57]) == 0 or xor(raw_conf[57]) == None:
+        if xor(raw_conf[57]) == 0 or xor(raw_conf[57]):
             conf['ProcessInjection'] = 'Disabled'
         elif xor(raw_conf[57]) == 1:
             conf['ProcessInjection'] = 'Default Browser'

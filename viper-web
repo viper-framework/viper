@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -11,12 +12,12 @@ try:
     from subprocess import getoutput
 except ImportError:
     from commands import getoutput
-    
+
 try:
     from scandir import walk
 except ImportError:
     from os import walk
-    
+
 import requests
 import argparse
 import tempfile
@@ -111,7 +112,7 @@ def parse(data):
 
 def print_output(output):
     if not output:
-        return '<p class="text-danger">! The command Generated no Output</p>' 
+        return '<p class="text-danger">! The command Generated no Output</p>'
     return_html = ''
     for entry in output:
         # Skip lines that say seesion opened
@@ -147,7 +148,7 @@ def print_output(output):
         else:
             return_html += '<p>{0}</p>'.format(entry['data'])
     return return_html
-    
+
 def parse_text(module_text):
     # String to hold the new text
     set_text = ''
@@ -163,7 +164,7 @@ def parse_text(module_text):
     return set_text
 
 def project_list():
-    # Get a list of projects 
+    # Get a list of projects
     projects_path = __project__.get_projects_path()
     p_list = []
     if os.path.exists(projects_path):
@@ -173,7 +174,7 @@ def project_list():
                 p_list.append(project)
     return p_list
 
-# this will allow complex command line parameters to be passed in via the web gui    
+# this will allow complex command line parameters to be passed in via the web gui
 def module_cmdline(cmd_line, file_hash):
     html = ""
     cmd = Commands()
@@ -204,9 +205,9 @@ def module_cmdline(cmd_line, file_hash):
         except:
             html += '<p class="text-danger">We were unable to complete the command {0}</p>'.format(cmd_line)
     __sessions__.close()
-    return html        
-        
-    
+    return html
+
+
 def module_text(cmd_string, file_hash):
     # A lot of commands rely on an open session
     # open a session on the file hash
@@ -229,13 +230,13 @@ def module_text(cmd_string, file_hash):
     __sessions__.close()
     return html
 
-# context manager for file uploader   
+# context manager for file uploader
 @contextlib.contextmanager
 def upload_temp():
     temp_dir = tempfile.mkdtemp()
     yield temp_dir
     shutil.rmtree(temp_dir)
-       
+
 ##
 # Pages
 #
@@ -688,7 +689,7 @@ def cuckoo_submit():
         path = get_sample_path(file_hash)
         __sessions__.new(path)
     except:
-        return '<span class="alert alert-danger">Invalid Submission</span>'   
+        return '<span class="alert alert-danger">Invalid Submission</span>'
 
     try:
         # Return URI For Existing Entry
@@ -700,13 +701,13 @@ def cuckoo_submit():
             return '<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cuckoo_web, str(cuckoo_id))
     except:
         return '<span class="alert alert-danger">Error Connecting To Cuckoo</span>'
-    
+
     # If it doesn't exist, submit it.
-    
+
     # Get the file data from viper
     file_data = open(__sessions__.current.file.path, 'rb').read()
     file_name = __sessions__.current.file.name
-   
+
     if file_data:
         # Submit file data to cuckoo
         uri = '{0}{1}'.format(cuckoo_api, '/tasks/create/file')
@@ -717,7 +718,7 @@ def cuckoo_submit():
             return '<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cuckoo_web, str(cuckoo_id))
     else:
         return '<span class="alert alert-danger">Unable to Submit File</span>'
-    
+
 # Hex Viewer
 @app.route('/hex', method='POST')
 def hex_viewer():
@@ -728,13 +729,13 @@ def hex_viewer():
     except:
         return '<p class="text-danger">Error Generating Request</p>'
     hex_length = 256
-    
+
     # get file path
     hex_path = get_sample_path(file_hash)
-    
+
     # create the command string
     hex_cmd = 'hexdump -C -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
-    
+
     # get the output
     hex_string = getoutput(hex_cmd)
 
@@ -770,26 +771,26 @@ def vt_download():
         redirect('/file/{0}/{1}'.format(project, vt_hash))
     else:
         return template('error.tpl', error="Unable to download file {0}".format(module_results))
-    
-    
-# Run The web Server        
+
+
+# Run The web Server
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-H', '--host', help='Host to bind the API server on', default='localhost', action='store', required=False)
     parser.add_argument('-p', '--port', help='Port to bind the API server on', default=9090, action='store', required=False)
     args = parser.parse_args()
-    
+
     if args.port:
         web_port = args.port
-    
+
     bv = bottle.__version__.split('.')[1]
     if int(bv) < 12:
         print "Please Upgrade Bottle to the latest version 'sudo pip install --upgrade bottle'"
         sys.exit()
-    
+
     if not os.path.exists('projects'):
         os.mkdir('projects')
-    
+
     # Set template dir
     bottle.TEMPLATE_PATH.insert(0,os.path.join(VIPER_ROOT, 'data/web'))
     app.run(host=args.host, port=web_port, reloader=True)

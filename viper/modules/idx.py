@@ -1,4 +1,5 @@
-# Originally written by Brian Baskin (@bbaskin):
+# -*- coding: utf-8 -*-
+#  Originally written by Brian Baskin (@bbaskin):
 # https://github.com/Rurik/Java_IDX_Parser
 # See the file 'LICENSE' for copying permission.
 

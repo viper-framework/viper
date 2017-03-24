@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Albertino.py
 
@@ -7,8 +8,10 @@ import hashlib
 from base64 import b64decode
 from Crypto.Cipher import AES, XOR
 
+
 def string_print(line):
     return ''.join((char for char in line if 32 < ord(char) < 127))
+
 
 def parse_config(config_list, ver):
     config_dict = {}
@@ -23,7 +26,7 @@ def parse_config(config_list, ver):
         config_dict['InstallDir'] = config_list[7]
         config_dict['Flag1'] = config_list[8]
         config_dict['Flag2'] = config_list[9]
-        config_dict['Mutex'] = config_list[10]              
+        config_dict['Mutex'] = config_list[10]
     if ver == 'V2':
         config_dict['Version'] = config_list[0]
         config_dict['Domain'] = config_list[1]
@@ -33,6 +36,8 @@ def parse_config(config_list, ver):
         config_dict['Mutex'] = config_list[5]
         config_dict['RegistryKey'] = config_list[6]
     return config_dict
+
+
 def get_long_line(data):
     try:
         raw_config = None
@@ -44,11 +49,11 @@ def get_long_line(data):
                     if str(entry.name) == '0':
                         data_rva = entry.directory.entries[0].data.struct.OffsetToData
                         size = entry.directory.entries[0].data.struct.Size
-                        data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
+                        data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
                         raw_config = data
     except:
         raw_config = None
-    if raw_config != None:
+    if raw_config:
         return raw_config, 'V1'
     try:
         m = re.search('\x69\x00\x6F\x00\x6E\x00\x00\x59(.*)\x6F\x43\x00\x61\x00\x6E', data)
@@ -57,19 +62,23 @@ def get_long_line(data):
     except:
         return None, None
 
-def decrypt_XOR(enckey, data):                    
-    cipher = XOR.new(enckey) # set the cipher
-    return cipher.decrypt(data) # decrpyt the data
+
+def decrypt_XOR(enckey, data):
+    cipher = XOR.new(enckey)  # set the cipher
+    return cipher.decrypt(data)  # decrpyt the data
+
 
 # decrypt function
 def decrypt_aes(enckey, data):
     iv = data[:16]
-    cipher = AES.new(enckey, AES.MODE_CBC, iv) # set the cipher
-    return cipher.decrypt(data[16:]) # decrpyt the data
+    cipher = AES.new(enckey, AES.MODE_CBC, iv)  # set the cipher
+    return cipher.decrypt(data[16:])  # decrpyt the data
+
 
 # converts the enc key to an md5 key
 def aes_key(enc_key):
     return hashlib.md5(enc_key).hexdigest().decode('hex')
+
 
 # This will split all the b64 encoded strings and the encryption key
 def get_parts(long_line):
@@ -81,22 +90,23 @@ def get_parts(long_line):
             new_line = line[1:]
         else:
             new_line = line[2:]
-        coded_config.append(new_line.replace('\x00',''))
+        coded_config.append(new_line.replace('\x00', ''))
     return coded_config
-        
+
+
 def config(data):
     long_line, ver = get_long_line(data)
-    if ver == None:
+    if ver:
         return
     config_list = []
     if ver == 'V1':
-        # The way the XOR Cypher was implemented the keys are off by 1. 
-        key1 = 'RAT11x' # Used for First level of encryption actual key is 'xRAT11'
-        key2 = 'eY11K' # used for individual sections, actual key is 'KeY11'
-        key3 = 'eY11PWD24K' # used for password section only. Actual key is 'KeY11PWD24'
+        # The way the XOR Cypher was implemented the keys are off by 1.
+        key1 = 'RAT11x'  # Used for First level of encryption actual key is 'xRAT11'
+        key2 = 'eY11K'  # used for individual sections, actual key is 'KeY11'
+        key3 = 'eY11PWD24K'  # used for password section only. Actual key is 'KeY11PWD24'
         config = long_line.decode('hex')
         first_decode = decrypt_XOR(key1, config)
-        sections = first_decode.split('|//\\\\|') # Split is |//\\| the extra \\ are for escaping.
+        sections = first_decode.split('|//\\\\|')  # Split is |//\\| the extra \\ are for escaping.
         for i in range(len(sections)):
             if i == 3:
                 enc_key = key3
@@ -106,7 +116,7 @@ def config(data):
     if ver == 'V2':
         coded_lines = get_parts(long_line)
         enc_key = aes_key(coded_lines[-1])
-        for i in range(1, (len(coded_lines)-1)):
+        for i in range(1, (len(coded_lines) - 1)):
             decoded_line = b64decode(coded_lines[i])
             decrypt_line = decrypt_aes(enc_key, decoded_line)
             config_list.append(string_print(decrypt_line))

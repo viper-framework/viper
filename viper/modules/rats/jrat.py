@@ -1,14 +1,15 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/ClientMesh.py
 
-#Standard Imports Go Here
+# Standard Imports Go Here
 from base64 import b64decode
 from zipfile import ZipFile
 from io import StringIO
 from Crypto.Cipher import AES, DES3
 
 
-#Helper Functions Go Here
+# Helper Functions Go Here
 
 # This extracts the Encryption Key and Config File from the Jar and or Dropper
 def get_parts(data):
@@ -18,12 +19,12 @@ def get_parts(data):
     conf = None
     try:
         with ZipFile(new_zip, 'r') as zip:
-            for name in zip.namelist(): # get all the file names
-                if name == "key.dat": # this file contains the encrytpion key
+            for name in zip.namelist():  # get all the file names
+                if name == "key.dat":  # this file contains the encrytpion key
                     enckey = zip.read(name)
-                if name == "enc.dat": # if this file exists, jrat has an installer / dropper                
+                if name == "enc.dat":  # if this file exists, jrat has an installer / dropper
                     dropper = zip.read(name)
-                if name == "config.dat": # this is the encrypted config file
+                if name == "config.dat":  # this is the encrypted config file
                     conf = zip.read(name)
     except:
         return None, None
@@ -52,11 +53,12 @@ def get_dropper(enckey, dropper):
         return new_key, conf
     except:
         return None, None
-    
-    
+
+
 # Returns only printable chars
 def string_print(line):
     return ''.join((char for char in line if 32 < ord(char) < 127))
+
 
 # Messy Messy Messy
 def messy_split(long_line):
@@ -74,15 +76,18 @@ def messy_split(long_line):
             new_list.append(line)
     return new_list
 
+
 # AES Decrypt
-def decrypt_aes(enckey, data):                    
-        cipher = AES.new(enckey) # set the cipher
-        return cipher.decrypt(data) # decrpyt the data
-        
+def decrypt_aes(enckey, data):
+    cipher = AES.new(enckey)  # set the cipher
+    return cipher.decrypt(data)  # decrpyt the data
+
+
 # DES Decrypt
 def decrypt_des(enckey, data):
-        cipher = DES3.new(enckey) # set the ciper
-        return cipher.decrypt(data) # decrpyt the data
+    cipher = DES3.new(enckey)  # set the ciper
+    return cipher.decrypt(data)  # decrpyt the data
+
 
 # Process Versions 3.2.2 > 4.2.
 def old_aes(conf, enckey):
@@ -90,8 +95,9 @@ def old_aes(conf, enckey):
     clean_config = string_print(decoded_config)
     raw_config = clean_config.split('SPLIT')
     return raw_config
-    
-#Process versions 4.2. > 
+
+
+# Process versions 4.2. >
 def new_aes(conf, enckey):
     sections = messy_split(conf)
     decoded_config = ''
@@ -99,14 +105,16 @@ def new_aes(conf, enckey):
         decoded_config += decrypt_aes(enckey, b64decode(x))
     raw_config = string_print(decoded_config).split('SPLIT')
     return raw_config
-    
+
+
 # process versions < 3.2.2
 def old_des(conf, enckey):
     decoded_config = decrypt_des(enckey, conf)
     clean_config = string_print(decoded_config)
     raw_config = clean_config.split('SPLIT')
     return raw_config
-    
+
+
 def parse_config(raw_config, enckey):
     config_dict = {}
     for kv in raw_config:
@@ -158,13 +166,14 @@ def parse_config(raw_config, enckey):
     config_dict["EncryptionKey"] = enckey.encode('hex')
     return config_dict
 
+
 def config(data):
     enckey, conf = get_parts(data)
-    if enckey == None:
+    if not enckey:
         return
     if len(enckey) == 16:
         # Newer versions use a base64 encoded config.dat
-        if '==' in conf: # this is not a great test but should work 99% of the time
+        if '==' in conf:  # this is not a great test but should work 99% of the time
             b64_check = True
         else:
             b64_check = False

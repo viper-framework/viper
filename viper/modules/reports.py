@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -7,12 +8,14 @@ import getpass
 
 try:
     import requests
+
     HAVE_REQUESTS = True
 except ImportError:
     HAVE_REQUESTS = False
 
 try:
     from bs4 import BeautifulSoup
+
     HAVE_BS4 = True
 except ImportError:
     HAVE_BS4 = False

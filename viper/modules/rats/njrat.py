@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/njRat.py
 
@@ -5,7 +6,7 @@ import base64
 import pype32
 
 
-#Helper Functions Go Here
+# Helper Functions Go Here
 
 # Get a list of strings from a section
 def get_strings(pe, dir_type):
@@ -18,7 +19,8 @@ def get_strings(pe, dir_type):
         counter += 1
     return string_list
 
-#Turn the strings in to a python config_dict
+
+# Turn the strings in to a python config_dict
 def parse_config(string_list):
     config_dict = {}
     if string_list[5] == '0.3.5':
@@ -43,7 +45,7 @@ def parse_config(string_list):
         config_dict["Network Separator"] = string_list[10]
         config_dict["Install Flag"] = string_list[11]
 
-    elif  string_list[3] == '0.4.1a':
+    elif string_list[3] == '0.4.1a':
         config_dict["Campaign ID"] = base64.b64decode(string_list[2])
         config_dict["version"] = string_list[3]
         config_dict["Install Name"] = string_list[5]
@@ -54,8 +56,7 @@ def parse_config(string_list):
         config_dict["Network Separator"] = string_list[10]
         config_dict["Install Flag"] = string_list[11]
 
-
-    elif  string_list[2] == '0.5.0E':
+    elif string_list[2] == '0.5.0E':
         config_dict["Campaign ID"] = base64.b64decode(string_list[1])
         config_dict["version"] = string_list[2]
         config_dict["Install Name"] = string_list[4]
@@ -66,8 +67,7 @@ def parse_config(string_list):
         config_dict["Network Separator"] = string_list[10]
         config_dict["Install Flag"] = string_list[9]
 
-
-    elif  string_list[2] == '0.6.4':
+    elif string_list[2] == '0.6.4':
         config_dict["Campaign ID"] = base64.b64decode(string_list[1])
         config_dict["version"] = string_list[2]
         config_dict["Install Name"] = string_list[3]
@@ -105,8 +105,9 @@ def parse_config(string_list):
         return None
     return config_dict
 
+
 def config(data):
-    pe = pype32.PE(data=data) 
+    pe = pype32.PE(data=data)
     string_list = get_strings(pe, 2)
     config_dict = parse_config(string_list)
     return config_dict

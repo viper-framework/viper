@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -13,6 +14,7 @@ from viper.core.session import __sessions__
 
 try:
     from bs4 import BeautifulSoup
+
     HAVE_BS4 = True
 except ImportError:
     HAVE_BS4 = False
@@ -30,7 +32,7 @@ class HTMLParse(Module):
         self.parser.add_argument('-f', '--iframe', action='store_true', help='Show all iframes')
         self.parser.add_argument('-e', '--embed', action='store_true', help='Show all embedded files')
         self.parser.add_argument('-i', '--images', action='store_true', help='Extract all images')
-        self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Dump all outputs to files. This option is availiable for iframes scripts and images, if you use it with images an http request will be executed to fetch each image')
+        self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Dump all outputs to files. This option is availiable for iframes scripts and images, if you use it with images an http request will be executed to fetch each image')  #noqa
         self.soup = None
 
     def string_clean(self, value):
@@ -152,11 +154,11 @@ class HTMLParse(Module):
                 self.log('table', dict(header=['Type', 'Source', 'Entropy'], rows=scripts))
 
         elif self.args.links:
-                links = self.parse_hrefs()
-                self.log('info', "Links")
-                self.log('info', "Target \t Text")
-                for link in links:
-                    self.log('item', "{0}\t {1}".format(link[0], self.string_clean(link[1])))
+            links = self.parse_hrefs()
+            self.log('info', "Links")
+            self.log('info', "Target \t Text")
+            for link in links:
+                self.log('item', "{0}\t {1}".format(link[0], self.string_clean(link[1])))
         # iFrames
         elif self.args.iframe:
             frames, frame_content = self.parse_iframes()

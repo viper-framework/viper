@@ -1,16 +1,18 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Bozok.py
 
 import pefile
+
 
 def extract_config(raw_data):
     pe = pefile.PE(data=raw_data)
 
     try:
         rt_string_idx = [
-            entry.id for entry in 
+            entry.id for entry in
             pe.DIRECTORY_ENTRY_RESOURCE.entries
-        ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+            ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
     except:
         return None
 
@@ -20,9 +22,10 @@ def extract_config(raw_data):
         if str(entry.name) == 'CFG':
             data_rva = entry.directory.entries[0].data.struct.OffsetToData
             size = entry.directory.entries[0].data.struct.Size
-            data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
+            data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
             return data
-                
+
+
 def config(data):
     try:
         config = {}

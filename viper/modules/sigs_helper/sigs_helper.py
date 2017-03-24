@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +18,6 @@
 # Viper adaptation: jahrome11@gmail.com (Jerome Marty)
 
 
-
 """
     Wrapper to exercise fingerprinting and authenticode validation.
 """
@@ -30,7 +30,6 @@ import pprint
 import sys
 import time
 
-
 from pyasn1.codec.der import encoder as der_encoder
 
 from verifysigs.utils import auth_data
@@ -41,40 +40,46 @@ from verifysigs.utils import pecoff_blob
 # EVIL EVIL -- Monkeypatch to extend accessor
 # TODO(user): This was submitted to pyasn1. Remove when we have it back.
 def F(self, idx):
-  if type(idx) is int:
-    return self.getComponentByPosition(idx)
-  else: return self.getComponentByName(idx)
+    if type(idx) is int:
+        return self.getComponentByPosition(idx)
+    else:
+        return self.getComponentByName(idx)
+
+
 from pyasn1.type import univ  # pylint: disable-msg=C6204,C6203
+
 univ.SequenceAndSetBase.__getitem__ = F
 del F, univ
+
+
 # EVIL EVIL
 
 
 def get_auth_data(filename):
-  with file(filename, 'rb') as objf:
-    fingerprinter = fingerprint.Fingerprinter(objf)
-    is_pecoff = fingerprinter.EvalPecoff()
-    fingerprinter.EvalGeneric()
-    results = fingerprinter.HashIt()
+    with file(filename, 'rb') as objf:
+        fingerprinter = fingerprint.Fingerprinter(objf)
+        is_pecoff = fingerprinter.EvalPecoff()
+        fingerprinter.EvalGeneric()
+        results = fingerprinter.HashIt()
 
-  signed_pecoffs = [x for x in results if x['name'] == 'pecoff' and
-                    'SignedData' in x]
+    signed_pecoffs = [x for x in results if x['name'] == 'pecoff' and
+                      'SignedData' in x]
 
-  if not signed_pecoffs:
-    print('This PE/COFF binary has no signature. Exiting.')
-    return
+    if not signed_pecoffs:
+        print('This PE/COFF binary has no signature. Exiting.')
+        return
 
-  signed_pecoff = signed_pecoffs[0]
-  signed_datas = signed_pecoff['SignedData']
+    signed_pecoff = signed_pecoffs[0]
+    signed_datas = signed_pecoff['SignedData']
 
-  # There may be multiple of these, if the windows binary was signed multiple
-  # times, e.g. by different entities. Each of them adds a complete SignedData
-  # blob to the binary.
-  # TODO(user): Process all instances
-  signed_data = signed_datas[0]
-  blob = pecoff_blob.PecoffBlob(signed_data)
-  auth = auth_data.AuthData(blob.getCertificateBlob())
-  content_hasher_name = auth.digest_algorithm().name
-  computed_content_hash = signed_pecoff[content_hasher_name]
+    # There may be multiple of these, if the windows binary was signed multiple
+    # times, e.g. by different entities. Each of them adds a complete SignedData
+    # blob to the binary.
+    # TODO(user): Process all instances
+    signed_data = signed_datas[0]
+    blob = pecoff_blob.PecoffBlob(signed_data)
+    auth = auth_data.AuthData(blob.getCertificateBlob())
+    content_hasher_name = auth.digest_algorithm().name
+    computed_content_hash = signed_pecoff[content_hasher_name]
 
-  return auth, computed_content_hash
+    return auth, computed_content_hash
