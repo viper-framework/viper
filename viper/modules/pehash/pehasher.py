@@ -6,30 +6,11 @@ from __future__ import division
 
 import bz2
 import hashlib
-
-try:
-    import pefile
-    HAVE_PEFILE = True
-except ImportError:
-    HAVE_PEFILE = False
-
-try:
-    import bitstring
-    HAVE_BITSTRING = True
-except ImportError:
-    HAVE_BITSTRING = False
+import pefile
+import bitstring
 
 
 def calculate_pehash(file_path=None, data=None):
-    if not HAVE_PEFILE:
-        # TODO (frennkie): what's going on here? should this be a Class (sub classing "Module")?
-        self.log('error', "Missing dependency, install pefile (`pip install pefile`)")
-        return ''
-
-    if not HAVE_BITSTRING:
-        self.log('error', "Missing dependency, install bitstring (`pip install bitstring`)")
-        return ''
-
     if not file_path and not data:
         return ''
 
@@ -77,7 +58,7 @@ def calculate_pehash(file_path=None, data=None):
 
         # Section chars
         for section in exe.sections:
-            # virutal address
+            # virtual address
             sect_va = bitstring.BitArray(hex(section.VirtualAddress))
             sect_va = bitstring.BitArray(bytes=sect_va.tobytes())
             sect_va_bits = sect_va[8:32]

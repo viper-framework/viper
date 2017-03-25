@@ -19,6 +19,8 @@ pylzma
 pymisp
 pypdns
 pypssl
+pytest
+pytest-cov
 python-dateutil
 python-magic
 r2pipe

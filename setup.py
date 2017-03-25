@@ -16,4 +16,6 @@ setup(
 
     scripts=['viper-cli', 'viper-api', 'viper-web', 'viper-update'],
     packages=find_packages(),
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
 )
