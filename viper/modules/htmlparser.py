@@ -32,7 +32,7 @@ class HTMLParse(Module):
         self.parser.add_argument('-f', '--iframe', action='store_true', help='Show all iframes')
         self.parser.add_argument('-e', '--embed', action='store_true', help='Show all embedded files')
         self.parser.add_argument('-i', '--images', action='store_true', help='Extract all images')
-        self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Dump all outputs to files. This option is availiable for iframes scripts and images, if you use it with images an http request will be executed to fetch each image')  #noqa
+        self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Dump all outputs to files. This option is availiable for iframes scripts and images, if you use it with images an http request will be executed to fetch each image')  # noqa
         self.soup = None
 
     def string_clean(self, value):

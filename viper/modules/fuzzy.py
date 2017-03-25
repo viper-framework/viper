@@ -96,7 +96,7 @@ class Fuzzy(Module):
                         continue
 
                     self.log('info', "Ssdeep cluster {0}".format(bold(cluster_name)))
-                    self.log('table', dict(header=['MD5', 'Name'],rows=cluster_members))
+                    self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
 
             # We're running against the already opened file.
             else:
