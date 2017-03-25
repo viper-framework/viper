@@ -29,7 +29,8 @@ before_install:
     - cd ..
     - git config user.email "travis@example.com"
     - git config user.name "Travis"
-    - git pull --recurse-submodules --no-commit && git submodule update
+    - git pull --recurse-submodules --no-commit
+    - git submodule update
 
 >>>>>>> a74ed90... pep8 fixes, add license - commit squash
 install:
