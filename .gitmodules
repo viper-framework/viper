@@ -3,6 +3,6 @@
     url = https://github.com/viper-framework/Mach-O.git
     branch = master
 [submodule "viper/modules/pdftools"]
-	path = viper/modules/pdftools
-	url = https://github.com/viper-framework/pdftools.git
+    path = viper/modules/pdftools
+    url = https://github.com/viper-framework/pdftools.git
     branch = master
