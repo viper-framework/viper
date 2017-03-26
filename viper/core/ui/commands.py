@@ -292,24 +292,28 @@ class Commands(object):
             title = input("Enter a title for the new note: ")
 
             # Create a new temporary file.
-            tmp = tempfile.NamedTemporaryFile(delete=False)
-            # Open the temporary file with the default editor, or with nano.
-            os.system('"${EDITOR:-nano}" ' + tmp.name)
-            # Once the user is done editing, we need to read the content and
-            # store it in the database.
-            body = tmp.read()
-            Database().add_note(__sessions__.current.file.sha256, title, body)
-            # Finally, remove the temporary file.
-            os.remove(tmp.name)
+            with tempfile.NamedTemporaryFile(mode='w+') as tmp:
+                # Open the temporary file with the default editor, or with nano.
+                os.system('"${EDITOR:-nano}" ' + tmp.name)
+                # Once the user is done editing, we need to read the content and
+                # store it in the database.
+                body = tmp.read()
+                Database().add_note(__sessions__.current.file.sha256, title, body)
 
-            self.log('info', "New note with title \"{0}\" added to the current file".format(bold(title)))
+            self.log('info', 'New note with title "{0}" added to the current file'.format(bold(title)))
 
         elif args.view:
             # Retrieve note wth the specified ID and print it.
             note = Database().get_note(args.view)
             if note:
                 self.log('info', bold('Title: ') + note.title)
-                self.log('info', bold('Body:') + '\n' + note.body)
+                if isinstance(note.body, bytes):
+                    # OLD: Old style, the content is stored as bytes
+                    # This is fixed when the user edits the old note.
+                    body = note.body.decode()
+                else:
+                    body = note.body
+                self.log('info', '{}\n{}'.format(bold('Body:'), body))
             else:
                 self.log('info', "There is no note with ID {0}".format(args.view))
 
@@ -318,18 +322,22 @@ class Commands(object):
             note = Database().get_note(args.edit)
             if note:
                 # Create a new temporary file.
-                tmp = tempfile.NamedTemporaryFile(delete=False)
-                # Write the old body to the temporary file.
-                tmp.write(note.body)
-                tmp.close()
-                # Open the old body with the text editor.
-                os.system('"${EDITOR:-nano}" ' + tmp.name)
-                # Read the new body from the temporary file.
-                body = open(tmp.name, 'r').read()
-                # Update the note entry with the new body.
-                Database().edit_note(args.edit, body)
-                # Remove the temporary file.
-                os.remove(tmp.name)
+                with tempfile.NamedTemporaryFile(mode='w+') as tmp:
+                    # Write the old body to the temporary file.
+                    if isinstance(note.body, bytes):
+                        # OLD: Old style, the content is stored as bytes
+                        body = note.body.decode()
+                    else:
+                        body = note.body
+                    tmp.write(body)
+                    tmp.flush()
+                    tmp.seek(0)
+                    # Open the old body with the text editor.
+                    os.system('"${EDITOR:-nano}" ' + tmp.name)
+                    # Read the new body from the temporary file.
+                    body = tmp.read()
+                    # Update the note entry with the new body.
+                    Database().edit_note(args.edit, body)
 
                 self.log('info', "Updated note with ID {0}".format(args.edit))
 
