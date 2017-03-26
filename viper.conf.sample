@@ -23,6 +23,14 @@ storage_path =
 # If empty, default is a SQLite in $storage_path/viper.db
 connection =
 
+[logging]
+# log file (full path - e.g. /tmp/viper.log)
+# If left blank, the default will be $storage_path/viper.log
+log_file =
+
+# enable additional debug logging
+debug = False
+
 [web]
 host = 0.0.0.0
 port = 8080

@@ -41,6 +41,7 @@ projects/
 *.db
 *.conf
 *.bak
+*.log
 
 data/yara/index.yara
 
