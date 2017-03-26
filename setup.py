@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
 
+with open('viper/common/version.py') as f:
+    __version__ = ''
+    exec(f.read())  # set __version__
+
 setup(
     name='viper',
-    version='1.3',
+    version=__version__,
     author='Claudio Guarnieri',
     author_email='nex@nex.sx',
     description="Binary Analysis & Management Framework",
