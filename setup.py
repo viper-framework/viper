@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 from setuptools import setup, find_packages
-
-with open('viper/common/version.py') as f:
-    __version__ = ''
-    exec(f.read())  # set __version__
+from viper.common.version import __version__
 
 setup(
     name='viper',
