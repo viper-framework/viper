@@ -17,11 +17,10 @@ before_install:
     - sudo apt-get install gcc python-socksipy libssl-dev swig -qq
     - wget http://downloads.sourceforge.net/project/ssdeep/ssdeep-2.10/ssdeep-2.10.tar.gz
     - tar -zxvf ssdeep-2.10.tar.gz
-    - cd ssdeep-2.10
+    - pushd ssdeep-2.10
     - ./configure && make
     - sudo make install
-    - cd ..
-    - git pull --recurse-submodules && git submodule update
+    - popd
 install:
     - pip install -r requirements-dev.txt
 script:
