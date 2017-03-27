@@ -102,7 +102,7 @@ class AndroidPackage(Module):
         def andro_file(a):
             self.log('info', "APK Contents")
             rows = []
-            for file_name, file_type in a.files.iteritems():
+            for file_name, file_type in a.files.items():
                 rows.append([file_name, file_type])
             self.log('table', dict(header=['File Name', 'File Type'], rows=rows))
 

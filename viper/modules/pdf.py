@@ -162,7 +162,7 @@ class PDF(Module):
 
         def dump_content(data):
             if isinstance(data, list):
-                return b''.join(map(lambda x: x[1].encode(), data))
+                return b''.join([x[1].encode() for x in data])
             else:
                 return data.encode()
 
