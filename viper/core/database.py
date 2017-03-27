@@ -86,7 +86,7 @@ class Malware(Base):
         return row_dict
 
     def __repr__(self):
-        return "<Malware('{0}','{1}')>".format(self.id, self.md5)
+        return "<Malware ('{0}','{1}')>".format(self.id, self.md5)
 
     def __init__(self,
                  md5,
@@ -128,7 +128,7 @@ class Tag(Base):
         return row_dict
 
     def __repr__(self):
-        return "<Tag ('{0}','{1}'>".format(self.id, self.tag)
+        return "<Tag ('{0}','{1}')>".format(self.id, self.tag)
 
     def __init__(self, tag):
         self.tag = tag
@@ -150,7 +150,7 @@ class Note(Base):
         return row_dict
 
     def __repr__(self):
-        return "<Note ('{0}','{1}'>".format(self.id, self.title)
+        return "<Note ('{0}','{1}')>".format(self.id, self.title)
 
     def __init__(self, title, body):
         self.title = title
@@ -174,7 +174,7 @@ class Analysis(Base):
         return row_dict
 
     def __repr__(self):
-        return "<Note ('{0}','{1}'>".format(self.id, self.cmd_line)
+        return "<Analysis ('{0}','{1}')>".format(self.id, self.cmd_line)
 
     def __init__(self, cmd_line, results):
         self.cmd_line = cmd_line

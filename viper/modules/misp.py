@@ -9,6 +9,7 @@ import time
 import glob
 import shutil
 import json
+import datetime
 
 try:
     from pymisp import PyMISP, PyMISPError, MISPEvent, EncodeFull, EncodeUpdate
@@ -509,6 +510,10 @@ class MISP(Module):
         # Make sure to start getting reports for the longest possible hashes (reduce risks of collisions)
         hashes_to_check = sorted(event_hashes, key=len)
         original_attributes = len(misp_event.attributes)
+        if cfg.virustotal.virustotal_has_private_key is False:
+            quota = 4
+            timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
+
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
             try:
@@ -523,7 +528,6 @@ class MISP(Module):
             try:
                 result = response.json()
             except:
-                # FIXME: support rate-limiting (4/min)
                 self.log('error', 'Unable to get the report of {}'.format(vt_request['resource']))
                 continue
             if result['response_code'] == 1:
@@ -543,6 +547,16 @@ class MISP(Module):
                 if self.args.populate:
                     misp_event = self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes, sample_hashes, misp_event)
                 self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(link[1], md5, sha1, sha256))
+                if cfg.virustotal.virustotal_has_private_key is False:
+                    if quota > 0:
+                        quota -= 1
+                    else:
+                        waiting_time = (timeout - datetime.datetime.now()).seconds
+                        if waiting_time > 0:
+                            self.log('warning', 'No private API key, 4 queries/min is the limit. Waiting for {} seconds.'.format(waiting_time))
+                            time.sleep(waiting_time)
+                        quota = 4
+                        timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
             else:
                 unk_vt_hashes.append(vt_request['resource'])
 
@@ -724,7 +738,7 @@ class MISP(Module):
                         self.args.filename, self.args.sha1))
                 if self.args.sha256:
                     __sessions__.current.misp_event.event.add_attribute('filename|sha256', '{}|{}'.format(
-                        self.args._filename, self.args.sha256))
+                        self.args.filename, self.args.sha256))
             else:
                 if self.args.md5:
                     __sessions__.current.misp_event.event.add_attribute('md5', self.args.md5)
