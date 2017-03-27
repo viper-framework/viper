@@ -2,7 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-# from os.path import expanduser  # currently not used
+from os.path import expanduser
 import shutil
 try:
     from configparser import ConfigParser
@@ -53,7 +53,6 @@ class Config:
                     shutil.copy(share_viper, config_file)
                 else:
                     shutil.copy(cwd_viper, config_file)
-
 
         # Parse the config file.
         config = ConfigParser()
