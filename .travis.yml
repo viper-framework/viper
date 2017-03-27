@@ -15,9 +15,9 @@ python:
 before_install:
     - sudo apt-get update -qq
     - sudo apt-get install gcc python-socksipy libssl-dev swig -qq
-    - wget http://downloads.sourceforge.net/project/ssdeep/ssdeep-2.10/ssdeep-2.10.tar.gz
-    - tar -zxvf ssdeep-2.10.tar.gz
-    - pushd ssdeep-2.10
+    - wget http://downloads.sourceforge.net/project/ssdeep/ssdeep-2.13/ssdeep-2.13.tar.gz
+    - tar -zxvf ssdeep-2.13.tar.gz
+    - cd ssdeep-2.13
     - ./configure && make
     - sudo make install
     - popd
