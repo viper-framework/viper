@@ -169,7 +169,7 @@ def parse_config(raw_config, enckey):
 
 def config(data):
     enckey, conf = get_parts(data)
-    if not enckey:
+    if enckey is None:
         return
     if len(enckey) == 16:
         # Newer versions use a base64 encoded config.dat

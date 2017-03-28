@@ -9,23 +9,30 @@ except:
     HAVE_TERMTAB = False
 
 import textwrap
+import six
 
 from viper.common.colors import cyan, yellow, red, green, bold
+
 
 def print_info(message):
     print(bold(cyan("[*]")) + " {0}".format(message))
 
+
 def print_item(message, tabs=0):
     print(" {0}".format("  " * tabs) + cyan("-") + " {0}".format(message))
+
 
 def print_warning(message):
     print(bold(yellow("[!]")) + " {0}".format(message))
 
+
 def print_error(message):
     print(bold(red("[!]")) + " {0}".format(message))
 
+
 def print_success(message):
     print(bold(green("[+]")) + " {0}".format(message))
+
 
 def table(header, rows):
     if not HAVE_TERMTAB:
@@ -35,12 +42,7 @@ def table(header, rows):
     # TODO: Refactor this function, it is some serious ugly code.
 
     content = [header] + rows
-    # Make sure everything is string
-    try:
-        content = [[a.replace('\t', '  ') for a in list(map(unicode, l))] for l in content]
-    except:
-        # Python3 way of doing it:
-        content = [[a.replace('\t', '  ') for a in list(map(str, l))] for l in content]
+    content = [[a.replace('\t', '  ') for a in list(map(six.text_type, l))] for l in content]
     t = AsciiTable(content)
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
@@ -58,6 +60,7 @@ def table(header, rows):
                 t.table_data[i] = content
 
     return t.table
+
 
 def print_output(output, filename=None):
     if not output:

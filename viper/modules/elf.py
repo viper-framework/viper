@@ -342,8 +342,7 @@ class ELF(Module):
                     rows.append([sample.md5, sample.name])
 
             if len(rows) > 0:
-                # FIXME:ep isn't defined
-                self.log('info', "Following are samples with Entry point {0}".format(bold(ep)))
+                self.log('info', "Following are samples with e_machine {0}".format(bold(machine)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
     def elftype(self):
@@ -431,8 +430,7 @@ class ELF(Module):
                     cur_e_type = elfo.header.e_machine
                 except:
                     continue
-                # FIXME: machine and cur_machine arem't defined
-                if machine == cur_machine:
+                if e_type == cur_e_type:
                     rows.append([sample.md5, sample.name])
 
             if len(rows) > 0:

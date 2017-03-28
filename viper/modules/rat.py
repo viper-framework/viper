@@ -17,7 +17,6 @@ except ImportError:
 
 try:
     import yara
-
     HAVE_YARA = True
 except ImportError:
     HAVE_YARA = False

@@ -6,20 +6,21 @@ bottle
 cffi
 dnspython
 enum34
+flake8
 idna
 ipaddress
-olefile
-oletools
 pbkdf2
+py3kwarn
 pyasn1
 pycparser
 pycrypto
-pydeep
 pyelftools
 pylzma
 pymisp
 pypdns
 pypssl
+pytest
+pytest-cov
 python-dateutil
 python-magic
 r2pipe
@@ -28,11 +29,14 @@ requests-cache
 scandir
 six
 terminaltables
+tox
 virustotal-api
+yara-python
 git+https://github.com/viper-framework/pefile.git#egg=pefile
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 git+https://github.com/crackinglandia/pype32.git#egg=pype32
 git+https://github.com/pyca/cryptography.git#egg=cryptography
+git+https://github.com/kbandla/pydeep.git#egg=pydeep
 
 # For peepdf
 git+https://github.com/serprex/pythonaes.git

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -9,6 +10,7 @@ try:
     import magic
 except ImportError:
     pass
+
 
 # Taken from the Python Cookbook.
 def path_split_all(path):
@@ -26,6 +28,7 @@ def path_split_all(path):
             allparts.insert(0, parts[1])
 
     return allparts
+
 
 # The following couple of functions are redundant.
 # TODO: find a way to better integrate these generic methods
@@ -48,16 +51,19 @@ def get_type(data):
 
     return file_type
 
+
 def get_md5(data):
     md5 = hashlib.md5()
     md5.update(data)
     return md5.hexdigest()
+
 
 def string_clean(line):
     try:
         return ''.join([x for x in line if x in string.printable])
     except:
         return line
+
 
 def string_clean_hex(line):
     line = str(line)
@@ -76,18 +82,19 @@ def hexdump(src, length=16, maxlines=None):
     FILTER = ''.join([(len(repr(chr(x))) == 3) and chr(x) or '.' for x in range(256)])
     lines = []
     for c in range(0, len(src), length):
-        chars = src[c:c+length]
+        chars = src[c:c + length]
         if isinstance(chars, str):
             chars = [ord(x) for x in chars]
         hex = ' '.join(["%02x" % x for x in chars])
         printable = ''.join(["%s" % ((x <= 127 and FILTER[x]) or '.') for x in chars])
-        lines.append("%04x  %-*s  %s\n" % (c, length*3, hex, printable))
+        lines.append("%04x  %-*s  %s\n" % (c, length * 3, hex, printable))
 
         if maxlines:
             if len(lines) == maxlines:
                 break
 
     return ''.join(lines)
+
 
 # Snippet taken from:
 # http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size

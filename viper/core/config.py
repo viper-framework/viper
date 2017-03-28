@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -16,7 +17,6 @@ from viper.common.constants import VIPER_ROOT
 class Config:
 
     def __init__(self, cfg=None):
-<<<<<<< HEAD
         # use cfg as a first priority
         if cfg:
             if os.path.exists(cfg):
@@ -56,82 +56,6 @@ class Config:
                     shutil.copy(cwd_viper, config_file)
 
         # Parse the config file.
-||||||| parent of b048006... [config] Fix python3 support
-        # use cfg as a first priority
-        if cfg:
-            if os.path.exists(cfg):
-                config_file = cfg
-        else:
-            # Possible paths for the configuration file.
-            # This should go in order from local to global.
-            config_paths = [
-                os.path.join(os.getcwd(), 'viper.conf'),
-                os.path.join(os.getenv('HOME'), '.viper', 'viper.conf'),
-                '/etc/viper/viper.conf'
-            ]
-
-            # Try to identify the best location for the config file.
-            config_file = None
-            for config_path in config_paths:
-                if os.path.exists(config_path):
-                    config_file = config_path
-                    break
-
-            # If no config is available, we try to copy it either from the
-            # /usr/share/viper folder, or from VIPER_ROOT.
-            if not config_file:
-                share_viper = '/usr/share/viper/viper.conf.sample'
-                cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
-
-                # If the local storage folder doesn't exist, we create it.
-                local_storage = os.path.join(os.getenv('HOME'), '.viper')
-                if not os.path.exists(local_storage):
-                    os.makedirs(local_storage)
-
-                config_file = os.path.join(local_storage, 'viper.conf')
-
-                if os.path.exists(share_viper):
-                    shutil.copy(share_viper, config_file)
-                else:
-                    shutil.copy(cwd_viper, config_file)
-
-        # Parse the config file.
-=======
-        # Possible paths for the configuration file.
-        # This should go in order from local to global.
-        config_paths = [
-            os.path.join(os.getcwd(), 'viper.conf'),
-            os.path.join(expanduser("~"), '.viper', 'viper.conf'),
-            '/etc/viper/viper.conf'
-        ]
-
-        # Try to identify the best location for the config file.
-        config_file = None
-        for config_path in config_paths:
-            if os.path.exists(config_path):
-                config_file = config_path
-                break
-
-        # If no config is available, we try to copy it either from the
-        # /usr/share/viper folder, or from VIPER_ROOT.
-        if not config_file:
-            share_viper = '/usr/share/viper/viper.conf.sample'
-            cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
-
-            # If the local storage folder doesn't exist, we create it.
-            local_storage = os.path.join(expanduser("~"), '.viper')
-            if not os.path.exists(local_storage):
-                os.makedirs(local_storage)
-
-            config_file = os.path.join(local_storage, 'viper.conf')
-
-            if os.path.exists(share_viper):
-                shutil.copy(share_viper, config_file)
-            else:
-                shutil.copy(cwd_viper, config_file)
-
-        # Pasre the config file.
->>>>>>> b048006... [config] Fix python3 support
         config = ConfigParser()
         config.read(config_file)
 

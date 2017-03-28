@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -23,7 +24,8 @@ class EmailParse(Module):
         self.parser.add_argument('-f', '--attach', action='store_true', help='Show Attachment information')
         self.parser.add_argument('-r', '--header', action='store_true', help='Show email Header information')
         self.parser.add_argument('-t', '--trace', action='store_true', help='Show email path via Received headers')
-        self.parser.add_argument('-T', '--traceall', action='store_true', help='Show email path via verbose Received headers')
+        self.parser.add_argument('-T', '--traceall', action='store_true',
+                                 help='Show email path via verbose Received headers')
         self.parser.add_argument('-s', '--spoofcheck', action='store_true', help='Test email for possible spoofing')
         self.parser.add_argument('-a', '--all', action='store_true', help='Run all the options')
         self.parser.add_argument('-o', '--open', type=int, help='Switch session to the specified attachment')
@@ -124,9 +126,7 @@ class EmailParse(Module):
                     else:
                         rfc822 = False
 
-                    if part.get_content_maintype() == 'multipart' \
-                        or not part.get('Content-Disposition') \
-                            and not rfc822:
+                    if part.get_content_maintype() == 'multipart' or not part.get('Content-Disposition') and not rfc822:
                         continue
 
                     att_count += 1
@@ -280,7 +280,7 @@ class EmailParse(Module):
                 bymatch = False
                 try:
                     mx = dns.resolver.query(fromdomain, 'MX')
-                    if mx :
+                    if mx:
                         for rdata in mx:
                             m = re.search("(\w+\.\w+).$", str(rdata.exchange))
                             if not m:

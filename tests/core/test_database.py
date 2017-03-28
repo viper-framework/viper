@@ -9,4 +9,4 @@ class TestTag:
     def test_init(self):
         instance = Tag(tag="eggs")
         assert isinstance(instance, Tag)
-        assert instance.__repr__() == "<Tag ('None','eggs'>"
+        assert instance.__repr__() == "<Tag ('None','eggs')>"

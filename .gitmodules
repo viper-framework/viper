@@ -1,5 +1,5 @@
 [submodule "viper/modules/Mach-O"]
-	path = viper/modules/pymacho_helper
+    path = viper/modules/pymacho_helper
     url = https://github.com/viper-framework/Mach-O.git
     branch = master
 [submodule "viper/modules/pdftools"]

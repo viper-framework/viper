@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/AdWind.py
 
 import string
 from zipfile import ZipFile
-from io import StringIO
+from io import BytesIO
 from Crypto.Cipher import ARC4, DES
 import xml.etree.ElementTree as ET
 
@@ -37,29 +38,32 @@ def sortConfig(old_config):
         new_config['Port1'] = old_config['puerto']
         return new_config
     return old_config
-        
+
+
 def decrypt_des(enckey, data):
-    cipher = DES.new(enckey, DES.MODE_ECB) # set the ciper
-    return cipher.decrypt(data) # decrpyt the data
-    
+    cipher = DES.new(enckey, DES.MODE_ECB)  # set the ciper
+    return cipher.decrypt(data)  # decrpyt the data
+
+
 def decrypt_rc4(enckey, data):
-    cipher = ARC4.new(enckey) # set the ciper
-    return cipher.decrypt(data) # decrpyt the data
+    cipher = ARC4.new(enckey)  # set the ciper
+    return cipher.decrypt(data)  # decrpyt the data
+
 
 def config(data):
     Key = "awenubisskqi"
-    newZip = StringIO(data)
+    newZip = BytesIO(data)
     raw_config = {}
     with ZipFile(newZip, 'r') as zip:
         for name in zip.namelist():
-            if name == "config.xml": # contains the encryption key
+            if name == "config.xml":  # contains the encryption key
                 # We need two attempts here first try DES for V1 If not try RC4 for V2
                 try:
                     config = zip.read(name)
                     result = decrypt_des(Key[:-4], config)
                 except:
                     config = zip.read(name)
-                    result = decrypt_rc4(Key, config)                                
+                    result = decrypt_rc4(Key, config)
                 xml = [x for x in result if x in string.printable]
                 root = ET.fromstring(xml)
                 for child in root:

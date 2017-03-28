@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2011 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,20 +18,12 @@
 # Viper adaptation: jahrome11@gmail.com (Jerome Marty)
 
 
-
 """
     Wrapper to exercise fingerprinting and authenticode validation.
 """
 
 # I really want to use parens in print statements.
 # pylint: disable-msg=C6003
-
-import hashlib
-import pprint
-import sys
-import time
-
-from pyasn1.codec.der import encoder as der_encoder
 
 from verifysigs.utils import auth_data
 from verifysigs.utils import fingerprint
@@ -46,7 +39,7 @@ def F(self, idx):
         return self.getComponentByName(idx)
 
 
-from pyasn1.type import univ  # pylint: disable-msg=C6204,C6203
+from pyasn1.type import univ  # pylint: disable-msg=C6204,C6203  # noqa
 
 univ.SequenceAndSetBase.__getitem__ = F
 del F, univ
@@ -56,9 +49,9 @@ del F, univ
 
 
 def get_auth_data(filename):
-    with file(filename, 'rb') as objf:
+    with open(filename, 'rb') as objf:
         fingerprinter = fingerprint.Fingerprinter(objf)
-        is_pecoff = fingerprinter.EvalPecoff()
+        # is_pecoff = fingerprinter.EvalPecoff()  # TODO(frennkie) remove - is never used
         fingerprinter.EvalGeneric()
         results = fingerprinter.HashIt()
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -24,22 +25,8 @@ except ImportError:
     HAVE_PEHASH = False
 
 try:
-<<<<<<< HEAD
-<<<<<<< HEAD
     from .sigs_helper.sigs_helper import get_auth_data
     from .verifysigs.asn1utils import dn
-||||||| parent of 5302faa... Initial refactoring for python3 support
-    from .sigs_helper.sigs_helper import get_auth_data
-    from verifysigs.asn1utils import dn
-=======
-    from .sigs_helper.verifysigs import get_auth_data
-||||||| parent of 23be87f... Make python2 happy
-    from .sigs_helper.verifysigs import get_auth_data
-=======
-    from .sigs_helper.sigs_helper import get_auth_data
->>>>>>> 23be87f... Make python2 happy
-    from verifysigs.asn1utils import dn
->>>>>>> 5302faa... Initial refactoring for python3 support
     HAVE_VERIFYSIGS = True
 except ImportError:
     HAVE_VERIFYSIGS = False
@@ -103,6 +90,9 @@ class PE(Module):
         parser_peh.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
 
         self.pe = None
+
+        self.result_compile_time = None
+        self.result_sections = None
 
     def __check_session(self):
         if not __sessions__.is_set():
@@ -268,7 +258,8 @@ class PE(Module):
         if not self.__check_session():
             return
 
-        compile_time = get_compiletime(self.pe)
+        self.result_compile_time = get_compiletime(self.pe)
+        compile_time = self.result_compile_time
         self.log('info', "Compile Time: {0}".format(bold(compile_time)))
 
         if self.args.scan:
@@ -939,6 +930,7 @@ class PE(Module):
                 section.get_entropy()
             ])
 
+        self.result_sections = rows
         self.log('info', "PE Sections:")
         self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'PointerToRawData', 'RawDataSize', 'Entropy'], rows=rows))
 
