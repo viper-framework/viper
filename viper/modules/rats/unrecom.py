@@ -22,7 +22,7 @@ def extract_embedded(zip_data):
                 print_info("Encryption Key {0}".format(zip.read(name)))
             if name == "load/MANIFEST.MF":  # this is the embedded jar
                 raw_embedded = zip.read(name)
-    if raw_embedded:
+    if raw_embedded is not None:
         # Decrypt The raw file
         dec_embedded = decrypt_arc4(enckey, raw_embedded)
         return dec_embedded

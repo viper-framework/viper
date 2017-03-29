@@ -87,7 +87,7 @@ def config(data):
             conf['P2PSpread'] = xor(raw_conf[71])
             conf['GoogleChromePasswords'] = xor(raw_conf[73])
 
-        if xor(raw_conf[57]) == 0 or xor(raw_conf[57]):
+        if xor(raw_conf[57]) == 0 or xor(raw_conf[57]) is None:
             conf['ProcessInjection'] = 'Disabled'
         elif xor(raw_conf[57]) == 1:
             conf['ProcessInjection'] = 'Default Browser'

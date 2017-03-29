@@ -53,7 +53,7 @@ def get_long_line(data):
                         raw_config = data
     except:
         raw_config = None
-    if raw_config:
+    if raw_config is not None:
         return raw_config, 'V1'
     try:
         m = re.search('\x69\x00\x6F\x00\x6E\x00\x00\x59(.*)\x6F\x43\x00\x61\x00\x6E', data)
@@ -96,7 +96,7 @@ def get_parts(long_line):
 
 def config(data):
     long_line, ver = get_long_line(data)
-    if ver:
+    if ver is None:
         return
     config_list = []
     if ver == 'V1':
