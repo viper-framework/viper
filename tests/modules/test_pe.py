@@ -5,6 +5,7 @@
 import os
 import re
 from datetime import datetime
+
 import pytest
 from tests.conftest import FIXTURE_DIR
 
@@ -53,7 +54,7 @@ class TestPE:
         assert re.search(r".*argument subname: invalid choice.*", out)
 
     @pytest.mark.parametrize("filename, expected", [
-        ("chromeinstall-8u31.exe", datetime(2014, 12, 18, 7, 32, 5)),
+        ("chromeinstall-8u31.exe", datetime(2014, 12, 18, 6, 32, 5)),
     ])
     def test_compiletime(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))

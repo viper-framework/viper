@@ -119,7 +119,6 @@ class SWF(Module):
 
                 self.log('info', "Flash object dumped at {0}".format(dump_path))
 
-
                 # Set the parent-child relation between CWS-FWS
                 this_parent = __sessions__.current.file.sha256
                 # Directly open a session on the dumped Flash object.
@@ -131,7 +130,6 @@ class SWF(Module):
                     self.log('error', "the parent file is not found in the database. ")
                 else:
                     db.add_parent(__sessions__.current.file.sha256, this_parent)
-
 
     def run(self):
 
