@@ -55,7 +55,10 @@ class RAT(Module):
             self.log('error', "There is no module for family {0}".format(bold(family)))
             return
 
-        config = module.config(__sessions__.current.file.data)
+        try:
+            config = module.config(__sessions__.current.file.data)
+        except:
+            config = None
         if not config:
             self.log('error', "No Configuration Detected")
             return

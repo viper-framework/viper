@@ -15,6 +15,10 @@ from viper.core.session import __sessions__
 
 
 class TestRAT:
+
+    def teardown_method(self):
+        __sessions__.close()
+
     def test_init(self):
         instance = rat.RAT()
         assert isinstance(instance, Module)
@@ -55,7 +59,6 @@ class TestRAT:
 
         instance.run()
         out, err = capsys.readouterr()
-        # TODO(frennkie) this is failing.. why is _sessinons__.is.set() True here?!
         assert re.search(r'.*No open session.*', out)
 
     def test_run_family_no_session(self, capsys):
@@ -64,7 +67,6 @@ class TestRAT:
 
         instance.run()
         out, err = capsys.readouterr()
-        # TODO(frennkie) this is failing.. why is _sessinons__.is.set() True here?!
         assert re.search(r'.*No open session.*', out)
 
     @pytest.mark.parametrize("filename, expected", [
@@ -104,6 +106,7 @@ class TestRAT:
         # ("chromeinstall-8u31.exe", True),
     ])
     def test_run_family_adwind(self, capsys, filename, expected):
+        # FIXME: this test isn't really useful.
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
 
         instance = rat.RAT()
@@ -114,4 +117,4 @@ class TestRAT:
         if expected:
             assert re.search(r'.*Automatically detected supported.*', out)
         else:
-            assert re.search(r'.*No known RAT detected.*', out)
+            assert re.search(r'.*No Configuration Detected.*', out)
