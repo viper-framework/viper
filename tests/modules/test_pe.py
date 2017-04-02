@@ -85,7 +85,6 @@ class TestPE:
         assert re.search(r".*PE Sections.*", lines[1])
         assert len(instance.result_sections) == expected
 
-
     # @pytest.mark.parametrize("filename, expected", [
     #     ("cmd.exe", 9),
     # ])

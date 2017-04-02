@@ -6,11 +6,8 @@ import string
 from struct import unpack
 
 
-def calc_length(byteStr):
-    # try:
-    return unpack(">H", byteStr)[0]
-    # except:
-    # return None
+def calc_length(byte_str):
+    return unpack(">H", byte_str)[0]
 
 
 def string_print(line):

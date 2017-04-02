@@ -18,7 +18,6 @@ def string_clean(line):
 
 # Crypto Stuffs
 def decrypt_string(key, salt, coded):
-    # try:
     # Derive key
     generator = PBKDF2(key, salt)
     aes_iv = generator.read(16)
@@ -28,8 +27,6 @@ def decrypt_string(key, salt, coded):
     cipher = AES.new(aes_key, mode, IV=aes_iv)
     value = cipher.decrypt(b64decode(coded)).replace('\x00', '')
     return value  # .encode('hex')
-    # except:
-    # return False
 
 
 # Get a list of strings from a section
@@ -46,11 +43,12 @@ def get_strings(pe, dir_type):
 
 # Turn the strings in to a python config_dict
 
-# Duplicate strings dont seem to be duplicated so we need to catch them
+# Duplicate strings don't seem to be duplicated so we need to catch them
 def config_1(key, salt, string_list):
     config_dict = {}
     for i in range(40):
         if len(string_list[1]) > 200:
+            # FIXME(frennkie): the next line doesn't do anything.. what could be a possible reason for it?
             config_dict["Embedded File found at {0}".format(i)]
         else:
             try:
