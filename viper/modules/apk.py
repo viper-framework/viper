@@ -6,13 +6,11 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 try:
-    from androguard.core import *
-    from androguard.core.bytecodes.dvm import *
-    from androguard.core.bytecodes.apk import *
-    from androguard.core.analysis.analysis import *
-    from androguard.core.analysis.ganalysis import *
-    from androguard.decompiler.decompiler import *
-
+    from androguard.core.bytecodes.dvm import DalvikVMFormat
+    from androguard.core.bytecodes.apk import APK, androconf
+    from androguard.core.analysis import analysis
+    from androguard.decompiler.decompiler import DecompilerDAD, DecompilerDed, DecompilerDex2Jad
+    from androguard.decompiler.dad.decompile import DvMethod
     HAVE_ANDROGUARD = True
 except Exception:
     HAVE_ANDROGUARD = False
@@ -46,6 +44,7 @@ class AndroidPackage(Module):
 
             :rtype: return the :class:`APK`, :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
             """
+
             a = APK(filename, raw)
             d, dx = analyze_dex(a.get_dex(), raw=True, decompiler=decompiler)
             return a, d, dx
@@ -58,6 +57,8 @@ class AndroidPackage(Module):
             :type filename: string
             :param raw: True is you would like to use a buffer (optional)
             :type raw: boolean
+            :param decompiler: the type of decompiler to use ("dad", "dex2jad", "ded")
+            :type decompiler: string
 
             :rtype: return the :class:`DalvikVMFormat`, and :class:`VMAnalysis` objects
             """
@@ -66,15 +67,10 @@ class AndroidPackage(Module):
                 d = DalvikVMFormat(filename)
             else:
                 d = DalvikVMFormat(open(filename, "rb").read())
-            d.create_python_export()
-            dx = uVMAnalysis(d)
-            gx = GVMAnalysis(dx, None)
+            dx = analysis.Analysis(d)
             d.set_vmanalysis(dx)
-            d.set_gvmanalysis(gx)
             run_decompiler(d, dx, decompiler)
-            d.create_xref()
-            d.create_dref()
-
+            dx.create_xref()
             return d, dx
 
         def run_decompiler(d, dx, decompiler):
@@ -141,7 +137,7 @@ class AndroidPackage(Module):
 
                 if method.get_code() is None:
                     continue
-                ms = decompile.DvMethod(mx)
+                ms = DvMethod(mx)
                 ms.process()
                 with open(dump_path, 'a+') as outfile:
                     outfile.write(str(method.get_class_name()))
