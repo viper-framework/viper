@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
 # Originally written by Brian Wallace (@botnet_hunter):
 # http://blog.cylance.com/a-study-in-bots-blackshades-net
 
 import re
 
 PRNG_SEED = 0
+
 
 def is_valid_config(config):
     if config[:3] != "\x0c\x0c\x0c":
@@ -12,10 +14,12 @@ def is_valid_config(config):
         return False
     return True
 
+
 def get_next_rng_value():
     global PRNG_SEED
     PRNG_SEED = ((PRNG_SEED * 1140671485 + 12820163) & 0xffffff)
     return PRNG_SEED / 65536
+
 
 def decrypt_configuration(hex):
     global PRNG_SEED
@@ -28,12 +32,13 @@ def decrypt_configuration(hex):
 
     for x in range(0xffffff):
         PRNG_SEED = x
-        if get_next_rng_value() != pre_check[0] or get_next_rng_value() != pre_check[1] or get_next_rng_value() != pre_check[2]:
+        if get_next_rng_value() != pre_check[0] or get_next_rng_value() != pre_check[1] or get_next_rng_value() != pre_check[2]:  # noqa
             continue
         PRNG_SEED = x
         config = "".join((chr(ord(c) ^ int(get_next_rng_value())) for c in tail))
         if is_valid_config(config):
             return config.split("\x0c\x0c\x0c")
+
 
 def config_extract(raw_data):
     config_pattern = re.findall('[0-9a-fA-F]{154,}', raw_data)
@@ -41,6 +46,7 @@ def config_extract(raw_data):
         if (len(s) % 2) == 1:
             s = s[:-1]
         return s
+
 
 def config_parser(config):
     config_dict = {}
@@ -63,7 +69,8 @@ def config_parser(config):
     config_dict['Smart DNS'] = config[17]
     config_dict['Protect Process'] = config[18]
     return config_dict
-        
+
+
 def config(data):
     raw_config = config_extract(data)
     if raw_config:

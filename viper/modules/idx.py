@@ -1,4 +1,5 @@
-# Originally written by Brian Baskin (@bbaskin):
+# -*- coding: utf-8 -*-
+#  Originally written by Brian Baskin (@bbaskin):
 # https://github.com/Rurik/Java_IDX_Parser
 # See the file 'LICENSE' for copying permission.
 
@@ -55,7 +56,7 @@ class IDX(Module):
             len_URL = struct.unpack('b', data.read(1))[0]
             data_URL = data.read(len_URL)
             # keep those 2 unused variables
-            namespace_len = struct.unpack('>h', data.read(2))[0]
+            namespace_len = struct.unpack('>h', data.read(2))[0]  # noqa
             sec2_fields = struct.unpack('>l', data.read(4))[0]
             sec_two.append(['URL', data_URL])
 
@@ -129,8 +130,8 @@ class IDX(Module):
         file_size = __sessions__.current.file.size
 
         # Keep those 2 unused variables
-        busy_byte = data.read(1)
-        complete_byte = data.read(1)
+        busy_byte = data.read(1)  # noqa
+        complete_byte = data.read(1)  # noqa
 
         cache_ver = struct.unpack('>i', data.read(4))[0]
         if cache_ver not in (602, 603, 604, 605, 606):
@@ -144,7 +145,7 @@ class IDX(Module):
             elif cache_ver == 605:
                 data.seek(6)
             # Not used, keep
-            is_shortcut_img = data.read(1)
+            is_shortcut_img = data.read(1)  # noqa
             content_len = struct.unpack('>l', data.read(4))[0]
             last_modified_date = struct.unpack('>q', data.read(8))[0] / 1000
             expiration_date = struct.unpack('>q', data.read(8))[0] / 1000
@@ -165,7 +166,7 @@ class IDX(Module):
                 sec5_len = 0
             elif cache_ver in [603, 604, 605]:
                 # Not used, keep
-                known_to_be_signed = data.read(1)
+                known_to_be_signed = data.read(1)  # noqa
 
                 sec2_len = struct.unpack('>i', data.read(4))[0]
                 sec3_len = struct.unpack('>i', data.read(4))[0]
@@ -176,8 +177,8 @@ class IDX(Module):
                 cert_expiration_date = struct.unpack('>q', data.read(8))[0] / 1000
 
                 # Not used, keep
-                class_verification_status = data.read(1)
-                reduced_manifest_length = struct.unpack('>l', data.read(4))[0]
+                class_verification_status = data.read(1)  # noqa
+                reduced_manifest_length = struct.unpack('>l', data.read(4))[0]  # noqa
 
                 sec_one.append(['Section 2 length', sec2_len])
                 if sec3_len:

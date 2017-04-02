@@ -9,6 +9,7 @@ except:
     HAVE_TERMTAB = False
 
 import textwrap
+import six
 
 from viper.common.colors import cyan, yellow, red, green, bold
 
@@ -41,12 +42,7 @@ def table(header, rows):
     # TODO: Refactor this function, it is some serious ugly code.
 
     content = [header] + rows
-    # Make sure everything is string
-    try:
-        content = [[a.replace('\t', '  ') for a in list(map(unicode, l))] for l in content]
-    except:
-        # Python3 way of doing it:
-        content = [[a.replace('\t', '  ') for a in list(map(str, l))] for l in content]
+    content = [[a.replace('\t', '  ') for a in list(map(six.text_type, l))] for l in content]
     t = AsciiTable(content)
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
@@ -91,6 +87,7 @@ def print_output(output, filename=None):
                     out.write('\n')
                 else:
                     out.write('{0}\n'.format(entry['data']))
+        print_success("Output written to {0}".format(filename))
     else:
         for entry in output:
             if entry['type'] == 'info':

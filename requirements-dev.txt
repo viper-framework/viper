@@ -19,6 +19,8 @@ pylzma
 pymisp
 pypdns
 pypssl
+pytest
+pytest-cov
 python-dateutil
 python-magic
 r2pipe
@@ -29,6 +31,7 @@ six
 terminaltables
 tox
 virustotal-api
+yara-python
 git+https://github.com/viper-framework/pefile.git#egg=pefile
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 git+https://github.com/crackinglandia/pype32.git#egg=pype32

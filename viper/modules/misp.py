@@ -98,7 +98,7 @@ class MISP(Module):
         parser_down = subparsers.add_parser('download', help='Download malware samples from MISP.')
         group = parser_down.add_mutually_exclusive_group()
         group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID.")
-        group.add_argument("-l", "--list", nargs='*', help="Download all the samples related to a list of events. Empty list to download all the samples of all the events stored in the current project.")
+        group.add_argument("-l", "--list", nargs='*', help="Download all the samples related to a list of events. Empty list to download all the samples of all the events stored in the current project.")  # noqa
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
         # ##### Search in MISP #####
@@ -303,7 +303,7 @@ class MISP(Module):
     def _find_related_id(self, event):
         if not event.RelatedEvent:
             return []
-        related = [(event.id, event.info) for event in event.RelatedEvent]
+        related = [(_event.id, _event.info) for _event in event.RelatedEvent]
         to_return = list(set(related))
         to_return.sort(key=lambda tup: tup[0])
         return to_return

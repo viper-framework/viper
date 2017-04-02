@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/DarkComet.py
 
@@ -37,7 +38,7 @@ def rc4crypt(data, key):
         y = (y + box[x]) % 256
         box[x], box[y] = box[y], box[x]
         out.append(chr(ord(char) ^ box[(box[x] + box[y]) % 256]))
-    
+
     return ''.join(out)
 
 
@@ -57,7 +58,7 @@ def v51_data(data, key):
 
 def version_check(raw_data):
     if '#KCMDDC2#' in raw_data:
-        return '#KCMDDC2#-890' 
+        return '#KCMDDC2#-890'
     elif '#KCMDDC4#' in raw_data:
         return '#KCMDDC4#-890'
     elif '#KCMDDC42#' in raw_data:
@@ -72,26 +73,26 @@ def version_check(raw_data):
         return None
 
 
-def extract_config(raw_data, key):            
+def extract_config(raw_data, key):
     config = BASE_CONFIG
 
     pe = pefile.PE(data=raw_data)
-    
+
     rt_string_idx = [
         entry.id for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries
-    ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+        ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
     rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
-    
+
     for entry in rt_string_directory.directory.entries:
         if str(entry.name) == 'DCDATA':
             data_rva = entry.directory.entries[0].data.struct.OffsetToData
             size = entry.directory.entries[0].data.struct.Size
-            data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
+            data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
             config = v51_data(data, key)
         elif str(entry.name) in list(config.keys()):
             data_rva = entry.directory.entries[0].data.struct.OffsetToData
             size = entry.directory.entries[0].data.struct.Size
-            data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
+            data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
             dec = rc4crypt(unhexlify(data), key)
             config[str(entry.name)] = [x for x in dec if x in string.printable]
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -89,6 +90,9 @@ class PE(Module):
         parser_peh.add_argument('-s', '--scan', action='store_true', help='Scan repository for matching samples')
 
         self.pe = None
+
+        self.result_compile_time = None
+        self.result_sections = None
 
     def __check_session(self):
         if not __sessions__.is_set():
@@ -254,7 +258,8 @@ class PE(Module):
         if not self.__check_session():
             return
 
-        compile_time = get_compiletime(self.pe)
+        self.result_compile_time = get_compiletime(self.pe)
+        compile_time = self.result_compile_time
         self.log('info', "Compile Time: {0}".format(bold(compile_time)))
 
         if self.args.scan:
@@ -925,6 +930,7 @@ class PE(Module):
                 section.get_entropy()
             ])
 
+        self.result_sections = rows
         self.log('info', "PE Sections:")
         self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'PointerToRawData', 'RawDataSize', 'Entropy'], rows=rows))
 
