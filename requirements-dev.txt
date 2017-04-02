@@ -50,3 +50,6 @@ git+https://github.com/viper-framework/oletools.git
 
 # clamd module
 pyclamd
+
+# apk module
+git+https://github.com/androguard/androguard.git
