@@ -12,7 +12,7 @@ import sys
 import re
 
 
-class TestCommands:
+class TestConsole:
 
     def test_init(self):
         instance = console.Console()

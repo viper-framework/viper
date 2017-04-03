@@ -200,6 +200,9 @@ class Database:
     # def __del__(self):
     #    self.engine.dispose()
 
+    def __repr__(self):
+        return "<{}>".format(self.__class__.__name__)
+
     def _connect_database(self, connection):
         if connection.startswith("mysql+pymysql"):
             self.engine = create_engine(connection)
