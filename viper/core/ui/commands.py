@@ -994,7 +994,7 @@ class Commands(object):
     #
     # This command is used to view or edit the parent child relationship between files.
     def cmd_parent(self, *args):
-        parser = argparse.ArgumentParser(prog='tags', description="Set the Parent for this file.")
+        parser = argparse.ArgumentParser(prog='parent', description="Set the Parent for this file.")
         parser.add_argument('-a', '--add', metavar='SHA256', help="Add parent file by sha256")
         parser.add_argument('-d', '--delete', action='store_true', help="Delete Parent")
         parser.add_argument('-o', '--open', action='store_true', help="Open The Parent")
