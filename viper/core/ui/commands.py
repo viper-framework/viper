@@ -148,7 +148,6 @@ class Commands(object):
             args = parser.parse_args(args)
         except:
             return
-
         target = " ".join(args.value)
 
         if not args.last and target is None:
@@ -927,8 +926,13 @@ class Commands(object):
 
         # Sort in to stats
         for item in items:
-            if '.' in item.name:
-                ext = item.name.split('.')
+            if isinstance(item.name, bytes):
+                # NOTE: In case you there are names stored as bytes in the database
+                name = item.name.decode()
+            else:
+                name = item.name
+            if '.' in name:
+                ext = name.split('.')
                 extension_dict[ext[-1]] += 1
             mime_dict[item.mime] += 1
             size_list.append(item.size)
