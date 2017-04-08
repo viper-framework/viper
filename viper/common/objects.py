@@ -102,7 +102,7 @@ class File(object):
         self.children = ''
 
         if self.is_valid():
-            if sys.version_info < (3, 4):
+            if sys.version_info < (3, 0):
                 # PY2SUPPORT
                 self.name = os.path.basename(self.path).encode('utf-8')
             else:
