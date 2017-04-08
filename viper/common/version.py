@@ -9,4 +9,3 @@
 
 __version_info__ = ('1', '3-dev')
 __version__ = '.'.join(__version_info__)
-
