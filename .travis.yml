@@ -12,8 +12,8 @@ python:
     - "3.5-dev"
     - 3.6
     - "3.6-dev"
-    - "3.7-dev"
-    - "nightly"
+      #- "3.7-dev"
+      #- "nightly"
 
 before_install:
     - sudo apt-get update -qq
@@ -25,8 +25,8 @@ before_install:
     - sudo make install
     - popd
 install:
-    - pip install -r requirements-dev.txt
-    - pip install tox-travis
+    - pip install -U -r requirements-dev.txt
+    - pip install -U tox-travis
 script:
     - echo "exit" | python viper-cli
     - tox
