@@ -18,6 +18,8 @@ from viper.common.utils import string_clean, string_clean_hex
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
+from io import open
+
 try:
     import olefile
 
@@ -371,7 +373,7 @@ class Office(Module):
                 # Save the code to external File
                 if save_path:
                     try:
-                        with open(save_path, 'a') as out:
+                        with open(save_path, 'ab') as out:
                             out.write(vba_code)
                         save = True
                     except:
