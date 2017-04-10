@@ -5,6 +5,7 @@
 import os
 import string
 import hashlib
+import binascii
 
 try:
     import magic
@@ -60,19 +61,20 @@ def get_md5(data):
 
 def string_clean(line):
     try:
+        if isinstance(line, bytes):
+            line = line.decode()
         return ''.join([x for x in line if x in string.printable])
     except:
         return line
 
 
 def string_clean_hex(line):
-    line = str(line)
     new_line = ''
     for c in line:
         if c in string.printable:
             new_line += c
         else:
-            new_line += '\\x' + c.encode('hex')
+            new_line += '\\x' + binascii.hexlify(c.encode()).decode()
     return new_line
 
 

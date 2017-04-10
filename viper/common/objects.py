@@ -7,7 +7,7 @@ import hashlib
 import binascii
 import sys
 
-if sys.version_info < (3, 4):
+if sys.version_info < (3, 0):
     # Make sure the read method returns a byte stream
     from io import open
 
@@ -123,19 +123,14 @@ class File(object):
 
     def get_chunks(self):
         try:
-            fd = open(self.path, 'rb')
-        # TODO: fix this up better.
-        except Exception:  # as e:  <- this need to be fixed anyway!
+            with open(self.path, 'rb') as fd:
+                while True:
+                    chunk = fd.read(16 * 1024)
+                    if not chunk:
+                        break
+                    yield chunk
+        except Exception:
             return
-
-        while True:
-            chunk = fd.read(16 * 1024)
-            if not chunk:
-                break
-
-            yield chunk
-
-        fd.close()
 
     def get_hashes(self):
         crc = 0
@@ -162,7 +157,7 @@ class File(object):
             return ''
 
         try:
-            return pydeep.hash_file(self.path)
+            return pydeep.hash_file(self.path).decode()
         except Exception:
             return ''
 
