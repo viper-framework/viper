@@ -13,6 +13,7 @@ import zlib
 import struct
 import zipfile
 import xml.etree.ElementTree as ET
+import sys
 
 from viper.common.utils import string_clean, string_clean_hex
 from viper.common.abstracts import Module
@@ -23,9 +24,9 @@ from io import open
 try:
     import olefile
 
-    try:
+    if sys.version_info >= (3, 0):
         from oletools.olevba3 import VBA_Parser, VBA_Scanner
-    except:
+    else:
         from oletools.olevba import VBA_Parser, VBA_Scanner
     HAVE_OLE = True
 except ImportError:
