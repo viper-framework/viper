@@ -77,7 +77,7 @@ class Office(Module):
     def detect_flash(self, section):
         if not HAVE_XXXSWF:
             self.log('warning', 'Unable to search for Flash objects, requires xxxswf')
-            return
+            return []
         section = BytesIO(section)
         swf = xxxswf.xxxswf()
         swf_data = swf.find_swf(section)
