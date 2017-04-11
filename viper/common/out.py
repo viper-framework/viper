@@ -42,7 +42,7 @@ def table(header, rows):
     # TODO: Refactor this function, it is some serious ugly code.
 
     content = [header] + rows
-    content = [[a.replace('\t', '  ') for a in list(map(six.text_type, l))] for l in content]
+    content = [[a.replace('\t', '  ').replace('\v', '\\v') for a in list(map(six.text_type, l))] for l in content]
     t = AsciiTable(content)
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
