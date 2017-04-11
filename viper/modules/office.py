@@ -8,8 +8,6 @@ http://www.decalage.info/python/oletools
 '''
 
 import os
-import re
-import zlib
 import struct
 import zipfile
 import xml.etree.ElementTree as ET
@@ -19,7 +17,7 @@ from viper.common.utils import string_clean, string_clean_hex
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
-from io import open
+from io import BytesIO, open
 
 try:
     import olefile
@@ -31,6 +29,12 @@ try:
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
+
+try:
+    from xxxswf import xxxswf
+    HAVE_XXXSWF = True
+except ImportError:
+    HAVE_XXXSWF = False
 
 
 class Office(Module):
@@ -51,52 +55,43 @@ class Office(Module):
     # HELPER FUNCTIONS
     #
 
-    def detect_flash(self, data):
-        matches = []
-        for match in re.finditer(b'CWS|FWS', data):
-            start = match.start()
-            if (start + 8) > len(data):
-                # Header size larger than remaining data,
-                # this is not a SWF.
-                continue
+    def print_swf_header_info(self, header):
+        if header is None:
+            self.log('warning', 'Error could not read header')
+            return
+        self.log('item', 'File Header: {}'.format(header['signature'].decode()))
+        if header['compression'] is not None:
+            self.log('item', 'Compression Type: {}'.format(header['compression']))
+        if header['compression'] is 'lzma':
+            self.log('item', 'Compressed Data Length: {}'.format(header['compressed_len']))
+        self.log('item', 'File Veader: {}'.format(header['version']))
+        self.log('item', 'File Size: {}'.format(header['file_length']))
+        self.log('item', 'Rect Nbit: {}'.format(header['nbits']))
+        self.log('item', 'Rect Xmin: {}'.format(header['xmin']))
+        self.log('item', 'Rect Xmax: {}'.format(header['xmax']))
+        self.log('item', 'Rect Ymin: {}'.format(header['ymin']))
+        self.log('item', 'Rect Ymax: {}'.format(header['ymax']))
+        self.log('item', 'Frame Rate: {}'.format(header['frame_rate']))
+        self.log('item', 'Frace Count: {}'.format(header['frame_count']))
 
-            # TODO: one struct.unpack should be simpler.
-            # Read Header
-            header = data[start:start + 3]
-            # Read Version
-            ver = struct.unpack('<b', data[start + 3])[0]
-            # Error check for version above 20
-            # TODO: is this accurate? (check SWF specifications).
-            if ver > 20:
-                continue
+    def detect_flash(self, section):
+        if not HAVE_XXXSWF:
+            self.log('warning', 'Unable to search for Flash objects, requires xxxswf')
+            return
+        section = BytesIO(section)
+        swf = xxxswf.xxxswf()
+        swf_data = swf.find_swf(section)
+        if len(swf_data) == 0:
+            return []
 
-            # Read SWF Size.
-            size = struct.unpack('<i', data[start + 4:start + 8])[0]
-            if (start + size) > len(data) or size < 1024:
-                # Declared size larger than remaining data, this is not
-                # a SWF or declared size too small for a usual SWF.
-                continue
-
-            # Read SWF into buffer. If compressed read uncompressed size.
-            swf = data[start:start + size]
-            is_compressed = False
-            swf_deflate = None
-            if b'CWS' in header:
-                is_compressed = True
-                # Data after header (8 bytes) until the end is compressed
-                # with zlib. Attempt to decompress it to check if it is valid.
-                compressed_data = swf[8:]
-
-                try:
-                    swf_deflate = zlib.decompress(compressed_data)
-                except:
-                    continue
-
-            # Else we don't check anything at this stage, we only assume it is a
-            # valid SWF. So there might be false positives for uncompressed SWF.
-            matches.append((start, size, is_compressed, swf, swf_deflate))
-
-        return matches
+        full_content = section.getvalue()
+        to_return = []
+        for index, start in enumerate(swf_data):
+            swf = swf.verify_swf(full_content[start:], 0)
+            if swf:
+                headers = xxxswf.SwfHeader(swf)
+                to_return.append((headers.header, swf))
+        return to_return
 
     ##
     # OLE FUNCTIONS
@@ -174,20 +169,13 @@ class Office(Module):
                 self.log('info', "Saving Flash objects...")
                 count = 1
 
-                for flash in flash_objects:
-                    # If SWF Is compressed save the swf and the decompressed data seperatly.
-                    if flash[2]:
-                        save_path = '{0}-FLASH-Decompressed{1}'.format(store_path, count)
-                        with open(save_path, 'wb') as flash_out:
-                            flash_out.write(flash[4])
-
-                        self.log('item', "Saved Decompressed Flash File to {0}".format(save_path))
-
-                    save_path = '{0}-FLASH-{1}'.format(store_path, count)
+                for header, flash_object in flash_objects:
+                    self.print_swf_header_info(header)
+                    save_path = '{0}-FLASH-Decompressed{1}'.format(store_path, count)
                     with open(save_path, 'wb') as flash_out:
-                        flash_out.write(flash[3])
+                        flash_out.write(flash_object)
 
-                    self.log('item', "Saved Flash File to {0}".format(save_path))
+                    self.log('item', "Saved Decompressed Flash File to {0}".format(save_path))
                     count += 1
 
             with open(store_path, 'wb') as out:

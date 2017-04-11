@@ -86,8 +86,10 @@ class TestOffice:
 
         assert re.search(r".*Macros/kfjtir .* 2017-04-09 19:03:45.905000 | 2017-04-09 19:03:45.920000.*", out)
 
-    @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
-    def test_vba(self, capsys, filename):
+    @pytest.mark.parametrize("filename,expected",
+                             [("Douglas-Resume.doc", [r".*zxsfg.bas.*", r".*.paya.exe.*"]),
+                              ("9afa90370cfd217ae1ec36e752a393537878a2f3b5f9159f61690e7790904b0d", [r".*Workbook_Open.*", r".*SbieDll.dll.*"])])
+    def test_vba(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = office.Office()
         instance.command_line = ["-v"]
@@ -95,14 +97,10 @@ class TestOffice:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*ojerc.bas.*", out)
-        assert re.search(r".*kgfoto.frm.*", out)
-        assert re.search(r".*zxsfg.bas.*", out)
-        assert re.search(r".*May download files from the Internet using PowerShell.*", out)
-        assert re.search(r".*.paya.exe*", out)
-        assert re.search(r".*.\x08\x00+3q\xb5 .*| 08002B3371B5*", out)
+        for e in expected:
+            assert re.search(e, out)
 
-    @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
+    @pytest.mark.parametrize("filename", ["c026ebfa3a191d4f27ee72f34fa0d97656113be368369f605e7845a30bc19f6a"])
     def test_export(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = office.Office()
@@ -111,7 +109,7 @@ class TestOffice:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*Saved stream to out_all/Macros-VBA-kfjtir.*", out)
+        assert re.search(r".*out_all/ObjectPool-_1398590705-Contents-FLASH-Decompressed1.*", out)
 
     @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
     def test_code(self, capsys, filename):

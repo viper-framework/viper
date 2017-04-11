@@ -50,6 +50,9 @@ git+https://github.com/sebdraven/verify-sigs.git
 # office module
 olefile
 git+https://github.com/viper-framework/oletools.git
+## Flash lookup
+git+https://github.com/viper-framework/xxxswf.git
+
 
 # clamd module
 pyclamd
