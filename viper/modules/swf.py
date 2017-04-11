@@ -66,11 +66,13 @@ class SWF(Module):
         header, version, size, data = self.parse_swf()
         # Decompressed data.
         decompressed = None
+        compressed = True
 
         # Check if the file is already a decompressed Flash object.
         if header == b'FWS':
             self.log('info', "The opened file doesn't appear to be compressed")
-            return
+            decompressed = data
+            compressed = False
         # Check if the file is compressed with zlib.
         elif header == b'CWS':
             self.log('info', "The opened file appears to be compressed with Zlib")
@@ -110,7 +112,7 @@ class SWF(Module):
             # this. Paginate?
             self.log('', cyan(hexdump(decompressed)))
 
-            if dump_dir:
+            if compressed and dump_dir:
                 # Dump the decompressed SWF file to the specified directory
                 # or to the default temporary one.
                 dump_path = os.path.join(dump_dir, '{0}.swf'.format(get_md5(decompressed)))
