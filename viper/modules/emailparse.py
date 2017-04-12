@@ -12,6 +12,8 @@ import olefile
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
+from io import open
+
 
 class EmailParse(Module):
     cmd = 'email'
@@ -34,7 +36,11 @@ class EmailParse(Module):
 
         def string_clean(value):
             if value:
-                return re.sub('[\n\t\r]', '', value)
+                if isinstance(value, bytes):
+                    value = value.decode()
+                elif isinstance(value, email.header.Header):
+                    value = str(value)
+                return re.sub('[\n\t\r]', '', str(value))
             return ""
 
         def parse_ole_msg(ole):
@@ -413,13 +419,13 @@ class EmailParse(Module):
                 self.log('item', link)
             return
 
+        super(EmailParse, self).run(*args)
+        if self.args is None:
+            return
+
         # Start Here
         if not __sessions__.is_set():
             self.log('error', "No open session")
-            return
-
-        super(EmailParse, self).run(*args)
-        if self.args is None:
             return
 
         # see if we can load the dns library for MX lookup spoof detecton
