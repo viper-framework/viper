@@ -44,6 +44,7 @@ class EmailParse(Module):
             return ""
 
         def parse_ole_msg(ole):
+            email_header = None
             stream_dirs = ole.listdir()
             for stream in stream_dirs:
                 # get stream that contains the email header
@@ -56,6 +57,10 @@ class EmailParse(Module):
                 email_header = email_header.split('Version 2.0\x0d\x0a', 1)[1]
             except:
                 pass
+
+            if not email_header:
+                self.log('warning', 'This OLE file is not an email.')
+                return None
 
             # Leaving us an RFC compliant email to parse
             msg = email.message_from_string(email_header)
@@ -379,7 +384,7 @@ class EmailParse(Module):
                         part_content = part.get_payload(decode=True)
                         for link in re.findall(b'(https?://[^"<>\s]+)', part_content):
                             if link not in links:
-                                links.append(link)
+                                links.append(link.decode())
 
                     if content_type == 'message/rfc822':
                         part_content = part.as_string()
@@ -439,6 +444,9 @@ class EmailParse(Module):
         # Try to open as an ole msg, if not treat as email string
         try:
             ole = olefile.OleFileIO(__sessions__.current.file.data)
+            msg = parse_ole_msg(ole)
+            if not msg:
+                return
             ole_flag = True
         except:
             ole_flag = False
@@ -449,32 +457,20 @@ class EmailParse(Module):
                 msg = ole
             att_session(self.args.open, msg, ole_flag)
         elif self.args.envelope:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_envelope(msg)
         elif self.args.attach:
             if ole_flag:
                 msg = ole
             email_attachments(msg, ole_flag)
         elif self.args.header:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_header(msg)
         elif self.args.trace:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_trace(msg, False)
         elif self.args.traceall:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_trace(msg, True)
         elif self.args.spoofcheck:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_spoofcheck(msg, dnsenabled)
         elif self.args.all:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_envelope(msg)
             email_header(msg)
             email_trace(msg, True)

@@ -24,8 +24,10 @@ class TestCommands:
     def test_open(self, capsys):
         instance = commands.Commands()
         instance.cmd_open('-h')
+        instance.cmd_open('-u', 'https://github.com/viper-framework/viper-test-files/raw/master/test_files/cmd.exe')
         out, err = capsys.readouterr()
         assert re.search("usage: open \[-h\] .*", out)
+        assert re.search(".*Session opened on /tmp/.*", out)
 
     def test_notes(self, capsys):
         instance = commands.Commands()
