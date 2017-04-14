@@ -2,6 +2,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import sys
 import os
 import re
 import email
@@ -37,7 +38,10 @@ class EmailParse(Module):
         def string_clean(value):
             if value:
                 if isinstance(value, bytes):
-                    value = value.decode()
+                    if sys.version_info < (3, 4):
+                        value = value.decode('utf-8', 'ignore')
+                    else:
+                        value = value.decode('utf-8', 'backslashreplace')
                 elif isinstance(value, email.header.Header):
                     value = str(value)
                 return re.sub('[\n\t\r]', '', str(value))
@@ -450,7 +454,10 @@ class EmailParse(Module):
             ole_flag = True
         except:
             ole_flag = False
-            msg = email.message_from_bytes(__sessions__.current.file.data)
+            if sys.version_info < (3, 0):
+                msg = email.message_from_string(__sessions__.current.file.data)
+            else:
+                msg = email.message_from_bytes(__sessions__.current.file.data)
 
         if self.args.open is not None:
             if ole_flag:

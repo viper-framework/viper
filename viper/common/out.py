@@ -10,6 +10,7 @@ except:
 
 import textwrap
 import six
+import sys
 
 from viper.common.colors import cyan, yellow, red, green, bold
 
@@ -41,8 +42,19 @@ def table(header, rows):
 
     # TODO: Refactor this function, it is some serious ugly code.
 
-    content = [header] + rows
-    content = [[a.replace('\t', '  ').replace('\v', '\\v') for a in list(map(six.text_type, l))] for l in content]
+    content = []
+    for l in [header] + rows:
+        to_append = []
+        for a in l:
+            if isinstance(a, bytes):
+                if sys.version_info < (3, 4):
+                    a = a.decode('utf-8', 'ignore')
+                else:
+                    a = a.decode('utf-8', 'backslashreplace')
+            if not isinstance(a, six.text_type):
+                a = six.text_type(a)
+            to_append.append(a.replace('\t', '  ').replace('\v', '\\v'))
+        content.append(to_append)
     t = AsciiTable(content)
     if not t.ok:
         longest_col = t.column_widths.index(max(t.column_widths))
