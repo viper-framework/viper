@@ -115,7 +115,8 @@ class TestAPK:
         instance.command_line = ["-d hello-world.dump"]
 
         # TODO(frennkie) this test fails (Can't convert 'bytes' object to str implicitly)
-        # instance.run()
-        # out, err = capsys.readouterr()
-        #
-        # assert 0
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*Decompiling Code*", out)
+        assert re.search(r".*Decompiled code saved to*", out)
