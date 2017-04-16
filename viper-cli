@@ -6,6 +6,7 @@
 import argparse
 
 from viper.core.ui import console
+from viper.common.version import __version__
 from viper.core.project import __project__
 
 parser = argparse.ArgumentParser()
@@ -15,6 +16,11 @@ parser.add_argument(
     help='Specify a new or existing project name',
     action='store',
     required=False)
+
+parser.add_argument(
+    '--version',
+    action='version',
+    version=__version__)
 
 args = parser.parse_args()
 

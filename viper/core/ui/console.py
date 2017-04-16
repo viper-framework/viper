@@ -13,6 +13,7 @@ import traceback
 from viper.common.out import print_error
 # from viper.common.out import print_output  # currently not used
 from viper.common.colors import cyan, magenta, white, bold, blue
+from viper.common.version import __version__
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
@@ -35,9 +36,9 @@ def logo():
    _   _ _ ____  _____  ____
   | | | | |  _ \| ___ |/ ___)
    \ V /| | |_| | ____| |
-    \_/ |_|  __/|_____)_| v1.3-dev
+    \_/ |_|  __/|_____)_| v{}
           |_|
-    """)
+    """.format(__version__))
 
     db = Database()
     count = db.get_sample_count()
