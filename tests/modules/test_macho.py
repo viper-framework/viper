@@ -51,7 +51,7 @@ class TestMacho:
         lines = out.split("\n")
         assert re.search(r".*Not a Mach-O file.*", lines[1])
 
-    @pytest.mark.parametrize("filename", ["binary-samples/MachO-OSX-x86-ls"])
+    @pytest.mark.parametrize("filename", ["MachO-OSX-x86-ls"])
     def test_no_argument(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = Macho()
@@ -63,8 +63,8 @@ class TestMacho:
         assert re.search(r".*Session opened on.*", lines[0])
 
     @pytest.mark.parametrize("filename,magic,cputype", [
-        ("binary-samples/MachO-OSX-x86-ls", "0xfeedface - 32 bits", "0x7 - i386"),
-        ("binary-samples/MachO-OSX-x64-ls", "0xfeedfacf - 64 bits", "0x1000007 - x86_64")
+        ("MachO-OSX-x86-ls", "0xfeedface - 32 bits", "0x7 - i386"),
+        ("MachO-OSX-x64-ls", "0xfeedfacf - 64 bits", "0x1000007 - x86_64")
     ])
     def test_headers(self, capsys, filename, magic, cputype):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -80,7 +80,7 @@ class TestMacho:
         assert re.search(r".*{}.*".format(cputype), out)
 
     @pytest.mark.parametrize("filename,amount_segments", [
-        ("binary-samples/MachO-OSX-x86-ls", 4)
+        ("MachO-OSX-x86-ls", 4)
     ])
     def test_segments(self, capsys, filename, amount_segments):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -94,7 +94,7 @@ class TestMacho:
         assert re.search(r".*Segments \({}\)".format(amount_segments), lines[1])
 
     @pytest.mark.parametrize("filename,amount_commands", [
-        ("binary-samples/MachO-OSX-x86-ls", 12),
+        ("MachO-OSX-x86-ls", 12),
     ])
     def test_load_commands(self, capsys, filename, amount_commands):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -107,7 +107,7 @@ class TestMacho:
         lines = out.split("\n")
         assert re.search(r".*Load Commands \({}\)".format(amount_commands), lines[1])
 
-    @pytest.mark.parametrize("filename", ["binary-samples/MachO-OSX-x86-ls"])
+    @pytest.mark.parametrize("filename", ["MachO-OSX-x86-ls"])
     def test_all(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = Macho()
