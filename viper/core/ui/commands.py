@@ -11,7 +11,6 @@ import fnmatch
 import getpass
 import tempfile
 import argparse
-from zipfile import ZipFile
 from collections import defaultdict
 
 try:
