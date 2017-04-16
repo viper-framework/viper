@@ -16,6 +16,10 @@ from viper.core.session import __sessions__
 
 
 class TestMacho:
+
+    def teardown_method(self):
+        __sessions__.close()
+
     def test_init(self):
         instance = Macho()
         assert isinstance(instance, Macho)
@@ -30,6 +34,7 @@ class TestMacho:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Get Macho OSX Headers.*")
 
+    @pytest.mark.usefixtures("cleandir")
     def test_no_session(self, capsys):
         instance = Macho()
         instance.command_line = ["-a"]
