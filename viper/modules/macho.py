@@ -42,22 +42,22 @@ class Macho(Module):
         # List general info
         def macho_headers(m):
             self.log('info', "Headers: ")
-            magic = "magic : 0x%x %s" % (m.header.magic, "- " + m.header.display_magic())
+            magic = "magic : 0x{0:x} - {1}".format(m.header.magic, m.header.display_magic())
             self.log('item', magic)
-            cputype = "cputype : 0x%x %s" % (m.header.cputype, "- " + m.header.display_cputype())
+            cputype = "cputype : 0x{0:x} - {1}".format(m.header.cputype, m.header.display_cputype())
             self.log('item', cputype)
-            cpu_subtype = "cpusubtype : 0x%s" % (m.header.cpusubtype)
+            cpu_subtype = "cpusubtype : 0x{0}".format(m.header.cpusubtype)
             self.log('item', cpu_subtype)
-            filetype = "filetype : 0x%x %s" % (m.header.filetype, "- " + m.header.display_filetype())
+            filetype = "filetype : 0x{0:x} - {1}".format(m.header.filetype, m.header.display_filetype())
             self.log('item', filetype)
-            ncmds = "ncmds : %d" % (m.header.ncmds)
+            ncmds = "ncmds : {0}".format(m.header.ncmds)
             self.log('item', ncmds)
-            sizeofcmds = "sizeofcmds : %d bytes" % (m.header.sizeofcmds)
+            sizeofcmds = "sizeofcmds : {0} bytes".format(m.header.sizeofcmds)
             self.log('item', sizeofcmds)
-            flags = "flags : 0x%x %s" % (m.header.flags, "- " + ", ".join(m.header.display_flags()))
+            flags = "flags : 0x{0:x} - {1}".format(m.header.flags, ", ".join(m.header.display_flags()))
             self.log('item', flags)
             if m.header.is_64():
-                reserved = "reserved : 0x%x" % (m.header.reserved)
+                reserved = "reserved : 0x{0:x}".format(m.header.reserved)
                 self.log('item', reserved)
 
                 # self.log('item', "filetype: 0x{0}".format(m.header.display_filetype()))
@@ -66,7 +66,7 @@ class Macho(Module):
         # print all load commands
         # TODO replace display method
         def macho_load_commands(m):
-            load_commands = " Load Commands (%d)" % len(m.commands)
+            load_commands = " Load Commands ({})".format(len(m.commands))
             self.log('info', load_commands)
             for lc in m.commands:
                 lc.display("\t")
@@ -74,7 +74,7 @@ class Macho(Module):
         # print all segments
         # TODO replace display method
         def macho_segments(m):
-            segments = " Segments (%d)" % len(m.segments)
+            segments = " Segments ({})".format(len(m.segments))
             self.log('info', segments)
             for segment in m.segments:
                 segment.display(before="\t")
@@ -82,7 +82,7 @@ class Macho(Module):
         try:
             m = MachO(__sessions__.current.file.path)
         except Exception as e:
-            self.log('error', "No Mach0 file, {0}".format(e))
+            self.log('error', "Not a Mach-O file: {0}".format(e))
             return
 
         if self.args is None:

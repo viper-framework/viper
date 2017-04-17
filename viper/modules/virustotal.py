@@ -153,17 +153,25 @@ class VirusTotal(Module):
         self.log('info', "{} out of {} scans detected {} as malicious.".format(virustotal['positives'], virustotal['total'], bold(url)))
         self.log('info', virustotal['permalink'])
 
-    def _display_verbose_scan(self, scans, query):
+    def _display_verbose_scan(self, virustotal, query):
+        self.log('success', "VirusTotal Report for {}:".format(bold(query)))
+        if 'times_submitted' in virustotal and 'first_seen' in virustotal:
+            self.log('info', 'Submitted {} times and seen first on {}.'.format(virustotal['times_submitted'], virustotal['first_seen']))
+
+        if 'submission_names' in virustotal:
+            self.log('info', 'Known names:')
+            for item in virustotal['submission_names']:
+                self.log('item', item)
+
         rows = []
-        if scans:
-            for engine, signature in scans.items():
+        if 'scans' in virustotal:
+            for engine, signature in virustotal['scans'].items():
                 if signature['detected']:
                     rows.append([engine, signature['result']])
                     signature = signature['result']
-
         rows.sort()
         if rows:
-            self.log('success', "VirusTotal Report for {}:".format(bold(query)))
+            self.log('info', "Detecting engines:")
             self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
 
     # ####### Helpers for open ########
@@ -279,7 +287,7 @@ class VirusTotal(Module):
             return True
 
         if verbose:
-            self._display_verbose_scan(virustotal['scans'], to_search)
+            self._display_verbose_scan(virustotal, to_search)
 
         self.log('info', "{} out of {} antivirus detected {} as malicious.".format(virustotal['positives'], virustotal['total'], bold(to_search)))
         self.log('info', virustotal['permalink'] + '\n')

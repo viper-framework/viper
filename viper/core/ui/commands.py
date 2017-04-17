@@ -8,9 +8,9 @@ import time
 import json
 import shutil
 import fnmatch
+import getpass
 import tempfile
 import argparse
-from zipfile import ZipFile
 from collections import defaultdict
 
 try:
@@ -31,6 +31,7 @@ from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.config import Config, console_output
 from viper.common.autorun import autorun_module
+from viper.core.archiver import Compressor
 
 cfg = Config()
 
@@ -39,6 +40,22 @@ try:
     input = raw_input
 except NameError:
     pass
+
+
+def get_password_once():
+    password = getpass.getpass('Password: ')
+    if password:
+        return password
+    else:
+        return False
+
+
+def get_password_twice():
+    password = getpass.getpass('Password: ')
+    if password == getpass.getpass('confirm Password: '):
+        return password
+    else:
+        return False
 
 
 class Commands(object):
@@ -177,13 +194,16 @@ class Commands(object):
         # the last find command.
         elif args.last:
             if __sessions__.find:
-                count = 1
-                for item in __sessions__.find:
-                    if count == int(target):
+                try:
+                    target = int(target)
+                except ValueError:
+                    self.log('warning', "Please pass the entry number from the last find to -l/--last (e.g. open -l 5)")
+                    return
+
+                for idx, item in enumerate(__sessions__.find, start=1):
+                    if idx == target:
                         __sessions__.new(get_sample_path(item.sha256))
                         break
-
-                    count += 1
             else:
                 self.log('warning', "You haven't performed a find yet")
         # Otherwise we assume it's an hash of an previously stored sample.
@@ -846,7 +866,9 @@ class Commands(object):
     # This command will export the current session to file or zip.
     def cmd_export(self, *args):
         parser = argparse.ArgumentParser(prog='export', description="Export the current session to file or zip")
-        parser.add_argument('-z', '--zip', action='store_true', help="Export session in a zip archive")
+        parser.add_argument('-z', '--zip', action='store_true', help="Export session in a zip archive (PW support: No)")
+        parser.add_argument('-7', '--sevenzip', action='store_true', help="Export session in a 7z archive (PW support: Yes)")
+        parser.add_argument('-p', '--password', action='store_true', help="Protect archive with a password (PW) if supported")
         parser.add_argument('value', help="path or archive name")
 
         try:
@@ -865,29 +887,23 @@ class Commands(object):
             parser.print_usage()
             return
 
-        # TODO: having for one a folder and for the other a full
-        # target path can be confusing. We should perhaps standardize this.
+        if args.zip and args.sevenzip:
+            self.log('error', "Please select either -z or -7 not both, abort")
 
-        # Abort if the specified path already exists.
-        if os.path.isfile(args.value):
-            self.log('error', "File at path \"{0}\" already exists, abort".format(args.value))
-            return
+        store_path = os.path.join(args.value, __sessions__.current.file.name)
 
-        # If the argument chosed so, archive the file when exporting it.
-        # TODO: perhaps add an option to use a password for the archive
-        # and default it to "infected".
-        if args.zip:
-            try:
-                with ZipFile(args.value, 'w') as export_zip:
-                    export_zip.write(__sessions__.current.file.path, arcname=__sessions__.current.file.name)
-            except IOError as e:
-                self.log('error', "Unable to export file: {0}".format(e))
-            else:
-                self.log('info', "File archived and exported to {0}".format(args.value))
-        # Otherwise just dump it to the given directory.
-        else:
-            # XXX: Export file with the original file name.
-            store_path = os.path.join(args.value, __sessions__.current.file.name)
+        if not args.zip and not args.sevenzip:
+            # Abort if the specified path already exists
+            if os.path.isfile(store_path):
+                self.log('error', "File at path \"{0}\" already exists, abort".format(args.value))
+                return
+
+            if os.path.isfile(args.value):
+                self.log('error', "File at path \"{0}\" already exists, abort".format(args.value))
+                return
+
+            if not os.path.isdir(args.value):
+                os.makedirs(args.value)
 
             try:
                 shutil.copyfile(__sessions__.current.file.path, store_path)
@@ -895,6 +911,40 @@ class Commands(object):
                 self.log('error', "Unable to export file: {0}".format(e))
             else:
                 self.log('info', "File exported to {0}".format(store_path))
+
+            return
+        elif args.zip:
+            cls = "ZipCompressor"
+
+        elif args.sevenzip:
+            cls = "SevenZipSystemCompressor"
+        else:
+            cls = ""
+            self.log('error', "Not implemented".format())
+
+        c = Compressor()
+
+        if args.password:
+            if c.compressors[cls].supports_password:
+                _password = get_password_twice()
+                if not _password:
+                    self.log('error', "Passwords did not match, abort")
+                    return
+                res = c.compress(__sessions__.current.file.path, file_name=__sessions__.current.file.name,
+                                 archive_path=store_path, cls_name=cls, password=_password)
+            else:
+                self.log('warning', "ignoring password (not supported): {}".format(cls))
+                res = c.compress(__sessions__.current.file.path, file_name=__sessions__.current.file.name,
+                                 archive_path=store_path, cls_name=cls)
+
+        else:
+            res = c.compress(__sessions__.current.file.path, file_name=__sessions__.current.file.name,
+                             archive_path=store_path, cls_name=cls)
+
+        if res:
+            self.log('info', "File archived and exported to {0}".format(c.output_archive_path))
+        else:
+            self.log('error', "Unable to export file: {0}".format(c.err))
 
     ##
     # STATS

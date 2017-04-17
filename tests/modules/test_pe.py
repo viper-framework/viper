@@ -86,18 +86,30 @@ class TestPE:
         assert re.search(r".*PE Sections.*", lines[1])
         assert len(instance.result_sections) == expected
 
-    # @pytest.mark.parametrize("filename, expected", [
-    #     ("cmd.exe", 9),
-    # ])
-    # def test_language_(self, filename, expected):
-    #     __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-    #     instance = pe.PE()
-    #     # instance.pe = pefile.PE(fast_load=True)
-    #     instance.command_line = ["language"]
-    #
-    #     instance.run()
-    #
-    #     assert 0  # debugging
+    @pytest.mark.parametrize("filename, expected", [
+        ("513a6e4e94369c64cab49324cd49c44137d2b66967bb6d16394ab145a8e32c45", 'e8fbb742e0d29f1ed5f587b3b769b426'),
+    ])
+    def test_security(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = pe.PE()
+        instance.command_line = ["security"]
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*{}*".format(expected), out)
+
+    @pytest.mark.parametrize("filename, expected", [("cmd.exe", r".*Probable language:.*C.*")])
+    def test_language_(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = pe.PE()
+        instance.command_line = ["language"]
+
+        instance.run()
+        out, err = capsys.readouterr()
+        lines = out.split("\n")
+
+        assert re.search(expected, lines[1])
 
     # @pytest.mark.parametrize("filename,expected", [
     #     ("cmd.exe", 9),
