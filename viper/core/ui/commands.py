@@ -132,7 +132,7 @@ class Commands(object):
         rows = list()
         rows.append(["Configuration File", cfg.config_file])
         rows.append(["Storage Path", __project__.path])
-        rows.append(["Database (default)", self.db.engine])
+        rows.append(["Current Project Database", self.db.engine])
 
         self.log('table', dict(header=['Configuration', ''], rows=rows))
 
