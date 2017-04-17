@@ -86,6 +86,7 @@ class Commands(object):
             export=dict(obj=self.cmd_export, description="Export the current session to file or zip"),
             analysis=dict(obj=self.cmd_analysis, description="View the stored analysis"),
             rename=dict(obj=self.cmd_rename, description="Rename the file in the database"),
+            ls=dict(obj=self.cmd_ls, description="List all samples"),
         )
 
     # Output Logging
@@ -160,6 +161,7 @@ class Commands(object):
         group.add_argument('-f', '--file', action='store_true', help="Target is a file")
         group.add_argument('-u', '--url', action='store_true', help="Target is a URL")
         group.add_argument('-l', '--last', action='store_true', help="Target is the entry number from the last find command's results")
+        group.add_argument('-i', '--id', action='store_true', help="Target is a sample ID")
         parser.add_argument('-t', '--tor', action='store_true', help="Download the file through Tor")
         parser.add_argument("value", metavar='PATH, URL, HASH or ID', nargs='*', help="Target to open. Hash can be md5 or sha256. ID has to be from the last search.")
 
@@ -209,6 +211,20 @@ class Commands(object):
                         break
             else:
                 self.log('warning', "You haven't performed a find yet")
+        elif args.id:
+            try:
+                id_ = int(target)
+            except ValueError as error:
+                self.log('error', "Wrong id format: '{0}'. Must be integer".format(target))
+                return
+                
+            row = self.db.find(key='id', value=id_)
+            if row:
+                __sessions__.new(get_sample_path(row.sha256))
+            else:
+                self.log('error', "id {0} not found".format(target))
+                
+        
         # Otherwise we assume it's an hash of an previously stored sample.
         else:
             target = target.strip().lower()
@@ -1096,3 +1112,23 @@ class Commands(object):
             else:
                 self.log('info', "No parent set for this sample")
 
+
+    ##
+    # LS
+    #
+    # This command shows all the files stored in
+    # the current project.
+
+    def cmd_ls(self):
+        # Search all the files matching the given parameters.
+        items = self.db.get_all_malware()
+        if not items:
+            return
+
+        # Populate the list of search results.
+        
+        # Generate a table with the results.
+        header = ['Id', 'Name', 'Size', 'Mime', 'MD5']
+        self.log("table", dict(header=header, rows=items))
+
+    

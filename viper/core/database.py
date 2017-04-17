@@ -455,6 +455,8 @@ class Database:
             rows = session.query(Malware).filter(Malware.type.like('%{0}%'.format(value))).all()
         elif key == 'mime':
             rows = session.query(Malware).filter(Malware.mime.like('%{0}%'.format(value))).all()
+        elif key == 'id':
+            rows = session.query(Malware).filter(Malware.id == value).first()
         else:
             print_error("No valid term specified")
 
@@ -536,3 +538,10 @@ class Database:
         session = self.Session()
         analysis = session.query(Analysis).get(analysis_id)
         return analysis
+
+
+
+    def get_all_malware(self):
+        session = self.Session()
+        return session.query(Malware.id, Malware.name, Malware.size, Malware.mime, Malware.md5).all()
+
