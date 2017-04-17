@@ -198,7 +198,10 @@ class Console(object):
                 # Check for output redirection
                 # If there is a > in the string, we assume the user wants to output to file.
                 if '>' in data:
-                    data, console_output['filename'] = data.split('>')
+                    data, console_output['filename'] = data.split('>', 1)
+                    if ';' in console_output['filename']:
+                        console_output['filename'], more_commands = console_output['filename'].split(';', 1)
+                        data = '{};{}'.format(data, more_commands)
                     print("Writing output to {0}".format(console_output['filename'].strip()))
 
                 # If the input starts with an exclamation mark, we treat the

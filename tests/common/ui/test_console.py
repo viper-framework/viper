@@ -30,3 +30,14 @@ class TestConsole:
         assert re.search(r".*You have .* files in your .* repository.*", out)
         assert re.search(r".* Commands.*", out)
         assert re.search(r".* Modules.*", out)
+
+    def test_redirect(self, capsys):
+        instance = console.Console()
+        if sys.version_info <= (3, 0):
+            in_fct = 'viper.core.ui.console.input'
+        else:
+            in_fct = 'builtins.input'
+        with mock.patch(in_fct, return_value='help > ./redirect;exit'):
+            instance.start()
+        out, err = capsys.readouterr()
+        assert re.search(r".*Output written to  ./redirect.*", out)
