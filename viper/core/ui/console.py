@@ -101,15 +101,13 @@ class Console(object):
 
         # Setup shell auto-complete.
         def complete(text, state):
-            # Try to autocomplete commands.
-            cmds = [i for i in self.cmd.commands if i.startswith(text)]
-            if state < len(cmds):
-                return cmds[state]
+            # Try to autocomplete both commands and modules
+            completions = list()
+            completions += [i for i in self.cmd.commands if i.startswith(text)]
+            completions += [i for i in __modules__ if i.startswith(text)]
 
-            # Try to autocomplete modules.
-            mods = [i for i in __modules__ if i.startswith(text)]
-            if state < len(mods):
-                return mods[state]
+            if state < len(completions):
+                return completions[state]
 
             # Then autocomplete paths.
             if text.startswith("~"):
