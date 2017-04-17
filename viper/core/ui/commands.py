@@ -823,8 +823,14 @@ class Commands(object):
         except:
             return
 
-        projects_path = os.path.join(expanduser("~"), '.viper', 'projects')
+        cfg = Config()
+        if cfg.paths.storage_path:
+            base_path = cfg.paths.storage_path
+        else:
+            base_path = os.path.join(expanduser("~"), '.viper')
 
+        projects_path = os.path.join(base_path, 'projects')
+        
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")
             return
