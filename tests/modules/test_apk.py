@@ -107,7 +107,7 @@ class TestAPK:
 
         assert re.search(r".*argument -d/--dump: expected one argument*", out)
 
-    @pytest.mark.usefixtures("cleandir_keep")
+    @pytest.mark.usefixtures("cleandir")
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_dump(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
