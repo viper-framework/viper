@@ -44,7 +44,10 @@ class MispEvent(object):
             self.event = event
         else:
             self.event = MISPEvent()
-            self.event.load(event)
+            if os.path.exists(event):
+                self.event.load_file(event)
+            else:
+                self.event.load(event)
         self.off = offline
         if self.event.id:
             self.current_dump_file = '{}.json'.format(self.event.id)
@@ -64,7 +67,7 @@ class MispEvent(object):
         return [a.value for a in self.event.attributes if a.type in ['domain', 'hostname']]
 
     def get_all_urls(self):
-        return [a.value for a in self.event.attribute if a.type == 'url']
+        return [a.value for a in self.event.attributes if a.type == 'url']
 
     def get_all_hashes(self):
         event_hashes = []
