@@ -109,7 +109,6 @@ if (chosen == "rat") {
 
 if (chosen == "reports") {
   selbox.options[selbox.options.length] = new Option('Find Reports On Malwr','malwr');
-  selbox.options[selbox.options.length] = new Option('Find Reports On Anubis','anubis');
   selbox.options[selbox.options.length] = new Option('Find Reports on ThreatExchange','threat');
   selbox.options[selbox.options.length] = new Option('Find Reports On Joe Sandbox','joe');
   selbox.options[selbox.options.length] = new Option('Find Reports On metascan','meta');

@@ -66,7 +66,7 @@ class VirusTotal(Module):
         return [json.loads(open(p, 'r').read()) for p in glob.glob(os.path.join(path, '*'))]
 
     def _download_hashes(self, misp_event, verbose):
-        eid = misp_event.event_id
+        eid = misp_event.event.id
         ehashes, shashes = misp_event.get_all_hashes()
         to_dl = sorted(ehashes, key=len)
         while to_dl:
@@ -150,17 +150,25 @@ class VirusTotal(Module):
                  virustotal['positives'], virustotal['total'], bold(url)))
         self.log('info', virustotal['permalink'])
 
-    def _display_verbose_scan(self, scans, query):
+    def _display_verbose_scan(self, virustotal, query):
+        self.log('success', "VirusTotal Report for {}:".format(bold(query)))
+        if 'times_submitted' in virustotal and 'first_seen' in virustotal:
+            self.log('info', 'Submitted {} times and seen first on {}.'.format(virustotal['times_submitted'], virustotal['first_seen']))
+
+        if 'submission_names' in virustotal:
+            self.log('info', 'Known names:')
+            for item in virustotal['submission_names']:
+                self.log('item', item)
+
         rows = []
-        if scans:
-            for engine, signature in scans.items():
+        if 'scans' in virustotal:
+            for engine, signature in virustotal['scans'].items():
                 if signature['detected']:
                     rows.append([engine, signature['result']])
                     signature = signature['result']
-
         rows.sort()
         if rows:
-            self.log('success', "VirusTotal Report for {}:".format(bold(query)))
+            self.log('info', "Detecting engines:")
             self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
 
     # ####### Helpers for open ########
@@ -186,7 +194,7 @@ class VirusTotal(Module):
     def _display_tmp_files(self):
         cureid = None
         if __sessions__.is_attached_misp(True):
-            cureid = __sessions__.current.misp_event.event_id
+            cureid = __sessions__.current.misp_event.event.id
         header = ['Sample ID', 'Current', 'Event ID', 'Filename']
         rows = []
         i = 0
@@ -217,7 +225,7 @@ class VirusTotal(Module):
         # FIXME: private and intel API are inconsistent to save a file.
         samples_path = os.path.join(self.cur_path, 'vt_samples')
         if __sessions__.is_attached_misp(True):
-            samples_path = os.path.join(samples_path, __sessions__.current.misp_event.event_id)
+            samples_path = os.path.join(samples_path, __sessions__.current.misp_event.event.id)
         elif force_eid:
             samples_path = os.path.join(samples_path, force_eid)
 
@@ -276,7 +284,7 @@ class VirusTotal(Module):
             return True
 
         if verbose:
-            self._display_verbose_scan(virustotal['scans'], to_search)
+            self._display_verbose_scan(virustotal, to_search)
 
         self.log('info', "{} out of {} antivirus detected {} as malicious.".format(virustotal['positives'], virustotal['total'], bold(to_search)))
         self.log('info', virustotal['permalink'] + '\n')
@@ -354,7 +362,7 @@ class VirusTotal(Module):
                 eid, path, name = tmp_samples[self.args.download_open]
                 if eid:
                     if __sessions__.is_attached_misp(quiet=True):
-                        if __sessions__.current.misp_event.event_id != eid:
+                        if __sessions__.current.misp_event.event.id != int(eid):
                             self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
                         else:
                             self.log('success', 'You opened a sample related to the current MISP event.')
@@ -371,7 +379,7 @@ class VirusTotal(Module):
                     if name == self.args.download_open_name:
                         if eid:
                             if __sessions__.is_attached_misp(quiet=True):
-                                if __sessions__.current.misp_event.event_id != eid:
+                                if __sessions__.current.misp_event.event.id != int(eid):
                                     self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
                                 else:
                                     self.log('success', 'You opened a sample related to the current MISP event.')

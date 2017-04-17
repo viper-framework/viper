@@ -173,9 +173,12 @@ class Cuckoo(Module):
                         rows = []
                         header = ['ID', 'Started On', 'Status', 'Completed On']
                         for result in search_results['tasks']:
-                            if result['sample']['sha256'] == __sessions__.current.file.sha256:
-                                rows.append([result['id'], result['started_on'], result['status'], result['completed_on']])
-                                count += 1
+                            try:
+                                if result['sample']['sha256'] == __sessions__.current.file.sha256:
+                                    rows.append([result['id'], result['started_on'], result['status'], result['completed_on']])
+                                    count += 1
+                            except:
+                                pass
                         if len(rows) > 0:
                             self.log('info', "Found {0} Results".format(count))
                             self.log('table', dict(header=header, rows=rows))

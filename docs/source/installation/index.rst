@@ -27,6 +27,8 @@ In addition you should install ssdeep with pydeep. After you downloaded the sour
     $ sudo apt-get install libfuzzy
     $ sudo pip install pydeep
 
+Although it is optional, we recommend that you install `YARA`_ pattern matching project and the `YARA-Python`_ library by following the setup instructions on their official websites.
+
 Viper can retrieve files remotely through `Tor`_, if you're interested in such feature you should install SocksiPy::
 
     $ sudo apt-get install python-socksipy
@@ -70,6 +72,8 @@ If everything worked out fine, you should be able to launch Viper's shell withou
 
 .. _official website: http://ssdeep.sourceforge.net
 .. _Tor: https://www.torproject.org
+.. _YARA: http://virustotal.github.io/yara/
+.. _YARA-Python: https://github.com/plusvic/yara-python
 
 Uninstall
 ---------

@@ -35,6 +35,7 @@ class YaraScan(Module):
         parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (default will run data/yara/index.yara)')
         parser_scan.add_argument('-a', '--all', action='store_true', help='Scan all stored files (default if no session is open)')
         parser_scan.add_argument('-t', '--tag', action='store_true', help='Tag Files with Rule Name (default is not to)')
+        parser_scan.add_argument('-v', '--verbose', action='store_true', help='Output a detailed overview of the matches and found offsets')
 
         parser_rules = subparsers.add_parser('rules', help='Operate on Yara rules')
         parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
@@ -81,6 +82,7 @@ class YaraScan(Module):
         arg_rule = self.args.rule
         arg_scan_all = self.args.all
         arg_tag = self.args.tag
+        arg_verbose = self.args.verbose
 
         # If no custom ruleset is specified, we use the default one.
         if not arg_rule:
@@ -134,11 +136,15 @@ class YaraScan(Module):
 
             rows = []
             tag_list = []
+            found = False
             for match in rules.match(entry_path):
+                found = True
                 # Add a row for each string matched by the rule.
-                for string in match.strings:
-                    rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
-
+                if arg_verbose:
+                    for string in match.strings:
+                        rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
+                else:
+                    self.log('item', match.rule)
                 # Add matching rules to our list of tags.
                 # First it checks if there are tags specified in the metadata
                 # of the Yara rule.
@@ -153,7 +159,7 @@ class YaraScan(Module):
                 # Add the tags to the list.
                 tag_list.append([entry.sha256, match_tags])
 
-            if rows:
+            if arg_verbose and rows:
                 header = [
                     'Rule',
                     'String',
@@ -161,9 +167,8 @@ class YaraScan(Module):
                     'Content'
                 ]
                 self.log('table', dict(header=header, rows=rows))
-
             # If we selected to add tags do that now.
-            if rows and arg_tag:
+            if found and arg_tag:
                 db = Database()
                 for tag in tag_list:
                     db.add_tags(tag[0], tag[1])

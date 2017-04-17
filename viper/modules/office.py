@@ -276,6 +276,7 @@ class Office(Module):
         media_list = []
         embedded_list = []
         vba_list = []
+        activex_list = []
         for name in zip_xml.namelist():
             if name == 'docProps/app.xml':
                 meta1 = self.meta_data(zip_xml.read(name))
@@ -288,6 +289,8 @@ class Office(Module):
                 embedded_list.append(name.split('/')[-1])
             if name == 'word/vbaProject.bin':
                 vba_list.append(name.split('/')[-1])
+            if name.startswith('word/activeX/'):
+                activex_list.append(name.split('/')[-1])
 
         # Print the results.
         self.log('info', "App MetaData:")
@@ -301,6 +304,10 @@ class Office(Module):
         if len(vba_list) > 0:
             self.log('info', "Macro Objects")
             for item in vba_list:
+                self.log('item', item)
+        if len(activex_list) > 0:
+            self.log('info', "ActiveX Objects")
+            for item in activex_list:
                 self.log('item', item)
         if len(media_list) > 0:
             self.log('info', "Media Objects")
@@ -345,7 +352,7 @@ class Office(Module):
         self.log('info', "Macro's Detected")
         #try:
         if True:
-            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex String':[], 'VBA string':[]}
+            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex string':[], 'VBA string':[]}
             for (filename, stream_path, vba_filename, vba_code) in vbaparser.extract_macros():
                 self.log('info', "Stream Details")
                 self.log('item', "OLE Stream: {0}".format(string_clean(stream_path)))
@@ -381,8 +388,8 @@ class Office(Module):
             self.log('info', "Base64 Strings")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Base64 String']))
             
-            self.log('info', "Dridex String")
-            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Dridex String']))
+            self.log('info', "Dridex string")
+            self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Dridex string']))
             
             self.log('info', "VBA string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['VBA string']))
