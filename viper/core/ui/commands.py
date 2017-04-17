@@ -197,13 +197,16 @@ class Commands(object):
         # the last find command.
         elif args.last:
             if __sessions__.find:
-                count = 1
-                for item in __sessions__.find:
-                    if count == int(target):
+                try:
+                    target = int(target)
+                except ValueError:
+                    self.log('warning', "Please pass the entry number from the last find to -l/--last (e.g. open -l 5)")
+                    return
+
+                for idx, item in enumerate(__sessions__.find, start=1):
+                    if idx == target:
                         __sessions__.new(get_sample_path(item.sha256))
                         break
-
-                    count += 1
             else:
                 self.log('warning', "You haven't performed a find yet")
         # Otherwise we assume it's an hash of an previously stored sample.
