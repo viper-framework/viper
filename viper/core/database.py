@@ -536,3 +536,10 @@ class Database:
         session = self.Session()
         analysis = session.query(Analysis).get(analysis_id)
         return analysis
+
+
+
+    def get_all_malware(self):
+        session = self.Session()
+        return session.query(Malware.name, Malware.mime, Malware.md5).all()
+

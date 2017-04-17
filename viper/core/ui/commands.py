@@ -86,6 +86,7 @@ class Commands(object):
             export=dict(obj=self.cmd_export, description="Export the current session to file or zip"),
             analysis=dict(obj=self.cmd_analysis, description="View the stored analysis"),
             rename=dict(obj=self.cmd_rename, description="Rename the file in the database"),
+            ls=dict(obj=self.cmd_ls, description="List all samples"),
         )
 
     # Output Logging
@@ -1096,3 +1097,23 @@ class Commands(object):
             else:
                 self.log('info', "No parent set for this sample")
 
+
+    ##
+    # LS
+    #
+    # This command shows all the files stored in
+    # the current project.
+
+    def cmd_ls(self):
+        # Search all the files matching the given parameters.
+        items = self.db.get_all_malware()
+        if not items:
+            return
+
+        # Populate the list of search results.
+        
+        # Generate a table with the results.
+        header = ['Name', 'Mime', 'MD5']
+        self.log("table", dict(header=header, rows=items))
+
+    
