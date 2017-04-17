@@ -100,7 +100,7 @@ class TestPE:
         assert re.search(r".*{}*".format(expected), out)
 
     @pytest.mark.parametrize("filename, expected", [("cmd.exe", r".*Probable language:.*C.*")])
-    def test_language_(self, capsys, filename, expected):
+    def test_language(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = pe.PE()
         instance.command_line = ["language"]
@@ -110,6 +110,20 @@ class TestPE:
         lines = out.split("\n")
 
         assert re.search(expected, lines[1])
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("513a6e4e94369c64cab49324cd49c44137d2b66967bb6d16394ab145a8e32c45",
+         r'.*2ab445d9a9ffeaab2ab3da4a68de3578.*86bbbd7c06317e171949a0566cdd05ae.*5c073d8e75dc926dd04bc73e32d41beb.*a19a2658ba69030c6ac9d11fd7d7e3c1.*'),
+    ])
+    def test_resources(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = pe.PE()
+        instance.command_line = ["resources"]
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(expected, expected)
 
     # @pytest.mark.parametrize("filename,expected", [
     #     ("cmd.exe", 9),
