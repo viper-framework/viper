@@ -34,11 +34,12 @@ class TestUseCases:
         instance.cmd_open('-f', os.path.join(FIXTURE_DIR, 'copy_' + filename))
         instance.cmd_store()
         if sys.version_info <= (3, 0):
-            in_fct = 'viper.core.ui.console.input'
+            in_fct = 'viper.core.ui.commands.input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
             instance.cmd_delete()
+        os.remove(os.path.join(FIXTURE_DIR, 'copy_' + filename))
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
