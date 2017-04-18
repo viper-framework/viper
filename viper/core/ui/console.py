@@ -135,6 +135,8 @@ class Console(object):
         if os.path.exists(history_path):
             readline.read_history_file(history_path)
 
+        readline.set_history_length(10000)
+
         # Register the save history at program's exit.
         atexit.register(save_history, path=history_path)
 
