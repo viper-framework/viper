@@ -4,6 +4,8 @@
 
 import os
 import re
+import sys
+from shutil import copyfile
 
 from hashlib import sha256
 
@@ -12,6 +14,12 @@ from tests.conftest import FIXTURE_DIR
 
 from viper.core.session import __sessions__
 from viper.core.ui import commands
+
+try:
+    from unittest import mock
+except ImportError:
+    # Python2
+    import mock
 
 
 class TestUseCases:
@@ -22,16 +30,27 @@ class TestUseCases:
     @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
     def test_store(self, capsys, filename):
         instance = commands.Commands()
-        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, filename))
+        copyfile(os.path.join(FIXTURE_DIR, filename), os.path.join(FIXTURE_DIR, 'copy_' + filename))
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, 'copy_' + filename))
         instance.cmd_store()
+        if sys.version_info <= (3, 0):
+            in_fct = 'viper.core.ui.console.input'
+        else:
+            in_fct = 'builtins.input'
+        with mock.patch(in_fct, return_value='y'):
+            instance.cmd_delete()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
         assert re.search(r".*Session opened on.*", lines[0])
         assert re.search(r".*Running command.*", lines[5])
+        assert re.search(r".*Deleted opened file.*", lines[7])
 
-    def test_store_all(self, capsys):
+    @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
+    def test_store_all(self, capsys, filename):
         instance = commands.Commands()
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, filename))
+        instance.cmd_store()
         instance.cmd_store('-f', FIXTURE_DIR)
         out, err = capsys.readouterr()
         assert re.search(r".*Skip, file \"chromeinstall-8u31.exe\" appears to be already stored.*", out)

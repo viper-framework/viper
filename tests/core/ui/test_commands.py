@@ -2,11 +2,19 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from viper.core.session import __sessions__
 from viper.core.ui import commands
+from viper.core.database import Database
+from tests.conftest import FIXTURE_DIR
+import pytest
 import re
+import os
 
 
 class TestCommands:
+
+    def teardown_method(self):
+        __sessions__.close()
 
     def test_init(self):
         instance = commands.Commands()
@@ -32,14 +40,34 @@ class TestCommands:
     def test_notes(self, capsys):
         instance = commands.Commands()
         instance.cmd_notes('-h')
+        instance.cmd_notes('-l')
         out, err = capsys.readouterr()
         assert re.search("usage: notes \[-h\] .*", out)
+        assert re.search(".*No open session.*", out)
 
-    def test_analysis(self, capsys):
+    @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
+    def test_notes_existing(self, capsys, filename):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        Database().add_note(__sessions__.current.file.sha256, 'Note test', 'This is the content')
+        instance = commands.Commands()
+        instance.cmd_notes('-l')
+        instance.cmd_notes('-v', '1')
+        instance.cmd_notes('-d', '1')
+        out, err = capsys.readouterr()
+        assert re.search(".*1  | Note test.*", out)
+        assert re.search(".*This is the content.*", out)
+
+    @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
+    def test_analysis(self, capsys, filename):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = commands.Commands()
         instance.cmd_analysis('-h')
+        instance.cmd_analysis('-l')
+        instance.cmd_analysis('-v', '1')
         out, err = capsys.readouterr()
         assert re.search("usage: analysis \[-h\] .*", out)
+        assert re.search(".*Saved On.*", out)
+        assert re.search(".*Cmd Line.*", out)
 
     def test_store(self, capsys):
         instance = commands.Commands()
@@ -74,6 +102,7 @@ class TestCommands:
     def test_projects(self, capsys):
         instance = commands.Commands()
         instance.cmd_projects('-h')
+        instance.cmd_projects('-l')
         out, err = capsys.readouterr()
         assert re.search("usage: projects \[-h\] .*", out)
 
