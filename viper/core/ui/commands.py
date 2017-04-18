@@ -830,7 +830,7 @@ class Commands(object):
             base_path = os.path.join(expanduser("~"), '.viper')
 
         projects_path = os.path.join(base_path, 'projects')
-        
+
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")
             return
