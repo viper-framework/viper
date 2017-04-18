@@ -42,14 +42,6 @@ except NameError:
     pass
 
 
-def get_password_once():
-    password = getpass.getpass('Password: ')
-    if password:
-        return password
-    else:
-        return False
-
-
 def get_password_twice():
     password = getpass.getpass('Password: ')
     if password == getpass.getpass('confirm Password: '):
