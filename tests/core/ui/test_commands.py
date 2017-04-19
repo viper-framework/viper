@@ -9,6 +9,13 @@ from tests.conftest import FIXTURE_DIR
 import pytest
 import re
 import os
+import sys
+
+try:
+    from unittest import mock
+except ImportError:
+    # Python2
+    import mock
 
 
 class TestCommands:
@@ -123,3 +130,18 @@ class TestCommands:
         instance.cmd_parent('-h')
         out, err = capsys.readouterr()
         assert re.search("usage: parent \[-h\] .*", out)
+
+    @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
+    def test_rename(self, capsys, filename):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = commands.Commands()
+        if sys.version_info <= (3, 0):
+            in_fct = 'viper.core.ui.commands.input'
+        else:
+            in_fct = 'builtins.input'
+        with mock.patch(in_fct, return_value='chromeinstall-8u31.exe.new'):
+            instance.cmd_rename()
+        out, err = capsys.readouterr()
+        lines = out.split('\n')
+        assert re.search(r".*Current name is.*1mchromeinstall-8u31.exe.*", lines[1])
+        assert re.search(r".*Refreshing session to update attributes.*", lines[2])
