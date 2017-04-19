@@ -6,6 +6,7 @@ from os.path import expanduser
 import sys
 import glob
 import atexit
+import logging
 import readline
 import traceback
 
@@ -18,6 +19,8 @@ from viper.core.project import __project__
 from viper.core.ui.commands import Commands
 from viper.core.database import Database
 from viper.core.config import Config, console_output
+
+log = logging.getLogger('viper')
 
 cfg = Config()
 
@@ -96,6 +99,9 @@ class Console(object):
         self.active = False
 
     def start(self):
+        # log start
+        log.info('Starting viper-cli')
+
         # Logo.
         logo()
 
