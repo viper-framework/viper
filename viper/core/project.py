@@ -4,8 +4,12 @@
 
 import os
 from os.path import expanduser
+import logging
 
 from viper.core.config import Config
+from viper.core.logger import init_logger
+
+log = logging.getLogger('viper')
 
 cfg = Config()
 
@@ -24,6 +28,13 @@ class Project(object):
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
+
+        if cfg.logging.log_file:
+            log_file = cfg.logging.log_file
+        else:
+            log_file = os.path.join(self.base_path, "viper.log")
+        init_logger(log_file_path=log_file, debug=cfg.logging.debug)
+        log.debug("logger initiated")
 
     def open(self, name):
         if not os.path.exists(self.base_path):
