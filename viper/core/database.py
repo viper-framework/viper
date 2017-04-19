@@ -160,7 +160,7 @@ class Analysis(Base):
     id = Column(Integer(), primary_key=True)
     cmd_line = Column(String(255), nullable=True)
     results = Column(Text(), nullable=False)
-    stored_at = Column(DateTime(timezone=False), default=datetime.now(), nullable=False)
+    stored_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
 
     def to_dict(self):
         row_dict = {}
