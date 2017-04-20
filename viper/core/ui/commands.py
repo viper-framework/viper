@@ -402,7 +402,7 @@ class Commands(object):
             rows = [[analysis.id, analysis.cmd_line, analysis.stored_at] for analysis in analysis_list]
 
             # Display list of existing results.
-            self.log('table', dict(header=['ID', 'Cmd Line', 'Saved On'], rows=rows))
+            self.log('table', dict(header=['ID', 'Cmd Line', 'Saved On (UTC)'], rows=rows))
 
         elif args.view:
             # Retrieve analysis wth the specified ID and print it.
