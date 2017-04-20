@@ -58,6 +58,7 @@ git+https://github.com/viper-framework/xxxswf.git
 pyclamd
 
 # apk module
+ipython < 6; python_version == '2.7'
 git+https://github.com/androguard/androguard.git
 
 # archiving
