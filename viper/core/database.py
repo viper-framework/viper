@@ -4,6 +4,7 @@
 
 import os
 import json
+import logging
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
@@ -17,6 +18,8 @@ from viper.common.out import print_warning, print_error
 from viper.common.objects import File
 from viper.core.project import __project__
 from viper.core.config import Config
+
+log = logging.getLogger('viper')
 
 cfg = Config()
 
