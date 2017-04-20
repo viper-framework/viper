@@ -29,11 +29,13 @@ class Project(object):
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
-        if cfg.logging.log_file:
+        if hasattr(cfg, 'logging') and cfg.logging.log_file:
             log_file = cfg.logging.log_file
+            debug_log = cfg.logging.debug
         else:
             log_file = os.path.join(self.base_path, "viper.log")
-        init_logger(log_file_path=log_file, debug=cfg.logging.debug)
+            debug_log = False
+        init_logger(log_file_path=log_file, debug=debug_log)
         log.debug("logger initiated")
 
     def open(self, name):
