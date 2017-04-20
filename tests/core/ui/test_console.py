@@ -51,7 +51,7 @@ class TestConsole:
         assert re.search(r".*Output written to  ./redirect.*", out)
 
     @pytest.mark.parametrize("filename,command,expected",
-                             [("chromeinstall-8u31.exe", 'pe imphash', 'f4ae543863ae0fb5af0c571fd19e8d32'),
+                             [("chromeinstall-8u31.exe", 'pe imphash', '697c52d3bf08cccfd62da7bc503fdceb'),
                               ('58e902cd-dae8-49b9-882b-186c02de0b81.json', 'misp --off show', 'Session opened on MISP event 6322')])
     def test_opened_session(self, capsys, filename, command, expected):
         if filename == "chromeinstall-8u31.exe":
