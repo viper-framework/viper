@@ -355,6 +355,7 @@ def add_file():
     with upload_temp() as temp_dir:
         for upload in uploads:
             file_path = os.path.join(temp_dir, upload.filename)
+            compression = request.forms.get('compression')
             with open(file_path, 'w') as tmp_file:
                 while True:
                     data = upload.file.read(READ_CHUNK_SIZE)
@@ -362,7 +363,7 @@ def add_file():
                         break
                     tmp_file.write(data)
             # Zip Files
-            if request.forms.get('compression') == 'zip':
+            if compression == 'zip':
                 zip_pass = request.forms.get('zip_pass')
                 try:
                     with ZipFile(file_path) as zf:
@@ -373,30 +374,29 @@ def add_file():
                                 file_list.append(os.path.join(root, name))
                 except Exception as e:
                     return template('error.tpl', error="Error with zipfile - {0}".format(e))
-            # GZip Files
-            elif request.forms.get('compression') == 'gz':
+            # GZip / BZip2 Files
+            elif compression == 'gz' or compression == 'bz2':
                 try:
-                    gzf = GzipFile(file_path, 'rb')
-                    decompress = gzf.read()
-                    gzf.close()
-                    with open(file_path[:-3],"wb") as df:
-                        df.write(decompress)
-                    file_list.append(file_path[:-3])
+                    dest_path = file_path[:-len(compression)]
+                    if compression == 'gz':
+                        cf = GzipFile(file_path, 'rb')
+                    else:
+                        cf = BZ2File(file_path, 'rb')
+
+                    with open(dest_path, "wb") as df:
+                        while True:
+                            decompress = cf.read(READ_CHUNK_SIZE)
+                            if not decompress:
+                                break
+                            df.write(decompress)
+                    file_list.append(dest_path)
                 except Exception as e:
                     return template('error.tpl', error="Error with gzipfile - {0}".format(e))
-            # BZip2 Files
-            elif request.forms.get('compression') == 'bz2':
-                try:
-                    bz2f = BZ2File(file_path, 'rb')
-                    decompress = bz2f.read()
-                    bz2f.close()
-                    with open(file_path[:-3],"wb") as df:
-                        df.write(decompress)
-                    file_list.append(file_path[:-3])
-                except Exception as e:
-                    return template('error.tpl', error="Error with bzip2file - {0}".format(e))
+                finally:
+                    cf.close()
+
             # Tar Files (any, including tar.gz tar.bz2)
-            elif request.forms.get('compression') == 'tar':
+            elif compression == 'tar':
                 try:
                     if not tarfile.is_tarfile(file_path):
                         return template('error.tpl', error="This is not a tar file")
@@ -409,7 +409,7 @@ def add_file():
                 except Exception as e:
                     return template('error.tpl', error="Error with tarfile - {0}".format(e))
             # Non zip files
-            elif request.forms.get('compression') == 'none':
+            elif compression == 'none':
                 file_list.append(file_path)
 
         # Add each file
