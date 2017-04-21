@@ -93,6 +93,11 @@ mod_dicts['yara'] = {'scan':'scan -t', 'all': 'scan -a -t'}
 
 
 ##
+# Misc constants
+#
+READ_CHUNK_SIZE = 1024
+
+##
 # Helper Functions
 #
 
@@ -351,7 +356,11 @@ def add_file():
         for upload in uploads:
             file_path = os.path.join(temp_dir, upload.filename)
             with open(file_path, 'w') as tmp_file:
-                tmp_file.write(upload.file.read())
+                while True:
+                    data = upload.file.read(READ_CHUNK_SIZE)
+                    if not data:
+                        break
+                    tmp_file.write(data)
             # Zip Files
             if request.forms.get('compression') == 'zip':
                 zip_pass = request.forms.get('zip_pass')
