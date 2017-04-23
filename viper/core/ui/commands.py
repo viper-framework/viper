@@ -896,15 +896,15 @@ class Commands(object):
         if not args.zip and not args.sevenzip:
             # Abort if the specified path already exists
             if os.path.isfile(store_path):
-                self.log('error', "File at path \"{0}\" already exists, abort".format(args.value))
-                return
-
-            if os.path.isfile(args.value):
-                self.log('error', "File at path \"{0}\" already exists, abort".format(args.value))
+                self.log('error', "Unable to export file: File exists: '{0}'".format(store_path))
                 return
 
             if not os.path.isdir(args.value):
-                os.makedirs(args.value)
+                try:
+                    os.makedirs(args.value)
+                except OSError as err:
+                    self.log('error', "Unable to export file: {0}".format(err))
+                    return
 
             try:
                 shutil.copyfile(__sessions__.current.file.path, store_path)
