@@ -13,6 +13,7 @@ from sqlalchemy import Table, Index, create_engine, and_
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
+from sqlalchemy.orm import subqueryload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from viper.common.out import print_warning, print_error
@@ -248,6 +249,11 @@ class Database:
         rows = session.query(Tag).all()
         return rows
 
+    def list_tags_for_malware(self, sha256):
+        session = self.Session()
+        malware = session.query(Malware).options(subqueryload(Malware.tag)).filter(Malware.sha256 == sha256).first()
+        return malware.tag
+
     def delete_tag(self, tag_name, sha256):
         session = self.Session()
 
@@ -273,6 +279,11 @@ class Database:
             session.rollback()
         finally:
             session.close()
+
+    def list_notes(self):
+        session = self.Session()
+        rows = session.query(Note).all()
+        return rows
 
     def add_note(self, sha256, title, body):
         session = self.Session()
@@ -409,7 +420,7 @@ class Database:
         rows = None
 
         if key == 'all':
-            rows = session.query(Malware).all()
+            rows = session.query(Malware).options(subqueryload(Malware.tag)).all()
         elif key == 'ssdeep':
             ssdeep_val = str(value)
             rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).all()
@@ -539,3 +550,8 @@ class Database:
         session = self.Session()
         analysis = session.query(Analysis).get(analysis_id)
         return analysis
+
+    def list_analysis(self):
+        session = self.Session()
+        rows = session.query(Analysis).all()
+        return rows
