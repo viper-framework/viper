@@ -197,6 +197,8 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
+        self.added_ids = {}
+
     def __del__(self):
         self.engine.dispose()
 
@@ -233,8 +235,10 @@ class Database:
                 continue
 
             try:
-                malware_entry.tag.append(Tag(tag))
+                new_tag = Tag(tag)
+                malware_entry.tag.append(new_tag)
                 session.commit()
+                self.added_ids.setdefault("tag", []).append(new_tag.id)
             except IntegrityError:
                 session.rollback()
                 try:
@@ -282,8 +286,10 @@ class Database:
             return
 
         try:
-            malware_entry.note.append(Note(title, body))
+            new_note = Note(title, body)
+            malware_entry.note.append(new_note)
             session.commit()
+            self.added_ids.setdefault("note", []).append(new_note.id)
         except SQLAlchemyError as e:
             print_error("Unable to add note: {0}".format(e))
             session.rollback()
@@ -344,6 +350,7 @@ class Database:
                                         parent=parent_sha)
                 session.add(malware_entry)
                 session.commit()
+                self.added_ids.setdefault("malware", []).append(malware_entry.id)
             except IntegrityError:
                 session.rollback()
                 malware_entry = session.query(Malware).filter(Malware.md5 == obj.md5).first()
@@ -527,8 +534,10 @@ class Database:
         if not malware_entry:
             return
         try:
-            malware_entry.analysis.append(Analysis(cmd_line, results))
+            new_analysis = Analysis(cmd_line, results)
+            malware_entry.analysis.append(new_analysis)
             session.commit()
+            self.added_ids.setdefault("analysis", []).append(new_analysis.id)
         except SQLAlchemyError as e:
             print_error("Unable to store analysis: {0}".format(e))
             session.rollback()
