@@ -100,6 +100,7 @@ class TestOffice:
         for e in expected:
             assert re.search(e, out)
 
+    @pytest.mark.usefixtures("cleandir")
     @pytest.mark.parametrize("filename", ["c026ebfa3a191d4f27ee72f34fa0d97656113be368369f605e7845a30bc19f6a"])
     def test_export(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -111,6 +112,7 @@ class TestOffice:
 
         assert re.search(r".*out_all/ObjectPool-_1398590705-Contents-FLASH-Decompressed1.*", out)
 
+    @pytest.mark.usefixtures("cleandir")
     @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
     def test_code(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
