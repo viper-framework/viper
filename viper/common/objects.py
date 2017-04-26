@@ -105,11 +105,7 @@ class File(object):
         self.children = ''
 
         if self.is_valid():
-            if sys.version_info < (3, 0):
-                # PY2SUPPORT
-                self.name = os.path.basename(self.path).encode('utf-8')
-            else:
-                self.name = os.path.basename(self.path)
+            self.name = os.path.basename(self.path)
             self.size = os.path.getsize(self.path)
             self.type = self.get_type()
             self.mime = self.get_mime()
