@@ -39,6 +39,7 @@ class TestConsole:
         assert re.search(r".* Commands.*", out)
         assert re.search(r".* Modules.*", out)
 
+    @pytest.mark.usefixtures("cleandir")
     def test_redirect(self, capsys):
         instance = console.Console()
         if sys.version_info <= (3, 0):

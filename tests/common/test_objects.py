@@ -4,11 +4,11 @@
 
 import os
 from tests.conftest import FIXTURE_DIR
-from viper.common.objects import MispEvent
+from viper.common.objects import File, MispEvent
 import pytest
 
 
-class TestObjects:
+class TestMispEvent:
 
     @pytest.mark.parametrize("filename", ["58e902cd-dae8-49b9-882b-186c02de0b81.json"])
     def test_mispevent(self, capsys, filename):
@@ -24,3 +24,16 @@ class TestObjects:
         assert not urls
         assert '722050c1b3f110c0ac9f80bc80723407' in hashes[0]
         assert not hashes[1]
+
+
+class TestFile:
+    @pytest.mark.parametrize("filename, name", [
+        ("string_handling/ascii.txt", "ascii.txt"),
+        ("string_handling/dümmy.txt", "dümmy.txt"),
+        ("string_handling/with blank.txt", "with blank.txt")
+        ])
+    def test_init(self, capsys, filename, name):
+        instance = File(os.path.join(FIXTURE_DIR, filename))
+        assert isinstance(instance, File)
+        assert instance.path == os.path.join(FIXTURE_DIR, filename)
+        assert instance.name == name
