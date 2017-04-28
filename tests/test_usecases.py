@@ -78,10 +78,16 @@ class TestUseCases:
         instance = commands.Commands()
         instance.cmd_find('all')
         instance.cmd_find('sha256', hashfile_sha)
+        instance.cmd_open('-l', '1')
+        instance.cmd_close()
+        instance.cmd_tags('-a', 'blah')
+        instance.cmd_find('-t')
+        instance.cmd_tags('-d', 'blah')
         out, err = capsys.readouterr()
 
         assert re.search(r".*EICAR.com.*", out)
         assert re.search(r".*{0}.*".format(filename), out)
+        assert re.search(r".*Tag.*|.*# Entries.*", out)
 
     def test_stats(self, capsys):
         instance = commands.Commands()

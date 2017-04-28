@@ -114,8 +114,10 @@ class TestCommands:
     def test_sessions(self, capsys):
         instance = commands.Commands()
         instance.cmd_sessions('-h')
+        instance.cmd_sessions('-l')
         out, err = capsys.readouterr()
         assert re.search("usage: sessions \[-h\] .*", out)
+        assert re.search(".*6af69bf32d84229ff9a8904ab8ed28d7.*", out)
 
     def test_projects(self, capsys):
         instance = commands.Commands()
