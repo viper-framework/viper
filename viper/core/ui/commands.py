@@ -563,7 +563,7 @@ class Commands(object):
     ##
     # DELETE
     #
-    # This command deletes the currenlty opened file (only if it's stored in
+    # This command deletes the currently opened file (only if it's stored in
     # the local repository) and removes the details from the database
     def cmd_delete(self, *args):
         parser = argparse.ArgumentParser(prog='delete', description="Delete a file")
