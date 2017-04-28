@@ -4,7 +4,6 @@
 from __future__ import unicode_literals
 
 import os
-import re
 from tests.conftest import FIXTURE_DIR
 from viper.common.objects import File, MispEvent
 import pytest
@@ -42,5 +41,4 @@ class TestFile:
         assert instance.name == name
 
         out, err = capsys.readouterr()
-        lines = out.split("\n")
         assert out == ""
