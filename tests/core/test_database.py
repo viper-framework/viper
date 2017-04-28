@@ -88,3 +88,15 @@ class TestDatabase:
         instance = Database()
         assert isinstance(instance, Database)
         assert instance.__repr__() == "<Database>"
+
+    @pytest.mark.parametrize("filename, name", [
+        ("string_handling/ascii.txt", "ascii.txt"),
+        ("string_handling/dümmy.txt", "dümmy.txt"),
+        ("string_handling/with blank.txt", "with blank.txt")
+        ])
+    def test_add(self, capsys, filename, name):
+        f = File(os.path.join(FIXTURE_DIR, filename))
+
+        instance = Database()
+        ret = instance.add(f)
+        assert ret is True
