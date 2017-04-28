@@ -2,7 +2,12 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
+import pytest
+from tests.conftest import FIXTURE_DIR
+
 from viper.core.database import Malware, Tag, Note, Analysis, Database
+from viper.common.objects import File
 
 
 class TestMalware:

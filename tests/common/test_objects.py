@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
+from __future__ import unicode_literals
 
 import os
+import re
 from tests.conftest import FIXTURE_DIR
 from viper.common.objects import File, MispEvent
 import pytest
@@ -34,6 +36,11 @@ class TestFile:
         ])
     def test_init(self, capsys, filename, name):
         instance = File(os.path.join(FIXTURE_DIR, filename))
+
         assert isinstance(instance, File)
         assert instance.path == os.path.join(FIXTURE_DIR, filename)
         assert instance.name == name
+
+        out, err = capsys.readouterr()
+        lines = out.split("\n")
+        assert out == ""
