@@ -2,11 +2,9 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-from viper.core.session import __sessions__
 from viper.core.ui import commands
 from viper.core.database import Database
 from tests.conftest import FIXTURE_DIR
-import pytest
 import re
 import os
 import sys
@@ -20,8 +18,14 @@ except ImportError:
 
 class TestCommands:
 
+    def setup_class(cls):
+        instance = commands.Commands()
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
+        instance.cmd_store()
+
     def teardown_method(self):
-        __sessions__.close()
+        instance = commands.Commands()
+        instance.cmd_close()
 
     def test_init(self):
         instance = commands.Commands()
@@ -31,18 +35,9 @@ class TestCommands:
         instance = commands.Commands()
         instance.cmd_help()
         instance.cmd_clear()
-        instance.cmd_close()
         out, err = capsys.readouterr()
         assert re.search(r".* Commands.*", out)
         assert re.search(r".* Modules.*", out)
-
-    def test_open(self, capsys):
-        instance = commands.Commands()
-        instance.cmd_open('-h')
-        instance.cmd_open('-u', 'https://github.com/viper-framework/viper-test-files/raw/master/test_files/cmd.exe')
-        out, err = capsys.readouterr()
-        assert re.search("usage: open \[-h\] .*", out)
-        assert re.search(".*Session opened on /tmp/.*", out)
 
     def test_notes(self, capsys):
         instance = commands.Commands()
@@ -52,11 +47,18 @@ class TestCommands:
         assert re.search("usage: notes \[-h\] .*", out)
         assert re.search(".*No open session.*", out)
 
-    @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
-    def test_notes_existing(self, capsys, filename):
-        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        Database().add_note(__sessions__.current.file.sha256, 'Note test', 'This is the content')
+    def test_open(self, capsys):
         instance = commands.Commands()
+        instance.cmd_open('-h')
+        instance.cmd_open('-u', 'https://github.com/viper-framework/viper-test-files/raw/master/test_files/cmd.exe')
+        out, err = capsys.readouterr()
+        assert re.search("usage: open \[-h\] .*", out)
+        assert re.search(".*Session opened on /tmp/.*", out)
+
+    def test_notes_existing(self, capsys):
+        instance = commands.Commands()
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
+        Database().add_note(commands.__sessions__.current.file.sha256, 'Note test', 'This is the content')
         instance.cmd_notes('-l')
         instance.cmd_notes('-v', '1')
         instance.cmd_notes('-d', '1')
@@ -64,10 +66,9 @@ class TestCommands:
         assert re.search(".*1  | Note test.*", out)
         assert re.search(".*This is the content.*", out)
 
-    @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
-    def test_analysis(self, capsys, filename):
-        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+    def test_analysis(self, capsys):
         instance = commands.Commands()
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
         instance.cmd_analysis('-h')
         instance.cmd_analysis('-l')
         instance.cmd_analysis('-v', '1')
@@ -100,6 +101,16 @@ class TestCommands:
         out, err = capsys.readouterr()
         assert re.search("usage: tags \[-h\] .*", out)
 
+    def test_tags_use(self, capsys):
+        instance = commands.Commands()
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
+        instance.cmd_tags('-a', 'mytag')
+        instance.cmd_tags('-d', 'mytag')
+        out, err = capsys.readouterr()
+        lines = out.split('\n')
+        assert re.search(".*Tags added to the currently opened file.*", lines[1])
+        assert re.search(".*Refreshing session to update attributes....*", lines[2])
+
     def test_sessions(self, capsys):
         instance = commands.Commands()
         instance.cmd_sessions('-h')
@@ -131,10 +142,9 @@ class TestCommands:
         out, err = capsys.readouterr()
         assert re.search("usage: parent \[-h\] .*", out)
 
-    @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
-    def test_rename(self, capsys, filename):
-        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+    def test_rename(self, capsys):
         instance = commands.Commands()
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
         if sys.version_info <= (3, 0):
             in_fct = 'viper.core.ui.commands.input'
         else:
