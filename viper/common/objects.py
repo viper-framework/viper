@@ -6,6 +6,7 @@ import os
 import hashlib
 import binascii
 import sys
+from viper.common.exceptions import Python2UnsupportedUnicode
 
 if sys.version_info < (3, 0):
     # Make sure the read method returns a byte stream
@@ -118,7 +119,27 @@ class File(object):
             return f.read()
 
     def is_valid(self):
-        return os.path.exists(self.path) and os.path.isfile(self.path)  # and os.path.getsize(self.path) != 0
+        if not os.path.exists(self.path):
+            return False
+        if not os.path.isfile(self.path):
+            return False
+
+        if sys.version_info < (3, 0):
+            # on Python2 make sure to only handle ASCII filenames
+            try:
+                self.path.decode('ascii')
+            except UnicodeEncodeError as err:
+                raise Python2UnsupportedUnicode("Non ASCII character(s) in file name not supported on Python2.\n"
+                                                "EncodeError: {}\n"
+                                                "File: {}\n"
+                                                "Please use Python >= 3.4".format(self.path.encode("utf-8"), err), "error")
+            except UnicodeDecodeError as err:
+                raise Python2UnsupportedUnicode("Non ASCII character(s) in file name not supported on Python2.\n"
+                                                "DecodeError: {}\n"
+                                                "File: {}\n"
+                                                "Please use Python >= 3.4".format(self.path, err), "error")
+
+        return True
 
     def get_chunks(self):
         try:
