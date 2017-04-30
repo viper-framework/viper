@@ -9,3 +9,6 @@ scandir==1.2
 six==1.10.0
 terminaltables==2.1.0
 virustotal-api==1.0.9
+pymisp==2.4.62.1
+
+git+https://github.com/kbandla/pydeep.git#egg=pydeep
