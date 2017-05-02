@@ -9,6 +9,7 @@ import hashlib
 from zipfile import ZipFile
 from optparse import OptionParser
 from sqlalchemy import create_engine
+from datetime import datetime
 
 try:
     from io import BytesIO
@@ -102,7 +103,7 @@ def update():
         # Open the local file, whether it exists or not, and either
         # rewrite or write the new content.
         try:
-            new_local = open(local_file_path, 'w')
+            new_local = open(local_file_path, 'wb')
         except IOError as e:
             if e.errno == 21:
                 # It's a new directory.
@@ -130,8 +131,11 @@ def update():
 def update_db():
     print_item("Backing up Sqlite DB")
 
+    # backup of database name with a timestamp to avoid to be overwritten
+    db_backupname = "viper_{0}.db.bak".format(datetime.utcnow().strftime("%Y%m%d-%H%M%S"))
+
     try:
-        os.rename('viper.db', 'viper.db.bak')
+        os.rename('viper.db', db_backupname)
     except Exception as e:
         print_error("Failed to Backup. {0} Stopping".format(e))
         return
@@ -141,7 +145,7 @@ def update_db():
     Database()
 
     print_item("Connecting to Viper Databases")
-    old_engine = create_engine('sqlite:///viper.db.bak')
+    old_engine = create_engine('sqlite:///{0}'.format(db_backupname))
     db_path = os.path.join(__project__.get_path(), 'viper.db')
     new_engine = create_engine('sqlite:///{0}'.format(db_path))
 
@@ -170,15 +174,15 @@ def update_db():
 
     # Rebuild association table with foreign keys
     for row in association:
-        if row[0] == None:
+        if row[0] is None:
             tag_id = "Null"
         else:
             tag_id = "(SELECT id from tag WHERE id='{0}')".format(row[0])
-        if row[1] == None:
+        if row[1] is None:
             note_id = "Null"
         else:
             note_id = "(SELECT id from note WHERE id='{0}')".format(row[1])
-        if row[2] == None:
+        if row[2] is None:
             malware_id = "Null"
         else:
             malware_id = "(SELECT id from malware WHERE id='{0}')".format(row[2])
@@ -196,12 +200,12 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     if not options.db and not options.core:
-        print ""
-        print "========================================================================="
-        print "| This script will Update your Viper to the latest Dev Version.         |"
-        print "| Some Dev Updates have new or modified tables. This script will allow  |"
-        print "| you to update your existing DB files to the required Schema.          |"
-        print "=========================================================================\n"
+        print("")
+        print("=========================================================================")
+        print("| This script will Update your Viper to the latest Dev Version.         |")
+        print("| Some Dev Updates have new or modified tables. This script will allow  |")
+        print("| you to update your existing DB files to the required Schema.          |")
+        print("=========================================================================\n")
         parser.print_help()
         sys.exit()
 
