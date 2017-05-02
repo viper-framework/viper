@@ -182,7 +182,7 @@ class Console(object):
             else:
                 prompt = prefix + cyan('viper > ', True)
 
-            # enable unicode for prompt on Py2
+            # force str (Py3) / unicode (Py2) for prompt
             if sys.version_info <= (3, 0):
                 prompt = prompt.encode('utf-8')
             else:

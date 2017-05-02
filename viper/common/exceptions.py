@@ -15,5 +15,9 @@ class GenericException(Exception):
         return self.level, self.message
 
 
+class ArgumentErrorCallback(GenericException):
+    pass
+
+
 class Python2UnsupportedUnicode(GenericException):
     pass
