@@ -19,8 +19,7 @@ python:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar ssdeep libfuzzy -qq
-    - popd
+    - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev -qq
 install:
     - pip install -U -r requirements-dev.txt
     - pip install -U tox-travis
