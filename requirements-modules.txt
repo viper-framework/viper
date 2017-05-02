@@ -3,7 +3,7 @@ asn1crypto==0.22.0
 beautifulsoup4==4.5.3
 cached-property==1.3.0
 cffi==1.10.0
-cryptography==1.9.dev1
+cryptography==1.8.1
 dnspython==1.15.0
 enum34==1.1.6
 future==0.16.0
@@ -14,24 +14,18 @@ Jinja2==2.9.6
 jsonschema==2.6.0
 MarkupSafe==1.0
 mccabe==0.6.1
-olefile==0.44
-oletools==0.50
 openapi-codec==1.3.1
 packaging==16.8
-pkg-resources==0.0.0
 pyasn1==0.2.3
 pycodestyle==2.3.1
 pycparser==2.17
 pycrypto==2.6.1
-pydeep==0.2
 pyelftools==0.24
-PyExifTool==0.1
 pylzma==0.4.8
 pymisp==2.4.71
 pyOpenSSL==17.0.0
 pyparsing==2.2.0
 pypdns==1.3
-pype32==0.1a5
 pypssl==2.1
 pytz==2017.2
 r2pipe==0.8.9
@@ -40,5 +34,22 @@ virustotal-api==1.1.5
 
 git+https://github.com/viper-framework/pefile.git#egg=pefile
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
-git+https://github.com/crackinglandia/pype32.git#egg=pype32
-git+https://github.com/pyca/cryptography.git#egg=cryptography
+
+
+# office module
+olefile==0.44
+git+https://github.com/viper-framework/oletools.git
+## Flash lookup
+git+https://github.com/viper-framework/xxxswf.git
+
+# apk module
+ipython < 6; python_version == '2.7'
+git+https://github.com/androguard/androguard.git
+
+# pe module (verify sigs)
+git+https://github.com/sebdraven/verify-sigs.git
+
+# archiving
+rarfile==3.0
+
+yara-python==3.5.0
