@@ -200,7 +200,6 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
-
         self.added_ids = {}
 
     def __repr__(self):
