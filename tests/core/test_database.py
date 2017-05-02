@@ -91,7 +91,6 @@ class TestDatabase:
         assert isinstance(instance, Database)
         assert instance.__repr__() == "<Database>"
 
-
     @pytest.mark.parametrize("filename, name", [
         ("string_handling/ascii.txt", "ascii.txt"),
         ("string_handling/with blank.txt", "with blank.txt")
@@ -101,6 +100,7 @@ class TestDatabase:
 
         instance = Database()
         ret = instance.add(f)
+        assert ret is True
 
     @pytest.mark.skipif(sys.version_info >= (3, 0), reason="requires python2")
     @pytest.mark.xfail(raises=Python2UnsupportedUnicode)
@@ -114,9 +114,9 @@ class TestDatabase:
         ret = instance.add(f)
         assert ret is True
 
-    @pytest.mark.skipif(sys.version_info < (3,3), reason="requires at least python3.3")
+    @pytest.mark.skipif(sys.version_info < (3, 3), reason="requires at least python3.3")
     @pytest.mark.parametrize("filename, name", [
-        ("string_handling/dümmy.txt", "dümmy.txt"),
+        ("string_handling/dümmy.txt", "dümmy.txt")
         ])
     def test_add_unicode_py3(self, capsys, filename, name):
         f = File(os.path.join(FIXTURE_DIR, filename))
