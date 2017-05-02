@@ -1,21 +1,12 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import argparse
 import viper.common.out as out
 from viper.core.config import console_output
+from viper.common.exceptions import ArgumentErrorCallback
 
-
-class ArgumentErrorCallback(Exception):
-    def __init__(self, message, level=''):
-        self.message = message.strip() + '\n'
-        self.level = level.strip()
-
-    def __str__(self):
-        return '{}: {}'.format(self.level, self.message)
-
-    def get(self):
-        return self.level, self.message
 
 class ArgumentParser(argparse.ArgumentParser):
     def print_usage(self):
@@ -30,6 +21,7 @@ class ArgumentParser(argparse.ArgumentParser):
     def exit(self, status, message=None):
         if message is not None:
             raise ArgumentErrorCallback(message)
+
 
 class Module(object):
     cmd = ''

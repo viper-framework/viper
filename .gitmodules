@@ -1,0 +1,12 @@
+[submodule "viper/modules/Mach-O"]
+    path = viper/modules/pymacho_helper
+    url = https://github.com/viper-framework/Mach-O.git
+    branch = master
+[submodule "viper/modules/pdftools"]
+    path = viper/modules/pdftools
+    url = https://github.com/viper-framework/pdftools.git
+    branch = master
+[submodule "tests/viper-test-files"]
+    path = tests/viper-test-files
+    url = https://github.com/viper-framework/viper-test-files
+    branch = master

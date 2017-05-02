@@ -1,7 +1,6 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
-
-from __future__ import unicode_literals  # make all strings unicode in python2
 
 import os
 import json
@@ -13,6 +12,7 @@ from sqlalchemy import Table, Index, create_engine, and_
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
+from sqlalchemy.orm import subqueryload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from viper.common.out import print_warning, print_error
@@ -34,6 +34,7 @@ association_table = Table(
     Column('malware_id', Integer, ForeignKey('malware.id')),
     Column('analysis_id', Integer, ForeignKey('analysis.id'))
 )
+
 
 class Malware(Base):
     __tablename__ = 'malware'
@@ -114,6 +115,7 @@ class Malware(Base):
         self.name = name
         self.parent = parent
 
+
 class Tag(Base):
     __tablename__ = 'tag'
 
@@ -133,6 +135,7 @@ class Tag(Base):
 
     def __init__(self, tag):
         self.tag = tag
+
 
 class Note(Base):
     __tablename__ = 'note'
@@ -182,7 +185,7 @@ class Analysis(Base):
 
 
 class Database:
-    #__metaclass__ = Singleton
+    # __metaclass__ = Singleton
 
     def __init__(self):
 
@@ -197,10 +200,11 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
+
         self.added_ids = {}
 
-    def __del__(self):
-        self.engine.dispose()
+    def __repr__(self):
+        return "<{}>".format(self.__class__.__name__)
 
     def _connect_database(self, connection):
         if connection.startswith("mysql+pymysql"):
@@ -242,7 +246,7 @@ class Database:
             except IntegrityError:
                 session.rollback()
                 try:
-                    malware_entry.tag.append(session.query(Tag).filter(Tag.tag==tag).first())
+                    malware_entry.tag.append(session.query(Tag).filter(Tag.tag == tag).first())
                     session.commit()
                 except SQLAlchemyError:
                     session.rollback()
@@ -252,13 +256,18 @@ class Database:
         rows = session.query(Tag).all()
         return rows
 
+    def list_tags_for_malware(self, sha256):
+        session = self.Session()
+        malware = session.query(Malware).options(subqueryload(Malware.tag)).filter(Malware.sha256 == sha256).first()
+        return malware.tag
+
     def delete_tag(self, tag_name, sha256):
         session = self.Session()
 
         try:
             # First remove the tag from the sample
             malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
-            tag = session.query(Tag).filter(Tag.tag==tag_name).first()
+            tag = session.query(Tag).filter(Tag.tag == tag_name).first()
             try:
                 malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
                 malware_entry.tag.remove(tag)
@@ -277,6 +286,11 @@ class Database:
             session.rollback()
         finally:
             session.close()
+
+    def list_notes(self):
+        session = self.Session()
+        rows = session.query(Note).all()
+        return rows
 
     def add_note(self, sha256, title, body):
         session = self.Session()
@@ -416,7 +430,7 @@ class Database:
         rows = None
 
         if key == 'all':
-            rows = session.query(Malware).all()
+            rows = session.query(Malware).options(subqueryload(Malware.tag)).all()
         elif key == 'ssdeep':
             ssdeep_val = str(value)
             rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).all()
@@ -548,3 +562,8 @@ class Database:
         session = self.Session()
         analysis = session.query(Analysis).get(analysis_id)
         return analysis
+
+    def list_analysis(self):
+        session = self.Session()
+        rows = session.query(Analysis).all()
+        return rows

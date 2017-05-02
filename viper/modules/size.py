@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -8,6 +9,7 @@ from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
+
 
 class SIZE(Module):
     cmd = 'size'
@@ -76,7 +78,7 @@ class SIZE(Module):
                 continue
 
             self.log('info', "Cluster size {0} with {1} elements".format(bold(cluster_name), len(cluster_members)))
-            self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members)) 
+            self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
 
     def size_scan(self):
         db = Database()
@@ -108,11 +110,11 @@ class SIZE(Module):
         if self.args is None:
             return
 
-        if not self.__check_session(): 
+        if not self.__check_session():
             self.log('error', 'At least one of the parameters is required')
             self.usage()
             return
-    
+
         self.file_size = __sessions__.current.file.size
         self.log("info", "Size: {0} B".format(self.file_size))
 

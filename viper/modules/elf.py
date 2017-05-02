@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os, math
+import os
+import math
+from io import BytesIO, open
 
 try:
     from elftools.elf.elffile import ELFFile
@@ -30,13 +33,13 @@ class ELF(Module):
     def __init__(self):
         super(ELF, self).__init__()
         subparsers = self.parser.add_subparsers(dest='subname')
-        
+
         subparsers.add_parser('sections', help='List ELF sections')
         subparsers.add_parser('segments', help='List ELF segments')
         subparsers.add_parser('symbols', help='List ELF symbols')
         subparsers.add_parser('interpreter', help='Get the program interpreter')
         subparsers.add_parser('dynamic', help='Show the dynamic section')
-        
+
         parser_ep = subparsers.add_parser('entrypoint', help='Show the ELF entry point')
         parser_ep.add_argument('-a', '--all', action='store_true', help='Print the entry point of all files in the project')
         parser_ep.add_argument('-c', '--cluster', action='store_true', help='Cluster all files in the project')
@@ -66,8 +69,7 @@ class ELF(Module):
 
         if not self.elf:
             try:
-                fd = open(__sessions__.current.file.path, 'rb')
-                self.elf = ELFFile(fd)
+                self.elf = ELFFile(BytesIO(__sessions__.current.file.data))
             except Exception as e:
                 self.log('error', "Unable to parse ELF file: {0}".format(e))
                 return False
@@ -163,7 +165,7 @@ class ELF(Module):
 
         ep = self.elf.header.e_entry
         self.log('info', "Entry point: {0:#x}".format(ep))
-        
+
         if self.args.scan and self.args.cluster:
             self.log('error', "You selected two exclusive options, pick one")
             return
@@ -179,8 +181,8 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_ep = elfo.header.e_entry
                 except:
                     continue
@@ -190,7 +192,6 @@ class ELF(Module):
             self.log('table', dict(header=['MD5', 'Name', 'Entry point'], rows=rows))
 
             return
-
 
         if self.args.cluster:
             db = Database()
@@ -202,9 +203,9 @@ class ELF(Module):
                 if not os.path.exists(sample_path):
                     continue
 
-                try: 
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                try:
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_ep = hex(elfo.header.e_entry)
                 except Exception as e:
                     self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
@@ -238,8 +239,8 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_ep = elfo.header.e_entry
                 except:
                     continue
@@ -250,7 +251,6 @@ class ELF(Module):
             if len(rows) > 0:
                 self.log('info', "Following are samples with Entry point {0}".format(bold(ep)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
-
 
     def machine(self):
         if not self.__check_session():
@@ -274,8 +274,8 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_machine = elfo.header.e_machine
                 except:
                     continue
@@ -285,7 +285,6 @@ class ELF(Module):
             self.log('table', dict(header=['MD5', 'Name', 'e_machine'], rows=rows))
 
             return
-
 
         if self.args.cluster:
             db = Database()
@@ -297,9 +296,9 @@ class ELF(Module):
                 if not os.path.exists(sample_path):
                     continue
 
-                try: 
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                try:
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_machine = elfo.header.e_machine
                 except Exception as e:
                     self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
@@ -333,8 +332,8 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_machine = elfo.header.e_machine
                 except:
                     continue
@@ -343,9 +342,8 @@ class ELF(Module):
                     rows.append([sample.md5, sample.name])
 
             if len(rows) > 0:
-                self.log('info', "Following are samples with Entry point {0}".format(bold(ep)))
+                self.log('info', "Following are samples with e_machine {0}".format(bold(machine)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
-
 
     def elftype(self):
         if not self.__check_session():
@@ -369,8 +367,8 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_e_type = elfo.header.e_type
                 except:
                     continue
@@ -380,7 +378,6 @@ class ELF(Module):
             self.log('table', dict(header=['MD5', 'Name', 'e_type'], rows=rows))
 
             return
-
 
         if self.args.cluster:
             db = Database()
@@ -392,9 +389,9 @@ class ELF(Module):
                 if not os.path.exists(sample_path):
                     continue
 
-                try: 
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                try:
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_e_type = elfo.header.e_type
                 except Exception as e:
                     self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
@@ -428,26 +425,23 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    elfo = ELFFile(fd)
+                    with open(sample_path, 'rb') as fd:
+                        elfo = ELFFile(fd)
                     cur_e_type = elfo.header.e_machine
                 except:
                     continue
-
-                if machine == cur_machine:
+                if e_type == cur_e_type:
                     rows.append([sample.md5, sample.name])
 
             if len(rows) > 0:
                 self.log('info', "Following are samples with ELF type {0}".format(bold(e_type)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
-
     def elfentropy(self):
         if not self.__check_session():
             return
 
-        fd = open(__sessions__.current.file.path, 'rb')
-        ent = self.get_entropy(fd.read())
+        ent = self.get_entropy(__sessions__.current.file.data)
         self.log('info', "Entropy {0}".format(ent))
         if ent > 7:
             self.log('warning', "Probably packed. High entropy.")
@@ -467,8 +461,8 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    cur_ent = self.get_entropy(fd.read())
+                    with open(sample_path, 'rb') as fd:
+                        cur_ent = self.get_entropy(fd.read())
                 except Exception as e:
                     self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
                     continue
@@ -478,7 +472,6 @@ class ELF(Module):
             self.log('table', dict(header=['MD5', 'Name', 'Entropy'], rows=rows))
 
             return
-
 
         if self.args.cluster:
             db = Database()
@@ -490,9 +483,9 @@ class ELF(Module):
                 if not os.path.exists(sample_path):
                     continue
 
-                try: 
-                    fd = open(sample_path, 'rb')
-                    cur_ent = self.get_entropy(fd.read())
+                try:
+                    with open(sample_path, 'rb') as fd:
+                        cur_ent = self.get_entropy(fd.read())
                 except Exception as e:
                     self.log('error', "Error {0} for sample {1}".format(e, sample.sha256))
                     continue
@@ -525,8 +518,8 @@ class ELF(Module):
                     continue
 
                 try:
-                    fd = open(sample_path, 'rb')
-                    cur_ent = self.get_entropy(fd.read())
+                    with open(sample_path, 'rb') as fd:
+                        cur_ent = self.get_entropy(fd.read())
                 except:
                     continue
 
@@ -537,15 +530,15 @@ class ELF(Module):
                 self.log('info', "Following are samples with entropy {0}".format(bold(ent)))
                 self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
-
     def get_entropy(self, data):
-        if not data: return 0
-        entropy = 0 
+        if not data:
+            return 0
+        entropy = 0
         for x in range(256):
-            p_x = float(data.count(chr(x)))/len(data)
+            p_x = float(data.count(bytes(x))) / len(data)
             if p_x > 0:
-                entropy += - p_x*math.log(p_x, 2)
-        ent = "%.2f" % entropy
+                entropy += - p_x * math.log(p_x, 2)
+        ent = "%.4f" % entropy
         return float(ent)
 
     def run(self):

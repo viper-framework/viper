@@ -1,12 +1,20 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import os
 import hashlib
 import binascii
+import sys
+from viper.common.exceptions import Python2UnsupportedUnicode
+
+if sys.version_info < (3, 0):
+    # Make sure the read method returns a byte stream
+    from io import open
 
 try:
     import pydeep
+
     HAVE_SSDEEP = True
 except ImportError:
     HAVE_SSDEEP = False
@@ -32,13 +40,15 @@ class Singleton(type):
 
 
 class MispEvent(object):
-
     def __init__(self, event, offline=False):
         if isinstance(event, MISPEvent):
             self.event = event
         else:
             self.event = MISPEvent()
-            self.event.load(event)
+            if os.path.exists(event):
+                self.event.load_file(event)
+            else:
+                self.event.load(event)
         self.off = offline
         if self.event.id:
             self.current_dump_file = '{}.json'.format(self.event.id)
@@ -52,13 +62,13 @@ class MispEvent(object):
         self.off = True
 
     def get_all_ips(self):
-        return [a.value for a in self.event.attributes if a.type in [u'ip-dst', u'ip-src']]
+        return [a.value for a in self.event.attributes if a.type in ['ip-dst', 'ip-src']]
 
     def get_all_domains(self):
-        return [a.value for a in self.event.attributes if a.type in [u'domain', u'hostname']]
+        return [a.value for a in self.event.attributes if a.type in ['domain', 'hostname']]
 
     def get_all_urls(self):
-        return [a.value for a in self.event.attribute if a.type == u'url']
+        return [a.value for a in self.event.attributes if a.type == 'url']
 
     def get_all_hashes(self):
         event_hashes = []
@@ -78,7 +88,6 @@ class MispEvent(object):
 
 
 class File(object):
-
     def __init__(self, path):
         self.id = None
         self.path = path
@@ -97,7 +106,7 @@ class File(object):
         self.children = ''
 
         if self.is_valid():
-            self.name = os.path.basename(self.path).encode('utf-8')
+            self.name = os.path.basename(self.path)
             self.size = os.path.getsize(self.path)
             self.type = self.get_type()
             self.mime = self.get_mime()
@@ -106,26 +115,42 @@ class File(object):
 
     @property
     def data(self):
-        return open(self.path, 'rb').read()
+        with open(self.path, 'rb') as f:
+            return f.read()
 
     def is_valid(self):
-        return os.path.exists(self.path) and os.path.isfile(self.path)# and os.path.getsize(self.path) != 0
+        if not os.path.exists(self.path):
+            return False
+        if not os.path.isfile(self.path):
+            return False
+
+        if sys.version_info < (3, 0):
+            # on Python2 make sure to only handle ASCII filenames
+            try:
+                self.path.decode('ascii')
+            except UnicodeEncodeError as err:
+                raise Python2UnsupportedUnicode("Non ASCII character(s) in file name not supported on Python2.\n"
+                                                "EncodeError: {}\n"
+                                                "File: {}\n"
+                                                "Please use Python >= 3.4".format(self.path.encode("utf-8"), err), "error")
+            except UnicodeDecodeError as err:
+                raise Python2UnsupportedUnicode("Non ASCII character(s) in file name not supported on Python2.\n"
+                                                "DecodeError: {}\n"
+                                                "File: {}\n"
+                                                "Please use Python >= 3.4".format(self.path, err), "error")
+
+        return True
 
     def get_chunks(self):
         try:
-            fd = open(self.path, 'rb')
-        # TODO: fix this up better.
-        except Exception as e:
+            with open(self.path, 'rb') as fd:
+                while True:
+                    chunk = fd.read(16 * 1024)
+                    if not chunk:
+                        break
+                    yield chunk
+        except Exception:
             return
-
-        while True:
-            chunk = fd.read(16 * 1024)
-            if not chunk:
-                break
-
-            yield chunk
-
-        fd.close()
 
     def get_hashes(self):
         crc = 0
@@ -141,7 +166,7 @@ class File(object):
             sha256.update(chunk)
             sha512.update(chunk)
 
-        self.crc32 = ''.join('%02X' % ((crc>>i)&0xff) for i in [24, 16, 8, 0])
+        self.crc32 = ''.join('%02X' % ((crc >> i) & 0xff) for i in [24, 16, 8, 0])
         self.md5 = md5.hexdigest()
         self.sha1 = sha1.hexdigest()
         self.sha256 = sha256.hexdigest()
@@ -152,7 +177,7 @@ class File(object):
             return ''
 
         try:
-            return pydeep.hash_file(self.path)
+            return pydeep.hash_file(self.path).decode()
         except Exception:
             return ''
 
@@ -167,7 +192,7 @@ class File(object):
             except:
                 try:
                     import subprocess
-                    file_process = subprocess.Popen(['file', '-b', self.path], stdout = subprocess.PIPE)
+                    file_process = subprocess.Popen(['file', '-b', self.path], stdout=subprocess.PIPE)
                     file_type = file_process.stdout.read().strip()
                 except:
                     return ''
