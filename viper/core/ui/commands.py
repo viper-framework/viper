@@ -3,6 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import platform
 from os.path import expanduser
 import time
 import json
@@ -25,12 +26,14 @@ from viper.common.colors import bold
 from viper.common.utils import convert_size
 from viper.common.objects import File
 from viper.common.network import download
+from viper.common.version import __version__
 from viper.core.session import __sessions__
 from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.config import Config, console_output
+import  viper.core.ui.console
 from viper.common.autorun import autorun_module
 from viper.core.archiver import Compressor
 
@@ -69,6 +72,7 @@ class Commands(object):
         # Map commands to their related functions.
         self.commands = dict(
             help=dict(obj=self.cmd_help, description="Show this help message"),
+            about=dict(obj=self.cmd_about, description="Show information about this Viper instance"),
             open=dict(obj=self.cmd_open, description="Open a file"),
             new=dict(obj=self.cmd_new, description="Create new file"),
             close=dict(obj=self.cmd_close, description="Close the current session"),
@@ -129,6 +133,27 @@ class Commands(object):
         rows = sorted(rows, key=lambda entry: entry[0])
 
         self.log('table', dict(header=['Command', 'Description'], rows=rows))
+
+    ##
+    # ABOUT
+    #
+    # This command prints some useful information regarding the running
+    # Viper instance
+    def cmd_about(self, *args):
+        rows = list()
+        rows.append(["Viper Version", __version__])
+        rows.append(["Python Version", platform.python_version()])
+        rows.append(["Homepage", "https://viper.li"])
+        rows.append(["Issue Tracker", "https://github.com/viper-framework/viper/issues"])
+
+        self.log('table', dict(header=['About', ''], rows=rows))
+
+        rows = list()
+        rows.append(["Configuration File", cfg.config_file])
+        rows.append(["Storage Path", __project__.path])
+        rows.append(["Current Project Database", self.db.engine])
+
+        self.log('table', dict(header=['Configuration', ''], rows=rows))
 
     ##
     # NEW
