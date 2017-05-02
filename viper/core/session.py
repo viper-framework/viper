@@ -86,7 +86,12 @@ class Sessions(object):
             row = Database().find(key='sha256', value=session.file.sha256)
             if row:
                 session.file.id = row[0].id
-                session.file.name = row[0].name
+
+                if isinstance(row[0].name, bytes):  # TODO(frennkie) check
+                    session.file.name = row[0].name.decode('utf-8')
+                else:
+                    session.file.name = row[0].name
+
                 session.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
 
                 if row[0].parent:
