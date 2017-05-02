@@ -98,3 +98,8 @@ pdns_pass =
 base_url = https://koodous.com/api/apks
 token = d01d9c845e4b2430682241c5faa55e786c129441
 
+[lastline]
+base_url = https://analysis.lastline.com/analysis/submit/file
+key =
+token =
+portal_account =

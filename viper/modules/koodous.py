@@ -1,13 +1,16 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # and developed by Koodous Team.
 # See the file 'LICENSE' for copying permission.
 
 try:
     import requests
+
     HAVE_REQUESTS = True
 except ImportError:
     HAVE_REQUESTS = False
 
+from io import BytesIO
 import hashlib
 import tempfile
 
@@ -17,6 +20,7 @@ from viper.core.config import Config
 
 cfg = Config()
 
+
 class Koodous(Module):
     cmd = 'koodous'
     description = 'Interact with Koodous'
@@ -24,21 +28,21 @@ class Koodous(Module):
 
     def __init__(self):
         super(Koodous, self).__init__()
-        self.parser.add_argument('-d','--download', action='store', 
+        self.parser.add_argument('-d', '--download', action='store',
                                  dest='sha256')
-        self.parser.add_argument('-u', '--upload', action='store_true', 
+        self.parser.add_argument('-u', '--upload', action='store_true',
                                  help='Upload file to Koodous')
-        self.parser.add_argument('-c','--comment',nargs='+', action='store', 
-                                 dest='comment', 
+        self.parser.add_argument('-c', '--comment', nargs='+', action='store',
+                                 dest='comment',
                                  help='Make a comment about sample')
-        self.parser.add_argument('-lc', '--load-comments', action='store_true', 
-                            help='Show comments about the sample loaded')
+        self.parser.add_argument('-lc', '--load-comments', action='store_true',
+                                 help='Show comments about the sample loaded')
 
     def run(self):
         super(Koodous, self).run()
         if self.args is None:
             return
-        
+
         if not HAVE_REQUESTS:
             self.log('error', "Missing dependency, install requests (`pip install requests`)")
             return
@@ -59,7 +63,7 @@ class Koodous(Module):
             self._show_comments()
             return
 
-        #If no action, show the help
+        # If no action, show the help
         self.help()
 
     def _download(self, sha256):
@@ -75,7 +79,6 @@ class Koodous(Module):
             down_url = response.json().get('download_url', None)
             response = requests.get(url=down_url)
 
-
             sha256_downloaded = hashlib.sha256(response.content).hexdigest()
             if sha256_downloaded != sha256:
                 self.log('error', 'Problem downloading')
@@ -84,25 +87,24 @@ class Koodous(Module):
             tmp.close()
             return __sessions__.new(tmp.name)
 
-
     def _upload(self):
         """
             Function to upload the session file to Koodous
         """
 
-        content_file = open(__sessions__.current.file.path, 'rb').read()
-        if content_file[:2] != 'PK':
+        content_file = __sessions__.current.file.data
+        if content_file[:2] != b'PK':
             self.log('info', 'Koodous only accepts APKs, try with VirusTotal.')
             return
         sha256 = hashlib.sha256(content_file).hexdigest()
-        
+
         url = '%s/%s/get_upload_url' % (cfg.koodous.koodous_url, sha256)
         headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         response = requests.get(url=url, headers=headers)
         if response.status_code == 200:
             upload_url = response.json().get('upload_url', None)
-            files = {'file': open(__sessions__.current.file.path, 'rb')}
+            files = {'file': BytesIO(__sessions__.current.file.data)}
             response = requests.post(url=upload_url, files=files)
             if response == 200:
                 self.log("File uploaded correctly.")
@@ -112,7 +114,6 @@ class Koodous(Module):
         else:
             self.log('error', 'Unknown error, sorry!')
 
-
     def _comment(self, comment):
         """
             Function to comment an APK in Koodous
@@ -120,11 +121,11 @@ class Koodous(Module):
         headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         try:
-            content_file = open(__sessions__.current.file.path, 'rb').read()
+            content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
         except:
             self.log('error', 'You have no file loaded')
-        
+
         try:
             url = '%s/%s/comments' % (cfg.koodous.koodous_url, sha256)
             data = {'text': comment}
@@ -136,8 +137,6 @@ class Koodous(Module):
         except:
             self.log('error', 'Network problem, please try again.')
 
-
-
     def _show_comments(self):
         """
             Function to view comments of a sample in Koodous
@@ -145,7 +144,7 @@ class Koodous(Module):
         headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
 
         try:
-            content_file = open(__sessions__.current.file.path, 'rb').read()
+            content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
         except:
             self.log('error', 'You have no file loaded')
@@ -157,6 +156,6 @@ class Koodous(Module):
                 self.log('info', 'This sample has no comments.')
                 return
             for result in response.json().get('results'):
-                print "[%s]: %s" % (result['author']['username'], result['text'])
+                self.log('info', "[{}]: {}".format(result['author']['username'], result['text']))
         except:
             self.log('error', 'Network problem, please try again.')

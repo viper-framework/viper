@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -19,6 +20,7 @@ try:
     HAVE_YARA = True
 except ImportError:
     HAVE_YARA = False
+
 
 class RAT(Module):
     cmd = 'rat'
@@ -53,7 +55,10 @@ class RAT(Module):
             self.log('error', "There is no module for family {0}".format(bold(family)))
             return
 
-        config = module.config(__sessions__.current.file.data)
+        try:
+            config = module.config(__sessions__.current.file.data)
+        except:
+            config = None
         if not config:
             self.log('error', "No Configuration Detected")
             return

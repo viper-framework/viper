@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -12,6 +13,7 @@ from viper.core.storage import get_sample_path
 
 cfg = Config()
 
+
 def parse_commands(data):
     root = ''
     args = []
@@ -21,7 +23,8 @@ def parse_commands(data):
     if len(words) > 1:
         args = words[1:]
 
-    return (root, args)
+    return root, args
+
 
 def autorun_module(file_hash):
     if not file_hash:
@@ -48,10 +51,10 @@ def autorun_module(file_hash):
                     module = __modules__[root]['obj']()
                     module.set_commandline(args)
                     module.run()
-                    
+
                     if cfg.modules.store_output and __sessions__.is_set():
                         Database().add_analysis(file_hash, split_command, module.output)
-                    
+
                     if cfg.autorun.verbose:
                         print_output(module.output)
 

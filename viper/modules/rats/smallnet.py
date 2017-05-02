@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/SmallNet.py
+
 
 def ver_52(data):
     config_dict = {}
@@ -24,7 +26,7 @@ def ver_52(data):
     config_dict['MSN Spread'] = config_parts[22]
     config_dict['Yahoo Spread'] = config_parts[23]
     config_dict['LAN Spread'] = config_parts[24]
-    config_dict['Disbale Firewall'] = config_parts[25] 
+    config_dict['Disbale Firewall'] = config_parts[25]
     config_dict['Delay Execution MiliSeconds'] = config_parts[26]
     config_dict['Attribute Read Only'] = config_parts[27]
     config_dict['Attribute System File'] = config_parts[28]
@@ -46,7 +48,7 @@ def ver_52(data):
     config_dict['MessageBox Message'] = config_parts[44]
     config_dict['MessageBox Icon'] = config_parts[45]
     config_dict['MessageBox Buttons'] = config_parts[46]
-    config_dict['MessageBox Title'] = config_parts[47]    
+    config_dict['MessageBox Title'] = config_parts[47]
     if config_parts[6] == 1:
         config_dict['Install Path'] = 'Temp'
     if config_parts[7] == 1:
@@ -61,13 +63,13 @@ def ver_52(data):
 def ver_5(data):
     config_dict = {}
     config_parts = data.split('!!ElMattadorDz!!')
-    config_dict['Domain'] = config_parts[1] 
-    config_dict['Port'] = config_parts[2] 
+    config_dict['Domain'] = config_parts[1]
+    config_dict['Port'] = config_parts[2]
     config_dict['Disable Registry'] = config_parts[3]
-    config_dict['Disbale TaskManager'] = config_parts[4] 
-    config_dict['Install Server'] = config_parts[5] 
-    config_dict['Registry Key'] = config_parts[8] 
-    config_dict['Install Name'] = config_parts[9] 
+    config_dict['Disbale TaskManager'] = config_parts[4]
+    config_dict['Install Server'] = config_parts[5]
+    config_dict['Registry Key'] = config_parts[8]
+    config_dict['Install Name'] = config_parts[9]
     config_dict['Disbale UAC'] = config_parts[10]
     config_dict['Anti-Sandboxie'] = config_parts[13]
     config_dict['Anti-Anubis'] = config_parts[14]
@@ -75,23 +77,24 @@ def ver_5(data):
     config_dict['Anti-VmWare'] = config_parts[16]
     config_dict['Anti-VirtualPC'] = config_parts[17]
     config_dict['ServerID'] = config_parts[18]
-    config_dict['USB Spread'] = config_parts[19] 
-    config_dict['P2P Spread'] = config_parts[20] 
+    config_dict['USB Spread'] = config_parts[19]
+    config_dict['P2P Spread'] = config_parts[20]
     config_dict['RAR Spread'] = config_parts[21]
     config_dict['MSN Spread'] = config_parts[22]
     config_dict['Yahoo Spread'] = config_parts[23]
     config_dict['LAN Spread'] = config_parts[24]
-    config_dict['Disbale Firewall'] = config_parts[25] 
-    config_dict['Delay Execution MiliSeconds'] = config_parts[26] 
-    if config_parts[6] == 1: 
+    config_dict['Disbale Firewall'] = config_parts[25]
+    config_dict['Delay Execution MiliSeconds'] = config_parts[26]
+    if config_parts[6] == 1:
         config_dict['Install Path'] = 'Temp'
-    if config_parts[7] == 1: 
+    if config_parts[7] == 1:
         config_dict['Install Path'] = 'Windows'
-    if config_parts[11] == 1: 
+    if config_parts[11] == 1:
         config_dict['Install Path'] = 'System32'
-    if config_parts[12] == 1: 
+    if config_parts[12] == 1:
         config_dict['Install Path'] = 'Program Files'
     return config_dict
+
 
 def config(data):
     if '!!<3SAFIA<3!!' in data:
@@ -100,4 +103,3 @@ def config(data):
     elif '!!ElMattadorDz!!' in data:
         config_dict = ver_5(data)
         return config_dict
-

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -6,6 +7,7 @@ import re
 import datetime
 import tempfile
 import time
+from io import BytesIO, open
 
 from viper.common.constants import VIPER_ROOT
 
@@ -17,15 +19,15 @@ except ImportError:
     HAVE_PEFILE = False
 
 try:
-    from viper.modules.pehash.pehasher import calculate_pehash
+    from .pehash.pehasher import calculate_pehash
     HAVE_PEHASH = True
 except ImportError:
     HAVE_PEHASH = False
 
 try:
-    from viper.modules.verifysigs.verifysigs import get_auth_data
-    from verifysigs.asn1 import dn
-    HAVE_VERIFYSIGS= True
+    from .sigs_helper.sigs_helper import get_auth_data
+    from .verifysigs.asn1utils import dn
+    HAVE_VERIFYSIGS = True
 except ImportError:
     HAVE_VERIFYSIGS = False
 
@@ -89,6 +91,9 @@ class PE(Module):
 
         self.pe = None
 
+        self.result_compile_time = None
+        self.result_sections = None
+
     def __check_session(self):
         if not __sessions__.is_set():
             self.log('error', "No open session")
@@ -96,7 +101,7 @@ class PE(Module):
 
         if not self.pe:
             try:
-                self.pe = pefile.PE(__sessions__.current.file.path)
+                self.pe = pefile.PE(data=__sessions__.current.file.data)
             except pefile.PEFormatError as e:
                 self.log('error', "Unable to parse PE file: {0}".format(e))
                 return False
@@ -110,9 +115,17 @@ class PE(Module):
         if hasattr(self.pe, 'DIRECTORY_ENTRY_IMPORT'):
             for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
                 try:
-                    self.log('info', "DLL: {0}".format(entry.dll))
+                    if isinstance(entry.dll, bytes):
+                        dll = entry.dll.decode()
+                    else:
+                        dll = entry.dll
+                    self.log('info', "DLL: {0}".format(dll))
                     for symbol in entry.imports:
-                        self.log('item', "{0}: {1}".format(hex(symbol.address), symbol.name))
+                        if isinstance(symbol.name, bytes):
+                            name = symbol.name.decode()
+                        else:
+                            name = symbol.name
+                        self.log('item', "{0}: {1}".format(hex(symbol.address), name))
                 except:
                     continue
 
@@ -178,8 +191,7 @@ class PE(Module):
 
                 self.log('info', "AddressOfEntryPoint cluster {0}".format(bold(cluster_name)))
 
-                self.log('table', dict(header=['MD5', 'Name'],
-                    rows=cluster_members))
+                self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
 
             return
 
@@ -213,13 +225,12 @@ class PE(Module):
 
             self.log('info', "Following are samples with AddressOfEntryPoint {0}".format(bold(ep)))
 
-            self.log('table', dict(header=['MD5', 'Name'],
-                rows=rows))
+            self.log('table', dict(header=['MD5', 'Name'], rows=rows))
 
     def compiletime(self):
 
         def get_compiletime(pe):
-            return datetime.datetime.fromtimestamp(pe.FILE_HEADER.TimeDateStamp)
+            return datetime.datetime.utcfromtimestamp(pe.FILE_HEADER.TimeDateStamp)
 
         if self.args.all:
             self.log('info', "Retrieving compile time for all stored samples...")
@@ -247,7 +258,8 @@ class PE(Module):
         if not self.__check_session():
             return
 
-        compile_time = get_compiletime(self.pe)
+        self.result_compile_time = get_compiletime(self.pe)
+        compile_time = self.result_compile_time
         self.log('info', "Compile Time: {0}".format(bold(compile_time)))
 
         if self.args.scan:
@@ -301,7 +313,7 @@ class PE(Module):
             if not userdb_path:
                 return
 
-            with file(userdb_path, 'rt') as f:
+            with open(userdb_path, 'rb') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
@@ -520,8 +532,7 @@ class PE(Module):
 
                 self.log('info', "Imphash cluster {0}".format(bold(cluster_name)))
 
-                self.log('table', dict(header=['MD5', 'Name'],
-                    rows=cluster_members))
+                self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
 
             return
 
@@ -677,7 +688,7 @@ class PE(Module):
                 auth.ValidateHashes(computed_content_hash)
                 auth.ValidateSignatures()
                 auth.ValidateCertChains(time.gmtime())
-            except Exception, e:
+            except Exception as e:
                 self.log('error', "Unable to validate PE certificate: {0}".format(str(e)))
                 return
 
@@ -687,7 +698,7 @@ class PE(Module):
 
             if auth.has_countersignature:
                 self.log('info', bold('Countersignature is present. Timestamp: {0} UTC'.format(
-                        time.asctime(time.gmtime(auth.counter_timestamp)))))
+                         time.asctime(time.gmtime(auth.counter_timestamp)))))
             else:
                 self.log('info', bold('Countersignature is not present.'))
 
@@ -696,17 +707,17 @@ class PE(Module):
 
             self.log('info', '{0}'.format(auth.cert_chain_head[2][0]))
             self.log('info', 'Chain not before: {0} UTC'.format(
-                    time.asctime(time.gmtime(auth.cert_chain_head[0]))))
+                     time.asctime(time.gmtime(auth.cert_chain_head[0]))))
             self.log('info', 'Chain not after: {0} UTC'.format(
-                    time.asctime(time.gmtime(auth.cert_chain_head[1]))))
+                     time.asctime(time.gmtime(auth.cert_chain_head[1]))))
 
             if auth.has_countersignature:
                 self.log('info', bold('Countersig chain head issued by:'))
                 self.log('info', '{0}'.format(auth.counter_chain_head[2]))
                 self.log('info', 'Countersig not before: {0} UTC'.format(
-                        time.asctime(time.gmtime(auth.counter_chain_head[0]))))
+                         time.asctime(time.gmtime(auth.counter_chain_head[0]))))
                 self.log('info', 'Countersig not after: {0} UTC'.format(
-                        time.asctime(time.gmtime(auth.counter_chain_head[1]))))
+                         time.asctime(time.gmtime(auth.counter_chain_head[1]))))
 
             self.log('info', bold('Certificates:'))
             for (issuer, serial), cert in auth.certificates.items():
@@ -720,13 +731,13 @@ class PE(Module):
                 not_before_time = not_before.ToPythonEpochTime()
                 not_after_time = not_after.ToPythonEpochTime()
                 self.log('info', 'Not Before: {0} UTC ({1})'.format(
-                        time.asctime(time.gmtime(not_before_time)), not_before[0]))
+                         time.asctime(time.gmtime(not_before_time)), not_before[0]))
                 self.log('info', 'Not After: {0} UTC ({1})'.format(
-                        time.asctime(time.gmtime(not_after_time)), not_after[0]))
+                         time.asctime(time.gmtime(not_after_time)), not_after[0]))
 
             if auth.trailing_data:
                 self.log('info', 'Signature Blob had trailing (unvalidated) data ({0} bytes): {1}'.format(
-                        len(auth.trailing_data), auth.trailing_data.encode('hex')))
+                         len(auth.trailing_data), auth.trailing_data.encode('hex')))
 
     def language(self):
 
@@ -747,7 +758,7 @@ class PE(Module):
 
         def is_cpp(data, cpp_count):
             for line in data:
-                if 'type_info' in line or 'RTTI' in line:
+                if b'type_info' in line or b'RTTI' in line:
                     cpp_count += 1
                     break
 
@@ -758,25 +769,25 @@ class PE(Module):
 
         def is_delphi(data):
             for line in data:
-                if 'Borland' in line:
-                    path = line.split('\\')
+                if b'Borland' in line:
+                    path = line.split(b'\\')
                     for p in path:
-                        if 'Delphi' in p:
+                        if b'Delphi' in p:
                             return True
             return False
 
         def is_vbdotnet(data):
             for line in data:
-                if 'Compiler' in line:
-                    stuff = line.split('.')
-                    if 'VisualBasic' in stuff:
+                if b'Compiler' in line:
+                    stuff = line.split(b'.')
+                    if b'VisualBasic' in stuff:
                         return True
 
             return False
 
         def is_autoit(data):
             for line in data:
-                if 'AU3!' in line:
+                if b'AU3!' in line:
                     return True
 
             return False
@@ -789,7 +800,7 @@ class PE(Module):
             return False
 
         def get_strings(content):
-            regexp = '[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
+            regexp = b'[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
             return re.findall(regexp, content)
 
         def find_language(iat, sample, content):
@@ -893,21 +904,25 @@ class PE(Module):
 
         rows = []
         for section in self.pe.sections:
+            if isinstance(section.Name, bytes):
+                section_name = section.Name.decode()
+            else:
+                section_name = section.Name
+            section_name = section_name.replace('\x00', '')
             if self.args.dump:
-                with open(__sessions__.current.file.path, 'rb') as file_handle:
-                    file_handle.seek(int(section.PointerToRawData))
-                    section_data = file_handle.read(int(section.SizeOfRawData))
+                file_handle = BytesIO(__sessions__.current.file.data)
+                file_handle.seek(int(section.PointerToRawData))
+                section_data = file_handle.read(int(section.SizeOfRawData))
 
-                    dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
-                        __sessions__.current.file.md5, section.Name.replace('\x00', '')))
+                dump_path = os.path.join(self.args.dump, '{}_{}.bin'.format(
+                    __sessions__.current.file.md5, section_name))
 
-                    with open(dump_path, 'wb') as dump_handle:
-                        dump_handle.write(section_data)
+                with open(dump_path, 'wb') as dump_handle:
+                    dump_handle.write(section_data)
 
-                    self.log('info', "Dumped section to {}".format(dump_path))
-
+                self.log('info', "Dumped section to {}".format(dump_path))
             rows.append([
-                section.Name,
+                section_name,
                 hex(section.VirtualAddress),
                 hex(section.Misc_VirtualSize),
                 section.PointerToRawData,
@@ -915,6 +930,7 @@ class PE(Module):
                 section.get_entropy()
             ])
 
+        self.result_sections = rows
         self.log('info', "PE Sections:")
         self.log('table', dict(header=['Name', 'RVA', 'VirtualSize', 'PointerToRawData', 'RawDataSize', 'Entropy'], rows=rows))
 
@@ -925,7 +941,7 @@ class PE(Module):
 
         current_pehash = None
         if __sessions__.is_set():
-            current_pehash = calculate_pehash(__sessions__.current.file.path)
+            current_pehash = calculate_pehash(data=__sessions__.current.file.data)
             self.log('info', "PEhash: {0}".format(bold(current_pehash)))
 
         if self.args.all or self.args.cluster or self.args.scan:

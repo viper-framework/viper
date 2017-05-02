@@ -416,9 +416,9 @@ class SevenZipSystemExtractor(Extractor):
             out = "-o{}".format(tmp_dir)
             if password:
                 pwd = "-p{}".format(password)
-                res = subprocess.check_output(["7z", "x", out, "-r", "-y", pwd, self.input_path], stderr=subprocess.STDOUT)
+                subprocess.check_output(["7z", "x", out, "-r", "-y", pwd, self.input_path], stderr=subprocess.STDOUT)
             else:
-                res = subprocess.check_output(["7z", "x", out, "-r", "-y", self.input_path], stderr=subprocess.STDOUT)
+                subprocess.check_output(["7z", "x", out, "-r", "-y", self.input_path], stderr=subprocess.STDOUT)
 
             for item in os.listdir(tmp_dir):
                 shutil.move(os.path.join(tmp_dir, item), self.output_path)

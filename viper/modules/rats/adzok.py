@@ -1,15 +1,18 @@
-# Originally written by Kevin Breen (@KevTheHermit):
+# -*- coding: utf-8 -*-
+#  Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Adzok.py
 
 import re
 import string
 from zipfile import ZipFile
-from cStringIO import StringIO
+from io import StringIO
 
-#Helper Functions Go Here
+
+# Helper Functions Go Here
 def string_print(line):
-    return filter(lambda x: x in string.printable, line)
-    
+    return [x for x in line if x in string.printable]
+
+
 def parse_config(raw_config):
     config_dict = {}
     for line in raw_config.split('\n'):
@@ -25,7 +28,7 @@ def parse_config(raw_config):
 
     # Tidy the config
     clean_config = {}
-    for k, v in config_dict.iteritems():
+    for k, v in config_dict.items():
         if k == 'dir':
             clean_config['Install Path'] = v
         if k == 'reg':
@@ -53,4 +56,3 @@ def config(data):
                 raw_config = jar.read(name)
     if raw_config:
         return parse_config(raw_config)
-

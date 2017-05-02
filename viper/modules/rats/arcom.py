@@ -1,13 +1,16 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/Arcom.py
 
 import base64
 from Crypto.Cipher import Blowfish
 
+
 def decrypt_blowfish(raw_data):
     key = 'CVu3388fnek3W(3ij3fkp0930di'
     cipher = Blowfish.new(key)
     return cipher.decrypt(raw_data)
+
 
 def config(data):
     try:

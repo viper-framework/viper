@@ -13,6 +13,8 @@ FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'viper-t
 @pytest.fixture()
 def cleandir():
     newpath = tempfile.mkdtemp(prefix="viper_tests_tmp_")
+    old_cwd = os.getcwd()
     os.chdir(newpath)
     yield
+    os.chdir(old_cwd)
     shutil.rmtree(newpath)

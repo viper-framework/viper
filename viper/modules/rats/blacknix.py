@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 # Originally written by Kevin Breen (@KevTheHermit):
 # https://github.com/kevthehermit/RATDecoders/blob/master/BlackNix.py
 
 import pefile
+
 
 def extract_config(raw_data):
     try:
@@ -9,9 +11,9 @@ def extract_config(raw_data):
 
         try:
             rt_string_idx = [
-                  entry.id for entry in 
+                entry.id for entry in
                 pe.DIRECTORY_ENTRY_RESOURCE.entries
-            ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+                ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
         except:
             return None
 
@@ -21,18 +23,20 @@ def extract_config(raw_data):
             if str(entry.name) == 'SETTINGS':
                 data_rva = entry.directory.entries[0].data.struct.OffsetToData
                 size = entry.directory.entries[0].data.struct.Size
-                data = pe.get_memory_mapped_image()[data_rva:data_rva+size]
+                data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
                 config = data.split('}')
                 return config
     except:
-        return None        
+        return None
+
 
 def decode(line):
     result = ''
-    for i in range(0,len(line)):
+    for i in range(0, len(line)):
         a = ord(line[i])
-        result += chr(a-1)
+        result += chr(a - 1)
     return result
+
 
 def config(data):
     try:

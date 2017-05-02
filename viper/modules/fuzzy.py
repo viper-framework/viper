@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -18,14 +19,12 @@ except ImportError:
 class Fuzzy(Module):
     cmd = 'fuzzy'
     description = "Search for similar files through fuzzy hashing"
-    authors = ['nex','deralexxx']
+    authors = ['nex', 'deralexxx']
 
     def __init__(self):
         super(Fuzzy, self).__init__()
-        self.parser.add_argument('-v', '--verbose', action='store_true',
-            help="Prints verbose logging")
-        self.parser.add_argument('-c', '--cluster', action='store_true',
-            help="Cluster all available samples by ssdeep")
+        self.parser.add_argument('-v', '--verbose', action='store_true', help="Prints verbose logging")
+        self.parser.add_argument('-c', '--cluster', action='store_true', help="Cluster all available samples by ssdeep")  # noqa
 
     def run(self):
         super(Fuzzy, self).run()
@@ -56,8 +55,7 @@ class Fuzzy(Module):
                         continue
 
                     if arg_verbose:
-                        self.log('info', "Testing file {0} with ssdeep {1}".format(
-                            sample.md5, sample.ssdeep))
+                        self.log('info', "Testing file {0} with ssdeep {1}".format(sample.md5, sample.ssdeep))
 
                     clustered = False
                     for cluster_name, cluster_members in clusters.items():
@@ -66,9 +64,8 @@ class Fuzzy(Module):
                             continue
 
                         if arg_verbose:
-                            self.log('info', "Testing {0} in cluser {1}".format(
-                                sample.md5, cluster_name))
-                        
+                            self.log('info', "Testing {0} in cluster {1}".format(sample.md5, cluster_name))
+
                         for member in cluster_members:
                             if sample.md5 == member[0]:
                                 continue
@@ -78,8 +75,7 @@ class Fuzzy(Module):
                             member_ssdeep = db.find(key='md5', value=member_hash)[0].ssdeep
                             if pydeep.compare(sample.ssdeep, member_ssdeep) > 40:
                                 if arg_verbose:
-                                    self.log('info', "Found home for {0} in cluster {1}".format(
-                                        sample.md5, cluster_name))
+                                    self.log('info', "Found home for {0} in cluster {1}".format(sample.md5, cluster_name))
 
                                 clusters[cluster_name].append([sample.md5, sample.name])
                                 clustered = True
@@ -87,7 +83,7 @@ class Fuzzy(Module):
 
                     if not clustered:
                         cluster_id = len(clusters) + 1
-                        clusters[cluster_id] = [[sample.md5, sample.name],]
+                        clusters[cluster_id] = [[sample.md5, sample.name], ]
 
                 ordered_clusters = collections.OrderedDict(sorted(clusters.items()))
 
@@ -100,9 +96,7 @@ class Fuzzy(Module):
                         continue
 
                     self.log('info', "Ssdeep cluster {0}".format(bold(cluster_name)))
-
-                    self.log('table', dict(header=['MD5', 'Name'],
-                        rows=cluster_members))
+                    self.log('table', dict(header=['MD5', 'Name'], rows=cluster_members))
 
             # We're running against the already opened file.
             else:
@@ -122,19 +116,15 @@ class Fuzzy(Module):
                     if not sample.ssdeep:
                         continue
 
-                    score = pydeep.compare(__sessions__.current.file.ssdeep,
-                        sample.ssdeep)
+                    score = pydeep.compare(__sessions__.current.file.ssdeep, sample.ssdeep)
 
                     if score > 40:
-                        matches.append(['{0}%'.format(score), sample.name,
-                            sample.sha256])
+                        matches.append(['{0}%'.format(score), sample.name, sample.sha256])
 
                     if arg_verbose:
-                        self.log('info', "Match {0}%: {2} [{1}]".format(score,
-                            sample.name, sample.sha256))
+                        self.log('info', "Match {0}%: {2} [{1}]".format(score, sample.name, sample.sha256))
 
                 self.log('info', "{0} relevant matches found".format(bold(len(matches))))
 
                 if len(matches) > 0:
-                    self.log('table', dict(header=['Score', 'Name', 'SHA256'],
-                        rows=matches))
+                    self.log('table', dict(header=['Score', 'Name', 'SHA256'], rows=matches))
