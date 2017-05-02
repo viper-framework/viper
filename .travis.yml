@@ -1,4 +1,6 @@
 language: python
+dist: trusty
+sudo: required
 
 cache:
     pip: true
@@ -17,7 +19,7 @@ python:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar -qq ssdeep libfuzzy -qq
+    - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar ssdeep libfuzzy -qq
     - popd
 install:
     - pip install -U -r requirements-dev.txt
