@@ -9,6 +9,7 @@ import hashlib
 from zipfile import ZipFile
 from optparse import OptionParser
 from sqlalchemy import create_engine
+from datetime import datetime
 
 try:
     from io import BytesIO
@@ -130,8 +131,11 @@ def update():
 def update_db():
     print_item("Backing up Sqlite DB")
 
+    # backup of database name with a timestamp to avoid to be overwritten
+    db_backupname = "viper_{0}.db.bak".format(datetime.utcnow().strftime("%Y%m%d-%H%M%S"))
+
     try:
-        os.rename('viper.db', 'viper.db.bak')
+        os.rename('viper.db', db_backupname)
     except Exception as e:
         print_error("Failed to Backup. {0} Stopping".format(e))
         return
@@ -141,12 +145,9 @@ def update_db():
     Database()
 
     print_item("Connecting to Viper Databases")
-    old_engine = create_engine('sqlite:///viper.db.bak')
+    old_engine = create_engine('sqlite:///{0}'.format(db_backupname))
     db_path = os.path.join(__project__.get_path(), 'viper.db')
     new_engine = create_engine('sqlite:///{0}'.format(db_path))
-
-    print_item("Old Database: {}".format(old_engine))
-    print_item("New Database: {}".format(new_engine))
 
     print_item("Reading data from Old Database")
     malware = old_engine.execute('SELECT * FROM malware').fetchall()
