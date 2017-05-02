@@ -5,18 +5,7 @@
 import argparse
 import viper.common.out as out
 from viper.core.config import console_output
-
-
-class ArgumentErrorCallback(Exception):
-    def __init__(self, message, level=''):
-        self.message = message.strip() + '\n'
-        self.level = level.strip()
-
-    def __str__(self):
-        return '{}: {}'.format(self.level, self.message)
-
-    def get(self):
-        return self.level, self.message
+from viper.common.exceptions import ArgumentErrorCallback
 
 
 class ArgumentParser(argparse.ArgumentParser):

@@ -182,6 +182,12 @@ class Console(object):
             else:
                 prompt = prefix + cyan('viper > ', True)
 
+            # force str (Py3) / unicode (Py2) for prompt
+            if sys.version_info <= (3, 0):
+                prompt = prompt.encode('utf-8')
+            else:
+                prompt = str(prompt)
+
             # Wait for input from the user.
             try:
                 data = input(prompt).strip()

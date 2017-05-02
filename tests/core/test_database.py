@@ -2,7 +2,14 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
+import sys
+import pytest
+from tests.conftest import FIXTURE_DIR
+
 from viper.core.database import Malware, Tag, Note, Analysis, Database
+from viper.common.objects import File
+from viper.common.exceptions import Python2UnsupportedUnicode
 
 
 class TestMalware:
@@ -83,3 +90,37 @@ class TestDatabase:
         instance = Database()
         assert isinstance(instance, Database)
         assert instance.__repr__() == "<Database>"
+
+    @pytest.mark.parametrize("filename, name", [
+        ("string_handling/ascii.txt", "ascii.txt"),
+        ("string_handling/with blank.txt", "with blank.txt")
+        ])
+    def test_add(self, capsys, filename, name):
+        f = File(os.path.join(FIXTURE_DIR, filename))
+
+        instance = Database()
+        ret = instance.add(f)
+        assert ret is True
+
+    @pytest.mark.skipif(sys.version_info >= (3, 0), reason="requires python2")
+    @pytest.mark.xfail(raises=Python2UnsupportedUnicode)
+    @pytest.mark.parametrize("filename, name", [
+        ("string_handling/dümmy.txt", "dümmy.txt"),
+        ])
+    def test_add_unicode_py2(self, capsys, filename, name):
+        f = File(os.path.join(FIXTURE_DIR, filename))
+
+        instance = Database()
+        ret = instance.add(f)
+        assert ret is True
+
+    @pytest.mark.skipif(sys.version_info < (3, 3), reason="requires at least python3.3")
+    @pytest.mark.parametrize("filename, name", [
+        ("string_handling/dümmy.txt", "dümmy.txt")
+        ])
+    def test_add_unicode_py3(self, capsys, filename, name):
+        f = File(os.path.join(FIXTURE_DIR, filename))
+
+        instance = Database()
+        ret = instance.add(f)
+        assert ret is True
