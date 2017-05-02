@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -55,15 +56,14 @@ class XorSearch(Module):
         def rotdata(data, key):
             encoded = ''
             for char in data:
-                if char.isalpha():
-                    num = ord(char)
-                    num -= key
-                    if num == ord('z') or num == ord('Z'):
-                        num += 26
-                    elif num == ord('a') or num == ord('A'):
-                        num -= 26
-                    encoded += chr(num)
-            return encoded.lower()
+                if 65 <= char <= 90 or 97 <= char <= 122:
+                    char -= key
+                    if char == ord('z') or char == ord('Z'):
+                        char += 26
+                    elif char == ord('a') or char == ord('A'):
+                        char -= 26
+                    encoded += chr(char)
+            return encoded.lower().encode()
 
         def xor_search(terms, save_path):
             for key in range(1, 256):
@@ -127,13 +127,14 @@ class XorSearch(Module):
         self.log('info', "Searching for the following strings:")
         for term in terms:
             self.log('item', term)
+        to_search = [term.encode() for term in terms]
 
         self.log('info', "Hold on, this might take a while...")
 
         if xor:
             self.log('info', "Searching XOR")
-            xor_search(terms, save_path)
+            xor_search(to_search, save_path)
 
         if rot:
             self.log('info', "Searching ROT")
-            rot_search(terms, save_path)
+            rot_search(to_search, save_path)

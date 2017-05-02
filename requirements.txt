@@ -1,35 +1,3 @@
-Django==1.9.2
-SQLAlchemy==1.0.11
-beautifulsoup4==4.4.1
-bitstring==3.1.4
-bottle==0.12.9
-cffi==1.5.0
-dnspython==1.12.0
-enum34==1.1.2
-idna==2.0
-ipaddress==1.0.16
-olefile==0.42.1
-oletools==0.41
-pbkdf2==1.3
-pyasn1==0.1.9
-pycparser==2.14
-pycrypto==2.6.1
-pydeep==0.2
-pyelftools==0.23
-pylzma==0.4.8
-pymisp==2.4.63
-pypdns==1.3
-pypssl==2.1
-python-dateutil==2.4.2
-python-magic==0.4.10
-r2pipe==0.8.0
-requests==2.9.1
-requests-cache==0.4.10
-scandir==1.2
-six==1.10.0
-terminaltables==2.1.0
-virustotal-api==1.0.9
-https://github.com/erocarrera/pefile/files/192316/pefile-2016.3.28.tar.gz#egg=pefile
-git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
-git+https://github.com/crackinglandia/pype32.git#egg=pype32
-git+https://github.com/pyca/cryptography.git#egg=cryptography
+-r requirements-base.txt
+-r requirements-modules.txt
+-r requirements-web.txt

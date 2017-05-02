@@ -1,12 +1,18 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import os
 from os.path import expanduser
+import logging
 
 from viper.core.config import Config
+from viper.core.logger import init_logger
+
+log = logging.getLogger('viper')
 
 cfg = Config()
+
 
 class Project(object):
     def __init__(self):
@@ -22,11 +28,19 @@ class Project(object):
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
-        
+
+        if hasattr(cfg, 'logging') and cfg.logging.log_file:
+            log_file = cfg.logging.log_file
+            debug_log = cfg.logging.debug
+        else:
+            log_file = os.path.join(self.base_path, "viper.log")
+            debug_log = False
+        init_logger(log_file_path=log_file, debug=debug_log)
+        log.debug("logger initiated")
+
     def open(self, name):
         if not os.path.exists(self.base_path):
-            raise Exception("The local storage folder does not exist at path {}".format(
-                base_path))
+            raise Exception("The local storage folder does not exist at path {}".format(self.base_path))
 
         if name == 'default':
             path = self.base_path
@@ -46,5 +60,6 @@ class Project(object):
 
     def get_projects_path(self):
         return os.path.join(self.base_path, 'projects')
-    
+
+
 __project__ = Project()

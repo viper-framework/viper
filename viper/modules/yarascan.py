@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -144,7 +145,7 @@ class YaraScan(Module):
                     for string in match.strings:
                         rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
                 else:
-                    self.log('item', match)
+                    self.log('item', match.rule)
                 # Add matching rules to our list of tags.
                 # First it checks if there are tags specified in the metadata
                 # of the Yara rule.

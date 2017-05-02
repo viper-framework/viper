@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -7,6 +8,7 @@ import datetime
 from viper.common.out import print_info, print_error
 from viper.common.objects import File
 from viper.core.database import Database
+
 
 class Session(object):
     def __init__(self):
@@ -18,6 +20,7 @@ class Session(object):
         self.created_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         # MISP event associated to the object
         self.misp_event = None
+
 
 class Sessions(object):
     def __init__(self):
@@ -83,7 +86,12 @@ class Sessions(object):
             row = Database().find(key='sha256', value=session.file.sha256)
             if row:
                 session.file.id = row[0].id
-                session.file.name = row[0].name
+
+                if isinstance(row[0].name, bytes):  # TODO(frennkie) check
+                    session.file.name = row[0].name.decode('utf-8')
+                else:
+                    session.file.name = row[0].name
+
                 session.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
 
                 if row[0].parent:

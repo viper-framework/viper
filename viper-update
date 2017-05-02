@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -23,6 +24,7 @@ from viper.common.network import download
 from viper.common.objects import File
 from viper.common.utils import path_split_all
 from viper.core.config import Config
+from viper.core.project import __project__
 
 # For python2 & 3 compatibility, a bit dirty,
 # but it seems to be the least bad one.
@@ -140,7 +142,8 @@ def update_db():
 
     print_item("Connecting to Viper Databases")
     old_engine = create_engine('sqlite:///viper.db.bak')
-    new_engine = create_engine('sqlite:///viper.db')
+    db_path = os.path.join(__project__.get_path(), 'viper.db')
+    new_engine = create_engine('sqlite:///{0}'.format(db_path))
 
     print_item("Reading data from Old Database")
     malware = old_engine.execute('SELECT * FROM malware').fetchall()

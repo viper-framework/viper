@@ -9,6 +9,7 @@ import time
 import glob
 import shutil
 import json
+import datetime
 
 try:
     from pymisp import PyMISP, PyMISPError, MISPEvent, EncodeFull, EncodeUpdate
@@ -97,7 +98,7 @@ class MISP(Module):
         parser_down = subparsers.add_parser('download', help='Download malware samples from MISP.')
         group = parser_down.add_mutually_exclusive_group()
         group.add_argument("-e", "--event", type=int, help="Download all the samples related to this event ID.")
-        group.add_argument("-l", "--list", nargs='*', help="Download all the samples related to a list of events. Empty list to download all the samples of all the events stored in the current project.")
+        group.add_argument("-l", "--list", nargs='*', help="Download all the samples related to a list of events. Empty list to download all the samples of all the events stored in the current project.")  # noqa
         group.add_argument("--hash", help="Download the sample related to this hash (only MD5).")
 
         # ##### Search in MISP #####
@@ -357,7 +358,7 @@ class MISP(Module):
     def _find_related_id(self, event):
         if not event.RelatedEvent:
             return []
-        related = [(event.id, event.info) for event in event.RelatedEvent]
+        related = [(_event.id, _event.info) for _event in event.RelatedEvent]
         to_return = list(set(related))
         to_return.sort(key=lambda tup: tup[0])
         return to_return
@@ -368,9 +369,9 @@ class MISP(Module):
         old_related_ids = [i[0] for i in old_related]
         for related, title in new_related:
             if related not in old_related_ids:
-                self.log('success', u'New related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
+                self.log('success', 'New related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
             else:
-                self.log('info', u'Related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
+                self.log('info', 'Related event: {}/events/view/{} - {}'.format(self.url.rstrip('/'), related, title))
         __sessions__.new(misp_event=MispEvent(new_event, self.offline_mode))
 
     # ####### Helpers for open ########
@@ -554,7 +555,7 @@ class MISP(Module):
                 event_hashes.append(h)
             if h is not None:
                 base_new_attributes[h] = {"category": a.category,
-                                          "comment": u'{} - Xchecked via VT: {}'.format(a.comment, h),
+                                          "comment": '{} - Xchecked via VT: {}'.format(a.comment, h),
                                           "to_ids": a.to_ids,
                                           "Tag": a.Tag,
                                           "distribution": a.distribution}
@@ -564,6 +565,10 @@ class MISP(Module):
         # Make sure to start getting reports for the longest possible hashes (reduce risks of collisions)
         hashes_to_check = sorted(event_hashes, key=len)
         original_attributes = len(misp_event.attributes)
+        if cfg.virustotal.virustotal_has_private_key is False:
+            quota = 4
+            timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
+
         while len(hashes_to_check) > 0:
             vt_request['resource'] = hashes_to_check.pop()
             try:
@@ -578,7 +583,6 @@ class MISP(Module):
             try:
                 result = response.json()
             except:
-                # FIXME: support rate-limiting (4/min)
                 self.log('error', 'Unable to get the report of {}'.format(vt_request['resource']))
                 continue
             if result['response_code'] == 1:
@@ -598,6 +602,16 @@ class MISP(Module):
                 if self.args.populate:
                     misp_event = self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes, sample_hashes, misp_event)
                 self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(link[1], md5, sha1, sha256))
+                if cfg.virustotal.virustotal_has_private_key is False:
+                    if quota > 0:
+                        quota -= 1
+                    else:
+                        waiting_time = (timeout - datetime.datetime.now()).seconds
+                        if waiting_time > 0:
+                            self.log('warning', 'No private API key, 4 queries/min is the limit. Waiting for {} seconds.'.format(waiting_time))
+                            time.sleep(waiting_time)
+                        quota = 4
+                        timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
             else:
                 unk_vt_hashes.append(vt_request['resource'])
 
@@ -627,7 +641,7 @@ class MISP(Module):
 
         if self._has_error_message(result):
             return
-        self.log('success', u'{} matches on the following events:'.format(query))
+        self.log('success', '{} matches on the following events:'.format(query))
         for e in result['response']:
             nb_samples = 0
             nb_hashes = 0
@@ -638,7 +652,7 @@ class MISP(Module):
                     nb_samples += 1
                 if a.type in ('md5', 'sha1', 'sha256', 'filename|md5', 'filename|sha1', 'filename|sha256'):
                     nb_hashes += 1
-            self.log('item', u'{} ({} samples, {} hashes) - {}{}{}'.format(me.info, nb_samples, nb_hashes, self.url, '/events/view/', me.id))
+            self.log('item', '{} ({} samples, {} hashes) - {}{}{}'.format(me.info, nb_samples, nb_hashes, self.url, '/events/view/', me.id))
 
     def pull(self):
         if self.offline_mode:
@@ -720,7 +734,7 @@ class MISP(Module):
         if len(related) > 0:
             self.log('info', 'Related events:')
             for r, title in related:
-                self.log('item', u'{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
+                self.log('item', '{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
 
         header = ['type', 'value', 'comment', 'related']
         rows = []
@@ -739,7 +753,7 @@ class MISP(Module):
         else:
             self.log('info', 'This event has not been published')
         if __sessions__.current.misp_event.event.id:
-            self.log('info', u'Link to Event: {}/events/view/{}'.format(self.url.rstrip('/'), __sessions__.current.misp_event.event.id))
+            self.log('info', 'Link to Event: {}/events/view/{}'.format(self.url.rstrip('/'), __sessions__.current.misp_event.event.id))
 
     def _change_event(self):
         if self.offline_mode:
@@ -779,7 +793,7 @@ class MISP(Module):
                         self.args.filename, self.args.sha1))
                 if self.args.sha256:
                     __sessions__.current.misp_event.event.add_attribute('filename|sha256', '{}|{}'.format(
-                        self.args._filename, self.args.sha256))
+                        self.args.filename, self.args.sha256))
             else:
                 if self.args.md5:
                     __sessions__.current.misp_event.event.add_attribute('md5', self.args.md5)

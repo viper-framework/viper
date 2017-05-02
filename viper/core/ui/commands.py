@@ -1,15 +1,17 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import os
+import platform
 from os.path import expanduser
 import time
 import json
 import shutil
 import fnmatch
+import getpass
 import tempfile
 import argparse
-from zipfile import ZipFile
 from collections import defaultdict
 
 try:
@@ -18,18 +20,20 @@ except ImportError:
     from os import walk
 
 import viper.common.out as out
-from viper.common.out import table
+# from viper.common.out import table  # currently not used
 from viper.common.colors import bold
 from viper.common.utils import convert_size
 from viper.common.objects import File
 from viper.common.network import download
+from viper.common.version import __version__
 from viper.core.session import __sessions__
 from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
-from viper.core.config import Config
+from viper.core.config import Config, console_output
 from viper.common.autorun import autorun_module
+from viper.core.archiver import Compressor
 
 cfg = Config()
 
@@ -38,6 +42,14 @@ try:
     input = raw_input
 except NameError:
     pass
+
+
+def get_password_twice():
+    password = getpass.getpass('Password: ')
+    if password == getpass.getpass('confirm Password: '):
+        return password
+    else:
+        return False
 
 
 class Commands(object):
@@ -50,6 +62,7 @@ class Commands(object):
         # Map commands to their related functions.
         self.commands = dict(
             help=dict(obj=self.cmd_help, description="Show this help message"),
+            about=dict(obj=self.cmd_about, description="Show information about this Viper instance"),
             open=dict(obj=self.cmd_open, description="Open a file"),
             new=dict(obj=self.cmd_new, description="Create new file"),
             close=dict(obj=self.cmd_close, description="Close the current session"),
@@ -75,10 +88,7 @@ class Commands(object):
             type=event_type,
             data=event_data
         ))
-        if event_type == 'table':
-            print table(event_data['header'], event_data['rows'])
-        else:
-            getattr(out, 'print_{0}'.format(event_type))(event_data)
+        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
 
     ##
     # CLEAR
@@ -112,6 +122,27 @@ class Commands(object):
         rows = sorted(rows, key=lambda entry: entry[0])
 
         self.log('table', dict(header=['Command', 'Description'], rows=rows))
+
+    ##
+    # ABOUT
+    #
+    # This command prints some useful information regarding the running
+    # Viper instance
+    def cmd_about(self, *args):
+        rows = list()
+        rows.append(["Viper Version", __version__])
+        rows.append(["Python Version", platform.python_version()])
+        rows.append(["Homepage", "https://viper.li"])
+        rows.append(["Issue Tracker", "https://github.com/viper-framework/viper/issues"])
+
+        self.log('table', dict(header=['About', ''], rows=rows))
+
+        rows = list()
+        rows.append(["Configuration File", cfg.config_file])
+        rows.append(["Storage Path", __project__.path])
+        rows.append(["Current Project Database", self.db.engine])
+
+        self.log('table', dict(header=['Configuration', ''], rows=rows))
 
     ##
     # NEW
@@ -150,7 +181,6 @@ class Commands(object):
             args = parser.parse_args(args)
         except:
             return
-
         target = " ".join(args.value)
 
         if not args.last and target is None:
@@ -180,13 +210,16 @@ class Commands(object):
         # the last find command.
         elif args.last:
             if __sessions__.find:
-                count = 1
-                for item in __sessions__.find:
-                    if count == int(target):
+                try:
+                    target = int(target)
+                except ValueError:
+                    self.log('warning', "Please pass the entry number from the last find to -l/--last (e.g. open -l 5)")
+                    return
+
+                for idx, item in enumerate(__sessions__.find, start=1):
+                    if idx == target:
                         __sessions__.new(get_sample_path(item.sha256))
                         break
-
-                    count += 1
             else:
                 self.log('warning', "You haven't performed a find yet")
         # Otherwise we assume it's an hash of an previously stored sample.
@@ -295,24 +328,28 @@ class Commands(object):
             title = input("Enter a title for the new note: ")
 
             # Create a new temporary file.
-            tmp = tempfile.NamedTemporaryFile(delete=False)
-            # Open the temporary file with the default editor, or with nano.
-            os.system('"${EDITOR:-nano}" ' + tmp.name)
-            # Once the user is done editing, we need to read the content and
-            # store it in the database.
-            body = tmp.read()
-            Database().add_note(__sessions__.current.file.sha256, title, body)
-            # Finally, remove the temporary file.
-            os.remove(tmp.name)
+            with tempfile.NamedTemporaryFile(mode='w+') as tmp:
+                # Open the temporary file with the default editor, or with nano.
+                os.system('"${EDITOR:-nano}" ' + tmp.name)
+                # Once the user is done editing, we need to read the content and
+                # store it in the database.
+                body = tmp.read()
+                Database().add_note(__sessions__.current.file.sha256, title, body)
 
-            self.log('info', "New note with title \"{0}\" added to the current file".format(bold(title)))
+            self.log('info', 'New note with title "{0}" added to the current file'.format(bold(title)))
 
         elif args.view:
             # Retrieve note wth the specified ID and print it.
             note = Database().get_note(args.view)
             if note:
                 self.log('info', bold('Title: ') + note.title)
-                self.log('info', bold('Body:') + '\n' + note.body)
+                if isinstance(note.body, bytes):
+                    # OLD: Old style, the content is stored as bytes
+                    # This is fixed when the user edits the old note.
+                    body = note.body.decode()
+                else:
+                    body = note.body
+                self.log('info', '{}\n{}'.format(bold('Body:'), body))
             else:
                 self.log('info', "There is no note with ID {0}".format(args.view))
 
@@ -321,18 +358,22 @@ class Commands(object):
             note = Database().get_note(args.edit)
             if note:
                 # Create a new temporary file.
-                tmp = tempfile.NamedTemporaryFile(delete=False)
-                # Write the old body to the temporary file.
-                tmp.write(note.body)
-                tmp.close()
-                # Open the old body with the text editor.
-                os.system('"${EDITOR:-nano}" ' + tmp.name)
-                # Read the new body from the temporary file.
-                body = open(tmp.name, 'r').read()
-                # Update the note entry with the new body.
-                Database().edit_note(args.edit, body)
-                # Remove the temporary file.
-                os.remove(tmp.name)
+                with tempfile.NamedTemporaryFile(mode='w+') as tmp:
+                    # Write the old body to the temporary file.
+                    if isinstance(note.body, bytes):
+                        # OLD: Old style, the content is stored as bytes
+                        body = note.body.decode()
+                    else:
+                        body = note.body
+                    tmp.write(body)
+                    tmp.flush()
+                    tmp.seek(0)
+                    # Open the old body with the text editor.
+                    os.system('"${EDITOR:-nano}" ' + tmp.name)
+                    # Read the new body from the temporary file.
+                    body = tmp.read()
+                    # Update the note entry with the new body.
+                    Database().edit_note(args.edit, body)
 
                 self.log('info', "Updated note with ID {0}".format(args.edit))
 
@@ -382,7 +423,7 @@ class Commands(object):
             rows = [[analysis.id, analysis.cmd_line, analysis.stored_at] for analysis in analysis_list]
 
             # Display list of existing results.
-            self.log('table', dict(header=['ID', 'Cmd Line', 'Saved On'], rows=rows))
+            self.log('table', dict(header=['ID', 'Cmd Line', 'Saved On (UTC)'], rows=rows))
 
         elif args.view:
             # Retrieve analysis wth the specified ID and print it.
@@ -546,7 +587,7 @@ class Commands(object):
     ##
     # DELETE
     #
-    # This command deletes the currenlty opened file (only if it's stored in
+    # This command deletes the currently opened file (only if it's stored in
     # the local repository) and removes the details from the database
     def cmd_delete(self, *args):
         parser = argparse.ArgumentParser(prog='delete', description="Delete a file")
@@ -717,7 +758,7 @@ class Commands(object):
         db = Database()
         if not db.find(key='sha256', value=__sessions__.current.file.sha256):
             self.log('error', "The opened file is not stored in the database. "
-                "If you want to add it use the `store` command.")
+                     "If you want to add it use the `store` command.")
             return
 
         if args.add:
@@ -803,7 +844,13 @@ class Commands(object):
         except:
             return
 
-        projects_path = os.path.join(expanduser("~"), '.viper', 'projects')
+        cfg = Config()
+        if cfg.paths.storage_path:
+            base_path = cfg.paths.storage_path
+        else:
+            base_path = os.path.join(expanduser("~"), '.viper')
+
+        projects_path = os.path.join(base_path, 'projects')
 
         if not os.path.exists(projects_path):
             self.log('info', "The projects directory does not exist yet")
@@ -841,7 +888,9 @@ class Commands(object):
     # This command will export the current session to file or zip.
     def cmd_export(self, *args):
         parser = argparse.ArgumentParser(prog='export', description="Export the current session to file or zip")
-        parser.add_argument('-z', '--zip', action='store_true', help="Export session in a zip archive")
+        parser.add_argument('-z', '--zip', action='store_true', help="Export session in a zip archive (PW support: No)")
+        parser.add_argument('-7', '--sevenzip', action='store_true', help="Export session in a 7z archive (PW support: Yes)")
+        parser.add_argument('-p', '--password', action='store_true', help="Protect archive with a password (PW) if supported")
         parser.add_argument('value', help="path or archive name")
 
         try:
@@ -860,29 +909,23 @@ class Commands(object):
             parser.print_usage()
             return
 
-        # TODO: having for one a folder and for the other a full
-        # target path can be confusing. We should perhaps standardize this.
+        if args.zip and args.sevenzip:
+            self.log('error', "Please select either -z or -7 not both, abort")
 
-        # Abort if the specified path already exists.
-        if os.path.isfile(args.value):
-            self.log('error', "File at path \"{0}\" already exists, abort".format(args.value))
-            return
+        store_path = os.path.join(args.value, __sessions__.current.file.name)
 
-        # If the argument chosed so, archive the file when exporting it.
-        # TODO: perhaps add an option to use a password for the archive
-        # and default it to "infected".
-        if args.zip:
-            try:
-                with ZipFile(args.value, 'w') as export_zip:
-                    export_zip.write(__sessions__.current.file.path, arcname=__sessions__.current.file.name)
-            except IOError as e:
-                self.log('error', "Unable to export file: {0}".format(e))
-            else:
-                self.log('info', "File archived and exported to {0}".format(args.value))
-        # Otherwise just dump it to the given directory.
-        else:
-            # XXX: Export file with the original file name.
-            store_path = os.path.join(args.value, __sessions__.current.file.name)
+        if not args.zip and not args.sevenzip:
+            # Abort if the specified path already exists
+            if os.path.isfile(store_path):
+                self.log('error', "Unable to export file: File exists: '{0}'".format(store_path))
+                return
+
+            if not os.path.isdir(args.value):
+                try:
+                    os.makedirs(args.value)
+                except OSError as err:
+                    self.log('error', "Unable to export file: {0}".format(err))
+                    return
 
             try:
                 shutil.copyfile(__sessions__.current.file.path, store_path)
@@ -890,6 +933,40 @@ class Commands(object):
                 self.log('error', "Unable to export file: {0}".format(e))
             else:
                 self.log('info', "File exported to {0}".format(store_path))
+
+            return
+        elif args.zip:
+            cls = "ZipCompressor"
+
+        elif args.sevenzip:
+            cls = "SevenZipSystemCompressor"
+        else:
+            cls = ""
+            self.log('error', "Not implemented".format())
+
+        c = Compressor()
+
+        if args.password:
+            if c.compressors[cls].supports_password:
+                _password = get_password_twice()
+                if not _password:
+                    self.log('error', "Passwords did not match, abort")
+                    return
+                res = c.compress(__sessions__.current.file.path, file_name=__sessions__.current.file.name,
+                                 archive_path=store_path, cls_name=cls, password=_password)
+            else:
+                self.log('warning', "ignoring password (not supported): {}".format(cls))
+                res = c.compress(__sessions__.current.file.path, file_name=__sessions__.current.file.name,
+                                 archive_path=store_path, cls_name=cls)
+
+        else:
+            res = c.compress(__sessions__.current.file.path, file_name=__sessions__.current.file.name,
+                             archive_path=store_path, cls_name=cls)
+
+        if res:
+            self.log('info', "File archived and exported to {0}".format(c.output_archive_path))
+        else:
+            self.log('error', "Unable to export file: {0}".format(c.err))
 
     ##
     # STATS
@@ -921,8 +998,13 @@ class Commands(object):
 
         # Sort in to stats
         for item in items:
-            if '.' in item.name:
-                ext = item.name.split('.')
+            if isinstance(item.name, bytes):
+                # NOTE: In case you there are names stored as bytes in the database
+                name = item.name.decode()
+            else:
+                name = item.name
+            if '.' in name:
+                ext = name.split('.')
                 extension_dict[ext[-1]] += 1
             mime_dict[item.mime] += 1
             size_list.append(item.size)
@@ -931,7 +1013,7 @@ class Commands(object):
                     tags_dict[t.tag] += 1
 
         avg_size = sum(size_list) / len(size_list)
-        #all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
+        # all_stats = {'Total': len(items), 'File Extension': extension_dict, 'Mime': mime_dict, 'Tags': tags_dict,
         #             'Avg Size': avg_size, 'Largest': max(size_list), 'Smallest': min(size_list)}
 
         # Counter for top x
@@ -961,7 +1043,6 @@ class Commands(object):
             rows.append([k, extension_dict[k]])
         self.log('table', dict(header=header, rows=rows))
 
-
         # Mimes
         self.log('info', "{0}Mime Types".format(prefix))
         header = ['Mime', 'Count']
@@ -989,7 +1070,7 @@ class Commands(object):
     #
     # This command is used to view or edit the parent child relationship between files.
     def cmd_parent(self, *args):
-        parser = argparse.ArgumentParser(prog='tags', description="Set the Parent for this file.")
+        parser = argparse.ArgumentParser(prog='parent', description="Set the Parent for this file.")
         parser.add_argument('-a', '--add', metavar='SHA256', help="Add parent file by sha256")
         parser.add_argument('-d', '--delete', action='store_true', help="Delete Parent")
         parser.add_argument('-o', '--open', action='store_true', help="Open The Parent")
@@ -1003,7 +1084,6 @@ class Commands(object):
             self.log('error', "No open session")
             parser.print_usage()
             return
-
 
         # If no arguments are specified, there's not much to do.
         if args.add is None and args.delete is None and args.open is None:
@@ -1039,4 +1119,3 @@ class Commands(object):
                 __sessions__.new(get_sample_path(__sessions__.current.file.parent[-64:]))
             else:
                 self.log('info', "No parent set for this sample")
-

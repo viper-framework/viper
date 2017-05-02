@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
+
 
 class Triage(Module):
     cmd = 'triage'
@@ -13,8 +15,7 @@ class Triage(Module):
     def __init__(self):
         super(Triage, self).__init__()
 
-        self.parser.add_argument('-a', '--all', action='store_true',
-            help="Triage all files")
+        self.parser.add_argument('-a', '--all', action='store_true', help="Triage all files")
 
     def _triage_file_type(self, obj):
         tags = []
@@ -27,7 +28,7 @@ class Triage(Module):
                 tags.append('dll')
             elif 'native' in obj.type:
                 self.log('info', "{} is a Windows driver".format(obj.name))
-                tags.append('driver')        
+                tags.append('driver')
 
         return tags
 

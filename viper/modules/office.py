@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -7,22 +8,33 @@ http://www.decalage.info/python/oletools
 '''
 
 import os
-import re
-import zlib
 import struct
 import zipfile
 import xml.etree.ElementTree as ET
+import sys
 
 from viper.common.utils import string_clean, string_clean_hex
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
+from io import BytesIO, open
+
 try:
     import olefile
-    from oletools.olevba import VBA_Parser, VBA_Scanner
+
+    if sys.version_info >= (3, 0):
+        from oletools.olevba3 import VBA_Parser, VBA_Scanner
+    else:
+        from oletools.olevba import VBA_Parser, VBA_Scanner
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
+
+try:
+    from xxxswf import xxxswf
+    HAVE_XXXSWF = True
+except ImportError:
+    HAVE_XXXSWF = False
 
 
 class Office(Module):
@@ -43,52 +55,43 @@ class Office(Module):
     # HELPER FUNCTIONS
     #
 
-    def detect_flash(self, data):
-        matches = []
-        for match in re.finditer('CWS|FWS', data):
-            start = match.start()
-            if (start + 8) > len(data):
-                # Header size larger than remaining data,
-                # this is not a SWF.
-                continue
+    def print_swf_header_info(self, header):
+        if header is None:
+            self.log('warning', 'Error could not read header')
+            return
+        self.log('item', 'File Header: {}'.format(header['signature'].decode()))
+        if header['compression'] is not None:
+            self.log('item', 'Compression Type: {}'.format(header['compression']))
+        if header['compression'] is 'lzma':
+            self.log('item', 'Compressed Data Length: {}'.format(header['compressed_len']))
+        self.log('item', 'File Veader: {}'.format(header['version']))
+        self.log('item', 'File Size: {}'.format(header['file_length']))
+        self.log('item', 'Rect Nbit: {}'.format(header['nbits']))
+        self.log('item', 'Rect Xmin: {}'.format(header['xmin']))
+        self.log('item', 'Rect Xmax: {}'.format(header['xmax']))
+        self.log('item', 'Rect Ymin: {}'.format(header['ymin']))
+        self.log('item', 'Rect Ymax: {}'.format(header['ymax']))
+        self.log('item', 'Frame Rate: {}'.format(header['frame_rate']))
+        self.log('item', 'Frace Count: {}'.format(header['frame_count']))
 
-            # TODO: one struct.unpack should be simpler.
-            # Read Header
-            header = data[start:start + 3]
-            # Read Version
-            ver = struct.unpack('<b', data[start + 3])[0]
-            # Error check for version above 20
-            # TODO: is this accurate? (check SWF specifications).
-            if ver > 20:
-                continue
+    def detect_flash(self, section):
+        if not HAVE_XXXSWF:
+            self.log('warning', 'Unable to search for Flash objects, requires xxxswf')
+            return []
+        section = BytesIO(section)
+        swf = xxxswf.xxxswf()
+        swf_data = swf.find_swf(section)
+        if len(swf_data) == 0:
+            return []
 
-            # Read SWF Size.
-            size = struct.unpack('<i', data[start + 4:start + 8])[0]
-            if (start + size) > len(data) or size < 1024:
-                # Declared size larger than remaining data, this is not
-                # a SWF or declared size too small for a usual SWF.
-                continue
-
-            # Read SWF into buffer. If compressed read uncompressed size.
-            swf = data[start:start + size]
-            is_compressed = False
-            swf_deflate = None
-            if 'CWS' in header:
-                is_compressed = True
-                # Data after header (8 bytes) until the end is compressed
-                # with zlib. Attempt to decompress it to check if it is valid.
-                compressed_data = swf[8:]
-
-                try:
-                    swf_deflate = zlib.decompress(compressed_data)
-                except:
-                    continue
-
-            # Else we don't check anything at this stage, we only assume it is a
-            # valid SWF. So there might be false positives for uncompressed SWF.
-            matches.append((start, size, is_compressed, swf, swf_deflate))
-
-        return matches
+        full_content = section.getvalue()
+        to_return = []
+        for index, start in enumerate(swf_data):
+            swf = swf.verify_swf(full_content[start:], 0)
+            if swf:
+                headers = xxxswf.SwfHeader(swf)
+                to_return.append((headers.header, swf))
+        return to_return
 
     ##
     # OLE FUNCTIONS
@@ -166,20 +169,13 @@ class Office(Module):
                 self.log('info', "Saving Flash objects...")
                 count = 1
 
-                for flash in flash_objects:
-                    # If SWF Is compressed save the swf and the decompressed data seperatly.
-                    if flash[2]:
-                        save_path = '{0}-FLASH-Decompressed{1}'.format(store_path, count)
-                        with open(save_path, 'wb') as flash_out:
-                            flash_out.write(flash[4])
-
-                        self.log('item', "Saved Decompressed Flash File to {0}".format(save_path))
-
-                    save_path = '{0}-FLASH-{1}'.format(store_path, count)
+                for header, flash_object in flash_objects:
+                    self.print_swf_header_info(header)
+                    save_path = '{0}-FLASH-Decompressed{1}'.format(store_path, count)
                     with open(save_path, 'wb') as flash_out:
-                        flash_out.write(flash[3])
+                        flash_out.write(flash_object)
 
-                    self.log('item', "Saved Flash File to {0}".format(save_path))
+                    self.log('item', "Saved Decompressed Flash File to {0}".format(save_path))
                     count += 1
 
             with open(store_path, 'wb') as out:
@@ -276,6 +272,7 @@ class Office(Module):
         media_list = []
         embedded_list = []
         vba_list = []
+        activex_list = []
         for name in zip_xml.namelist():
             if name == 'docProps/app.xml':
                 meta1 = self.meta_data(zip_xml.read(name))
@@ -288,6 +285,8 @@ class Office(Module):
                 embedded_list.append(name.split('/')[-1])
             if name == 'word/vbaProject.bin':
                 vba_list.append(name.split('/')[-1])
+            if name.startswith('word/activeX/'):
+                activex_list.append(name.split('/')[-1])
 
         # Print the results.
         self.log('info', "App MetaData:")
@@ -301,6 +300,10 @@ class Office(Module):
         if len(vba_list) > 0:
             self.log('info', "Macro Objects")
             for item in vba_list:
+                self.log('item', item)
+        if len(activex_list) > 0:
+            self.log('info', "ActiveX Objects")
+            for item in activex_list:
                 self.log('item', item)
         if len(media_list) > 0:
             self.log('info', "Media Objects")
@@ -334,7 +337,7 @@ class Office(Module):
     ##
     # VBA Functions
     #
-    
+
     def parse_vba(self, save_path):
         save = False
         vbaparser = VBA_Parser(__sessions__.current.file.path)
@@ -343,9 +346,9 @@ class Office(Module):
             self.log('error', "No Macro's Detected")
             return
         self.log('info', "Macro's Detected")
-        #try:
+        # try:
         if True:
-            an_results = {'AutoExec':[], 'Suspicious':[], 'IOC':[], 'Hex String':[], 'Base64 String':[], 'Dridex string':[], 'VBA string':[]}
+            an_results = {'AutoExec': [], 'Suspicious': [], 'IOC': [], 'Hex String': [], 'Base64 String': [], 'Dridex string': [], 'VBA string': []}
             for (filename, stream_path, vba_filename, vba_code) in vbaparser.extract_macros():
                 self.log('info', "Stream Details")
                 self.log('item', "OLE Stream: {0}".format(string_clean(stream_path)))
@@ -355,11 +358,11 @@ class Office(Module):
                 analysis = vba_scanner.scan(include_decoded_strings=True)
                 for kw_type, keyword, description in analysis:
                     an_results[kw_type].append([string_clean_hex(keyword), description])
-                    
+
                 # Save the code to external File
                 if save_path:
                     try:
-                        with open(save_path, 'a') as out:
+                        with open(save_path, 'ab') as out:
                             out.write(vba_code)
                         save = True
                     except:
@@ -368,37 +371,32 @@ class Office(Module):
             # Print all Tables together
             self.log('info', "AutoRun Macros Found")
             self.log('table', dict(header=['Method', 'Description'], rows=an_results['AutoExec']))
-            
+
             self.log('info', "Suspicious Keywords Found")
             self.log('table', dict(header=['KeyWord', 'Description'], rows=an_results['Suspicious']))
-            
+
             self.log('info', "Possible IOC's")
             self.log('table', dict(header=['IOC', 'Type'], rows=an_results['IOC']))
-            
+
             self.log('info', "Hex Strings")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Hex String']))
-            
+
             self.log('info', "Base64 Strings")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Base64 String']))
-            
+
             self.log('info', "Dridex string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['Dridex string']))
-            
+
             self.log('info', "VBA string")
             self.log('table', dict(header=['Decoded', 'Raw'], rows=an_results['VBA string']))
-            
-            
-            
+
             if save:
                 self.log('success', "Writing VBA Code to {0}".format(save_path))
-        #except:
-            #self.log('error', "Unable to Process File")
+                # except:
+                # self.log('error', "Unable to Process File")
         # Close the file
         vbaparser.close()
-        
-        
-        
-        
+
     # Main starts here
     def run(self):
         super(Office, self).run()
@@ -414,12 +412,12 @@ class Office(Module):
             return
 
         file_data = __sessions__.current.file.data
-        if file_data.startswith('<?xml'):
+        if file_data.startswith(b'<?xml'):
             OLD_XML = file_data
         else:
             OLD_XML = False
 
-        if file_data.startswith('MIME-Version:') and 'application/x-mso' in file_data:
+        if file_data.startswith(b'MIME-Version:') and 'application/x-mso' in file_data:
             MHT_FILE = file_data
         else:
             MHT_FILE = False

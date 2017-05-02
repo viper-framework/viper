@@ -6,6 +6,8 @@
 # Packages
 *.egg
 *.egg-info
+.eggs
+.cache
 dist
 build
 eggs
@@ -26,6 +28,9 @@ pip-log.txt
 .tox
 nosetests.xml
 
+# docs
+htmlcov
+
 # Translations
 *.mo
 
@@ -41,6 +46,7 @@ projects/
 *.db
 *.conf
 *.bak
+*.log
 
 data/yara/index.yara
 

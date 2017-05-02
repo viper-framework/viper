@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -6,17 +7,22 @@ from os.path import expanduser
 import sys
 import glob
 import atexit
+import logging
 import readline
 import traceback
 
 from viper.common.out import print_error
+# from viper.common.out import print_output  # currently not used
 from viper.common.colors import cyan, magenta, white, bold, blue
+from viper.common.version import __version__
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.core.ui.commands import Commands
 from viper.core.database import Database
-from viper.core.config import Config
+from viper.core.config import Config, console_output
+
+log = logging.getLogger('viper')
 
 cfg = Config()
 
@@ -26,15 +32,16 @@ try:
 except NameError:
     pass
 
+
 def logo():
     print("""         _
         (_)
    _   _ _ ____  _____  ____
   | | | | |  _ \| ___ |/ ___)
    \ V /| | |_| | ____| |
-    \_/ |_|  __/|_____)_| v1.3-dev
+    \_/ |_|  __/|_____)_| v{}
           |_|
-    """)
+    """.format(__version__))
 
     db = Database()
     count = db.get_sample_count()
@@ -53,6 +60,7 @@ def logo():
     print(magenta("You have " + bold(count)) +
           magenta(" files in your " + bold(name)) +
           magenta(" repository"))
+
 
 class Console(object):
 
@@ -95,25 +103,26 @@ class Console(object):
         self.active = False
 
     def start(self):
+        # log start
+        log.info('Starting viper-cli')
+
         # Logo.
         logo()
 
         # Setup shell auto-complete.
         def complete(text, state):
-            # Try to autocomplete commands.
-            cmds = [i for i in self.cmd.commands if i.startswith(text)]
-            if state < len(cmds):
-                return cmds[state]
+            # Try to autocomplete both commands and modules
+            completions = list()
+            completions += [i for i in self.cmd.commands if i.startswith(text)]
+            completions += [i for i in __modules__ if i.startswith(text)]
 
-            # Try to autocomplete modules.
-            mods = [i for i in __modules__ if i.startswith(text)]
-            if state < len(mods):
-                return mods[state]
+            if state < len(completions):
+                return completions[state]
 
             # Then autocomplete paths.
             if text.startswith("~"):
                 text = "{0}{1}".format(expanduser("~"), text[1:])
-            return (glob.glob(text+'*')+[None])[state]
+            return (glob.glob(text + '*') + [None])[state]
 
         # Auto-complete on tabs.
         readline.set_completer_delims(' \t\n;')
@@ -131,6 +140,8 @@ class Console(object):
 
         if os.path.exists(history_path):
             readline.read_history_file(history_path)
+
+        readline.set_history_length(10000)
 
         # Register the save history at program's exit.
         atexit.register(save_history, path=history_path)
@@ -156,7 +167,7 @@ class Console(object):
 
                 misp = ''
                 if __sessions__.current.misp_event:
-                    misp = '[MISP'
+                    misp = ' [MISP'
                     if __sessions__.current.misp_event.event.id:
                         misp += ' {}'.format(__sessions__.current.misp_event.event.id)
                     else:
@@ -170,6 +181,12 @@ class Console(object):
             # Otherwise display the basic prompt.
             else:
                 prompt = prefix + cyan('viper > ', True)
+
+            # force str (Py3) / unicode (Py2) for prompt
+            if sys.version_info <= (3, 0):
+                prompt = prompt.encode('utf-8')
+            else:
+                prompt = str(prompt)
 
             # Wait for input from the user.
             try:
@@ -192,9 +209,12 @@ class Console(object):
 
                 # Check for output redirection
                 # If there is a > in the string, we assume the user wants to output to file.
-                filename = False
                 if '>' in data:
-                    data, filename = data.split('>')
+                    data, console_output['filename'] = data.split('>', 1)
+                    if ';' in console_output['filename']:
+                        console_output['filename'], more_commands = console_output['filename'].split(';', 1)
+                        data = '{};{}'.format(data, more_commands)
+                    print("Writing output to {0}".format(console_output['filename'].strip()))
 
                 # If the input starts with an exclamation mark, we treat the
                 # input as a bash command and execute it.
@@ -250,3 +270,5 @@ class Console(object):
                     except Exception:
                         print_error("The command {0} raised an exception:".format(bold(root)))
                         traceback.print_exc()
+
+                console_output['filename'] = None   # reset output to stdout

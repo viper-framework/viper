@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import sys
 import os
 import re
 import email
@@ -10,6 +12,8 @@ import olefile
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+
+from io import open
 
 
 class EmailParse(Module):
@@ -23,7 +27,8 @@ class EmailParse(Module):
         self.parser.add_argument('-f', '--attach', action='store_true', help='Show Attachment information')
         self.parser.add_argument('-r', '--header', action='store_true', help='Show email Header information')
         self.parser.add_argument('-t', '--trace', action='store_true', help='Show email path via Received headers')
-        self.parser.add_argument('-T', '--traceall', action='store_true', help='Show email path via verbose Received headers')
+        self.parser.add_argument('-T', '--traceall', action='store_true',
+                                 help='Show email path via verbose Received headers')
         self.parser.add_argument('-s', '--spoofcheck', action='store_true', help='Test email for possible spoofing')
         self.parser.add_argument('-a', '--all', action='store_true', help='Run all the options')
         self.parser.add_argument('-o', '--open', type=int, help='Switch session to the specified attachment')
@@ -32,10 +37,18 @@ class EmailParse(Module):
 
         def string_clean(value):
             if value:
-                return re.sub('[\n\t\r]', '', value)
+                if isinstance(value, bytes):
+                    if sys.version_info < (3, 4):
+                        value = value.decode('utf-8', 'ignore')
+                    else:
+                        value = value.decode('utf-8', 'backslashreplace')
+                elif isinstance(value, email.header.Header):
+                    value = str(value)
+                return re.sub('[\n\t\r]', '', str(value))
             return ""
 
         def parse_ole_msg(ole):
+            email_header = None
             stream_dirs = ole.listdir()
             for stream in stream_dirs:
                 # get stream that contains the email header
@@ -49,6 +62,10 @@ class EmailParse(Module):
             except:
                 pass
 
+            if not email_header:
+                self.log('warning', 'This OLE file is not an email.')
+                return None
+
             # Leaving us an RFC compliant email to parse
             msg = email.message_from_string(email_header)
             return msg
@@ -58,6 +75,8 @@ class EmailParse(Module):
 
             # need to get a unique stream id for each att
             # its in the streamname as an 8 digit number.
+            header = ['#', 'Size', 'MD5', 'Filename', 'MimeType']
+            rows = []
             for i in range(20):  # arbitrary count of emails. i dont expecet this many
                 stream_number = str(i).zfill(8)
                 stream_name = '__attach_version1.0_#' + stream_number
@@ -68,7 +87,7 @@ class EmailParse(Module):
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
-                    print(i, att_size, att_md5, att_filename, att_mime)
+                    rows.append([i, att_size, att_md5, att_filename, att_mime])
                 except:
                     pass
                 # ASCII
@@ -78,9 +97,10 @@ class EmailParse(Module):
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
-                    print(i, att_size, att_md5, att_filename, att_mime)
+                    rows.append([i, att_size, att_md5, att_filename, att_mime])
                 except:
                     pass
+            self.log('table', dict(header=header, rows=rows))
 
         def att_session(att_id, msg, ole_flag):
             att_count = 0
@@ -121,9 +141,7 @@ class EmailParse(Module):
                     else:
                         rfc822 = False
 
-                    if part.get_content_maintype() == 'multipart' \
-                        or not part.get('Content-Disposition') \
-                            and not rfc822:
+                    if part.get_content_maintype() == 'multipart' or not part.get('Content-Disposition') and not rfc822:
                         continue
 
                     att_count += 1
@@ -145,7 +163,7 @@ class EmailParse(Module):
 
                         if data:
                             tmp_path = os.path.join(tempfile.gettempdir(), filename)
-                            with open(tmp_path, 'w') as tmp:
+                            with open(tmp_path, 'wb') as tmp:
                                 tmp.write(data)
                             __sessions__.new(tmp_path)
                             return
@@ -277,7 +295,7 @@ class EmailParse(Module):
                 bymatch = False
                 try:
                     mx = dns.resolver.query(fromdomain, 'MX')
-                    if mx :
+                    if mx:
                         for rdata in mx:
                             m = re.search("(\w+\.\w+).$", str(rdata.exchange))
                             if not m:
@@ -368,9 +386,9 @@ class EmailParse(Module):
 
                     if content_type in ('text/plain', 'text/html'):
                         part_content = part.get_payload(decode=True)
-                        for link in re.findall(r'(https?://[^"<>\s]+)', part_content):
+                        for link in re.findall(b'(https?://[^"<>\s]+)', part_content):
                             if link not in links:
-                                links.append(link)
+                                links.append(link.decode())
 
                     if content_type == 'message/rfc822':
                         part_content = part.as_string()
@@ -410,13 +428,13 @@ class EmailParse(Module):
                 self.log('item', link)
             return
 
+        super(EmailParse, self).run(*args)
+        if self.args is None:
+            return
+
         # Start Here
         if not __sessions__.is_set():
             self.log('error', "No open session")
-            return
-
-        super(EmailParse, self).run(*args)
-        if self.args is None:
             return
 
         # see if we can load the dns library for MX lookup spoof detecton
@@ -429,45 +447,37 @@ class EmailParse(Module):
 
         # Try to open as an ole msg, if not treat as email string
         try:
-            ole = olefile.OleFileIO(__sessions__.current.file.path)
+            ole = olefile.OleFileIO(__sessions__.current.file.data)
+            msg = parse_ole_msg(ole)
+            if not msg:
+                return
             ole_flag = True
         except:
             ole_flag = False
-            email_handle = open(__sessions__.current.file.path)
-            msg = email.message_from_file(email_handle)
-            email_handle.close()
+            if sys.version_info < (3, 0):
+                msg = email.message_from_string(__sessions__.current.file.data)
+            else:
+                msg = email.message_from_bytes(__sessions__.current.file.data)
 
         if self.args.open is not None:
             if ole_flag:
                 msg = ole
             att_session(self.args.open, msg, ole_flag)
         elif self.args.envelope:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_envelope(msg)
         elif self.args.attach:
             if ole_flag:
                 msg = ole
             email_attachments(msg, ole_flag)
         elif self.args.header:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_header(msg)
         elif self.args.trace:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_trace(msg, False)
         elif self.args.traceall:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_trace(msg, True)
         elif self.args.spoofcheck:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_spoofcheck(msg, dnsenabled)
         elif self.args.all:
-            if ole_flag:
-                msg = parse_ole_msg(ole)
             email_envelope(msg)
             email_header(msg)
             email_trace(msg, True)

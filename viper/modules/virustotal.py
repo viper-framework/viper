@@ -11,6 +11,7 @@ try:
     from virus_total_apis import PublicApi as vt
     from virus_total_apis import PrivateApi as vt_priv
     from virus_total_apis import IntelApi as vt_intel
+
     HAVE_VT = True
 except ImportError:
     HAVE_VT = False
@@ -51,7 +52,7 @@ class VirusTotal(Module):
         self.parser.add_argument('-do', '--download_open', type=int, help='Open a file from the list of the DL files (ID)')
         self.parser.add_argument('-don', '--download_open_name', help='Open a file by name from the list of the DL files (NAMe)')
         self.parser.add_argument('-dd', '--download_delete', help='Delete a file from the list of the DL files can be an ID or all.')
-        self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file or a URL to VirusTotal (by default it only looks up the hash/url)')
+        self.parser.add_argument('-s', '--submit', action='store_true', help='Submit file or a URL to VirusTotal (by default it only looks up the hash/url)')  # noqa
 
         self.parser.add_argument('-i', '--ip', help='IP address to lookup in the passive DNS')
         self.parser.add_argument('-dm', '--domain', help='Domain to lookup in the passive DNS')
@@ -59,8 +60,11 @@ class VirusTotal(Module):
 
         self.parser.add_argument("-v", "--verbose", action='store_true', help="Turn on verbose mode.")
 
-        self.parser.add_argument('-m', '--misp', default=None, choices=['hashes', 'ips', 'domains', 'urls', 'download', 'download_all'],
-                                 help='Searches for the hashes, ips, domains or URLs from the current MISP event, or download the samples if possible. Be carefull with download_all: it will download *all* the samples of all the MISP events in the current project.')
+        self.parser.add_argument('-m', '--misp', default=None,
+                                 choices=['hashes', 'ips', 'domains', 'urls', 'download', 'download_all'],
+                                 help='Searches for the hashes, ips, domains or URLs from the current MISP event, '
+                                      'or download the samples if possible. Be carefull with download_all: it will '
+                                      'download *all* the samples of all the MISP events in the current project.')
 
     def _get_local_events(self, path):
         return [json.loads(open(p, 'r').read()) for p in glob.glob(os.path.join(path, '*'))]
@@ -146,21 +150,28 @@ class VirusTotal(Module):
 
         if verbose:
             self._display_verbose_scan(virustotal['scans'], url)
-        self.log('info', "{} out of {} scans detected {} as malicious.".format(
-                 virustotal['positives'], virustotal['total'], bold(url)))
+        self.log('info', "{} out of {} scans detected {} as malicious.".format(virustotal['positives'], virustotal['total'], bold(url)))
         self.log('info', virustotal['permalink'])
 
-    def _display_verbose_scan(self, scans, query):
+    def _display_verbose_scan(self, virustotal, query):
+        self.log('success', "VirusTotal Report for {}:".format(bold(query)))
+        if 'times_submitted' in virustotal and 'first_seen' in virustotal:
+            self.log('info', 'Submitted {} times and seen first on {}.'.format(virustotal['times_submitted'], virustotal['first_seen']))
+
+        if 'submission_names' in virustotal:
+            self.log('info', 'Known names:')
+            for item in virustotal['submission_names']:
+                self.log('item', item)
+
         rows = []
-        if scans:
-            for engine, signature in scans.items():
+        if 'scans' in virustotal:
+            for engine, signature in virustotal['scans'].items():
                 if signature['detected']:
                     rows.append([engine, signature['result']])
                     signature = signature['result']
-
         rows.sort()
         if rows:
-            self.log('success', "VirusTotal Report for {}:".format(bold(query)))
+            self.log('info', "Detecting engines:")
             self.log('table', dict(header=['Antivirus', 'Signature'], rows=rows))
 
     # ####### Helpers for open ########
@@ -219,7 +230,7 @@ class VirusTotal(Module):
         if __sessions__.is_attached_misp(True):
             samples_path = os.path.join(samples_path, __sessions__.current.misp_event.event.id)
         elif force_eid:
-            samples_path = os.path.join(samples_path, force_eid)
+            samples_path = os.path.join(samples_path, str(force_eid))
 
         if not os.path.exists(samples_path):
             os.makedirs(samples_path)
@@ -276,7 +287,7 @@ class VirusTotal(Module):
             return True
 
         if verbose:
-            self._display_verbose_scan(virustotal['scans'], to_search)
+            self._display_verbose_scan(virustotal, to_search)
 
         self.log('info', "{} out of {} antivirus detected {} as malicious.".format(virustotal['positives'], virustotal['total'], bold(to_search)))
         self.log('info', virustotal['permalink'] + '\n')
@@ -355,11 +366,11 @@ class VirusTotal(Module):
                 if eid:
                     if __sessions__.is_attached_misp(quiet=True):
                         if __sessions__.current.misp_event.event.id != int(eid):
-                            self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
+                            self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))  # noqa
                         else:
                             self.log('success', 'You opened a sample related to the current MISP event.')
                     else:
-                        self.log('warning', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))
+                        self.log('warning', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))  # noqa
                 return __sessions__.new(path)
             except IndexError:
                 self.log('error', 'Invalid id, please use virustotal -dl.')
@@ -372,11 +383,11 @@ class VirusTotal(Module):
                         if eid:
                             if __sessions__.is_attached_misp(quiet=True):
                                 if __sessions__.current.misp_event.event.id != int(eid):
-                                    self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))
+                                    self.log('warning', 'You opened a sample related to a MISP event different than the one you are currently connected to: {}.'.format(eid))  # noqa
                                 else:
                                     self.log('success', 'You opened a sample related to the current MISP event.')
                             else:
-                                self.log('warning', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))
+                                self.log('warning', 'This samples is linked to the MISP event {eid}. You may want to run misp pull {eid}'.format(eid=eid))  # noqa
                         return __sessions__.new(path)
             except IndexError:
                 self.log('error', 'Invalid id, please use virustotal -dl.')
