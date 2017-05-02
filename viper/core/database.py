@@ -3,6 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import sys
 import json
 import logging
 from datetime import datetime
@@ -16,6 +17,7 @@ from sqlalchemy.orm import subqueryload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from viper.common.out import print_warning, print_error
+from viper.common.exceptions import Python2UnsupportedUnicode
 from viper.common.objects import File
 from viper.core.project import __project__
 from viper.core.config import Config
@@ -294,6 +296,15 @@ class Database:
     def add_note(self, sha256, title, body):
         session = self.Session()
 
+        if sys.version_info < (3, 0):
+            # on Python2 make sure to only handle ASCII
+            try:
+                title.decode('ascii')
+                body.decode('ascii')
+            except UnicodeError as err:
+                raise Python2UnsupportedUnicode("Non ASCII character(s) in Notes not supported on Python2.\n"
+                                                "Please use Python >= 3.4".format(err), "error")
+
         malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
         if not malware_entry:
             return
@@ -310,10 +321,27 @@ class Database:
     def get_note(self, note_id):
         session = self.Session()
         note = session.query(Note).get(note_id)
+
+        if sys.version_info < (3, 0):
+            # on Python2 make sure to only handle ASCII filenames
+            try:
+                note.title.decode('ascii')
+                note.body.decode('ascii')
+            except UnicodeError as err:
+                raise Python2UnsupportedUnicode("Non ASCII character(s) in Notes not supported on Python2.\n"
+                                                "Please use Python >= 3.4".format(err), "error")
         return note
 
     def edit_note(self, note_id, body):
         session = self.Session()
+
+        if sys.version_info < (3, 0):
+            # on Python2 make sure to only handle ASCII
+            try:
+                body.decode('ascii')
+            except UnicodeError as err:
+                raise Python2UnsupportedUnicode("Non ASCII character(s) in Notes not supported on Python2.\n"
+                                                "Please use Python >= 3.4".format(err), "error")
 
         try:
             session.query(Note).get(note_id).body = body
