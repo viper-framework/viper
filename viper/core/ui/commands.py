@@ -33,7 +33,6 @@ from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.config import Config, console_output
-import  viper.core.ui.console
 from viper.common.autorun import autorun_module
 from viper.core.archiver import Compressor
 
