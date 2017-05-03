@@ -24,7 +24,6 @@ pytest-cov
 python-dateutil
 python-magic
 r2pipe
-requests
 requests-cache
 scandir
 six
@@ -33,10 +32,10 @@ tox
 virustotal-api
 yara-python
 cryptography
+requests[socks]
 
 git+https://github.com/viper-framework/pefile.git#egg=pefile
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
-git+https://github.com/crackinglandia/pype32.git#egg=pype32
 git+https://github.com/kbandla/pydeep.git#egg=pydeep
 
 # pe module (verify sigs)
