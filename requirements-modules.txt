@@ -38,7 +38,7 @@ git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 
 # office module
 olefile==0.44
-git+https://github.com/viper-framework/oletools.git
+git+https://github.com/decalage2/oletools.git
 ## Flash lookup
 git+https://github.com/viper-framework/xxxswf.git
 
