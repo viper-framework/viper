@@ -51,7 +51,6 @@ del F, univ
 def get_auth_data(filename):
     with open(filename, 'rb') as objf:
         fingerprinter = fingerprint.Fingerprinter(objf)
-        # is_pecoff = fingerprinter.EvalPecoff()  # TODO(frennkie) remove - is never used
         fingerprinter.EvalGeneric()
         results = fingerprinter.HashIt()
 
