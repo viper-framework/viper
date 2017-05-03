@@ -18,5 +18,6 @@ dist:
 	python setup.py sdist
 
 clean:
-	find . -name '*.pyc' -delete
+	find . -type f -iname '*.pyc' -delete
+	find . -type d -iname "__pycache__" -delete
 	rm -rf dist build viper.egg-info
