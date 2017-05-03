@@ -48,7 +48,7 @@ def config_1(key, salt, string_list):
     config_dict = {}
     for i in range(40):
         if len(string_list[1]) > 200:
-            # FIXME(frennkie): the next line doesn't do anything.. what could be a possible reason for it?
+            # FIXME: the next line doesn't do anything.. what could be a possible reason for it?
             config_dict["Embedded File found at {0}".format(i)]
         else:
             try:

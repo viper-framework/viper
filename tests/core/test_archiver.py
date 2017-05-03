@@ -250,8 +250,6 @@ class TestCompressor:
         assert isinstance(instance.extensions, (list, KeysView))
         assert "zip" in instance.extensions
 
-    # TODO(frennkie) add tests for correct archive structure (e.g. compress file, uncompress and check dir layout)
-
     @pytest.mark.usefixtures("cleandir")
     def test_file_path_list_item_does_not_exist(self, capsys):
         assert os.listdir(os.getcwd()) == []
@@ -402,16 +400,3 @@ class TestCompressor:
         assert instance.err is not None
         assert re.search("unable to discover extension", instance.err)
         assert os.listdir(os.getcwd()) == []
-
-    # @pytest.mark.parametrize("filename", ["Mac.pdf"])
-    # def test_meta(self, capsys, filename):
-    #     __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-    #     instance = office.Office()
-    #     instance.command_line = ["-m"]
-    #
-    #     instance.run()
-    #     out, err = capsys.readouterr()
-    #
-    #     assert re.search(r".*comments .*| htsgraghtfgyrwthwwb*", out)
-    #     assert re.search(r".*create_time .*| 2017-03-08 16:00:00*", out)
-    #     assert re.search(r".*last_saved_time .*| 2017-04-09 19:03:00.*", out)
