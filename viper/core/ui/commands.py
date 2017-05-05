@@ -70,6 +70,7 @@ class Commands(object):
             notes=dict(obj=self.cmd_notes, description="View, add and edit notes on the opened file"),
             clear=dict(obj=self.cmd_clear, description="Clear the console"),
             store=dict(obj=self.cmd_store, description="Store the opened file to the local repository"),
+            copy=dict(obj=self.cmd_copy, description="Copy opened file(s) into another project"),
             delete=dict(obj=self.cmd_delete, description="Delete the opened file"),
             find=dict(obj=self.cmd_find, description="Find a file"),
             tags=dict(obj=self.cmd_tags, description="Modify tags of the opened file"),
@@ -559,6 +560,58 @@ class Commands(object):
                         autorun_module(__sessions__.current.file.sha256)
             else:
                 self.log('error', "No open session")
+
+    ##
+    # COPY
+    #
+    # This command copies the opened file into another project. Analysis, Notes
+    # and Tags are - by default - also copies. Children can (optionally) also
+    # be copied (recursively).
+    def cmd_copy(self, *args):
+        parser = argparse.ArgumentParser(prog='copy', description="Copy opened file into another project")
+        parser.add_argument('project', type=str, help="Project to copy file(s) to")
+
+        parser.add_argument('-d', '--delete', action='store_true', help="delete original file(s) after copy ('move')")
+        parser.add_argument('--no-analysis', action='store_true', help="do not copy analysis details")
+        parser.add_argument('--no-notes', action='store_true', help="do not copy notes")
+        parser.add_argument('--no-tags', action='store_true', help="do not copy tags")
+
+        parser.add_argument('-c', '--children', action='store_true', help="also copy all children - if --delete was "
+                                                                          "selected also the children will be deleted "
+                                                                          "from current project after copy")
+
+        try:
+            args = parser.parse_args(args)
+        except:
+            return
+
+        if not __sessions__.is_set():
+            self.log('error', "No open session")
+            return
+
+        if not __project__.name:
+            src_project = "default"
+        else:
+            src_project = __project__.name
+
+        self.db.copied_ids = []
+        res = self.db.copy(__sessions__.current.file.id,
+                           src_project=src_project, dst_project=args.project,
+                           copy_analysis=True, copy_notes=True, copy_tags=True, copy_children=args.children)
+
+        if args.delete:
+            __sessions__.close()
+            for item_id, item_sha256 in self.db.copied_id_sha256:
+                self.db.delete_file(item_id)
+                os.remove(get_sample_path(item_sha256))
+                self.log('info', "Deleted: {}".format(item_sha256))
+
+        if res:
+            self.log('success', "Successfully copied sample(s)")
+            return True
+        else:
+            self.log('error', "Something went wrong")
+            return False
 
     ##
     # RENAME

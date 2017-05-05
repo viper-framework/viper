@@ -11,6 +11,7 @@ Viper provides a set of core commands used to interact repositories of files you
     +------------+-----------------------------------------------+
     | clear      | Clear the console                             |
     | close      | Close the current session                     |
+    | copy       | Copy opened file(s) into another project      |
     | delete     | Delete the opened file                        |
     | exit, quit | Exit Viper                                    |
     | export     | Export the current session to file or zip     |
@@ -49,14 +50,14 @@ Each project will have its own local file repository, its own ``viper.db`` SQLit
 For example, this is how to launch Viper with a specific project::
 
     nex@nex:$ viper-cli --project test1
-             _                   
-            (_) 
-       _   _ _ ____  _____  ____ 
+             _
+            (_)
+       _   _ _ ____  _____  ____
       | | | | |  _ \| ___ |/ ___)
-       \ V /| | |_| | ____| |    
+       \ V /| | |_| | ____| |
         \_/ |_|  __/|_____)_| v1.1
               |_|
-        
+
     You have 0 files in your test1 repository
     test1 shell >
 
@@ -74,7 +75,7 @@ You can eventually switch to a different one::
 
     test1 shell > projects --switch test2
     [*] Switched to project test2
-    test2 shell > 
+    test2 shell >
 
 Note that if you specify a name of a project that doesn't exist to the ``--switch`` parameter, Viper will create that project and open it nevertheless.
 
@@ -106,7 +107,7 @@ If you don't specify any option, Viper will interpret the value you provided as 
 
     shell > open 22f77c113cc6d43d8c12ed3c9fb39825
     [*] Session opened on ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
-    shell poisonivy.exe > 
+    shell poisonivy.exe >
 
 If you want to open a file elsewhere on the filesystem, you need to specify the ``--file`` (or ``-f``) flag::
 
@@ -117,7 +118,7 @@ If you want to open an URL you can use the ``--url`` flag::
 
     shell > open --url http://malicious.tld/path/to/file.exe
     [*] Session opened on /tmp/tmpcuIOIj
-    shell tmpcuIOIj > 
+    shell tmpcuIOIj >
 
 If you have Tor running, you can fetch the file through it by additionally specifying ``--tor``.
 
@@ -131,7 +132,7 @@ Through the ``open`` command you can also directly open one of the entries from 
     +---+---------------+-----------------------+----------------------------------+
     shell > open --last 1
     [*] Session opened on ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
-    shell poisonivy.exe > 
+    shell poisonivy.exe >
 
 
 sessions
@@ -159,7 +160,7 @@ An example of execution is the following::
     +---+---------------+----------------------------------+---------------------+---------+
     shell poisonivy.exe > sessions --switch 2
     [*] Switched to session #2 on ~/viper/binaries/6/7/6/a/676a818365c573e236245e8182db87ba1bc021c5d8ee7443b9f673f26e7fd7d1
-    shell zeus.exe > 
+    shell zeus.exe >
 
 
 export
@@ -203,7 +204,7 @@ If you specify ``--delete`` it will instruct Viper to delete the original copy o
     shell poisonivy.exe > store --delete
     [+] Stored file "poisonivy.exe" to ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
     [*] Session opened on ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
-    shell poisonivy.exe > 
+    shell poisonivy.exe >
 
 If you want, you can store the content of an entire folder by specifying its path to the ``--folder`` parameter. In case the folder contains a large variety of files, you can filter which ones you're particularly interested in: with ``--file-size`` you can specify a maximum size in bytes, with ``--file-type`` you can specify a pattern of magic file type (e.g. *PE32*) and with ``--file-name`` you can specify a wildcard-enabled pattern to be matched with the file names (e.g. *apt_**).
 
@@ -347,6 +348,40 @@ Once added, the session will be refreshed so that the new attributes will be vis
     | SSdeep | 3072:I4lRkAehGfzmuqTPryFm8le+ZNX2TpF3Vb:I4lRkAehaKuqT+FDl7NXs7B                                                                  |
     | CRC32  | 4090D32C                                                                                                                         |
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
+
+
+copy
+======
+
+The ``copy`` command let's you copy the opened file into another project. By default the stored analysis results,
+notes and tags will also be copied. If the file has children related to it then these will not be copied by default.
+Also copying all children (recursively) can be enabled by passing the ``--children`` or ``-c`` flag.
+
+If the ``--delete`` or ``-d`` is passed then the files will be copied to the specified project and then deleted from the
+local project::
+
+    viper foo.txt > copy -h
+    usage: copy [-h] [-d] [--no-analysis] [--no-notes] [--no-tags] [-c] project
+
+    Copy opened file into another project
+
+    positional arguments:
+      project         Project to copy file(s) to
+
+    optional arguments:
+      -h, --help      show this help message and exit
+      -d, --delete    delete original file(s) after copy ('move')
+      --no-analysis   do not copy analysis details
+      --no-notes      do not copy notes
+      --no-tags       do not copy tags
+      -c, --children  also copy all children - if --delete was selected also the
+                      children will be deleted from current project after copy
+
+
+    viper foo.txt > copy -d foobar
+    [+] Copied: e2c94230decedbf4174ac3e35c6160a4c9324862c37cf45124920e63627624c1 (foo.txt)
+    [*] Deleted: e2c94230decedbf4174ac3e35c6160a4c9324862c37cf45124920e63627624c1
+    [+] Successfully copied sample(s)
 
 
 delete
