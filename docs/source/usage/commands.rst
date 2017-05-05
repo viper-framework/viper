@@ -9,6 +9,8 @@ Viper provides a set of core commands used to interact repositories of files you
     +------------+-----------------------------------------------+
     | Command    | Description                                   |
     +------------+-----------------------------------------------+
+    | about      | Show information about this Viper instance    |
+    | analysis   | View the stored analysis                      |
     | clear      | Clear the console                             |
     | close      | Close the current session                     |
     | delete     | Delete the opened file                        |
@@ -20,13 +22,40 @@ Viper provides a set of core commands used to interact repositories of files you
     | new        | Create new file                               |
     | notes      | View, add and edit notes on the opened file   |
     | open       | Open a file                                   |
+    | parent     | Add or remove a parent file                   |
     | projects   | List or switch existing projects              |
+    | rename     | Rename the file in the database               |
     | sessions   | List or switch sessions                       |
+    | stats      | Viper Collection Statistics                   |
     | store      | Store the opened file to the local repository |
     | tags       | Modify tags of the opened file                |
     +----------+-------------------------------------------------+
 
 Following are details for all the currently available commands.
+
+
+about
+=====
+
+The **about** command can be used to display some useful information regarding the Viper instance you are currently running. This includes the versions of both Viper itself and of your Python installation. Additionally the path of the active configuration file is shown::
+
+
+    viper > about
+    +----------------+-------------------------------------------------+
+    | About          |                                                 |
+    +----------------+-------------------------------------------------+
+    | Viper Version  | 1.3-dev                                         |
+    | Python Version | 3.4.3                                           |
+    | Homepage       | https://viper.li                                |
+    | Issue Tracker  | https://github.com/viper-framework/viper/issues |
+    +----------------+-------------------------------------------------+
+    +--------------------------+------------------------------------------------+
+    | Configuration            |                                                |
+    +--------------------------+------------------------------------------------+
+    | Configuration File       | /home/user/.viper/viper.conf                   |
+    | Storage Path             | /home/user/.viper                              |
+    | Current Project Database | Engine(sqlite:////home/user/.viper/viper.db)   |
+    +--------------------------+------------------------------------------------+
 
 
 projects
