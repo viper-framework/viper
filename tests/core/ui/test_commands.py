@@ -4,6 +4,7 @@
 
 from viper.core.ui import commands
 from viper.core.database import Database
+from viper.core.project import Project
 from tests.conftest import FIXTURE_DIR
 import re
 import os
@@ -130,9 +131,25 @@ class TestCommands:
     def test_projects(self, capsys):
         instance = commands.Commands()
         instance.cmd_projects('-h')
-        instance.cmd_projects('-l')
         out, err = capsys.readouterr()
         assert re.search("usage: projects \[-h\] .*", out)
+
+        p = Project()
+        p.open("project_switch_test1")
+
+        instance.cmd_projects('-l')
+        out, err = capsys.readouterr()
+        assert re.search(".*Projects Available.*", out)
+        assert re.search(".*project_switch_test1.*", out)
+        assert not re.search(".*not_there.*", out)
+
+        instance.cmd_projects('-s', 'project_switch_test1')
+        out, err = capsys.readouterr()
+        lines = out.split('\n')
+        assert re.search(".*Switched to project.*", lines[0])
+
+        # return to default
+        p.open("default")
 
     def test_export(self, capsys):
         instance = commands.Commands()
@@ -154,7 +171,15 @@ class TestCommands:
 
     def test_rename(self, capsys):
         instance = commands.Commands()
+
+        instance.cmd_find("all")
+        out, err = capsys.readouterr()
+        assert out == ""
+
         instance.cmd_open('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
+        instance.cmd_store()
+        _, _ = capsys.readouterr()
+
         if sys.version_info <= (3, 0):
             in_fct = 'viper.core.ui.commands.input'
         else:
@@ -163,5 +188,60 @@ class TestCommands:
             instance.cmd_rename()
         out, err = capsys.readouterr()
         lines = out.split('\n')
-        assert re.search(r".*Current name is.*1mchromeinstall-8u31.exe.*", lines[1])
-        assert re.search(r".*Refreshing session to update attributes.*", lines[2])
+        assert re.search(r".*Current name is.*1mchromeinstall-8u31.exe.*", lines[0])
+        assert re.search(r".*Refreshing session to update attributes.*", lines[1])
+
+    def test_copy(self, capsys):
+        instance = commands.Commands()
+
+        instance.cmd_projects('-s', 'copy_test_dst')
+        out, err = capsys.readouterr()
+        lines = out.split('\n')
+        assert re.search(r".*Switched to project.*", lines[0])
+
+        instance.cmd_find('all')
+        out, err = capsys.readouterr()
+        assert out == ""
+
+        instance.cmd_projects('-s', 'copy_test_src')
+        out, err = capsys.readouterr()
+        lines = out.split('\n')
+        assert re.search(r".*Switched to project.*", lines[0])
+
+        instance.cmd_find('all')
+        out, err = capsys.readouterr()
+        assert out == ""
+
+        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
+        instance.cmd_store()
+        out, err = capsys.readouterr()
+        lines = out.split('\n')
+        assert re.search(r".*Session opened on.*", lines[0])
+        assert re.search(r".*Stored file.*", lines[1])
+
+        instance.cmd_find('all')
+        out, err = capsys.readouterr()
+        assert re.search(r".*\| 1 \| chromeinstall-8u31.exe.*", out)
+        assert not re.search(r".*\| 2 \|.*", out)
+
+        instance.cmd_copy('-d', 'copy_test_dst')
+        out, err = capsys.readouterr()
+        lines = out.split('\n')
+        assert re.search(r".*Copied:.*", lines[0])
+        assert re.search(r".*Deleted:.*", lines[1])
+        assert re.search(r".*Successfully copied sample.*", lines[2])
+
+        instance.cmd_find('all')
+        out, err = capsys.readouterr()
+        assert out == ""
+        assert not re.search(r".*\| 1 \| chromeinstall-8u31.exe.*", out)
+        assert not re.search(r".*\| 2 \|.*", out)
+
+        instance.cmd_projects('-s', 'copy_test_dst')
+        out, err = capsys.readouterr()
+        assert re.search(r".*Switched to project.*", out)
+
+        instance.cmd_find('all')
+        out, err = capsys.readouterr()
+        assert re.search(r".*\| 1 \| chromeinstall-8u31.exe.*", out)
+        assert not re.search(r".*\| 2 \|.*", out)
