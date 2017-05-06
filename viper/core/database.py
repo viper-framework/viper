@@ -16,11 +16,13 @@ from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.orm import subqueryload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from viper.common.out import print_warning, print_error
+from viper.common.out import print_warning, print_error, print_success
 from viper.common.exceptions import Python2UnsupportedUnicode
 from viper.common.objects import File
+from viper.core.storage import get_sample_path, store_sample
 from viper.core.project import __project__
 from viper.core.config import Config
+
 
 log = logging.getLogger('viper')
 
@@ -203,6 +205,7 @@ class Database:
         self.Session = sessionmaker(bind=self.engine)
 
         self.added_ids = {}
+        self.copied_id_sha256 = []
 
     def __repr__(self):
         return "<{}>".format(self.__class__.__name__)
@@ -405,6 +408,72 @@ class Database:
 
         if notes_body and notes_title:
             self.add_note(sha256=obj.sha256, title=notes_title, body=notes_body)
+
+        return True
+
+    def copy(self, id, src_project, dst_project,
+             copy_analysis=True, copy_notes=True, copy_tags=True, copy_children=True, _parent_sha256=None):  # noqa
+        session = self.Session()
+
+        # make sure to open source project
+        __project__.open(src_project)
+
+        # get malware from DB
+        malware = session.query(Malware). \
+            options(subqueryload(Malware.analysis)). \
+            options(subqueryload(Malware.note)). \
+            options(subqueryload(Malware.parent)). \
+            options(subqueryload(Malware.tag)). \
+            get(id)
+
+        # get path and load file from disk
+        malware_path = get_sample_path(malware.sha256)
+        sample = File(malware_path)
+        sample.name = malware.name
+
+        log.debug("Copying ID: {} ({}): from {} to {}".format(malware.id, malware.name, src_project, dst_project))
+        # switch to destination project, add to DB and store on disk
+        __project__.open(dst_project)
+        dst_db = Database()
+        dst_db.add(sample)
+        store_sample(sample)
+        print_success("Copied: {} ({})".format(malware.sha256, malware.name))
+
+        if copy_analysis:
+            log.debug("copy analysis..")
+            for analysis in malware.analysis:
+                dst_db.add_analysis(malware.sha256, cmd_line=analysis.cmd_line, results=analysis.results)
+
+        if copy_notes:
+            log.debug("copy notes..")
+            for note in malware.note:
+                dst_db.add_note(malware.sha256, title=note.title, body=note.body)
+
+        if copy_tags:
+            log.debug("copy tags..")
+            dst_db.add_tags(malware.sha256, [x.tag for x in malware.tag])
+
+        if copy_children:
+            children = session.query(Malware).filter(Malware.parent_id == malware.id).all()
+            if not children:
+                pass
+            else:
+                _parent_sha256 = malware.sha256  # set current recursion item as parent
+                for child in children:
+                    self.copy(child.id,
+                              src_project=src_project, dst_project=dst_project,
+                              copy_analysis=copy_analysis, copy_notes=copy_notes, copy_tags=copy_tags,
+                              copy_children=copy_children, _parent_sha256=_parent_sha256)
+                    # restore parent-child relationships
+                    log.debug("add parent {} to child {}".format(_parent_sha256, child.sha256))
+                    if _parent_sha256:
+                        dst_db.add_parent(child.sha256, _parent_sha256)
+
+        # switch back to source project
+        __project__.open(src_project)
+
+        # store tuple of ID (in source project) and sha256 of copied samples
+        self.copied_id_sha256.append((malware.id, malware.sha256))
 
         return True
 
