@@ -79,7 +79,7 @@ class Sessions(object):
             if self.is_set() and misp_event is None and self.current.misp_event:
                 session.misp_event = self.current.misp_event
 
-            # Open a section on the given file.
+            # Open a session on the given file.
             session.file = File(path)
             # Try to lookup the file in the database. If it is already present
             # we get its database ID, file name, and tags.
