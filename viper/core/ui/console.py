@@ -116,17 +116,16 @@ class Console(object):
 
             # clean up user input so far (no leading/trailing/duplicate spaces)
             line = " ".join(readline.get_line_buffer().split())
-            words = line.split(" ")  # split words (e.g. store -f /tmp -> ['store', '-f', '/tmp']
+            words = line.split(" ")  # split words; e.g. store -f /tmp -> ['store', '-f', '/tmp']
 
             if words[0] in [i for i in self.cmd.commands]:
                 # handle completion for commands
 
                 # enable filesystem path completion for certain commands (e.g. export, store)
-                if words[0] in ["export", "store"]:
+                if words[0] in [x for x in self.cmd.commands if self.cmd.commands[x]["fs_path_completion"]]:
                     fs_path_completion = True
 
-                # TODO(frennkie) how to populate the command options automatically?!
-                options = ["--help"]
+                options = [key for key in self.cmd.commands[words[0]]["parser_args"]]
                 completions = [i for i in options if i.startswith(text) and i not in words]
 
             elif words[0] in [i for i in __modules__]:

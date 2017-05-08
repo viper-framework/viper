@@ -9,16 +9,16 @@ from viper.common.exceptions import ArgumentErrorCallback
 
 
 class ArgumentParser(argparse.ArgumentParser):
-    def print_usage(self):
+    def print_usage(self, file=None):
         raise ArgumentErrorCallback(self.format_usage())
 
-    def print_help(self):
+    def print_help(self, file=None):
         raise ArgumentErrorCallback(self.format_help())
 
     def error(self, message):
         raise ArgumentErrorCallback(message, 'error')
 
-    def exit(self, status, message=None):
+    def exit(self, status=0, message=None):
         if message is not None:
             raise ArgumentErrorCallback(message)
 
@@ -55,3 +55,35 @@ class Module(object):
             self.args = self.parser.parse_args(self.command_line)
         except ArgumentErrorCallback as e:
             self.log(*e.get())
+
+
+def get_argparse_parser_actions(parser):
+    """introspect argparse object and return list of parameters/options/arguments"""
+    ret = {}
+
+    parser_actions = [(x.option_strings, x.help) for x in parser._actions]
+    for parser_action in parser_actions:
+        if isinstance(parser_action[0], list):
+            for option in parser_action[0]:
+                # ignore short options (only add --help and not -h)
+                if option.startswith("--"):
+                    ret.update({option: parser_action[1]})
+        else:
+            ret.update({parser_action[0]: parser_action[1]})
+
+    return ret
+
+
+def get_argparse_subparser_actions(parser):
+    """introspect argparse subparser object"""
+    ret = {}
+    try:
+        for subparser_action in parser._subparsers._actions:
+            if isinstance(subparser_action, argparse._SubParsersAction):
+                for item in list(subparser_action.choices):
+                    ret.update({item: get_argparse_parser_actions(subparser_action.choices[item])})
+
+    except AttributeError:
+        pass
+
+    return ret
