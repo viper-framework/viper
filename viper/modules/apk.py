@@ -26,6 +26,7 @@ class AndroidPackage(Module):
         self.parser.add_argument('-i', '--info', action='store_true', help='Show general info')
         self.parser.add_argument('-p', '--perm', action='store_true', help='Show APK permissions')
         self.parser.add_argument('-f', '--file', action='store_true', help='Show APK file list')
+        self.parser.add_argument('-u', '--url', action='store_true', help='Show URLs in APK')
         self.parser.add_argument('-a', '--all', action='store_true', help='Run all options excluding dump')
         self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Extract all items from archive')
 
@@ -129,6 +130,13 @@ class AndroidPackage(Module):
             for perms in a.permissions:
                 self.log('item', perms)
 
+        # List all URL in the dex file
+        def andro_url(vm):
+            url_set = vm.get_regex_strings("http(s){0,1}://")
+            self.log('info', "APK URLs")
+            for url in url_set:
+                self.log('item', url.encode('utf-8'))
+
         # Decompile and Dump all the methods
         def andro_dump(vm, vmx, dump_path):
             # Export each decompiled method
@@ -204,6 +212,8 @@ class AndroidPackage(Module):
             andro_perm(a)
         elif self.args.file:
             andro_file(a)
+        elif self.args.url:
+            andro_url(vm)
         elif self.args.all:
             andro_info(a)
             andro_perm(a)
