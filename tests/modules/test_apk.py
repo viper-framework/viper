@@ -49,7 +49,7 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*No open session*", out)
+        assert re.search(r".*No open session.*", out)
         # assert out == ""
 
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
@@ -72,7 +72,7 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*APK Permissions*", out)
+        assert re.search(r".*APK Permissions.*", out)
 
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_file(self, capsys, filename):
@@ -83,7 +83,19 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*APK Contents*", out)
+        assert re.search(r".*APK Contents.*", out)
+
+    @pytest.mark.parametrize("filename", ["hello-world.apk"])
+    def test_url(self, capsys, filename):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = apk.AndroidPackage()
+        instance.command_line = ["-u"]
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*http://schemas.android.com/apk/res/android.*", out)
+        assert not re.search(r".*http://foo.example.bar.*", out)
 
     @pytest.mark.parametrize("filename,pkg_name", [("hello-world.apk", "de.rhab.helloworld")])
     def test_all(self, capsys, filename, pkg_name):
@@ -94,7 +106,7 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*Package Name: {}*".format(pkg_name), out)
+        assert re.search(r".*Package Name: {}.*".format(pkg_name), out)
 
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_dump_no_parameter(self, capsys, filename):
@@ -105,7 +117,7 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*argument -d/--dump: expected one argument*", out)
+        assert re.search(r".*argument -d/--dump: expected one argument.*", out)
 
     @pytest.mark.usefixtures("cleandir")
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
@@ -118,5 +130,5 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*Decompiling Code*", out)
-        assert re.search(r".*Decompiled code saved to*", out)
+        assert re.search(r".*Decompiling Code.*", out)
+        assert re.search(r".*Decompiled code saved to.*", out)
