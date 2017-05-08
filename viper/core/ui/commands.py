@@ -465,7 +465,7 @@ class Commands(object):
 
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
-                self.log('warning', "Skip, file \"{0}\" appears to be already stored".format(obj.name))
+                self.log('warning', "Skip, file \"{0}\" appears to be already stored".format(obj.name.encode('utf-8')))
                 return False
 
             if __sessions__.is_attached_misp(quiet=True):
@@ -482,7 +482,7 @@ class Commands(object):
                 # we don't want to have the binary lying in the repository with no
                 # associated database record.
                 new_path = store_sample(obj)
-                self.log("success", "Stored file \"{0}\" to {1}".format(obj.name, new_path))
+                self.log("success", "Stored file \"{0}\" to {1}".format(obj.name.encode('utf-8'), new_path))
 
             else:
                 return False

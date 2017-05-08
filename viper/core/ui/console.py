@@ -190,7 +190,11 @@ class Console(object):
 
             # Wait for input from the user.
             try:
-                data = input(prompt).strip()
+                if isinstance(prompt, unicode):
+                    prompt_input = prompt.encode('utf-8')
+                else:
+                    prompt_input = prompt
+                data = input(prompt_input).strip()
             except KeyboardInterrupt:
                 print("")
             # Terminate on EOF.

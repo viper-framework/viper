@@ -76,6 +76,9 @@ class Sessions(object):
         session.id = total + 1
 
         if path:
+            if isinstance(path, str):
+                path = path.decode('utf-8')
+
             if self.is_set() and misp_event is None and self.current.misp_event:
                 session.misp_event = self.current.misp_event
 
@@ -93,7 +96,7 @@ class Sessions(object):
                     session.file.parent = '{0} - {1}'.format(row[0].parent.name, row[0].parent.sha256)
                 session.file.children = Database().get_children(row[0].id)
 
-            print_info("Session opened on {0}".format(path))
+            print_info("Session opened on {0}".format(path.encode('utf-8')))
 
         if misp_event:
             if self.is_set() and path is None and self.current.file:
