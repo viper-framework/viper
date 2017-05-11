@@ -35,17 +35,16 @@ class TestUseCases:
         ("string_handling/with blank.txt", "with blank.txt"),
         ])
     def test_store(self, capsys, filename, name):
-        instance = commands.Commands()
         # use cleandir fixture operate on clean ./ local dir
         copyfile(os.path.join(FIXTURE_DIR, filename), os.path.join(".", os.path.basename(filename)))
-        instance.cmd_open('-f', os.path.join(".", os.path.basename(filename)))
-        instance.cmd_store()
+        commands.Open().run('-f', os.path.join(".", os.path.basename(filename)))
+        commands.Store().run()
         if sys.version_info <= (3, 0):
             in_fct = 'viper.core.ui.commands.input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
-            instance.cmd_delete()
+            commands.Delete().run()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -62,17 +61,16 @@ class TestUseCases:
         ("string_handling/dümmy.txt", "dümmy.txt")
         ])
     def test_store_unicode_py2(self, capsys, filename, name):
-        instance = commands.Commands()
         # use cleandir fixture operate on clean ./ local dir
         copyfile(os.path.join(FIXTURE_DIR, filename), os.path.join(".", os.path.basename(filename)))
-        instance.cmd_open('-f', os.path.join(".", os.path.basename(filename)))
-        instance.cmd_store()
+        commands.Open().run('-f', os.path.join(".", os.path.basename(filename)))
+        commands.Store().run()
         if sys.version_info <= (3, 0):
             in_fct = 'viper.core.ui.commands.input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
-            instance.cmd_delete()
+            commands.Delete().run()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -88,17 +86,16 @@ class TestUseCases:
         ("string_handling/dümmy.txt", "dümmy.txt")
         ])
     def test_store_unicode_py3(self, capsys, filename, name):
-        instance = commands.Commands()
         # use cleandir fixture operate on clean ./ local dir
         copyfile(os.path.join(FIXTURE_DIR, filename), os.path.join(".", os.path.basename(filename)))
-        instance.cmd_open('-f', os.path.join(".", os.path.basename(filename)))
-        instance.cmd_store()
+        commands.Open().run('-f', os.path.join(".", os.path.basename(filename)))
+        commands.Store().run()
         if sys.version_info <= (3, 0):
             in_fct = 'viper.core.ui.commands.input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
-            instance.cmd_delete()
+            commands.Delete().run()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -112,10 +109,9 @@ class TestUseCases:
     @pytest.mark.xfail(raises=Python2UnsupportedUnicode)
     @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
     def test_store_all_py2(self, capsys, filename):
-        instance = commands.Commands()
-        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, filename))
-        instance.cmd_store()
-        instance.cmd_store('-f', FIXTURE_DIR)
+        commands.Open().run('-f', os.path.join(FIXTURE_DIR, filename))
+        commands.Store().run()
+        commands.Store().run('-f', FIXTURE_DIR)
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -126,10 +122,9 @@ class TestUseCases:
     @pytest.mark.skipif(sys.version_info < (3, 3), reason="requires at least python3.3")
     @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
     def test_store_all_py3(self, capsys, filename):
-        instance = commands.Commands()
-        instance.cmd_open('-f', os.path.join(FIXTURE_DIR, filename))
-        instance.cmd_store()
-        instance.cmd_store('-f', FIXTURE_DIR)
+        commands.Open().run('-f', os.path.join(FIXTURE_DIR, filename))
+        commands.Store().run()
+        commands.Store().run('-f', FIXTURE_DIR)
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -141,10 +136,9 @@ class TestUseCases:
     def test_open(self, capsys, filename):
         with open(os.path.join(FIXTURE_DIR, filename), 'rb') as f:
             hashfile = sha256(f.read()).hexdigest()
-        instance = commands.Commands()
-        instance.cmd_open(hashfile)
-        instance.cmd_info()
-        instance.cmd_close()
+        commands.Open().run(hashfile)
+        commands.Info().run()
+        commands.Close().run()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -156,14 +150,13 @@ class TestUseCases:
         with open(os.path.join(FIXTURE_DIR, filename), 'rb') as f:
             data = f.read()
             hashfile_sha = sha256(data).hexdigest()
-        instance = commands.Commands()
-        instance.cmd_find('all')
-        instance.cmd_find('sha256', hashfile_sha)
-        instance.cmd_open('-l', '1')
-        instance.cmd_close()
-        instance.cmd_tags('-a', 'blah')
-        instance.cmd_find('-t')
-        instance.cmd_tags('-d', 'blah')
+        commands.Find().run('all')
+        commands.Find().run('sha256', hashfile_sha)
+        commands.Open().run('-l', '1')
+        commands.Close().run()
+        commands.Tags().run('-a', 'blah')
+        commands.Find().run('-t')
+        commands.Tags().run('-d', 'blah')
         out, err = capsys.readouterr()
 
         assert re.search(r".*EICAR.com.*", out)
@@ -171,8 +164,7 @@ class TestUseCases:
         assert re.search(r".*Tag.*|.*# Entries.*", out)
 
     def test_stats(self, capsys):
-        instance = commands.Commands()
-        instance.cmd_stats()
+        commands.Stats().run()
         out, err = capsys.readouterr()
 
         assert re.search(r".*Projects.*Name | Count.*", out)

@@ -6,8 +6,10 @@ import pkgutil
 import inspect
 import importlib
 
-from viper.common.out import print_warning
 from viper.common.abstracts import Module
+from viper.common.abstracts import get_argparse_parser_actions
+from viper.common.abstracts import get_argparse_subparser_actions
+from viper.common.out import print_warning
 
 
 def load_modules():
@@ -34,7 +36,10 @@ def load_modules():
             if inspect.isclass(member_object):
                 # Yield the class if it's a subclass of Module.
                 if issubclass(member_object, Module) and member_object is not Module:
-                    plugins[member_object.cmd] = dict(obj=member_object, description=member_object.description)
+                    plugins[member_object.cmd] = dict(obj=member_object,
+                                                      description=member_object.description,
+                                                      parser_args=get_argparse_parser_actions(member_object().parser),
+                                                      subparser_args=get_argparse_subparser_actions(member_object().parser))
 
     return plugins
 

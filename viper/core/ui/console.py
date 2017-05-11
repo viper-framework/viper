@@ -111,18 +111,68 @@ class Console(object):
 
         # Setup shell auto-complete.
         def complete(text, state):
-            # Try to autocomplete both commands and modules
-            completions = list()
-            completions += [i for i in self.cmd.commands if i.startswith(text)]
-            completions += [i for i in __modules__ if i.startswith(text)]
+            # filesystem path completion only makes sense for a few commands/modules
+            fs_path_completion = False
+
+            # clean up user input so far (no leading/trailing/duplicate spaces)
+            line = " ".join(readline.get_line_buffer().split())
+            words = line.split(" ")  # split words; e.g. store -f /tmp -> ['store', '-f', '/tmp']
+
+            if words[0] in [i for i in self.cmd.commands]:
+                # handle completion for commands
+
+                # enable filesystem path completion for certain commands (e.g. export, store)
+                if words[0] in [x for x in self.cmd.commands if self.cmd.commands[x]["fs_path_completion"]]:
+                    fs_path_completion = True
+
+                options = [key for key in self.cmd.commands[words[0]]["parser_args"]]
+                completions = [i for i in options if i.startswith(text) and i not in words]
+
+            elif words[0] in [i for i in __modules__]:
+                # handle completion for modules
+                if len(words) == 1:
+                    # only the module name is give so far - present all args and the subparsers (if any)
+                    options = [key for key in __modules__[words[0]]["parser_args"]]
+                    options += [key for key in __modules__[words[0]]["subparser_args"]]
+
+                elif len(words) == 2:
+                    # 1 complete word and one either complete or incomplete that specifies the subparser or an arg
+                    if words[1] in list(__modules__[words[0]]["parser_args"]):
+                        # full arg for a module is given
+                        options = [key for key in __modules__[words[0]]["parser_args"]]
+
+                    elif words[1] in list(__modules__[words[0]]["subparser_args"]):
+                        # subparser is specified - get all subparser args
+                        options = [key for key in __modules__[words[0]]["subparser_args"][words[1]]]
+
+                    else:
+                        options = [key for key in __modules__[words[0]]["parser_args"]]
+                        options += [key for key in __modules__[words[0]]["subparser_args"]]
+
+                else:  # more that 2 words
+                    if words[1] in list(__modules__[words[0]]["subparser_args"]):
+                        # subparser is specified - get all subparser args
+                        options = [key for key in __modules__[words[0]]["subparser_args"][words[1]]]
+                    else:
+                        options = [key for key in __modules__[words[0]]["parser_args"]]
+
+                completions = [i for i in options if i.startswith(text) and i not in words]
+
+            else:
+                # initial completion for both commands and modules
+                completions = [i for i in self.cmd.commands if i.startswith(text)]
+                completions += [i for i in __modules__ if i.startswith(text)]
 
             if state < len(completions):
                 return completions[state]
 
-            # Then autocomplete paths.
-            if text.startswith("~"):
-                text = "{0}{1}".format(expanduser("~"), text[1:])
-            return (glob.glob(text + '*') + [None])[state]
+            if fs_path_completion:
+                # completion for paths only if it makes sense
+                if text.startswith("~"):
+                    text = "{0}{1}".format(expanduser("~"), text[1:])
+                return (glob.glob(text + '*') + [None])[state]
+
+            return
 
         # Auto-complete on tabs.
         readline.set_completer_delims(' \t\n;')
