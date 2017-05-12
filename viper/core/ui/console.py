@@ -131,8 +131,8 @@ class Console(object):
                 if words[0] == "projects":
                     if "--switch" in words or "-s" in words:
                         options += get_project_list()
-                        
-                # enable tab completion for copy (list projects)
+
+                        # enable tab completion for copy (list projects)
                 if words[0] == "copy":
                     options += get_project_list()
 
