@@ -61,15 +61,18 @@ def get_argparse_parser_actions(parser):
     """introspect argparse object and return list of parameters/options/arguments"""
     ret = {}
 
-    parser_actions = [(x.option_strings, x.help) for x in parser._actions]
+    parser_actions = [(x.option_strings, x.choices, x.help) for x in parser._actions]
     for parser_action in parser_actions:
+        if parser_action[1]:
+            for action in parser_action[1]:
+                ret.update({action: parser_action[2]})
         if isinstance(parser_action[0], list):
             for option in parser_action[0]:
                 # ignore short options (only add --help and not -h)
                 if option.startswith("--"):
-                    ret.update({option: parser_action[1]})
+                    ret.update({option: parser_action[2]})
         else:
-            ret.update({parser_action[0]: parser_action[1]})
+            ret.update({parser_action[0]: parser_action[2]})
 
     return ret
 
