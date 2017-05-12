@@ -46,6 +46,10 @@ except NameError:
     pass
 
 
+# setup a database instance module wide (refresh with db.__init__() if needed)
+db = Database()
+
+
 def get_password_twice():
     password = getpass.getpass('Password: ')
     if password == getpass.getpass('confirm Password: '):
@@ -78,7 +82,6 @@ class Command(object):
     fs_path_completion = False
 
     def __init__(self):
-        self.db = Database()
         self.parser = argparse.ArgumentParser(prog=self.cmd, description=self.description)
 
     def log(self, event_type, event_data):
@@ -123,8 +126,15 @@ class About(Command):
 
         rows = list()
         rows.append(["Configuration File", cfg.config_file])
-        rows.append(["Storage Path", __project__.path])
-        rows.append(["Current Project Database", self.db.engine])
+
+        if __project__.name:
+            rows.append(["Active Project", __project__.name])
+            rows.append(["Storage Path", __project__.path])
+            rows.append(["Database Path", db.engine.url])
+        else:
+            rows.append(["Active Project", "default"])
+            rows.append(["Storage Path", __project__.path])
+            rows.append(["Database Path", db.engine.url])
 
         self.log('table', dict(header=['Configuration', ''], rows=rows))
 
@@ -158,7 +168,7 @@ class Analysis(Command):
             return
 
         # check if the file is already stores, otherwise exit
-        malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
+        malware = db.find(key='sha256', value=__sessions__.current.file.sha256)
         if not malware:
             self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
             return
@@ -179,7 +189,7 @@ class Analysis(Command):
 
         elif args.view:
             # Retrieve analysis wth the specified ID and print it.
-            result = Database().get_analysis(args.view)
+            result = db.get_analysis(args.view)
             if result:
                 self.log('info', bold('Cmd Line: ') + result.cmd_line)
                 for line in json.loads(result.results):
@@ -262,15 +272,15 @@ class Copy(Command):
         else:
             src_project = __project__.name
 
-        self.db.copied_ids = []
-        res = self.db.copy(__sessions__.current.file.id,
-                           src_project=src_project, dst_project=args.project,
-                           copy_analysis=True, copy_notes=True, copy_tags=True, copy_children=args.children)
+        db.copied_ids = []
+        res = db.copy(__sessions__.current.file.id,
+                      src_project=src_project, dst_project=args.project,
+                      copy_analysis=True, copy_notes=True, copy_tags=True, copy_children=args.children)
 
         if args.delete:
             __sessions__.close()
-            for item_id, item_sha256 in self.db.copied_id_sha256:
-                self.db.delete_file(item_id)
+            for item_id, item_sha256 in db.copied_id_sha256:
+                db.delete_file(item_id)
                 os.remove(get_sample_path(item_sha256))
                 self.log('info', "Deleted: {}".format(item_sha256))
 
@@ -314,9 +324,9 @@ class Delete(Command):
             if __sessions__.is_set():
                 __sessions__.close()
 
-            samples = self.db.find('all')
+            samples = db.find('all')
             for sample in samples:
-                self.db.delete_file(sample.id)
+                db.delete_file(sample.id)
                 os.remove(get_sample_path(sample.sha256))
 
             self.log('info', "Deleted a total of {} files.".format(len(samples)))
@@ -324,7 +334,7 @@ class Delete(Command):
             if __sessions__.find:
                 samples = __sessions__.find
                 for sample in samples:
-                    self.db.delete_file(sample.id)
+                    db.delete_file(sample.id)
                     os.remove(get_sample_path(sample.sha256))
                 self.log('info', "Deleted {} files.".format(len(samples)))
             else:
@@ -332,10 +342,10 @@ class Delete(Command):
 
         else:
             if __sessions__.is_set():
-                rows = self.db.find('sha256', __sessions__.current.file.sha256)
+                rows = db.find('sha256', __sessions__.current.file.sha256)
                 if rows:
                     malware_id = rows[0].id
-                    if self.db.delete_file(malware_id):
+                    if db.delete_file(malware_id):
                         self.log("success", "File deleted")
                     else:
                         self.log('error', "Unable to delete file")
@@ -469,13 +479,13 @@ class Find(Command):
         # of files associated with each of them.
         if args.tags:
             # Retrieve list of tags.
-            tags = self.db.list_tags()
+            tags = db.list_tags()
 
             if tags:
                 rows = []
                 # For each tag, retrieve the count of files associated with it.
                 for tag in tags:
-                    count = len(self.db.find('tag', tag.tag))
+                    count = len(db.find('tag', tag.tag))
                     rows.append([tag.tag, count])
 
                 # Generate the table with the results.
@@ -504,7 +514,7 @@ class Find(Command):
             value = None
 
         # Search all the files matching the given parameters.
-        items = self.db.find(key, value)
+        items = db.find(key, value)
         if not items:
             return
 
@@ -662,7 +672,7 @@ class Notes(Command):
             return
 
         # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
-        malware = Database().find(key='sha256', value=__sessions__.current.file.sha256)
+        malware = db.find(key='sha256', value=__sessions__.current.file.sha256)
         if not malware:
             self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
             return
@@ -691,13 +701,13 @@ class Notes(Command):
                 # Once the user is done editing, we need to read the content and
                 # store it in the database.
                 body = tmp.read()
-                Database().add_note(__sessions__.current.file.sha256, title, body)
+                db.add_note(__sessions__.current.file.sha256, title, body)
 
             self.log('info', 'New note with title "{0}" added to the current file'.format(bold(title)))
 
         elif args.view:
             # Retrieve note wth the specified ID and print it.
-            note = Database().get_note(args.view)
+            note = db.get_note(args.view)
             if note:
                 self.log('info', bold('Title: ') + note.title)
                 if isinstance(note.body, bytes):
@@ -712,7 +722,7 @@ class Notes(Command):
 
         elif args.edit:
             # Retrieve note with the specified ID.
-            note = Database().get_note(args.edit)
+            note = db.get_note(args.edit)
             if note:
                 # Create a new temporary file.
                 with tempfile.NamedTemporaryFile(mode='w+') as tmp:
@@ -730,13 +740,13 @@ class Notes(Command):
                     # Read the new body from the temporary file.
                     body = tmp.read()
                     # Update the note entry with the new body.
-                    Database().edit_note(args.edit, body)
+                    db.edit_note(args.edit, body)
 
                 self.log('info', "Updated note with ID {0}".format(args.edit))
 
         elif args.delete:
             # Delete the note with the specified ID.
-            Database().delete_note(args.delete)
+            db.delete_note(args.delete)
         else:
             self.parser.print_usage()
 
@@ -825,7 +835,7 @@ class Open(Command):
                 self.parser.print_usage()
                 return
 
-            rows = self.db.find(key=key, value=target)
+            rows = db.find(key=key, value=target)
 
             if not rows:
                 self.log('warning', "No file found with the given hash {0}".format(target))
@@ -868,7 +878,6 @@ class Parent(Command):
             self.parser.print_usage()
             return
 
-        db = Database()
         if not db.find(key='sha256', value=__sessions__.current.file.sha256):
             self.log('error', "The opened file is not stored in the database. "
                               "If you want to add it use the `store` command.")
@@ -954,7 +963,7 @@ class Projects(Command):
             self.log('info', "Switched to project {0}".format(bold(args.switch)))
 
             # Need to re-initialize the Database to open the new SQLite file.
-            self.db = Database()
+            db.__init__()
         else:
             self.log('info', self.parser.print_usage())
 
@@ -985,7 +994,7 @@ class Rename(Command):
                 self.log('error', "File name can't  be empty!")
                 return
 
-            self.db.rename(__sessions__.current.file.id, new_name)
+            db.rename(__sessions__.current.file.id, new_name)
 
             self.log('info', "Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
@@ -1072,7 +1081,7 @@ class Stats(Command):
         size_list = []
 
         # Find all
-        items = self.db.find('all')
+        items = db.find('all')
 
         if len(items) < 1:
             self.log('info', "No items in database to generate stats")
@@ -1194,7 +1203,7 @@ class Store(Command):
                     tags = 'misp:{}'.format(__sessions__.current.misp_event.event.id)
 
             # Try to store file object into database.
-            status = self.db.add(obj=obj, tags=tags)
+            status = db.add(obj=obj, tags=tags)
             if status:
                 # If succeeds, store also in the local repository.
                 # If something fails in the database (for example unicode strings)
@@ -1316,7 +1325,6 @@ class Tags(Command):
 
         # TODO: handle situation where addition or deletion of a tag fail.
 
-        db = Database()
         if not db.find(key='sha256', value=__sessions__.current.file.sha256):
             self.log('error', "The opened file is not stored in the database. "
                      "If you want to add it use the `store` command.")
