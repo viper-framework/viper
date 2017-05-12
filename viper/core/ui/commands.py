@@ -30,7 +30,7 @@ from viper.common.network import download
 from viper.common.version import __version__
 from viper.core.session import __sessions__
 from viper.core.project import __project__
-from viper.core.plugins import __modules__
+from viper.core.plugins import __modules__, __failed_modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.config import Config, console_output
@@ -107,9 +107,13 @@ class About(Command):
     cmd = "about"
     description = "Show information about this Viper instance"
 
+    def __init__(self):
+        super(About, self).__init__()
+        self.parser.add_argument('-m', '--modules',  action='store_true', help="Show info about modules")
+
     def run(self, *args):
         try:
-            self.parser.parse_args(args)
+            args = self.parser.parse_args(args)
         except:
             return
 
@@ -127,6 +131,27 @@ class About(Command):
         rows.append(["Current Project Database", self.db.engine])
 
         self.log('table', dict(header=['Configuration', ''], rows=rows))
+
+        if args.modules:
+            rows = list()
+            for key, value in __modules__.items():
+                min_python_version_str = ".".join([str(x) for x in value['obj'].min_python_version])
+                dependency_python = ",".join(value['obj'].dependency_list_python)
+                dependency_system = ",".join(value['obj'].dependency_list_system)
+
+                rows.append([key, dependency_system, min_python_version_str, dependency_python])
+
+            self.log('table', dict(header=['Active Modules', 'System dependencies', 'Min Python Version', 'Python requirements'], rows=rows))
+
+            rows = list()
+            for key, value in __failed_modules__.items():
+                min_python_version_str = ".".join([str(x) for x in value['obj'].min_python_version])
+                dependency_python = ",".join(value['obj'].dependency_list_python)
+                dependency_system = ",".join(value['obj'].dependency_list_system)
+
+                rows.append([key, dependency_system, min_python_version_str, dependency_python])
+
+            self.log('table', dict(header=['Failed Modules', 'System dependencies', 'Min Python Version', 'Python requirements'], rows=rows))
 
 
 class Analysis(Command):

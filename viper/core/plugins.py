@@ -4,6 +4,7 @@
 
 import pkgutil
 import inspect
+import logging
 import importlib
 
 from viper.common.abstracts import Module
@@ -11,12 +12,15 @@ from viper.common.abstracts import get_argparse_parser_actions
 from viper.common.abstracts import get_argparse_subparser_actions
 from viper.common.out import print_warning
 
+log = logging.getLogger('viper')
+
 
 def load_modules():
     # Import modules package.
     import viper.modules as modules
 
-    plugins = dict()
+    working_plugins = dict()
+    failed_plugins = dict()
 
     # Walk recursively through all modules and packages.
     for loader, module_name, ispkg in pkgutil.walk_packages(modules.__path__, modules.__name__ + '.'):
@@ -32,16 +36,26 @@ def load_modules():
 
         # Walk through all members of currently imported modules.
         for member_name, member_object in inspect.getmembers(module):
-            # Check if current member is a class.
-            if inspect.isclass(member_object):
-                # Yield the class if it's a subclass of Module.
-                if issubclass(member_object, Module) and member_object is not Module:
-                    plugins[member_object.cmd] = dict(obj=member_object,
-                                                      description=member_object.description,
-                                                      parser_args=get_argparse_parser_actions(member_object().parser),
-                                                      subparser_args=get_argparse_subparser_actions(member_object().parser))
+            if not inspect.isclass(member_object):
+                continue
+            # Yield the class if it's a subclass of Module.
+            if issubclass(member_object, Module) and member_object is not Module:
+                # run dependency check on each module and only add to working list if successful
+                if member_object().check():
+                    log.debug("Module: {} - dependency check ok".format(member_name))
+                    working_plugins[member_object.cmd] = dict(obj=member_object,
+                                                              description=member_object.description,
+                                                              parser_args=get_argparse_parser_actions(member_object().parser),
+                                                              subparser_args=get_argparse_subparser_actions(member_object().parser))
+                else:
+                    log.warning("Module: {} - failed dependency check".format(member_name))
+                    print_warning("Module: {} - failed dependency check".format(member_name))
+                    failed_plugins[member_object.cmd] = dict(obj=member_object,
+                                                             description=member_object.description,
+                                                             parser_args=get_argparse_parser_actions(member_object().parser),
+                                                             subparser_args=get_argparse_subparser_actions(member_object().parser))
 
-    return plugins
+    return working_plugins, failed_plugins
 
 
-__modules__ = load_modules()
+__modules__, __failed_modules__ = load_modules()

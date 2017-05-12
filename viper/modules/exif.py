@@ -18,6 +18,9 @@ class Exif(Module):
     description = 'Extract Exif MetaData'
     authors = ['Kevin Breen']
 
+    dependency_list_python = ["exiftool"]
+    dependency_list_system = ["exif"]
+
     def __init__(self):
         super(Exif, self).__init__()
 

@@ -48,6 +48,8 @@ class MISP(Module):
     description = 'Upload and query IOCs to/from a MISP instance'
     authors = ['Raphaël Vinot']
 
+    dependency_list_python = ["pymisp", "pytaxonomies", "requests"]
+
     def __init__(self):
         super(MISP, self).__init__()
         self.cur_path = __project__.get_path()
