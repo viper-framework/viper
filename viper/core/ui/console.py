@@ -17,7 +17,7 @@ from viper.common.colors import cyan, magenta, white, bold, blue
 from viper.common.version import __version__
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
-from viper.core.project import __project__
+from viper.core.project import __project__, get_project_list
 from viper.core.ui.commands import Commands
 from viper.core.database import Database
 from viper.core.config import Config, console_output
@@ -126,6 +126,16 @@ class Console(object):
                     fs_path_completion = True
 
                 options = [key for key in self.cmd.commands[words[0]]["parser_args"]]
+
+                # enable tab completion for projects --switch
+                if words[0] == "projects":
+                    if "--switch" in words or "-s" in words:
+                        options += get_project_list()
+
+                        # enable tab completion for copy (list projects)
+                if words[0] == "copy":
+                    options += get_project_list()
+
                 completions = [i for i in options if i.startswith(text) and i not in words]
 
             elif words[0] in [i for i in __modules__]:

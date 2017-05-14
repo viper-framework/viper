@@ -68,3 +68,21 @@ class Project(object):
 
 
 __project__ = Project()
+
+
+def get_project_list(exclude_default=False):
+    """get_project_list - get list of all projects"""
+    projects_path = __project__.get_projects_path()
+    project_list = []
+    if os.path.exists(projects_path):
+        for project in os.listdir(projects_path):
+            project_path = os.path.join(projects_path, project)
+            if os.path.isdir(project_path):
+                project_list.append(project)
+
+    if exclude_default:
+        pass
+    else:
+        project_list.append("default")
+
+    return project_list
