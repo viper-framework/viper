@@ -48,26 +48,29 @@ class EmailParse(Module):
             return ""
 
         def parse_ole_msg(ole):
-            email_header = None
+            email_h = None
             stream_dirs = ole.listdir()
             for stream in stream_dirs:
                 # get stream that contains the email header
                 if stream[0].startswith('__substg1.0_007D'):
-                    email_header = ole.openstream(stream).read()
+                    email_h = ole.openstream(stream).read()
                     if stream[0].endswith('001F'):  # Unicode probably needs something better than just stripping \x00
-                        email_header = email_header.replace(b'\x00', b'')
+                        email_h = email_h.replace(b'\x00', b'')
             # If it came from outlook we may need to trim some lines
             try:
-                email_header = email_header.split(b'Version 2.0\x0d\x0a', 1)[1]
+                email_h = email_h.split(b'Version 2.0\x0d\x0a', 1)[1]
             except:
                 pass
 
-            if not email_header:
+            if not email_h:
                 self.log('warning', 'This OLE file is not an email.')
                 return None
-
             # Leaving us an RFC compliant email to parse
-            msg = email.message_from_bytes(email_header)
+            if isinstance(email_h, str):
+                # Python2 madness
+                msg = email.message_from_string(email_h)
+            else:
+                msg = email.message_from_bytes(email_h)
             return msg
 
         def parse_ole_attachments(ole):
