@@ -54,6 +54,7 @@ class TestEmailParse:
     @pytest.mark.parametrize("filename,expected", [("junk.eml", [r'.*Google Award 2017.pdf.*']),
                                                    ("junk2.eml", [r'.*Photocopy04062017.*']),
                                                    ("junk3.eml", [r'.*http://www.earthworksjax.com.*']),
+                                                   ("unicode.msg", [r'.*raisedva.tif.*']),
                                                    ])
     def test_all(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))

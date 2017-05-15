@@ -48,31 +48,34 @@ class EmailParse(Module):
             return ""
 
         def parse_ole_msg(ole):
-            email_header = None
+            email_h = None
             stream_dirs = ole.listdir()
             for stream in stream_dirs:
                 # get stream that contains the email header
                 if stream[0].startswith('__substg1.0_007D'):
-                    email_header = ole.openstream(stream).read()
+                    email_h = ole.openstream(stream).read()
                     if stream[0].endswith('001F'):  # Unicode probably needs something better than just stripping \x00
-                        email_header = email_header.replace('\x00', '')
+                        email_h = email_h.replace(b'\x00', b'')
             # If it came from outlook we may need to trim some lines
             try:
-                email_header = email_header.split('Version 2.0\x0d\x0a', 1)[1]
+                email_h = email_h.split(b'Version 2.0\x0d\x0a', 1)[1]
             except:
                 pass
 
-            if not email_header:
+            if not email_h:
                 self.log('warning', 'This OLE file is not an email.')
                 return None
-
             # Leaving us an RFC compliant email to parse
-            msg = email.message_from_string(email_header)
+            if isinstance(email_h, str):
+                # Python2 madness
+                msg = email.message_from_string(email_h)
+            else:
+                msg = email.message_from_bytes(email_h)
             return msg
 
         def parse_ole_attachments(ole):
+            # FIXME: Never used
             # Hard part now, each part of the attachment is in a seperate stream
-
             # need to get a unique stream id for each att
             # its in the streamname as an 8 digit number.
             header = ['#', 'Size', 'MD5', 'Filename', 'MimeType']
@@ -82,8 +85,8 @@ class EmailParse(Module):
                 stream_name = '__attach_version1.0_#' + stream_number
                 # Unicode
                 try:
-                    att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read()
-                    att_mime = ole.openstream(stream_name + '/__substg1.0_370E001F').read()
+                    att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read().decode()
+                    att_mime = ole.openstream(stream_name + '/__substg1.0_370E001F').read().decode()
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
@@ -92,8 +95,8 @@ class EmailParse(Module):
                     pass
                 # ASCII
                 try:
-                    att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read()
-                    att_mime = ole.openstream(stream_name + '/__substg1.0_370E001E').read()
+                    att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read().decode()
+                    att_mime = ole.openstream(stream_name + '/__substg1.0_370E001E').read().decode()
                     att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
@@ -116,20 +119,20 @@ class EmailParse(Module):
                     # Unicode
                     try:
                         att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read()
-                        att_filename = att_filename.replace('\x00', '')
+                        att_filename = att_filename.replace(b'\x00', b'').decode()
                         att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     except:
                         pass
                     # ASCII
                     try:
-                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read()
+                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read().decode()
                         att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                     except:
                         pass
                     if i == att_id:
                         self.log('info', "Switching session to {0}".format(att_filename))
                         tmp_path = os.path.join(tempfile.gettempdir(), att_filename)
-                        with open(tmp_path, 'w') as tmp:
+                        with open(tmp_path, 'wb') as tmp:
                             tmp.write(att_data)
                         __sessions__.new(tmp_path)
                         return
@@ -356,7 +359,9 @@ class EmailParse(Module):
                     # Unicode
                     try:
                         att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read()
+                        att_filename = att_filename.replace(b'\x00', b'').decode()
                         att_mime = ole.openstream(stream_name + '/__substg1.0_370E001F').read()
+                        att_mime = att_mime.replace(b'\x00', b'').decode()
                         att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                         att_size = len(att_data)
                         att_md5 = hashlib.md5(att_data).hexdigest()
@@ -366,8 +371,8 @@ class EmailParse(Module):
                         pass
                     # ASCII
                     try:
-                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read()
-                        att_mime = ole.openstream(stream_name + '/__substg1.0_370E001E').read()
+                        att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read().decode()
+                        att_mime = ole.openstream(stream_name + '/__substg1.0_370E001E').read().decode()
                         att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
                         att_size = len(att_data)
                         att_md5 = hashlib.md5(att_data).hexdigest()
