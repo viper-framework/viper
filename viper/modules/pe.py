@@ -230,7 +230,7 @@ class PE(Module):
     def compiletime(self):
 
         def get_compiletime(pe):
-            return datetime.datetime.utcfromtimestamp(pe.FILE_HEADER.TimeDateStamp)
+            return "{0} ({1})".format(pe.FILE_HEADER.TimeDateStamp, datetime.datetime.utcfromtimestamp(pe.FILE_HEADER.TimeDateStamp))
 
         if self.args.all:
             self.log('info', "Retrieving compile time for all stored samples...")

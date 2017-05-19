@@ -54,7 +54,7 @@ class TestPE:
         assert re.search(r".*argument subname: invalid choice.*", out)
 
     @pytest.mark.parametrize("filename, expected", [
-        ("chromeinstall-8u31.exe", datetime(2014, 12, 18, 6, 32, 5)),
+        ("chromeinstall-8u31.exe", "1418884325 ({0})".format(datetime(2014, 12, 18, 6, 32, 5))),
     ])
     def test_compiletime(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -64,10 +64,9 @@ class TestPE:
         instance.run()
         out, err = capsys.readouterr()
         lines = out.split("\n")
-
         assert re.search(r".*Session opened*", lines[0])
         assert re.search(r".*Compile Time*", lines[1])
-        assert re.search(r".*{}.*".format(expected), lines[1])
+        assert re.search(r".*{}*".format(expected), lines[1])
         assert instance.result_compile_time == expected
 
     @pytest.mark.parametrize("filename, expected", [
