@@ -53,7 +53,7 @@ class Debup(Module):
         # Extract all the contents from the bup file.
 
         ole = olefile.OleFileIO(__sessions__.current.file.path)
-        # We know that BUPS are xor'd with 6A which is dec 106 for the decoder
+        # We know that BUPs are xor'd with 6A which is dec 106 for the decoder
 
         # This is the stored file.
         data = self.xordata(ole.openstream('File_0').read(), 106)
@@ -66,7 +66,12 @@ class Debup(Module):
 
         # Process the details file
         rows = []
-        lines = data2.split('\n')
+
+        if isinstance(data2, bytes):
+            data2 = data2.decode()
+        lines = data2.decode().split('\n')
+
+        filename = ''
         for line in lines:
             if line.startswith('OriginalName'):
                 fullpath = line.split('=')[1]
@@ -82,14 +87,14 @@ class Debup(Module):
         if data and self.args.session:
             try:
                 tempName = os.path.join('/tmp', filename)
-                with open(tempName, 'w') as temp:
+                with open(tempName, 'wb') as temp:
                     temp.write(data)
                 self.log('info', "Switching Session to Embedded File")
                 __sessions__.new(tempName)
                 return
             except:
-                self.log('error', "Unble to Switch Session")
-        # Else jsut print the date
+                self.log('error', "Unable to Switch Session")
+        # Else just print the data
         else:
             self.log('info', "BUP Details:")
             self.log('table', dict(header=['Description', 'Value'], rows=rows))
