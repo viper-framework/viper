@@ -113,6 +113,7 @@ class AndroidPackage(Module):
             self.log('info', "APK General Information")
             self.log('item', "Package Name: {0}".format(a.package))
             self.log('item', "Version Code: {0}".format(a.androidversion['Code']))
+            self.log('item', "Valid APK: {0}".format(a.is_valid_APK()))
             self.log('item', "Main Activity: {0}".format(a.get_main_activity()))
             self.log('info', "Other Activities")
             for item in a.get_activities():
