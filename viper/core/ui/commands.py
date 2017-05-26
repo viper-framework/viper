@@ -937,11 +937,11 @@ class Projects(Command):
 
         projects_path = os.path.join(base_path, 'projects')
 
-        if not os.path.exists(projects_path):
-            self.log('info', "The projects directory does not exist yet")
-            return
-
         if args.list:
+            if not os.path.exists(projects_path):
+                self.log('info', "The projects directory does not exist yet")
+                return
+
             self.log('info', "Projects Available:")
 
             rows = []
