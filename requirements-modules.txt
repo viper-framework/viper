@@ -53,3 +53,7 @@ git+https://github.com/sebdraven/verify-sigs.git
 rarfile==3.0
 
 yara-python==3.5.0
+
+# Scraper
+Scrapy==1.4.0
+scrapy-splash==0.7.2
