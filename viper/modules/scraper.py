@@ -155,7 +155,8 @@ class Scraper(Module):
             harfile = json.load(f)
         tree_file = os.path.join(self.scraper_store, "{}.pdf".format(isots))
         h2t = Har2Tree(harfile)
-        h2t.tree(tree_file)
+        h2t.make_tree()
+        h2t.render_tree_to_file(tree_file)
         self.log('success', 'Tree dump created: {}'.format(tree_file))
 
     def view(self):
