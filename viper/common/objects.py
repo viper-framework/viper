@@ -7,6 +7,7 @@ import hashlib
 import binascii
 import sys
 from viper.common.exceptions import Python2UnsupportedUnicode
+import six
 
 if sys.version_info < (3, 0):
     # Make sure the read method returns a byte stream
@@ -45,7 +46,7 @@ class MispEvent(object):
             self.event = event
         else:
             self.event = MISPEvent()
-            if os.path.exists(event):
+            if isinstance(event, six.string_types) and os.path.exists(event):
                 self.event.load_file(event)
             else:
                 self.event.load(event)
