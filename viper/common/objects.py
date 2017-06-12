@@ -45,7 +45,7 @@ class MispEvent(object):
             self.event = event
         else:
             self.event = MISPEvent()
-            if os.path.exists(event):
+            if isinstance(event, str) and os.path.exists(event):
                 self.event.load_file(event)
             else:
                 self.event.load(event)
