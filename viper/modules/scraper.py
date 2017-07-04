@@ -8,11 +8,15 @@ import os
 import base64
 from datetime import datetime
 from glob import glob
-from shutil import copyfile
+from shutil import copy2
 
 from viper.common.abstracts import Module
 from viper.core.config import Config
 from viper.core.project import __project__
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 try:
     from urllib.parse import urlparse
@@ -20,10 +24,7 @@ except ImportError:
     from urlparse import urlparse
 
 try:
-    from scrapy import Spider
-    from scrapy.crawler import CrawlerProcess, Crawler
-    from scrapy import signals
-    from scrapy_splash import SplashRequest
+    from .scrap import CustomCrawler
     HAVE_SCRAPY = True
 except ImportError:
     HAVE_SCRAPY = False
@@ -35,48 +36,6 @@ except:
     HAVE_ETE = False
 
 cfg = Config()
-
-
-if HAVE_SCRAPY:
-    class CustomCrawler():
-        class MySpider(Spider):
-            name = 'viper'
-
-            def __init__(self, url, *args, **kwargs):
-                self.start_url = url
-
-            def start_requests(self):
-                yield SplashRequest(self.start_url, self.parse, endpoint='render.json',
-                                    args={'har': 1, 'png': 1})
-
-            def parse(self, response):
-                return response.data
-
-        def __init__(self, useragent):
-            self.process = CrawlerProcess({'LOG_ENABLED': False})
-            self.crawler = Crawler(self.MySpider, {
-                'LOG_ENABLED': False,
-                'USER_AGENT': useragent,
-                'SPLASH_URL': cfg.scraper.splash_url,
-                'DOWNLOADER_MIDDLEWARES': {'scrapy_splash.SplashCookiesMiddleware': 723,
-                                           'scrapy_splash.SplashMiddleware': 725,
-                                           'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
-                                           },
-                'SPIDER_MIDDLEWARES': {'scrapy_splash.SplashDeduplicateArgsMiddleware': 100},
-                'DUPEFILTER_CLASS': 'scrapy_splash.SplashAwareDupeFilter',
-                # 'HTTPCACHE_STORAGE': 'scrapy_splash.SplashAwareFSCacheStorage'
-            })
-
-        def crawl(self, url):
-            crawled_items = []
-
-            def add_item(item):
-                crawled_items.append(item)
-
-            self.crawler.signals.connect(add_item, signals.item_scraped)
-            self.process.crawl(self.crawler, url=url)
-            self.process.start()
-            return crawled_items
 
 
 class Scraper(Module):
@@ -97,73 +56,85 @@ class Scraper(Module):
         self.quiet = False
         self.verbose = False
         self.parser.add_argument("-u", "--url", help='URL to scrap')
+        self.parser.add_argument("--depth", type=int, default=1, help='Depth to crawl on the website')
+
         self.parser.add_argument("-l", "--list", action='store_true', help='List already scraped URLs')
+
         self.parser.add_argument("-i", "--id", help='Dump ID (get it from -l/--list).')
+        self.parser.add_argument("-ld", "--list_depth", action='store_true', help='List all the urls fetched from one URL')
         self.parser.add_argument("-d", "--delete", action='store_true', help='Delete a report (ID, or all).')
         self.parser.add_argument("-v", "--view", action='store_true', help='View a dump.')
         self.parser.add_argument("-t", "--tree", action='store_true', help='Tree view.')
-        self.parser.add_argument("-ch", "--copy_har", help='Copy harfile somewhere else.')
+        self.parser.add_argument("-ch", "--copy_har", help='Copy harfiles somewhere else.')
+
+        self.parser.add_argument("-vq", "--very_quiet", action='store_true', help='Very quiet view (Only display hostnames)')
         self.parser.add_argument("-q", "--quiet", action='store_true', help='Quiet view (Only display external URLs)')
         self.parser.add_argument("--verbose", action='store_true', help='Verbose view')
 
-    def crawl(self, ua, url):
-        def _crawl(queue, ua, url):
-            crawler = CustomCrawler(ua)
+    def crawl(self, ua, url, depth):
+        # scrapy-splash requires to run in its own process because twisted wants to start on a clean state for each run
+        def _crawl(queue, ua, url, depth):
+            crawler = CustomCrawler(ua, depth)
             res = crawler.crawl(url)
             queue.put(res)
 
         q = multiprocessing.Queue()
-        p = multiprocessing.Process(target=_crawl, args=(q, ua, url))
+        p = multiprocessing.Process(target=_crawl, args=(q, ua, url, depth))
         p.start()
         res = q.get()
         p.join()
         return res
 
-    def scrape(self, ua, url):
+    def scrape(self, ua, url, depth):
         if not HAVE_SCRAPY:
             self.log('error', 'Missing dependencies: scrapy and scrapy-splash')
             return
-        items = self.crawl(ua, url)
+        items = self.crawl(ua, url, depth)
         if not items:
             self.log('error', 'Unable to crawl. Probably a network problem.')
             return None
-        # For now, only one item
-        item = items[0]
+        i = 1
         now = datetime.now().isoformat()
-        with open(os.path.join(self.scraper_store, '{}.json'.format(now)), 'w') as f:
-            json.dump(item, f)
-        png = item['png']
-        with open(os.path.join(self.scraper_store, '{}.png'.format(now)), 'wb') as f:
-            f.write(base64.b64decode(png))
-        harfile = item['har']
-        with open(os.path.join(self.scraper_store, '{}.har'.format(now)), 'w') as f:
-            json.dump(harfile, f)
+        dirpath = os.path.join(self.scraper_store, now)
+        os.makedirs(dirpath)
+        for item in items:
+            with open(os.path.join(dirpath, '{}.json'.format(i)), 'w') as f:
+                json.dump(item, f)
+            png = item['png']
+            with open(os.path.join(dirpath, '{}.png'.format(i)), 'wb') as f:
+                f.write(base64.b64decode(png))
+            harfile = item['har']
+            with open(os.path.join(dirpath, '{}.har'.format(i)), 'w') as f:
+                json.dump(harfile, f)
+            i += 1
         return now
 
     def tree(self):
+        # FIXME: only display the first scraped URL
         if not HAVE_ETE:
             self.log('error', 'Missing dependency: git+https://github.com/viper-framework/har2tree.git')
             return
         isots = self._get_report_timestamp(self.reportid)
         if isots is None:
             return
-        har = os.path.join(self.scraper_store, '{}.har'.format(isots))
+        har = os.path.join(self.scraper_store, isots, '1.har')
         if not os.path.exists(har):
             self.log('error', 'No har file available.')
             return
         with open(har, 'r') as f:
             harfile = json.load(f)
-        tree_file = os.path.join(self.scraper_store, "{}.pdf".format(isots))
+        tree_file = os.path.join(self.scraper_store, isots, "1.pdf")
         h2t = Har2Tree(harfile)
         h2t.make_tree()
         h2t.render_tree_to_file(tree_file)
         self.log('success', 'Tree dump created: {}'.format(tree_file))
 
     def view(self):
+        # FIXME: only display the first scraped URL
         isots = self._get_report_timestamp(self.reportid)
         if isots is None:
             return
-        json_file = os.path.join(self.scraper_store, '{}.json'.format(isots))
+        json_file = os.path.join(self.scraper_store, isots, '1.json')
         with open(json_file, 'r') as f:
             loaded_json = json.load(f)
         self.log('info', 'Requested URL: {}'.format(loaded_json['requestedUrl']))
@@ -172,13 +143,13 @@ class Scraper(Module):
         if loaded_json.get('title'):
             self.log('item', loaded_json['title'])
 
-        png = os.path.join(self.scraper_store, '{}.png'.format(isots))
+        png = os.path.join(self.scraper_store, isots, '1.png')
         if os.path.exists(png):
             self.log('success', 'PNG view ({}): {}'.format(loaded_json['geometry'], png))
         else:
             self.log('warning', 'No PNG view available.')
 
-        har = os.path.join(self.scraper_store, '{}.har'.format(isots))
+        har = os.path.join(self.scraper_store, isots, '1.har')
         if not os.path.exists(har):
             self.log('error', 'No har file available.')
             return
@@ -225,18 +196,18 @@ class Scraper(Module):
                 self.log('item', entry['response']['content']['text'])
 
     def _get_reports_sorted(self):
-        return sorted(glob(os.path.join(self.scraper_store, '*.json')))
+        return sorted(os.listdir(self.scraper_store))
 
     def _get_report_timestamp(self, reportid):
         if reportid.isdigit():
             if int(reportid) > len(self._get_reports_sorted()):
-                self.log('error', 'Invalid report ID, nothing to find there.')
+                self.log('error', 'Invalid report ID.')
                 return None
             reportfile = self._get_reports_sorted()[int(self.reportid) - 1]
-            return os.path.basename(reportfile).strip('.json')
+            return reportfile
         else:
             # Check if there is a report available to with that timestamp
-            json_file = os.path.join(self.scraper_store, '{}.json'.format(reportid))
+            json_file = os.path.join(self.scraper_store, reportid, '1.json')
             if not os.path.exists(json_file):
                 self.log('error', 'Nothing to display.')
                 return None
@@ -246,11 +217,10 @@ class Scraper(Module):
         header = ['ID', 'Time', 'Requested URL']
         rows = []
         i = 1
-        for json_file in self._get_reports_sorted():
-            ts = os.path.basename(json_file).strip('.json')
-            with open(json_file, 'r') as f:
+        for report_dir in self._get_reports_sorted():
+            with open(os.path.join(self.scraper_store, report_dir, '1.json'), 'r') as f:
                 loaded_json = json.load(f)
-            row = [i, ts, loaded_json['requestedUrl']]
+            row = [i, report_dir, loaded_json['requestedUrl']]
             i += 1
             rows.append(row)
         self.log('table', dict(header=header, rows=rows))
@@ -259,20 +229,28 @@ class Scraper(Module):
         isots = self._get_report_timestamp(self.reportid)
         if isots is None:
             return
-        copyfile(os.path.join(self.scraper_store, '{}.har'.format(isots)), destination)
-        self.log('success', 'Har file copied to {}.'.format(destination))
+        if os.path.exists(destination):
+            if not os.path.isdir(destination):
+                self.log('error', 'If it exists, destination has to be a directory.')
+            else:
+                destination = os.path.join(destination, isots)
+        os.makedirs(destination)
+
+        for harfile in glob(os.path.join(self.scraper_store, isots, '*.har')):
+            copy2(harfile, destination)
+        self.log('success', 'Har files copied to {}.'.format(destination))
 
     def delete(self):
         if self.reportid == 'all':
             for path in glob(os.path.join(self.scraper_store, '*')):
-                os.remove(path)
+                os.rmdir(path)
                 self.log('success', '{} deleted.'.format(path))
             return
         isots = self._get_report_timestamp(self.reportid)
         if isots is None:
             return
-        for path in glob(os.path.join(self.scraper_store, '{}.*'.format(isots))):
-            os.remove(path)
+        for path in glob(os.path.join(self.scraper_store, isots)):
+            os.rmdir(path)
             self.log('success', '{} deleted.'.format(path))
 
     def run(self):
@@ -288,7 +266,7 @@ class Scraper(Module):
             self.reportid = self.args.id
 
         if self.args.url:
-            self.reportid = self.scrape(self.user_agents[0], self.args.url)
+            self.reportid = self.scrape(self.user_agents[0], self.args.url, self.args.depth)
             if self.reportid is None:
                 return
             self.view()
