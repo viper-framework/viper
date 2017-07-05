@@ -30,7 +30,7 @@ except ImportError:
     HAVE_SCRAPY = False
 
 try:
-    from har2tree import Har2Tree
+    from har2tree import CrawledTree
     HAVE_ETE = True
 except:
     HAVE_ETE = False
@@ -55,18 +55,22 @@ class Scraper(Module):
             os.makedirs(self.scraper_store)
         self.quiet = False
         self.verbose = False
+        # Scraping paramaters
         self.parser.add_argument("-u", "--url", help='URL to scrap')
         self.parser.add_argument("--depth", type=int, default=1, help='Depth to crawl on the website')
 
+        # Actions on already scraped data
         self.parser.add_argument("-l", "--list", action='store_true', help='List already scraped URLs')
 
-        self.parser.add_argument("-i", "--id", help='Dump ID (get it from -l/--list).')
-        self.parser.add_argument("-ld", "--list_depth", action='store_true', help='List all the urls fetched from one URL')
-        self.parser.add_argument("-d", "--delete", action='store_true', help='Delete a report (ID, or all).')
-        self.parser.add_argument("-v", "--view", action='store_true', help='View a dump.')
-        self.parser.add_argument("-t", "--tree", action='store_true', help='Tree view.')
-        self.parser.add_argument("-ch", "--copy_har", help='Copy harfiles somewhere else.')
+        group1 = self.parser.add_argument_group('ID details', 'Actions on scraped data (by ID).')
+        group1.add_argument("-i", "--id", type=int, help='Dump ID (get it from -l/--list).')
+        group1.add_argument("-a", "--all", action='store_true', help='List all the urls fetched from one URL')
+        group1.add_argument("-d", "--delete", action='store_true', help='Delete a report (ID, or all).')
+        group1.add_argument("-v", "--view", action='store_true', help='View a dump.')
+        group1.add_argument("-t", "--tree", action='store_true', help='Tree view.')
+        group1.add_argument("-ch", "--copy_har", help='Copy harfiles somewhere else.')
 
+        # General parameters
         self.parser.add_argument("-vq", "--very_quiet", action='store_true', help='Very quiet view (Only display hostnames)')
         self.parser.add_argument("-q", "--quiet", action='store_true', help='Quiet view (Only display external URLs)')
         self.parser.add_argument("--verbose", action='store_true', help='Verbose view')
@@ -90,6 +94,7 @@ class Scraper(Module):
             self.log('error', 'Missing dependencies: scrapy and scrapy-splash')
             return
         items = self.crawl(ua, url, depth)
+        width = len(str(len(items)))
         if not items:
             self.log('error', 'Unable to crawl. Probably a network problem.')
             return None
@@ -98,43 +103,33 @@ class Scraper(Module):
         dirpath = os.path.join(self.scraper_store, now)
         os.makedirs(dirpath)
         for item in items:
-            with open(os.path.join(dirpath, '{}.json'.format(i)), 'w') as f:
+            with open(os.path.join(dirpath, '{0:0{width}}.json'.format(i, width=width)), 'w') as f:
                 json.dump(item, f)
             png = item['png']
-            with open(os.path.join(dirpath, '{}.png'.format(i)), 'wb') as f:
+            with open(os.path.join(dirpath, '{0:0{width}}.png'.format(i, width=width)), 'wb') as f:
                 f.write(base64.b64decode(png))
             harfile = item['har']
-            with open(os.path.join(dirpath, '{}.har'.format(i)), 'w') as f:
+            with open(os.path.join(dirpath, '{0:0{width}}.har'.format(i, width=width)), 'w') as f:
                 json.dump(harfile, f)
             i += 1
         return now
 
-    def tree(self):
+    def tree(self, process_all=False):
         # FIXME: only display the first scraped URL
         if not HAVE_ETE:
             self.log('error', 'Missing dependency: git+https://github.com/viper-framework/har2tree.git')
             return
-        isots = self._get_report_timestamp(self.reportid)
-        if isots is None:
-            return
-        har = os.path.join(self.scraper_store, isots, '1.har')
-        if not os.path.exists(har):
-            self.log('error', 'No har file available.')
-            return
-        with open(har, 'r') as f:
-            harfile = json.load(f)
-        tree_file = os.path.join(self.scraper_store, isots, "1.pdf")
-        h2t = Har2Tree(harfile)
-        h2t.make_tree()
-        h2t.render_tree_to_file(tree_file)
+        har_files = self.all_reports[self.reportid]['har']
+        ct = CrawledTree(har_files)
+        ct.find_parents()
+        ct.join_trees()
+        tree_file = os.path.join(self.scraper_store, self.all_reports[self.reportid]['isots'], "tree.pdf")
+        ct.dump_test(tree_file)
         self.log('success', 'Tree dump created: {}'.format(tree_file))
 
-    def view(self):
+    def view(self, view_all=False):
         # FIXME: only display the first scraped URL
-        isots = self._get_report_timestamp(self.reportid)
-        if isots is None:
-            return
-        json_file = os.path.join(self.scraper_store, isots, '1.json')
+        json_file = self.all_reports[self.reportid]['json'][0]
         with open(json_file, 'r') as f:
             loaded_json = json.load(f)
         self.log('info', 'Requested URL: {}'.format(loaded_json['requestedUrl']))
@@ -143,16 +138,9 @@ class Scraper(Module):
         if loaded_json.get('title'):
             self.log('item', loaded_json['title'])
 
-        png = os.path.join(self.scraper_store, isots, '1.png')
-        if os.path.exists(png):
-            self.log('success', 'PNG view ({}): {}'.format(loaded_json['geometry'], png))
-        else:
-            self.log('warning', 'No PNG view available.')
+        self.log('success', 'PNG view ({}): {}'.format(loaded_json['geometry'], self.all_reports[self.reportid]['png'][0]))
 
-        har = os.path.join(self.scraper_store, isots, '1.har')
-        if not os.path.exists(har):
-            self.log('error', 'No har file available.')
-            return
+        har = self.all_reports[self.reportid]['har'][0]
         with open(har, 'r') as f:
             harfile = json.load(f)
 
@@ -195,48 +183,58 @@ class Scraper(Module):
                 self.log('info', 'Response data ({})'.format(entry['response']['content']['mimeType']))
                 self.log('item', entry['response']['content']['text'])
 
-    def _get_reports_sorted(self):
+    def load_reports(self):
+        to_return = []
+        for report in self.sorted_reports():
+            a = glob(os.path.join(self.scraper_store, report, '*.json'))
+            b = glob(os.path.join(self.scraper_store, report, '*.har'))
+            c = glob(os.path.join(self.scraper_store, report, '*.png'))
+            r = {}
+            r['isots'] = report
+            r['json'] = sorted(a)
+            r['har'] = sorted(b)
+            r['png'] = sorted(c)
+            to_return.append(r)
+        return to_return
+
+    def sorted_reports(self):
         return sorted(os.listdir(self.scraper_store))
 
-    def _get_report_timestamp(self, reportid):
-        if reportid.isdigit():
-            if int(reportid) > len(self._get_reports_sorted()):
-                self.log('error', 'Invalid report ID.')
-                return None
-            reportfile = self._get_reports_sorted()[int(self.reportid) - 1]
-            return reportfile
-        else:
-            # Check if there is a report available to with that timestamp
-            json_file = os.path.join(self.scraper_store, reportid, '1.json')
-            if not os.path.exists(json_file):
-                self.log('error', 'Nothing to display.')
-                return None
-            return reportid
-
-    def list(self):
-        header = ['ID', 'Time', 'Requested URL']
+    def list(self, full_report=False):
         rows = []
         i = 1
-        for report_dir in self._get_reports_sorted():
-            with open(os.path.join(self.scraper_store, report_dir, '1.json'), 'r') as f:
-                loaded_json = json.load(f)
-            row = [i, report_dir, loaded_json['requestedUrl']]
-            i += 1
-            rows.append(row)
-        self.log('table', dict(header=header, rows=rows))
+        if full_report:
+            header = ['ID', 'Requested URL']
+            json_files = self.all_reports[self.reportid]['json']
+            for jf in json_files:
+                with open(jf, 'r') as f:
+                    loaded_json = json.load(f)
+                row = ['{}_{}'.format(self.all_reports[self.reportid]['isots'], i),
+                       loaded_json['requestedUrl']]
+                i += 1
+                rows.append(row)
+            self.log('table', dict(header=header, rows=rows))
+        else:
+            header = ['ID', 'Time', 'Requested URL']
+            for report in self.all_reports:
+                with open(report['json'][0], 'r') as f:
+                    loaded_json = json.load(f)
+                # print(loaded_json['requestedUrl'])
+                row = [i, report['isots'], loaded_json['requestedUrl']]
+                i += 1
+                rows.append(row)
+            self.log('table', dict(header=header, rows=rows))
 
     def copy_har(self, destination):
-        isots = self._get_report_timestamp(self.reportid)
-        if isots is None:
-            return
+        report = self.all_reports[self.reportid]
         if os.path.exists(destination):
             if not os.path.isdir(destination):
                 self.log('error', 'If it exists, destination has to be a directory.')
             else:
-                destination = os.path.join(destination, isots)
+                destination = os.path.join(destination, report['isots'])
         os.makedirs(destination)
 
-        for harfile in glob(os.path.join(self.scraper_store, isots, '*.har')):
+        for harfile in report['har']:
             copy2(harfile, destination)
         self.log('success', 'Har files copied to {}.'.format(destination))
 
@@ -246,15 +244,13 @@ class Scraper(Module):
                 os.rmdir(path)
                 self.log('success', '{} deleted.'.format(path))
             return
-        isots = self._get_report_timestamp(self.reportid)
-        if isots is None:
-            return
-        for path in glob(os.path.join(self.scraper_store, isots)):
-            os.rmdir(path)
-            self.log('success', '{} deleted.'.format(path))
+        path = os.path.join(self.scraper_store, self.all_reports[self.reportid]['isots'])
+        os.rmdir(path)
+        self.log('success', '{} deleted.'.format(path))
 
     def run(self):
         super(Scraper, self).run()
+        self.all_reports = self.load_reports()
         if self.args is None:
             return
 
@@ -263,22 +259,28 @@ class Scraper(Module):
         if self.args.verbose:
             self.verbose = True
         if self.args.id is not None:
-            self.reportid = self.args.id
+            self.reportid = self.args.id - 1
+        if self.args.all:
+            self.all = True
+        else:
+            self.all = False
 
         if self.args.url:
             self.reportid = self.scrape(self.user_agents[0], self.args.url, self.args.depth)
             if self.reportid is None:
                 return
+            self.all_reports = self.load_reports()
+            self.reportid = len(self.all_reports) - 1
             self.view()
         elif self.args.list:
-            self.list()
+            self.list(self.all)
         elif self.reportid:
             if self.args.view:
-                self.view()
+                self.view(self.all)
             if self.args.delete:
                 self.delete()
             elif self.args.tree:
-                self.tree()
+                self.tree(self.all)
             elif self.args.copy_har:
                 self.copy_har(self.args.copy_har)
         else:
