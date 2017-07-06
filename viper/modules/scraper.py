@@ -64,7 +64,6 @@ class Scraper(Module):
 
         group1 = self.parser.add_argument_group('ID details', 'Actions on scraped data (by ID).')
         group1.add_argument("-i", "--id", type=int, help='Dump ID (get it from -l/--list).')
-        group1.add_argument("-a", "--all", action='store_true', help='List all the urls fetched from one URL')
         group1.add_argument("-d", "--delete", action='store_true', help='Delete a report (ID, or all).')
         group1.add_argument("-v", "--view", action='store_true', help='View a dump.')
         group1.add_argument("-t", "--tree", action='store_true', help='Tree view.')
@@ -114,8 +113,7 @@ class Scraper(Module):
             i += 1
         return now
 
-    def tree(self, process_all=False):
-        # FIXME: only display the first scraped URL
+    def tree(self):
         if not HAVE_ETE:
             self.log('error', 'Missing dependency: git+https://github.com/viper-framework/har2tree.git')
             return
@@ -127,95 +125,88 @@ class Scraper(Module):
         ct.dump_test(tree_file)
         self.log('success', 'Tree dump created: {}'.format(tree_file))
 
-    def view(self, view_all=False):
-        # FIXME: only display the first scraped URL
-        json_file = self.all_reports[self.reportid]['json'][0]
-        with open(json_file, 'r') as f:
-            loaded_json = json.load(f)
-        self.log('info', 'Requested URL: {}'.format(loaded_json['requestedUrl']))
-        if loaded_json['url'] != loaded_json['requestedUrl']:
-            self.log('item', 'Redirected to: {}'.format(loaded_json['url']))
-        if loaded_json.get('title'):
-            self.log('item', loaded_json['title'])
+    def view(self):
+        for json_f, har, png in zip(self.all_reports[self.reportid]['json'],
+                                    self.all_reports[self.reportid]['har'],
+                                    self.all_reports[self.reportid]['png']):
+            with open(json_f, 'r') as f:
+                loaded_json = json.load(f)
+            self.log('info', 'Requested URL: {}'.format(loaded_json['requestedUrl']))
+            if loaded_json['url'] != loaded_json['requestedUrl']:
+                self.log('item', 'Redirected to: {}'.format(loaded_json['url']))
+            if loaded_json.get('title'):
+                self.log('item', loaded_json['title'])
 
-        self.log('success', 'PNG view ({}): {}'.format(loaded_json['geometry'], self.all_reports[self.reportid]['png'][0]))
+            self.log('success', 'PNG view ({}): {}'.format(loaded_json['geometry'], png))
 
-        har = self.all_reports[self.reportid]['har'][0]
-        with open(har, 'r') as f:
-            harfile = json.load(f)
+            with open(har, 'r') as f:
+                harfile = json.load(f)
 
-        requested_domain = '.'.join(urlparse(loaded_json['url']).hostname.split('.')[-2:])
+            requested_domain = '.'.join(urlparse(loaded_json['url']).hostname.split('.')[-2:])
 
-        for entry in harfile['log']['entries']:
-            # Inspired by: https://github.com/fboender/harview/blob/master/src/harview.py
-            if self.quiet and not entry['response']['redirectURL']:
-                url_parsed = urlparse(entry['response']['url'])
-                if url_parsed.hostname and url_parsed.hostname.endswith(requested_domain):
+            for entry in harfile['log']['entries']:
+                # Inspired by: https://github.com/fboender/harview/blob/master/src/harview.py
+                if self.quiet and not entry['response']['redirectURL']:
+                    url_parsed = urlparse(entry['response']['url'])
+                    if url_parsed.hostname and url_parsed.hostname.endswith(requested_domain):
+                        continue
+
+                status = entry['response']['status']
+                if status >= 400:
+                    log_type = 'error'
+                elif status >= 300:
+                    log_type = 'warning'
+                else:
+                    log_type = 'success'
+
+                self.log(log_type, '{} {} {}'.format(status, entry['request']['method'], entry['request']['url']))
+                if 300 <= status <= 399:
+                    # Redirect
+                    self.log(log_type, 'Redirect to: {}'.format(entry['response']['redirectURL']))
+                if not self.verbose:
                     continue
+                self.log('info', 'Request headers')
+                for header in entry['request']['headers']:
+                    self.log('item', '{}: {}'.format(header['name'], header['value']))
 
-            status = entry['response']['status']
-            if status >= 400:
-                log_type = 'error'
-            elif status >= 300:
-                log_type = 'warning'
-            else:
-                log_type = 'success'
+                if entry['request']['method'] == 'POST' and entry['request'].get('postData'):
+                    self.log('info', 'POST data ({})'.format(entry['request']['postData']['mimeType']))
+                    self.log('item', entry['request']['postData']['text'])
 
-            self.log(log_type, '{} {} {}'.format(status, entry['request']['method'], entry['request']['url']))
-            if 300 <= status <= 399:
-                # Redirect
-                self.log(log_type, 'Redirect to: {}'.format(entry['response']['redirectURL']))
-            if not self.verbose:
-                continue
-            self.log('info', 'Request headers')
-            for header in entry['request']['headers']:
-                self.log('item', '{}: {}'.format(header['name'], header['value']))
+                self.log('info', 'Response headers (status = {})'.format(entry['response']['status']))
+                for header in entry['response']['headers']:
+                    self.log('item', '{}: {}'.format(header['name'], header['value']))
 
-            if entry['request']['method'] == 'POST' and entry['request'].get('postData'):
-                self.log('info', 'POST data ({})'.format(entry['request']['postData']['mimeType']))
-                self.log('item', entry['request']['postData']['text'])
-
-            self.log('info', 'Response headers (status = {})'.format(entry['response']['status']))
-            for header in entry['response']['headers']:
-                self.log('item', '{}: {}'.format(header['name'], header['value']))
-
-            if 'text' in entry['response']['content']:
-                self.log('info', 'Response data ({})'.format(entry['response']['content']['mimeType']))
-                self.log('item', entry['response']['content']['text'])
+                if 'text' in entry['response']['content']:
+                    self.log('info', 'Response data ({})'.format(entry['response']['content']['mimeType']))
+                    self.log('item', entry['response']['content']['text'])
 
     def load_reports(self):
         to_return = []
         for report in self.sorted_reports():
-            a = glob(os.path.join(self.scraper_store, report, '*.json'))
-            b = glob(os.path.join(self.scraper_store, report, '*.har'))
-            c = glob(os.path.join(self.scraper_store, report, '*.png'))
             r = {}
             r['isots'] = report
-            r['json'] = sorted(a)
-            r['har'] = sorted(b)
-            r['png'] = sorted(c)
+            r['json'] = sorted(glob(os.path.join(self.scraper_store, report, '*.json')))
+            r['har'] = sorted(glob(os.path.join(self.scraper_store, report, '*.har')))
+            r['png'] = sorted(glob(os.path.join(self.scraper_store, report, '*.png')))
             to_return.append(r)
         return to_return
 
     def sorted_reports(self):
         return sorted(os.listdir(self.scraper_store))
 
-    def list(self, full_report=False):
+    def list(self):
+        header = ['ID', 'Time', 'Requested URL']
         rows = []
-        i = 1
-        if full_report:
-            header = ['ID', 'Requested URL']
+        if self.reportid is not None:
             json_files = self.all_reports[self.reportid]['json']
             for jf in json_files:
                 with open(jf, 'r') as f:
                     loaded_json = json.load(f)
-                row = ['{}_{}'.format(self.all_reports[self.reportid]['isots'], i),
-                       loaded_json['requestedUrl']]
-                i += 1
+                row = [self.reportid + 1, self.all_reports[self.reportid]['isots'], loaded_json['requestedUrl']]
                 rows.append(row)
-            self.log('table', dict(header=header, rows=rows))
         else:
-            header = ['ID', 'Time', 'Requested URL']
+            i = 1
             for report in self.all_reports:
                 with open(report['json'][0], 'r') as f:
                     loaded_json = json.load(f)
@@ -223,7 +214,7 @@ class Scraper(Module):
                 row = [i, report['isots'], loaded_json['requestedUrl']]
                 i += 1
                 rows.append(row)
-            self.log('table', dict(header=header, rows=rows))
+        self.log('table', dict(header=header, rows=rows))
 
     def copy_har(self, destination):
         report = self.all_reports[self.reportid]
@@ -260,10 +251,8 @@ class Scraper(Module):
             self.verbose = True
         if self.args.id is not None:
             self.reportid = self.args.id - 1
-        if self.args.all:
-            self.all = True
         else:
-            self.all = False
+            self.reportid = None
 
         if self.args.url:
             self.reportid = self.scrape(self.user_agents[0], self.args.url, self.args.depth)
@@ -273,14 +262,14 @@ class Scraper(Module):
             self.reportid = len(self.all_reports) - 1
             self.view()
         elif self.args.list:
-            self.list(self.all)
+            self.list()
         elif self.reportid:
             if self.args.view:
-                self.view(self.all)
+                self.view()
             if self.args.delete:
                 self.delete()
             elif self.args.tree:
-                self.tree(self.all)
+                self.tree()
             elif self.args.copy_har:
                 self.copy_har(self.args.copy_har)
         else:
