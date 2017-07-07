@@ -55,6 +55,7 @@ class Scraper(Module):
             os.makedirs(self.scraper_store)
         self.quiet = False
         self.verbose = False
+        self.very_quiet = False
         # Scraping paramaters
         self.parser.add_argument("-u", "--url", help='URL to scrap')
         self.parser.add_argument("--depth", type=int, default=1, help='Depth to crawl on the website')
@@ -126,30 +127,38 @@ class Scraper(Module):
         self.log('success', 'Tree dump created: {}'.format(tree_file))
 
     def view(self):
+        all_hostnames = set()
         for json_f, har, png in zip(self.all_reports[self.reportid]['json'],
                                     self.all_reports[self.reportid]['har'],
                                     self.all_reports[self.reportid]['png']):
             with open(json_f, 'r') as f:
                 loaded_json = json.load(f)
-            self.log('info', 'Requested URL: {}'.format(loaded_json['requestedUrl']))
-            if loaded_json['url'] != loaded_json['requestedUrl']:
-                self.log('item', 'Redirected to: {}'.format(loaded_json['url']))
-            if loaded_json.get('title'):
-                self.log('item', loaded_json['title'])
+            if not self.very_quiet:
+                self.log('info', 'Requested URL: {}'.format(loaded_json['requestedUrl']))
+                if loaded_json['url'] != loaded_json['requestedUrl']:
+                    self.log('item', 'Redirected to: {}'.format(loaded_json['url']))
+                if loaded_json.get('title'):
+                    self.log('item', loaded_json['title'])
 
-            self.log('success', 'PNG view ({}): {}'.format(loaded_json['geometry'], png))
+                self.log('success', 'PNG view ({}): {}'.format(loaded_json['geometry'], png))
 
             with open(har, 'r') as f:
                 harfile = json.load(f)
 
             requested_domain = '.'.join(urlparse(loaded_json['url']).hostname.split('.')[-2:])
-
             for entry in harfile['log']['entries']:
                 # Inspired by: https://github.com/fboender/harview/blob/master/src/harview.py
                 if self.quiet and not entry['response']['redirectURL']:
                     url_parsed = urlparse(entry['response']['url'])
                     if url_parsed.hostname and url_parsed.hostname.endswith(requested_domain):
                         continue
+
+                hostname = urlparse(entry['request']['url']).hostname
+                if hostname:
+                    all_hostnames.add(urlparse(entry['request']['url']).hostname)
+
+                if self.very_quiet:
+                    continue
 
                 status = entry['response']['status']
                 if status >= 400:
@@ -180,6 +189,10 @@ class Scraper(Module):
                 if 'text' in entry['response']['content']:
                     self.log('info', 'Response data ({})'.format(entry['response']['content']['mimeType']))
                     self.log('item', entry['response']['content']['text'])
+        if self.very_quiet:
+            self.log('info', 'All unique hostnames appearing in this trace:')
+            for d in sorted(all_hostnames):
+                self.log('item', d)
 
     def load_reports(self):
         to_return = []
@@ -249,6 +262,8 @@ class Scraper(Module):
             self.quiet = True
         if self.args.verbose:
             self.verbose = True
+        if self.args.very_quiet:
+            self.very_quiet = True
         if self.args.id is not None:
             self.reportid = self.args.id - 1
         else:
