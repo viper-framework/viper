@@ -313,7 +313,7 @@ class PE(Module):
             if not userdb_path:
                 return
 
-            with open(userdb_path, 'rb') as f:
+            with open(userdb_path, 'rt', encoding='ISO-8859-1') as f:
                 sig_data = f.read()
 
             signatures = peutils.SignatureDatabase(data=sig_data)
