@@ -194,6 +194,97 @@ class MISP(Module):
         s.add_argument("-e", "--event", help="Add tag to the current event.")
         s.add_argument("-a", "--attribute", nargs='+', help="Add tag to an attribute of the current event. Syntax: <identifier for the attribute> <machinetag>")
 
+        # Admin
+        s = subparsers.add_parser('admin', help='Administration options.')
+        admin = s.add_subparsers(dest='admin')
+        # Organisation
+        org = admin.add_parser('org', help="Organisation managment.")
+        subparsers_org = org.add_subparsers(dest='org')
+        # Get
+        display = subparsers_org.add_parser('display', help="Display an organisation.")
+        display.add_argument('id', help='ID of the organisation to display. Use "local" to display all local organisations, "external" for all remote organisations, and "all", for both.')
+        # Search
+        search = subparsers_org.add_parser('search', help="Search an organisation by name.")
+        search.add_argument('name', help='(Partial) name of the organisation.')
+        search.add_argument('-t', '--type', default='local', choices=['local', 'external', 'all'],
+                            help='Use "local" to search in all local organisations, "external" for remote organisations, and "all", for both.')
+        # Add
+        add = subparsers_org.add_parser('add', help="Add an organisation.")
+        add.add_argument('name', help='Organisation name.')
+        add.add_argument('-u', '--uuid', default=None, help='UUID of the organisation.')
+        add.add_argument('-d', '--description', default=[], nargs='+', help='Description of the organisation.')
+        add.add_argument('-t', '--type', default=[], nargs='+', help='Type of the organisation.')
+        add.add_argument('-n', '--nationality', default=None, help='Nationality of the organisation.')
+        add.add_argument('-s', '--sector', default=[], nargs='+', help='Sector of the organisation.')
+        add.add_argument('-c', '--contacts', default=[], nargs='+', help='Contact point(s) in the organisation.')
+        add.add_argument('--not-local', default=True, action='store_false', help='**Not** a local organisation.')
+        # Delete
+        delete = subparsers_org.add_parser('delete', help="Delete an organisation.")
+        delete.add_argument('id', help='ID of the organisation to delete.')
+        # Edit
+        edit = subparsers_org.add_parser('edit', help="Edit an organisation.")
+        edit.add_argument('id', help='ID of the organisation to edit.')
+        edit.add_argument('-n', '--name', help='Organisation name.')
+        edit.add_argument('-u', '--uuid', help='UUID of the organisation.')
+        edit.add_argument('-d', '--description', default=[], nargs='+', help='Description of the organisation.')
+        edit.add_argument('-t', '--type', default=[], nargs='+', help='Type of the organisation.')
+        edit.add_argument('--nationality', help='Nationality of the organisation.')
+        edit.add_argument('-s', '--sector', default=[], nargs='+', help='Sector of the organisation.')
+        edit.add_argument('-c', '--contacts', default=[], nargs='+', help='Contact point(s) in the organisation.')
+        edit.add_argument('--not-local', default=True, action='store_false', help='**Not** a local organisation.')
+
+        # User
+        user = admin.add_parser('user', help="User managment.")
+        subparsers_user = user.add_subparsers(dest='user')
+        # Get
+        display = subparsers_user.add_parser('display', help="Display a user.")
+        display.add_argument('id', help='ID of the user to display. Use "all" to display all users.')
+        # Search
+        search = subparsers_user.add_parser('search', help="Search a user by email.")
+        search.add_argument('name', help='(Partial) email of the user.')
+        # Add
+        add = subparsers_user.add_parser('add', help="Add a user.")
+        add.add_argument('email', help='User email address.')
+        add.add_argument('-o', '--org-id', default=None, help='Organisation ID of the user.')
+        add.add_argument('-r', '--role-id', default=None, help='Role of the user')
+        add.add_argument('-g', '--gpgkey', default=None, help='Path to the GPG public key export')
+        add.add_argument('-c', '--change-pw', default=None, action='store_true', help='Force thanging the password after next login')
+        add.add_argument('-t', '--termsaccepted', default=None, action='store_true', help='Set the TOC to accepted')
+        add.add_argument('-p', '--password', default=None, help='Set a new password')
+        add.add_argument('-d', '--disabled', default=None, action='store_true', help='Disable the account')
+        # Delete
+        delete = subparsers_user.add_parser('delete', help="Delete a user.")
+        delete.add_argument('id', help='ID of the user to delete.')
+        # Edit
+        edit = subparsers_user.add_parser('edit', help="Edit a user.")
+        edit.add_argument('id', help='ID of the user to edit.')
+        edit.add_argument('-e', '--email', help='User email address.')
+        edit.add_argument('-o', '--org-id', default=None, help='Organisation ID of the user.')
+        edit.add_argument('-r', '--role-id', default=None, help='Role of the user')
+        edit.add_argument('-g', '--gpgkey', default=None, help='Path to the GPG public key export')
+        edit.add_argument('-c', '--change-pw', default=None, action='store_true', help='Force thanging the password after next login')
+        edit.add_argument('-t', '--termsaccepted', default=None, action='store_true', help='Set the TOC to accepted')
+        edit.add_argument('-p', '--password', default=None, help='Set a new password')
+        edit.add_argument('-d', '--disabled', default=None, action='store_true', help='Disable the account')
+
+        # Role
+        role = admin.add_parser('role', help="Role managment.")
+        subparsers_role = role.add_subparsers(dest='role')
+        # Get
+        display = subparsers_role.add_parser('display', help="Display all the roles.")
+        # Search
+        search = subparsers_role.add_parser('search', help="Search a role by name.")
+        search.add_argument('name', help='(Partial) name of the role.')
+
+        # Tags
+        tag = admin.add_parser('tag', help="Tag managment.")
+        subparsers_tag = tag.add_subparsers(dest='tag')
+        # Get
+        display = subparsers_tag.add_parser('display', help="Display all the tags.")
+        # Search
+        search = subparsers_tag.add_parser('search', help="Search a tag by name.")
+        search.add_argument('name', help='(Partial) name of the tag.')
+
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
     # ####### Generic Helpers ########
@@ -1004,6 +1095,189 @@ class MISP(Module):
             __sessions__.current.misp_event.event.add_attribute_tag(tag, identifier)
             self._change_event()
 
+    def admin(self):
+        if self.args.admin == 'org':
+            def display_orgs_table(typeorg='local', name=None):
+                header = ['ID', 'Name', 'Local', 'Users', 'Created', 'UUID']
+                rows = []
+                for org in self.misp.get_organisations_list(typeorg):
+                    org = org['Organisation']
+                    if not name or name.lower() in org['name'].lower():
+                        rows.append([org['id'], org['name'], org['local'], org.get('user_count'), org['date_created'], org['uuid']])
+                self.log('table', dict(header=header, rows=sorted(rows, key=lambda x: int(x[0]))))
+
+            def display_org(org):
+                if not org.get('Organisation'):
+                    self.log('error', 'Invalid organisation.')
+                    return False
+                org = org['Organisation']
+                self.log('success', org['name'])
+                for k, v in org.items():
+                    if k != 'name' and v:
+                        self.log('item', '{}: {}'.format(k, v))
+                return True
+
+            if self.args.org == 'display':
+                if self.args.id in ['all', 'local', 'external']:
+                    display_orgs_table(self.args.id)
+                else:
+                    org = self.misp.get_organisation(self.args.id)
+                    display_org(org)
+            elif self.args.org == 'search':
+                display_orgs_table(name=self.args.name, typeorg=self.args.type)
+            elif self.args.org == 'add':
+                response = self.misp.add_organisation(
+                    name=self.args.name, description=' '.join(self.args.description),
+                    type=' '.join(self.args.type), nationality=self.args.nationality,
+                    sector=' '.join(self.args.sector), uuid=self.args.uuid,
+                    contact=' '.join(self.args.contacts), local=self.args.not_local)
+                if response.get('Organisation'):
+                    self.log('success', 'New organisation created.')
+                    display_org(response)
+                else:
+                    # Error
+                    self.log('error', response['message'])
+                    if response.get('errors'):
+                        self.log('error', response['errors'][-1])
+            elif self.args.org == 'delete':
+                org = self.misp.get_organisation(self.args.id)
+                self.log('warning', "You're about to delete the following organisation:")
+                if not display_org(org):
+                    return
+                i = input('Are you sure you want to delete it? (Please write "I am sure.")\n')
+                if i != 'I am sure.':
+                    self.log('warning', "Organisation not deleted.")
+                    return
+                response = self.misp.delete_organisation(self.args.id)
+                self.log('success', response['message'])
+            elif self.args.org == 'edit':
+                response = self.misp.edit_organisation(
+                    self.args.id,
+                    name=self.args.name, description=' '.join(self.args.description),
+                    type=' '.join(self.args.type), nationality=self.args.nationality,
+                    sector=' '.join(self.args.sector), uuid=self.args.uuid,
+                    contacts=' '.join(self.args.contacts), local=self.args.not_local)
+                if response.get('Organisation'):
+                    self.log('success', 'Organisation updated.')
+                    display_org(response)
+                else:
+                    # Error
+                    self.log('error', response['message'])
+                    if response.get('errors'):
+                        self.log('error', response['errors'][-1])
+        elif self.args.admin == 'user':
+            def display_users_table(name=None):
+                header = ['ID', 'E-Mail', 'Organisation', 'authkey']
+                rows = []
+                for user in self.misp.get_users_list():
+                    user = user['User']
+                    if not name or name.lower() in user['email'].lower():
+                        rows.append([user['id'], user['email'], user['org_ci'], user['authkey']])
+                self.log('table', dict(header=header, rows=sorted(rows, key=lambda x: int(x[0]))))
+
+            def display_user(user):
+                if not user.get('User'):
+                    self.log('error', 'Invalid user.')
+                    return False
+                user = user['User']
+                self.log('success', user['email'])
+                for k, v in user.items():
+                    if k not in ['email', 'certif_public', 'gpgkey'] and v:
+                        self.log('item', '{}: {}'.format(k, v))
+                return True
+
+            if self.args.user == 'display':
+                if self.args.id == 'all':
+                    display_users_table()
+                else:
+                    user = self.misp.get_user(self.args.id)
+                    display_user(user)
+            elif self.args.user == 'search':
+                display_users_table(name=self.args.name)
+            elif self.args.user == 'add':
+                gpgkey = ''
+                if self.args.gpgkey:
+                    if os.path.isfile(self.args.gpgkey):
+                        with open(self.args.gpgkey, 'r') as f:
+                            gpgkey = f.read()
+                    else:
+                        self.log('error', 'gpgkey should be a path to the armored dump of the public key')
+                response = self.misp.add_user(
+                    email=self.args.email, org_id=self.args.org_id, role_id=self.args.role_id,
+                    gpgkey=gpgkey, change_pw=self.args.change_pw, termsaccepted=self.args.termsaccepted,
+                    password=self.args.password, disabled=self.args.disabled)
+                if response.get('User'):
+                    self.log('success', 'New user created.')
+                    display_user(response)
+                else:
+                    # Error
+                    self.log('error', response['message'])
+                    if response.get('errors'):
+                        self.log('error', response['errors'][-1])
+            elif self.args.user == 'delete':
+                user = self.misp.get_user(self.args.id)
+                self.log('warning', "You're about to delete the following user:")
+                if not display_user(user):
+                    return
+                i = input('Are you sure you want to delete it? (Please write "I am sure.")\n')
+                if i != 'I am sure.':
+                    self.log('warning', "User not deleted.")
+                    return
+                response = self.misp.delete_user(self.args.id)
+                self.log('success', response['message'])
+            elif self.args.user == 'edit':
+                gpgkey = ''
+                if self.args.gpgkey:
+                    if os.path.isfile(self.args.gpgkey):
+                        with open(self.args.gpgkey, 'r') as f:
+                            gpgkey = f.read()
+                    else:
+                        self.log('error', 'gpgkey should be a path to the armored dump of the public key')
+                response = self.misp.edit_user(
+                    self.args.id,
+                    email=self.args.email, org_id=self.args.org_id, role_id=self.args.role_id,
+                    gpgkey=gpgkey, change_pw=self.args.change_pw, termsaccepted=self.args.termsaccepted,
+                    password=self.args.password, disabled=self.args.disabled)
+                print(response)
+                if response.get('User'):
+                    self.log('success', 'User updated.')
+                    display_user(response)
+                else:
+                    # Error
+                    self.log('error', response['message'])
+                    if response.get('errors'):
+                        self.log('error', response['errors'][-1])
+        elif self.args.admin == 'role':
+            def display_roles_table(name=None):
+                # TODO
+                header = ['ID', 'Name']
+                rows = []
+                for role in self.misp.get_roles_list():
+                    print(role)
+                    role = role['Role']
+                    if not name or name.lower() in role['name'].lower():
+                        rows.append([role['id'], role['name']])
+                self.log('table', dict(header=header, rows=sorted(rows, key=lambda x: int(x[0]))))
+
+            if self.args.role == 'display':
+                display_roles_table()
+            elif self.args.role == 'search':
+                display_roles_table(name=self.args.name)
+        elif self.args.admin == 'tag':
+            def display_tags_table(name=None):
+                header = ['ID', 'Name', 'Usage', 'Favourite', 'Exportable', 'Hidden', 'Colour', 'Org ID']
+                rows = []
+                for tag in self.misp.get_tags_list():
+                    if not name or name.lower() in tag['name'].lower():
+                        rows.append([tag['id'], tag['name'], tag['attribute_count'],
+                                    tag['favourite'], tag['exportable'], tag['hide_tag'], tag['colour'], tag['org_id']])
+                self.log('table', dict(header=header, rows=sorted(rows, key=lambda x: int(x[0]))))
+
+            if self.args.tag == 'display':
+                display_tags_table()
+            elif self.args.tag == 'search':
+                display_tags_table(name=self.args.name)
+
     def run(self):
         super(MISP, self).run()
         if self.args is None:
@@ -1092,6 +1366,8 @@ class MISP(Module):
                 self.store()
             elif self.args.subname == 'tag':
                 self.tag()
+            elif self.args.subname == 'admin':
+                self.admin()
             else:
                 self.log('error', "No calls defined for this command.")
         except requests.exceptions.HTTPError as e:
