@@ -2,7 +2,6 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import multiprocessing
 import json
 import os
 import base64
@@ -24,7 +23,7 @@ except ImportError:
     from urlparse import urlparse
 
 try:
-    from .scrap import CustomCrawler
+    from scrapysplashwrapper import crawl
     HAVE_SCRAPY = True
 except ImportError:
     HAVE_SCRAPY = False
@@ -54,8 +53,9 @@ class Scraper(Module):
         if not os.path.exists(self.scraper_store):
             os.makedirs(self.scraper_store)
         self.quiet = False
-        self.verbose = False
         self.very_quiet = False
+        self.verbose = False
+        self.debug = False
         # Scraping paramaters
         self.parser.add_argument("-u", "--url", help='URL to scrap')
         self.parser.add_argument("--depth", type=int, default=1, help='Depth to crawl on the website')
@@ -74,29 +74,20 @@ class Scraper(Module):
         self.parser.add_argument("-vq", "--very_quiet", action='store_true', help='Very quiet view (Only display hostnames)')
         self.parser.add_argument("-q", "--quiet", action='store_true', help='Quiet view (Only display external URLs)')
         self.parser.add_argument("--verbose", action='store_true', help='Verbose view')
-
-    def crawl(self, ua, url, depth):
-        # scrapy-splash requires to run in its own process because twisted wants to start on a clean state for each run
-        def _crawl(queue, ua, url, depth):
-            crawler = CustomCrawler(ua, depth)
-            res = crawler.crawl(url)
-            queue.put(res)
-
-        q = multiprocessing.Queue()
-        p = multiprocessing.Process(target=_crawl, args=(q, ua, url, depth))
-        p.start()
-        res = q.get()
-        p.join()
-        return res
+        self.parser.add_argument("--debug", action='store_true', help='Enable debug on the crawler.')
 
     def scrape(self, ua, url, depth):
         if not HAVE_SCRAPY:
             self.log('error', 'Missing dependencies: scrapy and scrapy-splash')
             return
-        items = self.crawl(ua, url, depth)
+        if self.debug:
+            params = {'log_enabled': True, 'log_level': 'INFO'}
+        else:
+            params = {}
+        items = crawl(cfg.scraper.splash_url, url, depth, ua, **params)
         width = len(str(len(items)))
         if not items:
-            self.log('error', 'Unable to crawl. Probably a network problem.')
+            self.log('error', 'Unable to crawl. Probably a network problem (try --debug).')
             return None
         i = 1
         now = datetime.now().isoformat()
@@ -111,6 +102,9 @@ class Scraper(Module):
             harfile = item['har']
             with open(os.path.join(dirpath, '{0:0{width}}.har'.format(i, width=width)), 'w') as f:
                 json.dump(harfile, f)
+            htmlfile = item['html']
+            with open(os.path.join(dirpath, '{0:0{width}}.html'.format(i, width=width)), 'w') as f:
+                json.dump(htmlfile, f)
             i += 1
         return now
 
@@ -262,6 +256,8 @@ class Scraper(Module):
             self.quiet = True
         if self.args.verbose:
             self.verbose = True
+        if self.args.debug:
+            self.debug = True
         if self.args.very_quiet:
             self.very_quiet = True
         if self.args.id is not None:

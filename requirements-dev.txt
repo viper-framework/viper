@@ -61,6 +61,5 @@ rarfile
 git+https://github.com/MISP/PyTaxonomies.git
 pymisp
 
-# Scrapy
-scrapy
-scrapy-splash
+# Scraper
+git+https://github.com/viper-framework/ScrapySplashWrapper.git
