@@ -16,7 +16,6 @@ pycparser
 pycrypto
 pyelftools
 pylzma
-pymisp
 pypdns
 pypssl
 pytest
@@ -57,3 +56,10 @@ git+https://github.com/androguard/androguard.git
 
 # archiving
 rarfile
+
+# MISP
+git+https://github.com/MISP/PyTaxonomies.git
+pymisp
+
+# Scraper
+git+https://github.com/viper-framework/ScrapySplashWrapper.git
