@@ -105,7 +105,7 @@ token =
 portal_account =
 
 [scraper]
-# Requires a scrapy project setup somewhere
+# Needs to talk to a splash API. Documentation: https://splash.readthedocs.io/en/stable/install.html
 splash_url = http://172.17.0.1:8050/
 
 [useragents]
