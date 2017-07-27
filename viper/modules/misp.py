@@ -67,6 +67,7 @@ class MISP(Module):
                                                 * 1: This community only
                                                 * 2: Connected communities
                                                 * 3: All communities
+                                                * 5: Inherit
 
                                             Sample categories:
                                                 * 0: Payload delivery
@@ -86,7 +87,8 @@ class MISP(Module):
                                                 * 3: Undefined
                                           '''))
         parser_up.add_argument("-e", "--event", type=int, help="Event ID to update. If None, and you're not connected to a MISP event a new one is created.")
-        parser_up.add_argument("-d", "--distrib", type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
+        parser_up.add_argument("-d", "--distrib", type=int, choices=[0, 1, 2, 3, 5], help="Distribution of the attributes for the new event.")
+        parser_up.add_argument("-s", "--sharing", type=int, help="Sharing group ID when distribution is set to 4.")
         parser_up.add_argument("-ids", action='store_true', help="Is eligible for automatically creating IDS signatures.")
         parser_up.add_argument("-c", "--categ", type=int, choices=[0, 1, 2, 3], default=1, help="Category of the samples.")
         parser_up.add_argument("-i", "--info", nargs='+', help="Event info field of a new event.")
@@ -127,6 +129,10 @@ class MISP(Module):
                                                           * 1: This community only
                                                           * 2: Connected communities
                                                           * 3: All communities
+                                                          * 4: Sharing group
+
+                                                      Sharing Group:
+                                                          * #: ID of sharing group
 
                                                       Analysis levels:
                                                           * 0: Initial
@@ -139,7 +145,8 @@ class MISP(Module):
                                                           * 2: Low
                                                           * 3: Undefined
                                                     '''))
-        parser_create_event.add_argument("-d", "--distrib", type=int, choices=[0, 1, 2, 3], help="Distribution of the attributes for the new event.")
+        parser_create_event.add_argument("-d", "--distrib", type=int, choices=[0, 1, 2, 3, 4], help="Distribution of the attributes for the new event.")
+        parser_create_event.add_argument("-s", "--sharing", type=int, help="Sharing group ID when distribution is set to 4.")
         parser_create_event.add_argument("-t", "--threat", type=int, choices=[0, 1, 2, 3], help="Threat level of a new event.")
         parser_create_event.add_argument("-a", "--analysis", type=int, choices=[0, 1, 2], help="Analysis level a new event.")
         parser_create_event.add_argument("-i", "--info", required=True, nargs='+', help="Event info field of a new event.")
@@ -621,10 +628,18 @@ class MISP(Module):
             self.log('error', 'Info field is required for a new event')
         info = ' '.join(self.args.info)
 
+        # Check if the following arguments have been set (and correctly set). If not, take the config values
+        self.args.distrib = self.distribution if self.args.distrib is None else self.args.distrib
+        self.args.sharing = self.sharinggroup if self.args.sharing is None else self.args.sharing
+
+        if self.args.sharing and self.args.distrib != 4:
+            self.args.sharing = None
+            self.log('info', "Sharing group can only be set if distribution is 4. Clearing set value")
+
         misp_event = MISPEvent()
         misp_event.set_all_values(info=info, distribution=self.args.distrib,
-                                  threat_level_id=self.args.threat, analysis=self.args.analysis,
-                                  date=self.args.date)
+                                  sharing_group_id=self.args.sharing, threat_level_id=self.args.threat,
+                                  analysis=self.args.analysis, date=self.args.date)
         self._search_local_hashes(misp_event)
         if self.offline_mode:
             # New event created locally, no ID
@@ -1042,6 +1057,19 @@ class MISP(Module):
             verify = False
         else:
             verify = cfg.misp.misp_verify
+
+        # Capture default distribution and sharing group settings. Backwards compatability and empty string check
+        self.distribution = cfg.misp.get("misp_distribution", None)
+        self.distribution = None if self.distribution == "" else self.distribution
+        if type(self.distribution) not in (type(None), int):
+            self.distribution = None
+            self.log('info', "The distribution stored in viper config is not an integer, setting to None")
+
+        self.sharinggroup = cfg.misp.get("misp_sharinggroup", None)
+        self.sharinggroup = None if self.sharinggroup == "" else self.sharinggroup
+        if type(self.sharinggroup) not in (type(None), int):
+            self.sharinggroup = None
+            self.log('info', "The sharing group stored in viper config is not an integer, setting to None")
 
         if cfg.misp.misp_taxonomies_directory:
             self.local_dir_taxonomies = cfg.misp.misp_taxonomies_directory
