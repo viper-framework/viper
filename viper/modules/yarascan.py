@@ -3,8 +3,10 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import string
 import tempfile
-import string as printstring  # string is being used as a var - easier to replace here
+import subprocess
+from os.path import expanduser
 
 try:
     from scandir import walk
@@ -15,7 +17,7 @@ from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
 from viper.core.storage import get_sample_path
-from viper.common.constants import VIPER_ROOT
+from viper.core.config import Config
 
 try:
     import yara
@@ -23,79 +25,90 @@ try:
 except ImportError:
     HAVE_YARA = False
 
+cfg = Config()
+
+
+def string_printable(line):
+    line = str(line)
+    new_line = ''
+    for c in line:
+        if c in string.printable:
+            new_line += c
+        else:
+            new_line += '\\x' + c.encode('hex')
+    return new_line
+
 
 class YaraScan(Module):
     cmd = 'yara'
-    description = 'Run Yara scan'
+    description = 'Scan stored files with Yara rules'
     authors = ['nex']
 
     def __init__(self):
         super(YaraScan, self).__init__()
         subparsers = self.parser.add_subparsers(dest='subname')
         parser_scan = subparsers.add_parser('scan', help='Scan files with Yara signatures')
-        parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (default will run data/yara/index.yara)')
+        parser_scan.add_argument('-r', '--rule', help='Specify a ruleset file path (if none is specified, the rules in local storage are used)')
         parser_scan.add_argument('-a', '--all', action='store_true', help='Scan all stored files (default if no session is open)')
         parser_scan.add_argument('-t', '--tag', action='store_true', help='Tag Files with Rule Name (default is not to)')
         parser_scan.add_argument('-v', '--verbose', action='store_true', help='Output a detailed overview of the matches and found offsets')
 
         parser_rules = subparsers.add_parser('rules', help='Operate on Yara rules')
         parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
+        parser_rules.add_argument('-u', '--update', action='store_true', help='Download latest rules from selected repositories')
 
-        for folder in ['/usr/share/viper/yara', os.path.join(VIPER_ROOT, 'data/yara')]:
-            if os.path.exists(folder):
-                self.rule_path = folder
-                break
+        self.local_rules = os.path.join(expanduser('~'), '.viper', 'data', 'yara')
+        self.rules_paths = [
+            '/usr/share/viper/yara',
+            self.local_rules
+        ]
+
+    def _get_rules(self):
+        # Retrieve the list of rules and populate a list.
+        rules = []
+        count = 1
+
+        # We loop through all rules paths (both in share as well as locally)
+        # and we populate the list of rules.
+        for root in self.rules_paths:
+            for folder, folders, files in walk(root):
+                for file_name in files:
+                    # Skip if the extension is not right, could cause problems.
+                    if not file_name.endswith('.yar') and not file_name.endswith('.yara'):
+                        continue
+
+                    rules.append([count, os.path.join(folder, file_name)])
+                    count += 1
+
+        return rules
 
     def scan(self):
-
-        def string_printable(line):
-            line = str(line)
-            new_line = ''
-            for c in line:
-                if c in printstring.printable:
-                    new_line += c
-                else:
-                    new_line += '\\x' + c.encode('hex')
-            return new_line
-
-        # This means users can just drop or remove rule files without
-        # having to worry about maintaining the index.
-        # TODO: make paths absolute.
-        # TODO: this regenerates the file at every run, perhaps we
-        # could find a way to optimize this.
-        def rule_index():
-            tmp_path = os.path.join(tempfile.gettempdir(), 'index.yara')
-            with open(tmp_path, 'w') as rules_index:
-                for rule_file in os.listdir(self.rule_path):
-                    # Skip if the extension is not right, could cause problems.
-                    if not rule_file.endswith('.yar') and not rule_file.endswith('.yara'):
-                        continue
-                    # Skip if it's the index itself.
-                    if rule_file == 'index.yara':
-                        continue
-
-                    # Add the rule to the index.
-                    line = 'include "{0}"\n'.format(os.path.join(self.rule_path, rule_file))
-                    rules_index.write(line)
-
-            return tmp_path
-
         arg_rule = self.args.rule
         arg_scan_all = self.args.all
         arg_tag = self.args.tag
         arg_verbose = self.args.verbose
 
-        # If no custom ruleset is specified, we use the default one.
-        if not arg_rule:
-            arg_rule = rule_index()
+        externals = {'filename': '', 'filepath': '', 'extension': '', 'filetype': ''}
 
-        # Check if the selected ruleset actually exists.
-        if not os.path.exists(arg_rule):
-            self.log('error', "No valid Yara ruleset at {0}".format(arg_rule))
-            return
+        # If a rule file is specified we compile that, otherwise all
+        # the rules we have stored locally.
+        if arg_rule:
+            # Check if the selected ruleset actually exists.
+            if not os.path.exists(arg_rule):
+                self.log('error', "The specified file does not exist at path {0}".format(arg_rule))
+                return
 
-        # Compile all rules from given ruleset.
-        rules = yara.compile(arg_rule)
+            rules = yara.compile(arg_rule, externals=externals)
+        # Otherwise, we get all the rules that are stored locally and we
+        # load them in different namespaces.
+        else:
+            filepaths = dict()
+            for rule in self._get_rules():
+                filepaths['namespace' + str(rule[0])] = rule[1]
+
+            rules = yara.compile(filepaths=filepaths, externals=externals, includes=False)
+
+        # Files to scan.
         files = []
 
         # If there is a session open and the user didn't specifically
@@ -106,7 +119,7 @@ class YaraScan(Module):
         # Otherwise we loop through all files in the repository and queue
         # them up for scan.
         else:
-            self.log('info', "Scanning all stored files...")
+            self.log('info', "Scanning all stored files (in the current project)...")
 
             db = Database()
             samples = db.find(key='all')
@@ -114,6 +127,7 @@ class YaraScan(Module):
             for sample in samples:
                 files.append(sample)
 
+        # Loop through all files to be scanned.
         for entry in files:
             if entry.size == 0:
                 continue
@@ -138,12 +152,24 @@ class YaraScan(Module):
             rows = []
             tag_list = []
             found = False
-            for match in rules.match(entry_path):
+
+            # We need this just for some Yara rules.
+            try:
+                ext = os.path.splitext(entry.name)[1]
+            except:
+                ext = ''
+
+            for match in rules.match(entry_path, externals={'filename': entry.name, 'filepath': entry_path, 'extension': ext, 'filetype': entry.type}):
                 found = True
                 # Add a row for each string matched by the rule.
                 if arg_verbose:
-                    for string in match.strings:
-                        rows.append([match.rule, string_printable(string[1]), string_printable(string[0]), string_printable(string[2])])
+                    for match_string in match.strings:
+                        rows.append([
+                            match.rule,
+                            string_printable(match_string[1]),
+                            string_printable(match_string[0]),
+                            string_printable(match_string[2])]
+                        )
                 else:
                     self.log('item', match.rule)
                 # Add matching rules to our list of tags.
@@ -181,14 +207,9 @@ class YaraScan(Module):
 
     def rules(self):
         arg_edit = self.args.edit
+        arg_update = self.args.update
 
-        # Retrieve the list of rules and populate a list.
-        rules = []
-        count = 1
-        for folder, folders, files in walk(self.rule_path):
-            for file_name in files:
-                rules.append([count, os.path.join(folder, file_name)])
-                count += 1
+        rules = self._get_rules()
 
         # If the user wants to edit a specific rule, loop through all of them
         # identify which one to open, and launch the default editor.
@@ -198,6 +219,30 @@ class YaraScan(Module):
                     os.system('"${EDITOR:-nano}" ' + rule[1])
                     break
         # Otherwise, just print the list.
+        # Check if the user wants to update rules.
+        elif arg_update:
+            # FIrst we create the local rules folder in case it doesn't exist.
+            if not os.path.exists(self.local_rules):
+                os.makedirs(self.local_rules)
+
+            # TODO: we definitely need a way for Config to parse lists appropriately.
+            urls = cfg.yara.repositories.split('\n')
+            for url in urls:
+                url = url.strip()
+
+                self.log('info', "Updating Yara rules from repository {}".format(url))
+
+                repo_name = url.rsplit('/', 1)[-1].rstrip('.git')
+                repo_path = os.path.join(self.local_rules, repo_name)
+
+                # If the repository has been cloned before, we gonna update it.
+                if os.path.exists(repo_path):
+                    proc = subprocess.Popen(['git', 'pull'], cwd=repo_path)
+                # Otherwise, do first clone.
+                else:
+                    proc = subprocess.Popen(['git', 'clone', url], cwd=self.local_rules)
+                
+                proc.wait()
         else:
             self.log('table', dict(header=['#', 'Path'], rows=rules))
             self.log('', "")
