@@ -4,7 +4,6 @@
 
 import os
 import string
-import tempfile
 import subprocess
 from os.path import expanduser
 
@@ -241,7 +240,7 @@ class YaraScan(Module):
                 # Otherwise, do first clone.
                 else:
                     proc = subprocess.Popen(['git', 'clone', url], cwd=self.local_rules)
-                
+
                 proc.wait()
         else:
             self.log('table', dict(header=['#', 'Path'], rows=rules))
