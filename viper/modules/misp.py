@@ -1249,14 +1249,19 @@ class MISP(Module):
                         self.log('error', response['errors'][-1])
         elif self.args.admin == 'role':
             def display_roles_table(name=None):
-                # TODO
-                header = ['ID', 'Name']
+                header = ['ID', 'Name', 'Adm', 'Site Adm', 'Sync', 'Audit',
+                          'Auth key', 'Regex', 'Tagger', 'Tag edit', 'Template',
+                          'Sharing group', 'Delegation', 'Sighting']
                 rows = []
                 for role in self.misp.get_roles_list():
-                    print(role)
                     role = role['Role']
                     if not name or name.lower() in role['name'].lower():
-                        rows.append([role['id'], role['name']])
+                        row = [role['id'], role['name'], role['perm_admin'],
+                               role['perm_site_admin'], role['perm_sync'],
+                               role['perm_audit'], role['perm_auth'], role['perm_regexp_access'],
+                               role['perm_tagger'], role['perm_tag_editor'], role['perm_template'],
+                               role['perm_sharing_group'], role['perm_delegate'], role['perm_sighting']]
+                        rows.append([entry if entry else '' for entry in row])
                 self.log('table', dict(header=header, rows=sorted(rows, key=lambda x: int(x[0]))))
 
             if self.args.role == 'display':
