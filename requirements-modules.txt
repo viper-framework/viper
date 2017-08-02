@@ -22,7 +22,6 @@ pycparser==2.17
 pycrypto==2.6.1
 pyelftools==0.24
 pylzma==0.4.8
-pymisp==2.4.71
 pyOpenSSL==17.0.0
 pyparsing==2.2.0
 pypdns==1.3
@@ -56,3 +55,7 @@ yara-python==3.5.0
 
 # Scraper
 git+https://github.com/viper-framework/ScrapySplashWrapper.git
+
+# MISP
+git+https://github.com/MISP/PyTaxonomies.git
+pymisp==2.4.77

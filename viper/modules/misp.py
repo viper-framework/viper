@@ -577,9 +577,6 @@ class MISP(Module):
             self.sharinggroup = None
             self.log('info', "The sharing group stored in viper config is not an integer, setting to None")
 
-        if cfg.misp.misp_taxonomies_directory:
-            self.local_dir_taxonomies = cfg.misp.misp_taxonomies_directory
-
         if not self.offline_mode:
             try:
                 self.misp = PyMISP(self.url, self.key, verify, 'json')
