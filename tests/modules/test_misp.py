@@ -3,6 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import re
+import sys
 
 import pytest
 
@@ -56,6 +57,7 @@ class TestMISP:
 
         assert re.search(r".*CIRCL Taxonomy.*", out)
 
+    @pytest.mark.skipif(sys.version_info < (3, 0), reason="Encoding foobar, don't care.")
     def test_tag_search(self, capsys):
         instance = misp.MISP()
         instance.command_line = ['--off', 'tag', '-s', 'ciRcl']
