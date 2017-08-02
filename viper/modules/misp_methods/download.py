@@ -72,4 +72,3 @@ def download(self):
         self._display_tmp_files()
     else:
         self.log('warning', 'No samples available.')
-
