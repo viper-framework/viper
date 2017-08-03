@@ -34,7 +34,7 @@ class ClamAV(Module):
             return
 
         if not HAVE_CLAMD:
-            self.log('error', "Missing dependency, install requests (`pip install pyclamd`)")
+            self.log('error', "Missing dependency, install pyclamd (`pip install pyclamd`)")
             return
 
         if not self.Connect():
