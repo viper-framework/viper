@@ -109,6 +109,9 @@ class Console(object):
         # Logo.
         logo()
 
+        # Validate configuration
+        cfg.validate()
+
         # Setup shell auto-complete.
         def complete(text, state):
             # filesystem path completion only makes sense for a few commands/modules

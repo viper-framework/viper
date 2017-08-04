@@ -3,6 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import sys
 from os.path import expanduser
 import shutil
 try:
@@ -12,6 +13,18 @@ except ImportError:
 
 from viper.common.objects import Dictionary
 from viper.common.constants import VIPER_ROOT
+from viper.common.out import print_error, print_info, print_success
+
+
+MANDATORY_SECTIONS = [
+    "modules",
+    "paths",
+    "database",
+    "logging",
+    "web",
+    "api",
+    "autorun"
+]
 
 
 class Config:
@@ -77,6 +90,21 @@ class Config:
                         value = config.get(section, name)
 
                 setattr(getattr(self, section), name, value)
+
+    def validate(self):
+        print_info("Validating configuration: {}".format(self.config_file))
+
+        # Parse the config file.
+        config = ConfigParser()
+        config.read(self.config_file)
+
+        missing_sections = [x for x in MANDATORY_SECTIONS if x not in config.sections()]
+
+        if missing_sections:
+            print_error("ERROR: The following mandatory sections are missing in the configuration file: {}".format(" ".join(missing_sections)))
+            sys.exit(1)
+
+        print_success("Successfully validated configuration.")
 
     def get(self, section):
         """Get option.
