@@ -2,10 +2,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
 import re
-import sys
-import pytest
 
 from viper.core.config import Config
 
@@ -51,7 +48,7 @@ class TestConfig:
         instance.http_client.https_proxy = "http://prx1.example.com:3128"
         instance.parse_http_client()
 
-        assert instance.http_client.proxies is None
+        assert instance.http_client.proxies == {'http': 'http://prx1.example.com:3128', 'https': 'http://prx1.example.com:3128', 'no': None}
         assert instance.http_client.verify is True
         assert instance.http_client.cert is None
 
