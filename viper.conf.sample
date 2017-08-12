@@ -41,6 +41,29 @@ host = 0.0.0.0
 port = 9090
 
 
+[http_client]
+# http client settings for outgoing requests (e.g. download, VT)
+# will be applied to requests and can be overriden per module
+
+# Proxy specific settings:
+# * https_proxy = e.g. http://user:pass@prx.example.com:3128 (will also set http_proxy)
+# * no_proxy = host1.example.com,internal.domain
+# If https_proxy and no_proxy are not set then settings from the environment will be used.
+# If no proxy should be used then use https_proxy = False (overrides environment)
+#https_proxy =
+#no_proxy =
+
+# tls_verify (default: True): Whether TLS certificates should be validated or not
+#tls_verify = True|False
+
+# tls_ca_bundle: Path to a (custom) ca/ca_bundle file for TLS certificate validation
+#tls_ca_bundle = /root/my_ca_bundle.crt
+
+# tls_client_cert: Path to a TLS client certificate (cert and key) which should be used
+# for authentication
+#tls_client_cert = /root/my_client_cert.pem
+
+
 [autorun]
 enabled = True
 
@@ -86,8 +109,8 @@ misp_taxonomies_directory = ./misp-taxonomies
 # Set the following to select default distribution and sharing group (if in use)
 # Distribution ranges from 0-4, with sharing group only set when distribution is 4.
 # Leave empty to use PyMISP default
-misp_distribution = 
-misp_sharinggroup = 
+misp_distribution =
+misp_sharinggroup =
 
 [pssl]
 pssl_url =

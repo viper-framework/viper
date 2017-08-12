@@ -25,6 +25,7 @@ from viper.core.config import Config, console_output
 log = logging.getLogger('viper')
 
 cfg = Config()
+cfg.parse_http_client()
 
 # For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
 try:
