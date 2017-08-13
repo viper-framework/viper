@@ -60,7 +60,7 @@ class Config:
                     shutil.copy(cwd_viper, self.config_file)
 
         # Parse the config file.
-        config = ConfigParser()
+        config = self._config = ConfigParser()
         config.read(self.config_file)
 
         # Parse the config file and attribute for the current instantiated
@@ -102,8 +102,8 @@ class Config:
                             "https": self.http_client.https_proxy,
                             "no": self.http_client.no_proxy}
             else:
-                log.debug("Global: Proxy disabled (overriden)")
-                _proxies = {"http": "", "https": "", "no": ""}
+                log.debug("Global: Proxy disabled (overridden)")
+                _proxies = {"http": "", "https": "", "no": None}
 
         if self.http_client.tls_verify is None:
             log.debug("Global: TLS verify not configured")
@@ -143,8 +143,8 @@ class Config:
                                 "https": section.https_proxy,
                                 "no": section.no_proxy}
                 else:
-                    log.debug("Section: Proxy disabled (overriden)")
-                    _proxies = {"http": "", "https": "", "no": ""}
+                    log.debug("Section: Proxy disabled (overridden)")
+                    _proxies = {"http": "", "https": "", "no": None}
 
             if section.tls_verify is None:
                 log.debug("Section: TLS verify not configured")
@@ -182,6 +182,7 @@ class Config:
             log.warning("unable to fetch section: {}\n{}".format(section, e))
             print(e)
 
+__config__ = Config()
 
 console_output = {}
 console_output['filename'] = False

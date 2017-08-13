@@ -17,11 +17,11 @@ import tempfile
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
-from viper.core.config import Config
+from viper.core.config import __config__
 
 log = logging.getLogger('viper')
 
-cfg = Config()
+cfg = __config__
 cfg.parse_http_client(cfg.koodous)
 # Call: requests.get(url, proxies=cfg.koodous.proxies, verify=cfg.koodous.verify, cert=cfg.koodous.cert)
 
