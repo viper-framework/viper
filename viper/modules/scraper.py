@@ -10,7 +10,7 @@ from glob import glob
 from shutil import copy2
 
 from viper.common.abstracts import Module
-from viper.core.config import Config
+from viper.core.config import __config__
 from viper.core.project import __project__
 import logging
 
@@ -34,7 +34,7 @@ try:
 except:
     HAVE_ETE = False
 
-cfg = Config()
+cfg = __config__
 
 
 class Scraper(Module):

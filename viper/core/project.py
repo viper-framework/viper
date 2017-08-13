@@ -6,12 +6,12 @@ import os
 from os.path import expanduser
 import logging
 
-from viper.core.config import Config
 from viper.core.logger import init_logger
+from viper.core.config import __config__
 
 log = logging.getLogger('viper')
 
-cfg = Config()
+cfg = __config__
 
 
 class Project(object):

@@ -8,10 +8,10 @@ from viper.common.out import print_output
 from viper.core.plugins import __modules__
 from viper.core.session import __sessions__
 from viper.core.database import Database
-from viper.core.config import Config
+from viper.core.config import __config__
 from viper.core.storage import get_sample_path
 
-cfg = Config()
+cfg = __config__
 
 
 def parse_commands(data):

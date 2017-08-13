@@ -20,9 +20,9 @@ except:
 
 from viper.core.session import __sessions__
 from viper.common.objects import MispEvent
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+cfg = __config__
 
 
 # ####### Helpers for check_hashes ########

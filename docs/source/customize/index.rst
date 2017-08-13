@@ -65,9 +65,9 @@ You can easily access the config file:
     .. code-block:: python
         :linenos:
 
-        from viper.core.config import Config
+        from viper.core.config import __config__
 
-        cfg = Config()
+        cfg = __config__
 
 
 From here you can access any element in the config file by name:

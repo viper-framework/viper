@@ -16,7 +16,7 @@ from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
 from viper.core.storage import get_sample_path
-from viper.core.config import Config
+from viper.core.config import __config__
 
 try:
     import yara
@@ -24,7 +24,7 @@ try:
 except ImportError:
     HAVE_YARA = False
 
-cfg = Config()
+cfg = __config__
 
 
 def string_printable(line):

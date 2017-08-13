@@ -27,9 +27,9 @@ from viper.core.project import __project__
 from viper.core.storage import get_sample_path
 from viper.common.objects import MispEvent
 from viper.common.constants import VIPER_ROOT
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+cfg = __config__
 
 
 class MISP(Module):

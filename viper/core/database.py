@@ -21,12 +21,12 @@ from viper.common.exceptions import Python2UnsupportedUnicode
 from viper.common.objects import File
 from viper.core.storage import get_sample_path, store_sample
 from viper.core.project import __project__
-from viper.core.config import Config
+from viper.core.config import __config__
 
 
 log = logging.getLogger('viper')
 
-cfg = Config()
+cfg = __config__
 
 Base = declarative_base()
 
