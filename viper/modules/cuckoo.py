@@ -10,6 +10,7 @@ except ImportError:
 
 import os
 import shutil
+import logging
 import tempfile
 import tarfile
 import contextlib
@@ -17,12 +18,15 @@ from io import BytesIO
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
-from viper.core.config import Config
 from viper.core.database import Database
 from viper.common.objects import File
 from viper.core.storage import store_sample
+from viper.core.config import __config__
 
-cfg = Config()
+log = logging.getLogger('viper')
+
+cfg = __config__
+cfg.parse_http_client(cfg.cuckoo)
 
 
 # context manager for dropped files
@@ -60,7 +64,8 @@ class Cuckoo(Module):
     def api_query(self, api_method, api_uri, files=None, params=None):
         if files:
             try:
-                response = requests.post(api_uri, files=files, data=params)
+                response = requests.post(api_uri, files=files, data=params,
+                                         proxies=cfg.cuckoo.proxies, verify=cfg.cuckoo.verify, cert=cfg.cuckoo.cert)
 
             except requests.ConnectionError:
                 self.log('error', "Unable to connect to Cuckoo API at '{0}'.".format(api_uri))
@@ -76,7 +81,7 @@ class Cuckoo(Module):
         if not files and api_method == 'get':
             # GET from API
             try:
-                response = requests.get(api_uri)
+                response = requests.get(api_uri, proxies=cfg.cuckoo.proxies, verify=cfg.cuckoo.verify, cert=cfg.cuckoo.cert)
             except requests.ConnectionError:
                 self.log('error', "Unable to connect to Cuckoo API at '{0}'.".format(api_uri))
                 return
