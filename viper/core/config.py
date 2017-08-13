@@ -182,6 +182,7 @@ class Config:
             log.warning("unable to fetch section: {}\n{}".format(section, e))
             print(e)
 
+
 __config__ = Config()
 
 console_output = {}
