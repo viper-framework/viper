@@ -2,8 +2,6 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
-
 try:
     from pytaxonomies import Taxonomies
     HAVE_PYTAX = True
@@ -19,11 +17,7 @@ def tag(self):
         self.log('error', "Missing dependency, install PyTaxonomies (`pip install git+https://github.com/MISP/PyTaxonomies.git`)")
         return
 
-    try:
-        taxonomies = Taxonomies(manifest_path=os.path.join(self.local_dir_taxonomies, 'MANIFEST.json'))
-    except Exception as e:
-        self.log('error', 'Unable to open the taxonomies, please fix the config file ([misp] - misp_taxonomies_directory): {}'.format(e))
-        return
+    taxonomies = Taxonomies()
 
     if self.args.list:
         self.log('table', dict(header=['Name', 'Description'], rows=[(title, tax.description)
