@@ -102,9 +102,6 @@ malwr_prefix = https://malwr.com
 misp_url =
 misp_key =
 misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
-# To use the misp taxonomies, you need to clone https://github.com/MISP/misp-taxonomies
-# and set the path to the directory here:
-misp_taxonomies_directory = ./misp-taxonomies
 # Set the following to select default distribution and sharing group (if in use)
 # Distribution ranges from 0-4, with sharing group only set when distribution is 4.
 # Leave empty to use PyMISP default

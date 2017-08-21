@@ -465,7 +465,7 @@ class Find(Command):
 
         group = self.parser.add_mutually_exclusive_group()
         group.add_argument('-t', '--tags', action='store_true', help="List available tags and quit")
-        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note", "any", "ssdeep"], help="Where to search.")
+        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha1", "sha256", "tag", "note", "any", "ssdeep"], help="Where to search.")
         self.parser.add_argument("value", nargs='?', help="String to search.")
 
     def run(self, *args):
