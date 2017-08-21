@@ -43,6 +43,7 @@ class MISP(Module):
     from .misp_methods import check_hashes, _prepare_attributes, _populate  # noqa
     from .misp_methods import store, _get_local_events  # noqa
     from .misp_methods import tag  # noqa
+    from .misp_methods import galaxies  # noqa
     from .misp_methods import version  # noqa
     from .misp_methods import open_samples, _load_tmp_samples, _display_tmp_files, _clean_tmp_samples  # noqa
     from .misp_methods import add, add_hashes, _check_add, _change_event  # noqa
@@ -199,6 +200,13 @@ class MISP(Module):
         s.add_argument("-s", "--search", help="Search all tags matching a value.")
         s.add_argument("-e", "--event", help="Add tag to the current event.")
         s.add_argument("-a", "--attribute", nargs='+', help="Add tag to an attribute of the current event. Syntax: <identifier for the attribute> <machinetag>")
+
+        # Galaxies
+        s = subparsers.add_parser('galaxies', help='Use misp-galaxy with PyMISPGalaxies.')
+        s.add_argument("-l", "--list", action='store_true', help="List existing galaxies.")
+        s.add_argument("-d", "--details", help="Display all values of a galaxy.")
+        s.add_argument("-v", "--cluster-value", nargs='+', help="Display all details of a cluster value.")
+        s.add_argument("-s", "--search", help="Search all galaxies matching a value.")
 
         # Admin
         s = subparsers.add_parser('admin', help='Administration options.')
@@ -623,6 +631,8 @@ class MISP(Module):
                 self.store()
             elif self.args.subname == 'tag':
                 self.tag()
+            elif self.args.subname == 'galaxies':
+                self.galaxies()
             elif self.args.subname == 'admin':
                 self.admin()
             else:
