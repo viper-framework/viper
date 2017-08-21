@@ -206,7 +206,7 @@ class MISP(Module):
         s.add_argument("-l", "--list", action='store_true', help="List existing galaxies.")
         s.add_argument("-d", "--details", help="Display all values of a galaxy.")
         s.add_argument("-v", "--cluster-value", nargs='+', help="Display all details of a cluster value.")
-        s.add_argument("-s", "--search", help="Search all galaxies matching a value.")
+        s.add_argument("-s", "--search", nargs='+', help="Search all galaxies matching a value.")
 
         # Admin
         s = subparsers.add_parser('admin', help='Administration options.')
