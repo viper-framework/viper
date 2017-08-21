@@ -6,7 +6,22 @@ try:
     from pymispgalaxies import Clusters
     HAVE_PYGALAXIES = True
 except:
-    HAVE_PYGALAXIES = True
+    HAVE_PYGALAXIES = False
+
+
+def _print_cluster_value(self, cluster_value):
+    self.log('success', 'Name: {}'.format(cluster_value.value))
+    if cluster_value.description:
+        self.log('info', 'Description: {}'.format(cluster_value.description))
+    if not cluster_value.meta:
+        return
+    for key, value in cluster_value.meta._json().items():
+        if isinstance(value, list):
+            self.log('info', '{}:'.format(key))
+            for e in value:
+                self.log('item', '{}'.format(e))
+        else:
+            self.log('info', '{}: {}'.format(key, value))
 
 
 def galaxies(self):
@@ -20,16 +35,16 @@ def galaxies(self):
         self.log('table', dict(header=['Name', 'Description'], rows=[(name, cluster.description)
                                                                      for name, cluster in clusters.items()]))
     elif self.args.search:
-        matches = clusters.search(self.args.search)
+        to_search = ' '.join(self.args.search)
+        matches = clusters.search(to_search)
         if not matches:
-            self.log('error', 'No tags matching "{}".'.format(self.args.search))
+            self.log('error', 'No matches for "{}" in the clusters.'.format(to_search))
             return
-        self.log('success', 'Tags matching "{}":'.format(self.args.search))
+        self.log('success', 'Clusters matching "{}":'.format(to_search))
         for cluster, values in matches:
-            self.log('info', cluster.name)
+            self.log('success', cluster.name)
             for val in values:
-                for k, v in val._json().items():
-                    self.log('item', '{}: {}'.format(k, v))
+                _print_cluster_value(self, val)
     elif self.args.details:
         cluster = clusters.get(self.args.details)
         if not cluster:
@@ -59,12 +74,4 @@ def galaxies(self):
             if not c_val:
                 self.log('error', 'No cluster value called "{}".'.format(cluster_value))
                 return
-            self.log('info', 'Name: {}'.format(c_val.value))
-            self.log('info', 'Description: {}'.format(c_val.description))
-            for key, value in c_val.meta._json().items():
-                if isinstance(value, list):
-                    self.log('info', '{}:'.format(key))
-                    for e in value:
-                        self.log('item', '{}'.format(e))
-                else:
-                    self.log('info', '{}: {}'.format(key, value))
+            _print_cluster_value(self, c_val)

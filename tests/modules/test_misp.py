@@ -75,3 +75,39 @@ class TestMISP:
         out, err = capsys.readouterr()
 
         assert re.search(r".*Denial of Service | denial-of-service.*", out)
+
+    def test_galaxies_list(self, capsys):
+        instance = misp.MISP()
+        instance.command_line = ['--off', 'galaxies', '--list']
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*microsoft-activity-group.*", out)
+
+    def test_galaxies_search(self, capsys):
+        instance = misp.MISP()
+        instance.command_line = ['--off', 'galaxies', '--search', 'foo']
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*Foozer.*", out)
+
+    def test_galaxies_list_cluster(self, capsys):
+        instance = misp.MISP()
+        instance.command_line = ['--off', 'galaxies', '-d', 'rat']
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*BlackNix.*", out)
+
+    def test_galaxies_list_cluster_value(self, capsys):
+        instance = misp.MISP()
+        instance.command_line = ['--off', 'galaxies', '-d', 'rat', '-v', 'BlackNix']
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*leakforums.net.*", out)
