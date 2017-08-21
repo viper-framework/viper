@@ -101,7 +101,6 @@ malwr_prefix = https://malwr.com
 [misp]
 misp_url =
 misp_key =
-misp_verify = True
 misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
 # To use the misp taxonomies, you need to clone https://github.com/MISP/misp-taxonomies
 # and set the path to the directory here:
@@ -111,6 +110,8 @@ misp_taxonomies_directory = ./misp-taxonomies
 # Leave empty to use PyMISP default
 misp_distribution =
 misp_sharinggroup =
+https_proxy = False
+tls_verify = True
 
 [pssl]
 pssl_url =
