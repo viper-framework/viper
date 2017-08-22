@@ -33,11 +33,11 @@ from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
-from viper.core.config import Config, console_output
+from viper.core.config import __config__, console_output
 from viper.common.autorun import autorun_module
 from viper.core.archiver import Compressor
 
-cfg = Config()
+cfg = __config__
 
 # For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
 try:

@@ -20,9 +20,9 @@ except:
 
 from viper.core.session import __sessions__
 from viper.common.objects import MispEvent
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+cfg = __config__
 
 
 # ####### Helpers for check_hashes ########
@@ -114,7 +114,7 @@ def check_hashes(self):
     while len(hashes_to_check) > 0:
         vt_request['resource'] = hashes_to_check.pop()
         try:
-            response = requests.post(cfg.misp.misp_vturl, data=vt_request)
+            response = requests.post(cfg.misp.misp_vturl, data=vt_request, proxies=cfg.virustotal.proxies)
         except requests.ConnectionError:
             self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
             return

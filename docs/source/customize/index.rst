@@ -65,9 +65,9 @@ You can easily access the config file:
     .. code-block:: python
         :linenos:
 
-        from viper.core.config import Config
+        from viper.core.config import __config__
 
-        cfg = Config()
+        cfg = __config__
 
 
 From here you can access any element in the config file by name:
@@ -86,6 +86,53 @@ From here you can access any element in the config file by name:
         vt_key = cfg.virustotal.virustotal_key
 
 
+
+Using common config settings for outbound http connections
+----------------------------------------------------------
+
+A common use case for modules is to implement the API of an external web service (e.g. https://koodous.com/).
+The (great!) requests library (https://github.com/requests/requests/) provides an easy interface for making
+outbound http connections.
+Viper provides a global configuration section ``[http_client]`` where certain requests options can be set
+for Proxies, TLS Verfication, CA_BUNDLE and TLS Client Certificates.
+Please check the current ``viper.conf.sample``  for more details.
+
+When implementing a custom module settings from the global ``[http_client]]`` can be overridden by specifying
+them again in the configuration section of the custom module and then calling the ``Config.parse_http_client``
+method for the custom module configuration section. Example:
+
+    .. code-block:: ini
+        :linenos:
+
+        # viper.conf
+
+        [http_client]
+        https_proxy = http://prx1.example.internal:3128
+        tls_verify = True
+
+        [mymodule]
+        base_url = https://myapi.example.internal
+        https_proxy = False
+        tls_verify = False
+
+
+    .. code-block:: python
+        :linenos:
+
+        import requests
+        from viper.common.abstracts import Module
+        from viper.core.config import __config__
+
+        cfg = __config__
+        cfg.parse_http_client(cfg.mymodule)
+
+        class MyModule(Module):
+            cmd = 'mycmd'
+            description = 'This module does this and that'
+
+            def run(self):
+                url = cfg.mymodule.base_url
+                r = requests.get(url=url, headers=headers, proxies=cfg.mymodule.proxies, verify=cfg.mymodule.verify, cert=cfg.mymodule.cert)
 
 
 Accessing the session

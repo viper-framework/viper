@@ -6,6 +6,7 @@ import argparse
 import textwrap
 import os
 import json
+import logging
 
 try:
     from pymisp import PyMISP, PyMISPError, MISPEvent, EncodeFull
@@ -27,9 +28,12 @@ from viper.core.project import __project__
 from viper.core.storage import get_sample_path
 from viper.common.objects import MispEvent
 from viper.common.constants import VIPER_ROOT
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+log = logging.getLogger('viper')
+
+cfg = __config__
+cfg.parse_http_client(cfg.misp)
 
 
 class MISP(Module):
@@ -570,7 +574,7 @@ class MISP(Module):
         if not self.args.verify:
             verify = False
         else:
-            verify = cfg.misp.misp_verify
+            verify = cfg.misp.tls_verify
 
         # Capture default distribution and sharing group settings. Backwards compatability and empty string check
         self.distribution = cfg.misp.get("misp_distribution", None)
@@ -587,7 +591,7 @@ class MISP(Module):
 
         if not self.offline_mode:
             try:
-                self.misp = PyMISP(self.url, self.key, verify, 'json')
+                self.misp = PyMISP(self.url, self.key, ssl=verify, proxies=cfg.misp.proxies, cert=cfg.misp.cert)
             except PyMISPError as e:
                 self.log('error', e.message)
                 return

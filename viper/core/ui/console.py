@@ -20,11 +20,12 @@ from viper.core.plugins import __modules__
 from viper.core.project import __project__, get_project_list
 from viper.core.ui.commands import Commands
 from viper.core.database import Database
-from viper.core.config import Config, console_output
+from viper.core.config import __config__, console_output
 
 log = logging.getLogger('viper')
 
-cfg = Config()
+cfg = __config__
+cfg.parse_http_client()
 
 # For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
 try:
