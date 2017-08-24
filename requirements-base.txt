@@ -9,3 +9,4 @@ six==1.10.0
 SQLAlchemy==1.1.9
 terminaltables==3.1.0
 git+https://github.com/kbandla/pydeep.git#egg=pydeep
+psycopg2
