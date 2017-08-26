@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Index{% endblock %}
+
+
+{% block content %}
+
+    <ol class="breadcrumb">
+        <li><a href="/">Home</a></li>
+        <li><a href="/project/{{ project }}">{{ project }}</a></li>
+        <li><a href="/file/{{ project }}/{{ file_info.sha256 }}">{{ file_info.sha256 }}</a></li>
+    </ol>
+
+    <ul id="navTabs" class="nav nav-tabs">
+        <li class="active"><a href="#static" data-toggle="tab">Static</a></li>
+        <li><a href="#notes" data-toggle="tab">Notes</a></li>
+        <li><a href="#modules" data-toggle="tab">Modules</a></li>
+        <li><a href="#hex" data-toggle="tab">Hex View</a></li>
+    </ul>
+    <div id="spin_loader"></div>
+    <div class="tab-content">
+        <!-- STATIC -->
+        <div class="tab-pane active" id="static">
+            <table class="table table-striped table-bordered table-hover">
+                <tr>
+                    <th>File ID</th>
+                    <td>{{ file_info.id }}</td>
+                </tr>
+
+                <tr>
+                    <th>File Name</th>
+                    <td>{{ file_info.name }}</td>
+                </tr>
+                <tr>
+                    <th>File Size</th>
+                    <td>{{ file_info.size }} bytes</td>
+                </tr>
+                <tr>
+                    <th>File Type</th>
+                    <td>{{ file_info.type }}</td>
+                </tr>
+                <tr>
+                    <th>File Mime</th>
+                    <td>{{ file_info.mime }}</td>
+                </tr>
+                <tr>
+                    <th>MD5</th>
+                    <td>{{ file_info.md5 }}</td>
+                </tr>
+                <tr>
+                    <th>SHA1</th>
+                    <td>{{ file_info.sha1 }}</td>
+                </tr>
+                <tr>
+                    <th>SHA256</th>
+                    <td>{{ file_info.sha256 }}</td>
+                </tr>
+                <tr>
+                    <th>SHA512</th>
+                    <td>{{ file_info.sha512 }}</td>
+                </tr>
+                <tr>
+                    <th>CRC32</th>
+                    <td>{{ file_info.crc32 }}</td>
+                </tr>
+                <tr>
+                    <th>Ssdeep</th>
+{#                    TODO(frennkie) Fuzzy Search doesn't do anything#}
+                    <td>{{ file_info.ssdeep }} <span><button type="button" class="btn btn-primary btn-xs">Fuzzy Search</button></span></td>
+                </tr>
+                <tr>
+                    <th>Parent</th>
+                    <td><a href="/file/{{ project }}/{{ file_info.parent|slice:'-64:' }}">{{ file_info.parent }}</a></td>
+                </tr>
+                <tr>
+                    <th>Children</th>
+                    <td>
+                        {% for child in file_info.children %}
+                            <a href="/file/{{ project }}/{{ child }}">{{ child }}</a>{% if not forloop.last %} - {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <th></th>
+                    <td><a class="btn btn-primary btn-small" href="{% url "viperapi_v3:malware-download" project_name=project sha256=file_info.sha256 %}">Download</a> <a class="btn btn-primary btn-small" onClick="$('#cuckoo').load('/cuckoo/submit?hash={{ file_info.sha256 }}&amp;project={{ project }}');">Cuckoo</a> <span id="cuckoo"></span></td>
+                </tr>
+            </table>
+
+            <div class="panel panel-default" id="panel_tags">
+                <div class="panel-heading">Tags</div>
+                <div class="panel-body">
+                    {% for tag in tag_list %}
+                        <div id="display_tag_{{ tag.id }}" style="display: inline-block;">
+                            <form id="search_tag_form" role="form" enctype="multipart/form-data" accept-charset="utf-8" method="post" action="/search/" style="display:inline">
+                                <input class="form-control" type="hidden" id="key" name="key" value="tag"/>
+                                <input class="form-control" type="hidden" id="term" name="term" value="{{ tag.tag }}"/>
+                                <input class="form-control" type="hidden" id="curr_project" name="curr_project" value="{{ project }}"/>
+
+                                <button type="submit" class="btn btn-xs btn-primary" name="search" value="{{ tag.tag }}">{{ tag.tag }}</button>
+                                {% csrf_token %}
+                            </form>
+
+                            <a onclick="delTag('{{ tag.id }}')" href="#"><span class="glyphicon glyphicon-remove text-danger small"></span></a>&nbsp;&nbsp;
+                        </div>
+                    {% endfor %}
+                    <a href="#"><span class="glyphicon glyphicon-plus text-success" data-toggle="modal" data-target="#newTag"></span></a>
+                </div>
+            </div>
+
+            <div class="modal fade" id="newTag" tabindex="-1" role="dialog" aria-labelledby="newTagLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                            <h4 class="modal-title" id="newTagLabel">Add New Tag</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add_tag_form" role="form" enctype="multipart/form-data" accept-charset="utf-8">
+                                <input type="text" class="form-control" name="tag" id="tag" placeholder="Tags (comma separated, lowercase)" autofocus>
+                                <button type="submit" class="btn btn-default" name="new" value="New">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- NOTES -->
+        <div class="tab-pane" id="notes">
+            <button class="btn btn-primary btn-small" data-toggle="modal" data-target="#newNote">Add New Note</button>
+            <div class="row">
+                {% for note in note_list %}
+                    <div id="display_note_{{ note.id }}" class="col-md-4">
+                        <div class="note-box">
+                            <form id="update_note_form" role="form" enctype="multipart/form-data" accept-charset="utf-8">
+                                <label for="note-list"></label>
+                                <input id="note-list" type="text" class="form-control" name="title" value="{{ note.title }}">
+                                <textarea id="note-list" class="form-control" rows="5" name="body">{{ note.body }}</textarea>
+                                <input type="hidden" name="id" value="{{ note.id }}"/>
+                                <button type="submit" class="btn btn-success" name="update" value="Update">Update</button>
+                                <button type="reset" class="btn btn-warning" name="reset" value="Reset">Reset</button>
+
+                                <a onclick="delNote('{{ note.id }}')" href="#">
+                                    <button type="button" class="btn btn-default btn-danger" name="delete" value="delete">Delete</button>
+                                </a>
+
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="modal fade" id="newNote" tabindex="-1" role="dialog" aria-labelledby="newNoteLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                            <h4 class="modal-title" id="newNoteLabel">Add New Note</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add_note_form" role="form" enctype="multipart/form-data" accept-charset="utf-8">
+                                <input type="text" class="form-control" name="title" id="noteTitle" placeholder="Title">
+                                <textarea class="form-control" rows="3" name="body" id="noteBody" placeholder="Note Text"></textarea>
+                                <button type="submit" class="btn btn-default" name="new" value="New">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODULES -->
+        <div class="tab-pane" id="modules">
+            <p>Select a module or run a command</p>
+            <form class="form-inline" role="form" id="ajaxsubmit" onsubmit="return false" name="modules">
+                <label for="cmdString">Viper Command</label>
+                <select class="form-control" name="module" onchange="setOptions(document.modules.module.options[document.modules.module.selectedIndex].value);">
+                    <option value="module">Module</option>
+                    <option value="apk">APK - Parse Android APKs</option>
+                    <option value="clamav">ClamaAV - Scan file from local ClamAV daemon</option>
+                    <option value="debup">Debup - Parse McAfee BUP Files</option>
+                    <option value="editdistance">Edit Distance - Filename Edit Distance</option>
+                    <option value="elf">ELF - Extract information from ELF headers</option>
+                    <option value="email">Email - Parse eml and msg Files</option>
+                    <option value="exif">Exif - Extract MetaData</option>
+                    <option value="fuzzy">Fuzzy - SSdeep CTPH Scan</option>
+                    <option value="html">HTML - Parse HTML Data</option>
+                    <option value="idx">IDX - Parse Java IDX Files</option>
+                    <option value="image">Image - Perfom analysis on images</option>
+                    <option value="jar">JAR - Parse Java archives</option>
+                    <option value="office">Office - Office document parser</option>
+                    <option value="pdf">PDF - PDF document parser</option>
+                    <option value="pe">PE - Parse PE32 files</option>
+                    <option value="rat">RAT - Extract config from common rats</option>
+                    <option value="reports">Reports - Online sandbox reports</option>
+                    <option value="shellcode">ShellCode - Identify shellCode patterns</option>
+                    <option value="strings">Strings - Extract strings</option>
+                    <option value="swf">SWF - Parse SWF files</option>
+                    <option value="virustotal">VirusTotal</option>
+                    <option value="xor">XOR - Encoded strings</option>
+                    <option value="yara">Yara - Scan with Yara rules</option>
+
+                </select>
+                <select class="form-control" name="args">
+                    <option value=" ">Select a module first</option>
+                </select> |
+                <input type="text" class="form-control" name="cmdline" placeholder="Enter CLI Commands"> |
+                <select class="form-control" name="moduleHistory">
+                    <option value=" ">Module History</option>
+                    {% for cmd in module_history %}
+                        <option value="{{ cmd.id }}">{{ cmd.cmd_line }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-default" name="submit">Run</button>
+                <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
+
+            </form>
+            <hr/>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-md-8"><h3 class="panel-title">Module Output</h3></div>
+                        <div class="col-md-4" style="text-align: right;">
+                            <button class="btn btn-default btn-xs btn-primary" onclick="clear_div()">Clear</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="ajaxresponse"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HEX -->
+        <div class="tab-pane" id="hex">
+            <form class="form-inline" role="form" id="hexsubmit" onsubmit="return false" name="hexsubmit">
+                <button type="submit" class="btn btn-default" name="submit">Load More</button>
+                <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
+                <input type="hidden" id="hex_start" name="hex_start" value="0"/>
+                <input type="hidden" id="hex_end" name="hex_end" value="32"/>
+                {% csrf_token %}
+            </form>
+            <hr/>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Hex Viewer</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="text-center" id="hexview">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+
+{% block js %}
+    <script type='text/javascript'>
+
+        var malware_tag_list_url = "{% url 'viperapi_v3:malware-tag-list' project_name=project malware_sha256=file_info.sha256 %}";
+        var malware_note_list_url = "{% url 'viperapi_v3:malware-note-list' project_name=project malware_sha256=file_info.sha256 %}";
+        var file_view_url = "{% url 'file-view' project=project sha256=file_info.sha256 %}";
+
+        // Javascript to enable link to tab
+        var url = document.location.toString();
+        if (url.match('#')) {
+            $('.nav-tabs a[href="#' + url.split('#')[1] + '-tab"]').tab('show');
+        } //add a suffix
+
+        // Change hash for page-reload
+        $('.nav-tabs a').on('shown.bs.tab', function (e) {
+            window.location.hash = e.target.hash;
+        });
+
+        // Every time a modal is shown, if it has an autofocus element, focus on it.
+        $('.modal').on('shown.bs.modal', function () {
+            $(this).find('[autofocus]').focus();
+        });
+
+        $(document).ready(function (event) {
+            console.log("working on Project: {{ project }}");
+            console.log("working on File: {{ file_info.sha256 }}");
+
+            $('ul.nav.nav-tabs a:first').tab('show'); // Select first tab
+            $('ul.nav.nav-tabs a[href="' + window.location.hash + '"]').tab('show'); // Select tab by name if provided in location hash
+            $('ul.nav.nav-tabs a[data-toggle="tab"]').on('shown', function (event) {    // Update the location hash to current tab
+                window.location.hash = event.target.hash;
+            })
+
+        });
+    </script>
+{% endblock %}

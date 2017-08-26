@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Viper - {% block title %}{% endblock %}</title>
+
+    {% load static from staticfiles %}
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Viper Malware Analysis">
+    <meta name="keywords" content="viper,malware,yara">
+
+    <link rel="stylesheet" href="{% static "viperweb/css/bootstrap.css" %}" />
+    <link rel="stylesheet" href="{% static "viperweb/css/style.css" %}" />
+
+</head>
+
+<body role="document">
+
+<!-- Nav Bar -->
+
+<nav class="navbar navbar-inverse" role="navigation">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a href="#" class="navbar-brand">Viper </a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+
+        {% if user.is_authenticated %}
+            <ul class="nav navbar-nav">
+                <li><a href="/"><i class="glyphicon glyphicon-home"></i></a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Projects <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="/">default</a></li>
+                        <li class="divider"></li>
+                        {% for project in projects %}
+                            {% if not project == "default" %}
+                                <li><a href="{% url "main-page-project" project=project %}">{{ project }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        <li>
+
+                            <form class="navbar-form navbar-left" role="form" action="{% url "create-project" %}" enctype="multipart/form-data" method="post">
+                                <input type="text" name="project" class="form-control" placeholder="switch to/create new">
+                                {% csrf_token %}
+                            </form>
+
+                        </li>
+
+                    </ul>
+                </li>
+                <li ><a href="{% url "yara-rules" %}">Yara Rules</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="{% url "logout" %}">Logout ({{ user }})</a></li>
+
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="{% url "admin:index" %}">Admin</a></li>
+                        <li><a href="{% url "viperapi_v3:api-root" %}">API (browseable)</a></li>
+                        <li><a href="{% url "viperapi_v3:api-docs" %}">API Docs</a></li>
+                        <li class="divider"></li>
+                        <li><a href="https://viper-framework.readthedocs.io/en/latest/">Docs (RTD)</a></li>
+                        <li><a href="https://github.com/viper-framework/viper/issues">Issues (GH)</a></li>
+                        <li class="divider"></li>
+                        <li><a href="{% url "changelog" %}">ChangeLog</a></li>
+                        <li><a href="{% url "about" %}">About</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+        {% else %}
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="/"><i class="glyphicon glyphicon-home"></i></a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="{% url "login" %}">Login</a></li>
+
+{#                <li><a href="#" data-toggle="modal" data-target="#loginForm">Login</a></li>#}
+
+{#                <div class="modal fade" id="loginForm" tabindex="-1" role="dialog" aria-labelledby="loginLabel" aria-hidden="true">#}
+{#                    <div class="modal-dialog">#}
+{#                        <div class="modal-content">#}
+{#                            <div class="modal-header">#}
+{#                                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>#}
+{#                                <h4 class="modal-title" id="loginLabel">Login</h4>#}
+{#                            </div>#}
+{#                            <div class="modal-body">#}
+{#                                <form class="form-signin" role="form" action="{% url "login" %}" enctype="multipart/form-data" method="post" target="_self">#}
+{#                                    {% csrf_token %}#}
+{#                                    <div class="form-group">#}
+{#                                        <input type="text" name="username" id="inputEmail" class="form-control" placeholder="Username" required autofocus>#}
+{#                                    </div>#}
+{#                                    <div class="form-group">#}
+{#                                        <input type="password" name="password" id="inputPassword" class="form-control" placeholder="Password" required>#}
+{#                                    </div>#}
+{#                                    <button class="btn btn-primary btn-block" type="submit">Sign in</button>#}
+{#                                    <h6 class="text-warning"><a href="/reset/">Forgot My Password</a> | <a href="/username/">Forgot My Username</a></h6>#}
+{#                                </form>#}
+{##}
+{#                            </div>#}
+{#                            <div class="modal-footer">#}
+{#                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>#}
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
+
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">More <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="https://viper-framework.readthedocs.io/en/latest/">Docs (RTD)</a></li>
+                        <li><a href="https://github.com/viper-framework/viper/issues">Issues (GH)</a></li>
+                        <li class="divider"></li>
+                        <li><a href="{% url "changelog" %}">ChangeLog</a></li>
+                        <li><a href="{% url "about" %}">About</a></li>
+                </li>
+            </ul>
+
+        {% endif %}
+        </div>
+    </div>
+</nav>
+
+<!-- End Nav -->
+
+<div class="container-fluid">
+    <p style="margin-bottom: 25px;"><img src="{% static "viperweb/images/viper.png" %}" width="250" height="60" alt="Viper Malware"/></p>
+    <!-- End Header  -->
+
+    {% if error %}
+    <div class="alert alert-danger text-center">
+        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+        <strong>Error!</strong> {{ error }}.
+    </div>
+    {% endif %}
+
+    {% if success %}
+    <div class="alert alert-success text-center">
+        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+        <strong>Success!</strong> {{ success }}.
+    </div>
+    {% endif %}
+
+{#    {% if user.is_authenticated %}#}
+{#    <div class="container text-center">#}
+{#        <h2>Welcome to the Viper Malware Analysis Framework</h2>#}
+{##}
+{#    </div>#}
+{#    {% else %}#}
+{#    <div class="container text-center">#}
+{#        <h2>Welcome to the Viper Malware Analysis Framework</h2>#}
+{#        <p>This is the interactive web panel that will allow you to add, search and perform analysis across files.<p>#}
+{#        <p>In order to access the Web Panel you must first <a href="{% url "login" %}">Login</a></p>#}
+{##}
+{#    </div>#}
+{#    {% endif %}#}
+
+    {% block content %}{% endblock %}
+
+</div>
+
+
+<div class="footer">
+    <div class="container">
+        <div align="center">
+            <p class="muted credit"><a href="http://viper.li">Viper-Framework.</a> Source Code on <a href="https://github.com/viper-framework/viper">Github.</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- include libraries(jQuery, bootstrap, fileview) -->
+<!--<script src="{ % static 'js/jquery.min.js' %}"></script> -->
+<script type="text/javascript" src="{% static 'viperweb/js/jquery.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/bootstrap.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/bootstrap-filestyle.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/pagination.js' %}"></script>
+
+
+<script type="text/javascript" src="{% static "viperweb/js/js.cookie.js" %}"></script>
+
+<!-- Viper JavaScripts -->
+<script type="text/javascript" src="{% static 'viperweb/js/dropdown.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/spin.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/ajax_submit.js' %}"></script>
+
+<!-- JavaScript block per template page -->
+{% block js %}
+{% endblock %}
+
+</body>
+</html>

@@ -38,7 +38,8 @@ setup(
     url='http://viper.li',
 
     platforms='any',
-    scripts=['viper-cli', 'viper-api', 'viper-web', 'viper-update'],
+    scripts=['viper-cli', 'viper-web', 'viper-update'],
+
     packages=find_packages(exclude=['tests', 'tests.*']),
     install_requires=requires,
     dependency_links=links,

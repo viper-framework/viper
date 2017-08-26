@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Viper Changelog{% endblock %}
+
+
+{% block content %}
+
+    {% for key, value in changelog.items %}
+        <div class="row">
+            <div class="col-sm-5">
+                <div class="panel panel-default">
+                   <table class="table table-striped table-bordered table-hover">
+                        <tr>
+                            <td>{{ key }}</td>
+                            <td>{{ value }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+{% endblock %}
