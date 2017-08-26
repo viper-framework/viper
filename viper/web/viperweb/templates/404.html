@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+
+<div class="container">
+<h2>There doesn't seem to be anything here. </h2>
+<div class="alert alert-danger">
+{#    TODO This doesn't make sense.. either remove or replace by link to issues#}
+    <p><a href='/'>Go Home </a> and try again. If the error persists please email: <a href="mailto:error@malwareconfig.com?Subject=404_Error" target="_top">error@malwareconfig.com</a></p>
+</div>
+
+</div>
+
+{% endblock %}

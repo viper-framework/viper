@@ -85,4 +85,4 @@ def get_project_list(exclude_default=False):
     else:
         project_list.append("default")
 
-    return project_list
+    return sorted(project_list)

@@ -37,6 +37,7 @@ from viper.common.utils import get_type, get_md5
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
+from viper.core.project import __project__
 
 
 class PE(Module):
@@ -305,7 +306,9 @@ class PE(Module):
 
         def get_signatures():
             userdb_path = None
-            for path_attempt in ['/usr/share/viper/peid/UserDB.TXT', os.path.join(VIPER_ROOT, 'data/peid/UserDB.TXT')]:
+            for path_attempt in ['/usr/share/viper/peid/UserDB.TXT',
+                                 os.path.join(__project__.base_path, 'peid/UserDB.TXT'),
+                                 os.path.join(VIPER_ROOT, 'data/peid/UserDB.TXT')]:
                 if os.path.exists(path_attempt):
                     userdb_path = path_attempt
                     break

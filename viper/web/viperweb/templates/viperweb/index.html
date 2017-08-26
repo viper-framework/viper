@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Main{% endblock %}
+
+
+{% block content %}
+
+    <ol class="breadcrumb">
+        <li><a href="/">Home</a></li>
+        <li><a href="/project/{{ project }}">{{ project }}</a></li>
+    </ol>
+
+    <!-- Upload (simple) -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Sample Upload (simple)</h3>
+        </div>
+        <div class="panel-body">
+            <form id="upload_form" role="form" class="form-inline" enctype="multipart/form-data">
+
+                <div class="form-group">
+                    <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
+                </div>
+
+                <div class="form-group">
+                    <label for="tag_list_upload"></label>
+                    <input id="tag_list_upload" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
+                </div>
+
+                <button type="submit" class="btn btn-default">Upload</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Upload Archive -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+              <a data-toggle="collapse" href="#collapse_upload_archive">Sample Upload - supports extraction of archive files (e.g. Zip, Rar)</a>
+            </h3>
+        </div>
+
+        <div id="collapse_upload_archive" class="panel-collapse collapse">
+            <div class="panel-body">
+                <form id="upload_form_archive" role="form" class="form-inline" enctype="multipart/form-data">
+
+                    <div class="form-group">
+                        <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tag_list_upload"></label>
+                        <input id="tag_list_upload" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="extractor">Archive options:</label>
+                        <select id="extractor" name="extractor" class="form-control">
+                            <option value="auto">[*] Detect file extension</option>
+                            <option value="none">[~] No Extractor</option>
+                            <option disabled>&nbsp;</option>
+                            {% for key, row in extractors.items %}
+                                <option value="{{ row.cls_name }}">
+                                    {{ row.title }}: {% for item in row.supports_extensions %}{{ item }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %} {% if row.supports_password %}(*PW*){% endif %}
+                                </option>
+                            {% endfor %}
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="archive_pass"></label>
+                        <input id="archive_pass" name="archive_pass" type="password" class="form-control" placeholder="Archive Password">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="store_archive"></label>
+                        <select id="store_archive" name="store_archive" class="form-control">
+                            <option value="true">[+] Store archive</option>
+                            <option value="false">[-] Discard archive</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-default">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Download from URL -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">URL Download</h3>
+        </div>
+        <div class="panel-body">
+            <form id="download_form" role="form" class="form-inline" enctype="multipart/form-data" action="/urldownload/" method="post">
+
+                <div class="form-group">
+                    <label class="sr-only" for="URL">URL</label>
+                    <input type="search" class="form-control" name="url" id="url" placeholder="URL">
+                </div>
+
+                <div class="form-group">
+                    <label for="tag_list_url_dl"></label>
+                    <input id="tag_list_url_dl" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
+                </div>
+
+                <div class="checkbox">
+                    <label><input type="checkbox" name="tor" value="tor"> Use Tor</label>
+                </div>
+
+                <button type="submit" class="btn btn-default">Run</button>
+                <input type="hidden" name="project" value="{{ project }}"/>
+                {% csrf_token %}
+
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Download from VirusTotal TODO(frennkie) disabled on 2017-09-08 - requires private VT API key - so I can not test it -->
+{#    <div class="panel panel-default">#}
+{#        <div class="panel-heading">#}
+{#            <h3 class="panel-title">VT Download</h3>#}
+{#        </div>#}
+{#        <div class="panel-body">#}
+{##}
+{#            <form id="virustotal_form" role="form" class="form-inline" enctype="multipart/form-data" action="/virustotal/">#}
+{##}
+{#                <div class="form-group">#}
+{#                    <label class="sr-only" for="hash">HASH</label>#}
+{#                    <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="VT HASH">#}
+{#                    <input type="hidden" name="project" value="{{ project }}"/>#}
+{#                </div>#}
+{##}
+{#                <div class="form-group">#}
+{#                    <label for="tag_list_vt_dl"></label>#}
+{#                    <input id="tag_list_vt_dl" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">#}
+{#                </div>#}
+{##}
+{#                <button type="submit" class="btn btn-default">Run</button>#}
+{#                <input type="hidden" name="project" value="{{ project }}"/>#}
+{#                {% csrf_token %}#}
+{##}
+{#            </form>#}
+{#        </div>#}
+{#    </div>#}
+
+
+    <!-- Search -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">Search Samples</h3>
+        </div>
+        <div class="panel-body">
+            <form id="search_form" role="form" class="form-inline" enctype="multipart/form-data" action="/search/" method="POST">
+
+                <div class="form-group">
+                    <label for="search_options"></label>
+                    <select id="search_options" class="form-control" name="key">
+                        <option value="name">Name</option>
+                        <option value="type">Type</option>
+                        <option value="mime">Mime</option>
+                        <option value="md5">MD5</option>
+                        <option value="sha256">SHA256</option>
+                        <option value="tag">Tag</option>
+                        <option value="note">Note</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="sr-only" for="term">Search Term</label>
+                    <input type="text" class="form-control" name="term" id="term" placeholder="Search Term">
+                </div>
+
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" name="project" value="project"> All Projects
+                    </label>
+                </div>
+                <input type="hidden" name="curr_project" value="{{ project }}"/>
+                <button type="submit" class="btn btn-default">Search</button>
+                {% csrf_token %}
+
+            </form>
+        </div>
+    </div>
+
+
+    <!-- List Samples -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="row">
+                <div class="col-xs-4 text-left">Project: <b>{{ project }}</b></div>
+                <div class="col-xs-4 text-center"></div>
+                <div class="col-xs-4 text-right">Showing {{ samples.0 }} to {{ samples.1 }} (Total: <b>{{ sample_count }}</b>)</div>
+            </div>
+        </div>
+
+        <table class="table table-striped table-bordered table-hover">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>SHA256</th>
+                <th>Tags</th>
+            </tr>
+            {% for row in sample_list %}
+                <tr>
+                    <td>{{ row.id }}</td>
+                    <td><a href="/project/{{ project }}/file/{{ row.sha256 }}/">{{ row.name }}</a></td>
+                    <td class="mono">{{ row.sha256 }}</td>
+                    <td>
+                        {% for tag in row.tag %}
+                            <div style="display: inline-block;">
+                                <form id="search_tag_form" role="form" enctype="multipart/form-data" accept-charset="utf-8" method="post" action="/search/" style="display:inline">
+                                    <input class="form-control" type="hidden" id="key" name="key" value="tag"/>
+                                    <input class="form-control" type="hidden" id="term" name="term" value="{{ tag.tag }}"/>
+                                    <input class="form-control" type="hidden" id="curr_project" name="curr_project" value="{{ project }}"/>
+
+                                    <button type="submit" class="btn btn-xs btn-primary" name="search" value="{{ tag.tag }}">{{ tag.tag }}</button>
+                                    {% csrf_token %}
+                                </form>
+                            </div>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="text-center">
+        <nav>
+            <ul class="pagination">
+                {% if config_list.has_previous %}
+                    <li><a href="?page={{ sample_list.previous_page_number }}">&laquo;</a></li>
+                {% else %}
+                    <li class="disabled"><span><span aria-hidden="true">&laquo;</span></span></li>
+                {% endif %}
+
+                {% for page in sample_list.paginator.page_range %}
+                    {% spaceless %}
+                        <li
+                                {% if page == sample_list.number %}
+                                    class="active"
+                                {% endif %}
+                        ><a href="?page={{ page }}">{{ page }}</a></li>
+                    {% endspaceless %}
+                {% endfor %}
+
+                {% if sample_list.has_next %}
+                    <li><a href="?page={{ sample_list.next_page_number }}">&raquo;</a></li>
+                {% else %}
+                    <li class="disabled"><span><span aria-hidden="true">&raquo;</span></span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+
+{% endblock %}
+
+{% block js %}
+    <script type='text/javascript'>
+        {#    TODO(frennkie) debug output #}
+        $(document).ready(function () {
+            console.log("working on Project: {{ project }}");
+        });
+
+        var malware_upload_url = "{% url 'viperapi_v3:malware-upload' project_name=project %}";
+        var malware_list_url = "{% url 'file-list' project=project %}";
+
+        $("#upload_form").submit(function (event) {
+            console.log("upload_form called");
+            event.preventDefault();
+            var formData = new FormData($(this)[0]);
+            $.ajax({
+                url: malware_upload_url,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+
+                success: function (data, textStatus, jqXHR) {
+                    console.log("Submit successful");
+                    console.log("API Endpoint: " + jqXHR.getResponseHeader('Location'));
+
+                    // TODO(frennkie) this simply redirects to first..?!
+                    window.location.replace(malware_list_url + data[0].data.sha256 + "/");
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log("Submit failed");
+
+                    console.log("jqXHR:" + jqXHR);
+                    console.log("textStatus:" + textStatus);
+                    console.log("errorThrown:" + errorThrown);
+
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
+                    var error = obj.error;
+                    console.log(error);
+                    console.log(error.message);
+                    alert("Upload failed: " + error.message);
+                }
+            });
+            return false;
+        });
+
+        $("#upload_form_archive").submit(function (event) {
+            console.log("upload_form_archive called");
+            event.preventDefault();
+            var formData = new FormData($(this)[0]);
+            $.ajax({
+                url: malware_upload_url,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+
+                success: function (data, textStatus, jqXHR) {
+                    console.log("Submit successful");
+                    console.log(data);
+
+                    // TODO(frennkie) this simply redirects to first..?!
+                    window.location.replace(malware_list_url + data[0].data.sha256 + "/");
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log("Submit failed");
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
+                    var error = obj.error;
+                    console.log(error);
+                    console.log(error.message);
+                    alert("Upload failed: " + error.message);
+                }
+            });
+            return false;
+        });
+    </script>
+{% endblock %}
+
+

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Changelog{% endblock %}
+
+{% block content %}
+
+<ol class="breadcrumb">
+    <li><a href="{% url 'main_page' %}">Home</a></li>
+    <li><a href="{% url 'changelog' %}">Changelog</a></li>
+</ol>
+
+    {% for key, value in changelog.items %}
+        <div class="row">
+            <div class="col-sm-5">
+                <div class="panel panel-default">
+                   <table class="table table-striped table-bordered table-hover">
+                        <tr>
+                            <td>{{ key }}</td>
+                            <td>{{ value }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+{% endblock %}

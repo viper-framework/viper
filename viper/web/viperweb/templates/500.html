@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+    <div class="col-md-3"></div>
+    <div class="col-md-6">
+        <div class="panel panel-danger">
+            <div class="panel-heading">
+                <h3 class="panel-title">Something went wrong!</h3>
+            </div>
+            <div class="panel-body">
+                <p><a href='/'>Go Home </a> and try again.</p>
+                <p>If the error persists please
+                    check the <a href="https://viper-framework.readthedocs.io/en/latest/" target="_blank">Documentation</a> or
+                    ask for help on the <a href="https://github.com/viper-framework/viper/issues" target="_blank">Github Issues</a> page.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3"></div>
+{% endblock %}

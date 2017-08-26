@@ -35,6 +35,12 @@ debug = False
 host = 0.0.0.0
 port = 8080
 
+# user name of superuser (default: "admin")
+#admin_username = admin
+# superuser password (default: auto generate)
+#admin_password = not-very-secret
+
+
 [api]
 enabled = True
 host = 0.0.0.0

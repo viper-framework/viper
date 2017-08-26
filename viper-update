@@ -23,7 +23,7 @@ from viper.common.out import print_success
 from viper.common.out import print_item
 from viper.common.network import download
 from viper.common.objects import File
-from viper.core.config import Config
+from viper.core.config import __config__
 from viper.core.project import __project__
 
 # For python2 & 3 compatibility, a bit dirty,
@@ -76,7 +76,7 @@ def update():
     names = zip_file.namelist()
 
     # Get appropriate root folder.
-    cfg = Config()
+    cfg = __config__
     if cfg.paths.storage_path:
         base_path = cfg.paths.storage_path
         resources_path = cfg.paths.storage_path
