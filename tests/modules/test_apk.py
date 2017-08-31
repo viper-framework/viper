@@ -119,7 +119,6 @@ class TestAPK:
 
         assert re.search(r".*argument -d/--dump: expected one argument.*", out)
 
-    @pytest.mark.skip(reason="Fails due to: https://github.com/androguard/androguard/issues/277")
     @pytest.mark.usefixtures("cleandir")
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_dump(self, capsys, filename):
