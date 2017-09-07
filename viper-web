@@ -15,10 +15,10 @@ from viper.core.project import __project__
 from viper.core.ui.commands import Commands
 from viper.common.out import print_info, print_warning, print_error, print_success
 from viper.common.constants import VIPER_ROOT
-from viper.core.config import Config
+from viper.core.config import __config__
 
 # Viper Global Config
-cfg = Config()
+cfg = __config__
 
 # insert path and load Django settings
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.web.settings")

@@ -57,7 +57,7 @@ try:
 except ImportError:
     from os import walk  # noqa
 
-logger = logging.getLogger("viper")
+log = logging.getLogger("viper")
 cfg = __config__
 
 
@@ -75,7 +75,6 @@ def get_project_list():
                 p_list.append(project)
     return p_list
 
-#
 # def open_project_db(project):
 #     # check for valid project and return Database object
 #     if project == 'default':
@@ -127,7 +126,7 @@ def get_project_open_db():
     def my_decorator(func):
         @wraps(func)
         def func_wrapper(viewset, *args, **kwargs):
-            logger.debug("Decorator called: {}".format(viewset))
+            log.debug("Decorator called: {}".format(viewset))
 
             project = viewset.kwargs.get(viewset.lookup_field_project, None)
             if project == 'default':
@@ -142,7 +141,7 @@ def get_project_open_db():
 
             if not db:
                 error = {"error": {"code": "NotFound", "message": "Project not found: {}".format(project)}}
-                logger.error(error)
+                log.error(error)
                 raise NotFound(detail=error)
 
             return func(viewset, project=project, db=db, *args, **kwargs)
@@ -347,12 +346,12 @@ class MalwareViewSet(ViperGenericViewSet):
         instance = self.get_object()
 
         try:
-            logger.debug("os.remove Malware sample at path: {}".format(get_sample_path(instance.sha256)))
+            log.debug("os.remove Malware sample at path: {}".format(get_sample_path(instance.sha256)))
             os.remove(get_sample_path(instance.sha256))
         except OSError:
-            logger.error("failed to delete Malware sample: {}".format(get_sample_path(instance.sha256)))
+            log.error("failed to delete Malware sample: {}".format(get_sample_path(instance.sha256)))
 
-        logger.debug("db.delete_file for Malware ID: {}".format(instance.id))
+        log.debug("db.delete_file for Malware ID: {}".format(instance.id))
         db.delete_file(instance.id)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -406,7 +405,7 @@ class MalwareViewSet(ViperGenericViewSet):
         else:
             error = {"error": {"code": "DatabaseAddFailed",
                                "message": "Adding File to Database failed: {} (sha256: {})".format(malware.name, malware.sha256)}}
-            logger.error("failed: {}".format(error))
+            log.error("failed: {}".format(error))
             print("failed: {}".format(error))  # TODO(frennkie) write to log
             raise ValidationError(detail=error)
 
@@ -414,14 +413,16 @@ class MalwareViewSet(ViperGenericViewSet):
         try:
             os.remove(uploaded_file_path)
         except OSError as err:
-            logger.error("failed to delete temporary file: {}".format(err))
+            log.error("failed to delete temporary file: {}".format(err))
             print("failed to delete temporary file: {}".format(err))
 
         return malware
 
     # TODO(frennkie) - this needs testing and cleaning up!
     @get_project_open_db()
-    @list_route(methods=['post'], serializer_class=MalwareUploadSerializer, parser_classes=[MultiPartParser, FormParser, FileUploadParser])
+    @list_route(methods=['post'],
+                serializer_class=MalwareUploadSerializer,
+                parser_classes=[MultiPartParser, FormParser, FileUploadParser])
     def upload(self, request, project=None, db=None, *args, ** kwargs):
         """Upload file as new Malware instance"""
         session = db.Session()
@@ -446,6 +447,7 @@ class MalwareViewSet(ViperGenericViewSet):
 
             # if a file name was provided (to override name of uploaded file) then us it
             uploaded_file_path = uploaded_file.temporary_file_path()
+            print("Working on (Path): {}".format(uploaded_file_path))
 
             if not uploaded_file_name:
                 uploaded_file_name = "{}".format(uploaded_file)
@@ -454,18 +456,11 @@ class MalwareViewSet(ViperGenericViewSet):
                 print("Extractor: {}".format(extractor))
 
                 if extractor == "auto":
-                    # print("Upload path: {}".format(uploaded_file_path))
-                    # print("Upload path type: {}".format(type(uploaded_file_path)))
-                    #
-                    # print("Target path: {}".format(uploaded_file))
-                    # print("Target path type: {}".format(type(uploaded_file)))
-
                     tmp_dir = tempfile.mkdtemp(prefix="viper_tmp_")
                     tmp_dirs.append(tmp_dir)
                     new_uploaded_file = os.path.join(tmp_dir, uploaded_file_name)
-                    # print("Target path: {}".format(new_uploaded_file))
-                    # print("Target path type: {}".format(type(new_uploaded_file)))
-                    os.rename(uploaded_file_path, new_uploaded_file)  # TODO(frennkie) make sure this is deleted
+                    # os.rename(uploaded_file_path, new_uploaded_file)  # TODO(frennkie) renaming causes Django to raise an error because it can't delete tmp file
+                    shutil.copy(uploaded_file_path, new_uploaded_file)  # TODO(frennkie) copying temporay file seems a bit wasteful (I/O, disk space)
 
                     ext = Extractor()
 
@@ -499,7 +494,7 @@ class MalwareViewSet(ViperGenericViewSet):
                     # TODO(frennkie) raise?!
 
             else:
-                logger.debug("No Extractor will be used, just store uploaded file")
+                log.debug("No Extractor will be used, just store uploaded file")
                 if uploaded_file_name:
                     to_process.append((uploaded_file_path, uploaded_file_name))
                 else:
@@ -514,7 +509,7 @@ class MalwareViewSet(ViperGenericViewSet):
             try:
                 shutil.rmtree(item)
             except OSError as err:
-                logger.error("failed to delete temporary dir: {}".format(err))
+                log.error("failed to delete temporary dir: {}".format(err))
                 print("failed to delete temporary dir: {}".format(err))
 
         if not len(processed):
@@ -630,14 +625,14 @@ class MalwareTagViewSet(ViperGenericMalwareViewSet, TagViewSet, CreateModelMixin
             raise NotFound(detail=error)
 
         if not tag.malware:
-            logger.error("Tag: {} not related to any Malware - will remove it".format(tag))
+            log.error("Tag: {} not related to any Malware - will remove it".format(tag))
             print("Tag: {} not related to any Malware - will remove it".format(tag))
             try:
                 session.delete(tag)
                 session.commit()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Exception as err:
-                logger.error("Tag: {} problem".format(tag, err))
+                log.error("Tag: {} problem".format(tag, err))
                 print("Tag: {} problem".format(tag, err))
 
         malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).one_or_none()
@@ -651,7 +646,7 @@ class MalwareTagViewSet(ViperGenericMalwareViewSet, TagViewSet, CreateModelMixin
                                "message": "Tag {}: {} is not associated to Malware: {} (Project: {})".format(tag.id, tag.tag, malware.sha256, project)}}
             raise NotFound(detail=error)
 
-        logger.info("I will now delete tag: {} (from Malware: {})".format(tag, malware))
+        log.info("I will now delete tag: {} (from Malware: {})".format(tag, malware))
         db.delete_tag(tag.tag, malware.sha256)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -718,7 +713,7 @@ class MalwareNoteViewSet(ViperGenericMalwareViewSet, NoteViewSet, UpdateModelMix
 
         try:
             new_note_id = db.added_ids.get("note")[0]
-            print("new Note created: {}".format(new_note_id))
+            log.debug("new Note created: {}".format(new_note_id))
         except (TypeError, IndexError):
             raise Exception("No new Note created")
 

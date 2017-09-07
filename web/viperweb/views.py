@@ -15,7 +15,7 @@ import logging
 
 # Django Imports
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import csrf_exempt
@@ -44,7 +44,7 @@ try:
 except ImportError:
     from commands import getoutput  # commands was deprecated in Py2.
 
-logger = logging.getLogger("viper")
+log = logging.getLogger("viper")
 cfg = __config__
 
 
@@ -474,16 +474,13 @@ def vt_download(request):
 def file_view(request, sha256=None, project='default'):
     if not sha256:
         return render(request, '404.html')
-    print(sha256)
+
+    # Open DB and session
     db = open_db(project)
-    # Open a session
-    try:
-        path = get_sample_path(sha256)
-        print(path)
-        __sessions__.new(path)
-        print(__sessions__)
-    except:
+    path = get_sample_path(sha256)
+    if not path:
         return render(request, '404.html')
+    __sessions__.new(path)
 
     # Get the file info  - TODO (frennkie) this should not be done here.. move it to backend
     file_info = {
@@ -508,7 +505,9 @@ def file_view(request, sha256=None, project='default'):
     note_list = []
     module_history = []
     malware = db.find(key='sha256', value=sha256)  # TODO (frennkie) this should not be done here.. move it to backend
-    if malware:
+    if not malware:
+        raise Http404
+    else:
         notes = malware[0].note
         if notes:
             for note in notes:
@@ -536,7 +535,7 @@ def file_view(request, sha256=None, project='default'):
 
 
 # Get module output.
-@csrf_exempt  # TODO(frennkie) my is CSRF exempt here?!
+@csrf_exempt  # TODO(frennkie) why is CSRF exempt here?!
 # @login_required
 def run_module(request):
     # Get the hash of the file we want to run a command against
@@ -702,6 +701,9 @@ def search_file(request):
         project_search = request.POST['project']
     else:
         project_search = False
+
+    print("Key: {}".format(key))
+    print("Value: {}".format(value))
 
     # Set some data holders
     results = []
