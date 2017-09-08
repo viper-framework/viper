@@ -27,10 +27,10 @@ urlpatterns = [
     url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/$', views.FileView.as_view(), name='file-view'),  # File Page
     url(r'^project/(?P<project>[^/]+)/file/$', views.FileView.as_view(), name='file-list'),  # File List for Project TODO(frennkie) not used
 
-    url(r'^hex/$', views.hex_view, name='hex-view'),  # Hex
-    url(r'^module/$', views.run_module, name='run-module'),  # Module Ajax
-    url(r'^search/$', views.search_file, name='search-file'),  # Search
+    url(r'^hex/$', views.HexView.as_view(), name='hex-view'),  # Hex
+    url(r'^module/$', views.RunModuleView.as_view(), name='run-module'),  # Module Ajax
+    url(r'^search/$', views.SearchFileView.as_view(), name='search-file'),  # Search
     url(r'^urldownload/', views.UrlDownloadView.as_view(), name='url-download'),  # Upload from URL
-    url(r'^yara/$', views.yara_rules, name='yara-rules'),  # Yara
+    url(r'^yara/$', views.YaraRulesView.as_view(), name='yara-rules'),  # Yara
 
 ]

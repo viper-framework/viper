@@ -375,11 +375,11 @@ class FileView(TemplateView, LoginRequiredMixin):
         sha256 = kwargs.get('sha256')
         if not sha256:
             log.error("no sha256 hashed provided")
-            raise Http404
+            raise Http404("no sha256 hashed provided")
 
         path = get_sample_path(sha256)
         if not path:
-            raise Http404
+            raise Http404("could not retrieve file for sha256 hash: {}".format(sha256))
         __sessions__.new(path)
 
         # Get the file info  - TODO (frennkie) this should not be done here.. move it to backend
@@ -404,7 +404,7 @@ class FileView(TemplateView, LoginRequiredMixin):
         # Get additional details for file
         malware = db.find(key='sha256', value=sha256)  # TODO (frennkie) this should not be done here.. move it to backend
         if not malware:
-            raise Http404
+            raise Http404("could not find file for sha256 hash: {}".format(sha256))
 
         note_list = []
         notes = malware[0].note
@@ -431,79 +431,81 @@ class FileView(TemplateView, LoginRequiredMixin):
                                                'module_history': module_history})
 
 
-# Get module output.
-@login_required
-def run_module(request):
-    # Get the hash of the file we want to run a command against
-    file_hash = request.POST['file_hash']
-    if len(file_hash) != 64:
-        file_hash = False
-    # Lot of logic here to decide what command you entered.
-    module_name = request.POST['module']
-    module_args = request.POST['args']
-    cmd_line = request.POST['cmdline']
-    module_history = request.POST['moduleHistory']
-    cmd_string = ''
-    # Order of precedence
-    # moduleHistory, cmd_line, module_name
+class RunModuleView(TemplateView, LoginRequiredMixin):
+    """Run a module and return output"""
+    def post(self, request, *args, **kwargs):
+        # Get the hash of the file we want to run a command against
+        file_hash = request.POST.get('file_hash')
+        if len(file_hash) != 64:
+            file_hash = False
+        # Lot of logic here to decide what command you entered.
+        module_name = request.POST.get('module')
+        module_args = request.POST.get('args')
+        cmd_line = request.POST.get('cmdline')
+        module_history = request.POST.get('moduleHistory')
+        cmd_string = ''
+        # Order of precedence
+        # moduleHistory, cmd_line, module_name
 
-    if module_history != ' ':
-        result = Database().get_analysis(module_history)
-        module_results = print_output(json.loads(result.results))
-        html = '<p class="text-success">Result for "{0}" stored on {1}</p>'.format(result.cmd_line, result.stored_at)
-        html += str(parse_text(module_results))
-        return HttpResponse('<pre>{0}</pre>'.format(html))
-    if cmd_line:
-        cmd_string = cmd_line
-    elif module_args:
-        cmd_string = '{0} {1}'.format(module_name, mod_dict[module_name][module_args])
-    module_results = module_cmdline(cmd_string, file_hash)
-    return HttpResponse('<pre>{0}</pre>'.format(str(parse_text(module_results))))
-
-
-# Hex Viewer
-@login_required
-def hex_view(request):
-    # get post data
-    file_hash = request.POST['file_hash']
-    try:
-        hex_offset = int(request.POST['hex_start'])
-    except:
-        return '<p class="text-danger">Error Generating Request</p>'
-    hex_length = 256
-
-    # get file path
-    hex_path = get_sample_path(file_hash)
-
-    # create the command string
-    hex_cmd = 'hd -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
-
-    # get the output
-    hex_string = getoutput(hex_cmd)
-    # Format the data
-    html_string = ''
-    hex_rows = hex_string.split('\n')
-    for row in hex_rows:
-        if len(row) > 9:
-            off_str = row[0:8]
-            hex_str = row[9:58]
-            asc_str = row[58:78]
-            asc_str = asc_str.replace('"', '&quot;')
-            asc_str = asc_str.replace('<', '&lt;')
-            asc_str = asc_str.replace('>', '&gt;')
-            html_string += '<div class="row"><span class="text-primary mono">{0}</span> \
-                            <span class="text-muted mono">{1}</span> <span class="text-success mono"> \
-                            {2}</span></div>'.format(off_str, hex_str, asc_str)
-    # return the data
-    return HttpResponse(html_string)
+        if module_history != ' ':
+            result = Database().get_analysis(module_history)
+            module_results = print_output(json.loads(result.results))
+            html = '<p class="text-success">Result for "{0}" stored on {1}</p>'.format(result.cmd_line, result.stored_at)
+            html += str(parse_text(module_results))
+            return HttpResponse('<pre>{0}</pre>'.format(html))
+        if cmd_line:
+            cmd_string = cmd_line
+        elif module_args:
+            cmd_string = '{0} {1}'.format(module_name, mod_dict[module_name][module_args])
+        module_results = module_cmdline(cmd_string, file_hash)
+        return HttpResponse('<pre>{0}</pre>'.format(str(parse_text(module_results))))
 
 
-@login_required
-def yara_rules(request):
-    rule_path = os.path.join(VIPER_ROOT, 'data/yara')
-    rule_list = os.listdir(rule_path)
-    # Read Rules
-    if request.method == 'GET':
+class HexView(TemplateView, LoginRequiredMixin):
+    """Read file a return as Hex"""
+    def post(self, request, *args, **kwargs):
+        # get post data
+        file_hash = request.POST.get('file_hash')
+        try:
+            hex_offset = int(request.POST.get('hex_start'))
+        except:
+            return '<p class="text-danger">Error Generating Request</p>'
+        hex_length = 256
+
+        # get file path
+        hex_path = get_sample_path(file_hash)
+
+        # create the command string
+        hex_cmd = 'hd -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
+
+        # get the output
+        hex_string = getoutput(hex_cmd)
+        # Format the data
+        html_string = ''
+        hex_rows = hex_string.split('\n')
+        for row in hex_rows:
+            if len(row) > 9:
+                off_str = row[0:8]
+                hex_str = row[9:58]
+                asc_str = row[58:78]
+                asc_str = asc_str.replace('"', '&quot;')
+                asc_str = asc_str.replace('<', '&lt;')
+                asc_str = asc_str.replace('>', '&gt;')
+                html_string += '<div class="row"><span class="text-primary mono">{0}</span> \
+                                <span class="text-muted mono">{1}</span> <span class="text-success mono"> \
+                                {2}</span></div>'.format(off_str, hex_str, asc_str)
+        # return the data
+        return HttpResponse(html_string)
+
+
+class YaraRulesView(TemplateView, LoginRequiredMixin):
+    """Manage Yara Rules"""
+    def get(self, request, *args, **kwargs):
+
+        rule_path = os.path.join(VIPER_ROOT, 'data/yara')
+        rule_list = os.listdir(rule_path)
+        # Read Rules
+
         action = request.GET.get('action')
         rule = request.GET.get('rule')
         rule_text = ''
@@ -537,20 +539,23 @@ def yara_rules(request):
                 rule_text = 'Invalid Rule'
             return render(request, 'viperweb/yara.html', {'rule_list': rule_list,
                                                           'rule_text': rule_text,
-                                                          'projects': project_list()
-                                                          })
+                                                          'projects': project_list()})
         else:
             rule_text = 'Invalid Action'
 
         return render(request, 'viperweb/yara.html', {'rule_list': rule_list,
                                                       'rule_name': rule,
                                                       'rule_text': rule_text,
-                                                      'projects': project_list()
-                                                      })
+                                                      'projects': project_list()})
+
     # Modify Rules
-    elif request.method == 'POST':
-        rule_name = request.POST['rule_name']
-        rule_text = request.POST['rule_text']
+    def post(self, request, *args, **kwargs):
+
+        rule_path = os.path.join(VIPER_ROOT, 'data/yara')
+        rule_list = os.listdir(rule_path)
+
+        rule_name = request.POST.get('rule_name')
+        rule_text = request.POST.get('rule_text')
         rule_file = os.path.join(rule_path, rule_name)
         # Prevent storing files in a relative path or with a non yar extension
         rule_test = rule_name.split('.')
@@ -564,8 +569,7 @@ def yara_rules(request):
         return render(request, 'viperweb/yara.html', {'rule_list': rule_list,
                                                       'rule_name': rule_name,
                                                       'rule_text': rule_text,
-                                                      'projects': project_list()
-                                                      })
+                                                      'projects': project_list()})
 
 
 class AboutView(TemplateView):
@@ -622,54 +626,52 @@ class CreateProjectView(TemplateView, LoginRequiredMixin):
         return redirect(reverse('main-page-project', kwargs={'project': project_name}))
 
 
-# Search
-@login_required
-def search_file(request):
-    key = request.POST['key']
-    value = request.POST['term'].lower()
-    curr_project = request.POST['curr_project']
-    if 'project' in request.POST:
-        project_search = request.POST['project']
-    else:
-        project_search = False
+class SearchFileView(TemplateView, LoginRequiredMixin):
+    """ Search file"""
+    def post(self, request, *args, **kwargs):
+        key = request.POST.get('key')
+        value = request.POST.get('term').lower()
+        curr_project = request.POST.get('curr_project')
 
-    print("Key: {}".format(key))
-    print("Value: {}".format(value))
+        project_search = request.POST.get('project', False)
 
-    # Set some data holders
-    results = []
-    projects = []
+        print("Key: {}".format(key))
+        print("Value: {}".format(value))
 
-    # Search All Projects
-    if project_search:
-        # Get list of project paths
-        projects = project_list()
-    else:
-        # If not searching all projects what are we searching
-        projects.append(curr_project)
+        # Set some data holders
+        results = []
+        projects = []
 
-    print(projects)
+        # Search All Projects
+        if project_search:
+            # Get list of project paths
+            projects = project_list()
+        else:
+            # If not searching all projects what are we searching
+            projects.append(curr_project)
 
-    # Search each Project in the list
-    for project in projects:
-        db = open_db(project)
-        print(db)
-        # get results
-        proj_results = []
-        rows = db.find(key=key, value=value)
-        print(rows)
+        print(projects)
 
-        for row in rows:
-            proj_results.append([row.name, row.sha256])
-        results.append({'name': project, 'res': proj_results})
+        # Search each Project in the list
+        for project in projects:
+            db = open_db(project)
+            print(db)
+            # get results
+            proj_results = []
+            rows = db.find(key=key, value=value)
+            print(rows)
 
-    if results:
-        # Return some things
-        return render(request, 'viperweb/search.html', {'results': results,
-                                                        'projects': project_list()})
-    else:
-        return render(request, 'viperweb/search.html', {'results': [],
-                                                        'projects': project_list()})
+            for row in rows:
+                proj_results.append([row.name, row.sha256])
+            results.append({'name': project, 'res': proj_results})
+
+        if results:
+            # Return some things
+            return render(request, 'viperweb/search.html', {'results': results,
+                                                            'projects': project_list()})
+        else:
+            return render(request, 'viperweb/search.html', {'results': [],
+                                                            'projects': project_list()})
 
 
 
