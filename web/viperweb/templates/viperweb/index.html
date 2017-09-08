@@ -92,33 +92,33 @@
     </div>
 
 
-    <!-- Download from VirusTotal -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">VT Download</h3>
-        </div>
-        <div class="panel-body">
-
-            <form id="virustotal_form" role="form" class="form-inline" enctype="multipart/form-data" action="/virustotal/">
-
-                <div class="form-group">
-                    <label class="sr-only" for="hash">HASH</label>
-                    <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="VT HASH">
-                    <input type="hidden" name="project" value="{{ project }}"/>
-                </div>
-
-                <div class="form-group">
-                    <label for="tag_list_vt_dl"></label>
-                    <input id="tag_list_vt_dl" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
-                </div>
-
-                <button type="submit" class="btn btn-default">Run</button>
-                <input type="hidden" name="project" value="{{ project }}"/>
-                {% csrf_token %}
-
-            </form>
-        </div>
-    </div>
+    <!-- Download from VirusTotal TODO(frennkie) disabled on 2017-09-08 - requires private VT API key - so I can test it -->
+{#    <div class="panel panel-default">#}
+{#        <div class="panel-heading">#}
+{#            <h3 class="panel-title">VT Download</h3>#}
+{#        </div>#}
+{#        <div class="panel-body">#}
+{##}
+{#            <form id="virustotal_form" role="form" class="form-inline" enctype="multipart/form-data" action="/virustotal/">#}
+{##}
+{#                <div class="form-group">#}
+{#                    <label class="sr-only" for="hash">HASH</label>#}
+{#                    <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="VT HASH">#}
+{#                    <input type="hidden" name="project" value="{{ project }}"/>#}
+{#                </div>#}
+{##}
+{#                <div class="form-group">#}
+{#                    <label for="tag_list_vt_dl"></label>#}
+{#                    <input id="tag_list_vt_dl" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">#}
+{#                </div>#}
+{##}
+{#                <button type="submit" class="btn btn-default">Run</button>#}
+{#                <input type="hidden" name="project" value="{{ project }}"/>#}
+{#                {% csrf_token %}#}
+{##}
+{#            </form>#}
+{#        </div>#}
+{#    </div>#}
 
 
     <!-- Search -->
@@ -181,7 +181,7 @@
             {% for row in sample_list %}
                 <tr>
                     <td>{{ row.id }}</td>
-                    <td><a href="/file/{{ project }}/{{ row.sha256 }}/">{{ row.name }}</a></td>
+                    <td><a href="/project/{{ project }}/file/{{ row.sha256 }}/">{{ row.name }}</a></td>
                     <td class="mono">{{ row.sha256 }}</td>
                     <td>
                         {% for tag in row.tag %}
@@ -236,32 +236,10 @@
 {% block js %}
 
     <script type='text/javascript'>
-
-        // upload_form submit action
-        var malware_upload_url = "{% url 'viperapi_v3:malware-upload' project_name=project %}";
-        var malware_list_url = "{% url 'file-list' project=project %}";
-
-
-{#        // download_form submit action#}
-{#        $("#download_form").submit(function (event) {#}
-{#            console.log("download called");#}
-{#        });#}
-
-{#        // virustotal_form submit action#}
-{#        $("#virustotal_form").submit(function (event) {#}
-{#            console.log("virustotal called");#}
-{#        });#}
-
-{#        // search_form submit action#}
-{#        $("#search_form").submit(function (event) {#}
-{#            console.log("search called");#}
-{#        });#}
-
-
+{#    TODO(frennkie) debug output #}
         $(document).ready(function () {
             console.log("working on Project: {{ project }}");
         });
-
     </script>
 {% endblock %}
 

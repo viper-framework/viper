@@ -15,11 +15,15 @@ import logging
 
 # Django Imports
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpResponse, Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth import authenticate, login, logout
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.views.generic import TemplateView
+from django.contrib import messages
+from django.core.files.temp import NamedTemporaryFile
 
 # Viper imports
 from viper.core.session import __sessions__
@@ -52,7 +56,7 @@ cfg = __config__
 # Helper Functions
 ##
 
-# Module Dicts
+# Module Dicts - TODO(frennkie) can this be auto generated (introspection)?!
 mod_dict = {'apk': {'help': '-h', 'info': '-i', 'perm': '-p', 'list': '-f', 'all': '-a', 'dump': '-d'},
             'clamav': {'run': ''},
             'debup': {'info': '', 'extract': '-s'},
@@ -103,7 +107,7 @@ def project_list():
             if os.path.isdir(project_path):
                 p_list.append(project)
     p_list.append("default")
-    return p_list
+    return sorted(p_list)
 
 
 def open_db(project):
@@ -222,15 +226,19 @@ def module_cmdline(cmd_line, file_hash):
     return html
 
 
-def add_file(file_path, tags, parent):
+def add_file(file_path, name=None, tags=None, parent=None):
     obj = File(file_path)
     new_path = store_sample(obj)
     print(new_path)
+
+    if not name:
+        name = os.path.basename(file_path)
+
     # success = True
     if new_path:
         # Add file to the database.
         db = Database()
-        db.add(obj=obj, tags=tags, parent_sha=parent)
+        db.add(obj=obj, name=name, tags=tags, parent_sha=parent)
 
         # AutoRun Modules
         if cfg.autorun.enabled:
@@ -245,298 +253,186 @@ def add_file(file_path, tags, parent):
 
 
 ##
-# Views
+# Class Based Views
 ##
 
-# Login Page
-def login_page(request):
-    try:
-        username = request.POST['username']
-        password = request.POST['password']
-
-        if username and password:
-            user = authenticate(username=username, password=password)
-            if user is not None:
-                if user.is_active:
-                    login(request, user)
-                    return redirect('/')
-                else:
-                    error = "This account has been disabled"
-                    return main_page(request, project='default', error=error)
-            else:
-                error = "Unable to login to the Web Panel. Check your UserName and Password"
-                return main_page(request, project='default', error=error)
-    except:
-        error = "Unable to login to the Web Panel"
-        return main_page(request, project='default', error=error)
-
-
-# Logout Page
-def logout_page(request):
-    logout(request)
-    success = "You have been logged out"
-    return main_page(request, project='default', success=success)
-
-
 # Main Page
-@login_required
-def main_page(request, project='default', error=None, success=None):
+class MainPageView(TemplateView, LoginRequiredMixin):
+    """Main Page"""
+    def get(self, request, *args, **kwargs):
+        template_name = "viperweb/index.html"
 
-    db = open_db(project)
-    # set pagination details
-    page = request.GET.get('page')
-    if not page:
-        page = 1
-    page_count = request.GET.get('count')
-    if not page_count:
-        page_count = 15
+        # default to "default" project if none given
+        project = kwargs.get('project', 'default')
+        db = open_db(project)
 
-    # Get all Samples
-    sample_list = db.find('all')
+        # Get all Samples
+        sample_list = db.find('all')
 
-    sample_count = len(sample_list)
-    first_sample = int(page) * int(page_count) - int(page_count) + 1
-    last_sample = int(page) * int(page_count)
+        # set pagination details
+        page = request.GET.get('page', 1)
+        page_count = request.GET.get('count', 15)
 
-    if last_sample > sample_count:
-        last_sample = sample_count
+        sample_count = len(sample_list)
+        first_sample = int(page) * int(page_count) - int(page_count) + 1
+        last_sample = int(page) * int(page_count)
 
-    paginator = Paginator(sample_list, page_count)
-    try:
-        samples = paginator.page(page)
-    except PageNotAnInteger:
-        samples = paginator.page(1)
-    except EmptyPage:
-        samples = paginator.page(paginator.num_pages)
+        if last_sample > sample_count:
+            last_sample = sample_count
 
-    return render(request, 'viperweb/index.html', {'sample_list': samples,
-                                                   'sample_count': sample_count,
-                                                   'samples': [first_sample, last_sample],
-                                                   'extractors': Extractor().extractors,
-                                                   'error_line': False,
-                                                   'project': project,
-                                                   'projects': project_list(),
-                                                   'error': error,
-                                                   'success': success
-                                                   })
+        paginator = Paginator(sample_list, page_count)
+        try:
+            samples = paginator.page(page)
+        except PageNotAnInteger:
+            samples = paginator.page(1)
+        except EmptyPage:
+            samples = paginator.page(paginator.num_pages)
 
-#
-# # Add New File
-# # Uses Context Manager to Remove Temp files
-# @login_required
-# def     upload_files(request):
-#     tags = request.POST['tag_list']
-#     uploads = request.FILES.getlist('file')
-#     compression = request.POST['compression']
-#
-#     if 'storezip' in request.POST:
-#         store_zip = request.POST['storezip']
-#     else:
-#         store_zip = False
-#
-#     # Set Project
-#     project = request.POST['project']
-#     if not project:
-#         project = 'default'
-#     open_db(project)
-#
-#     # Write temp file to disk
-#     with upload_temp() as temp_dir:
-#         for upload in uploads:
-#             file_path = os.path.join(temp_dir, upload.name)
-#             with open(file_path, 'w') as tmp_file:
-#                 tmp_file.write(upload.file.read())
-#             parent = None
-#
-#             #  If not compressed or we want to store the zip as well.
-#             if compression == 'none' or store_zip:
-#                 stored = add_file(file_path, tags, None)
-#                 if store_zip:
-#                     parent = stored
-#
-#             # Zip Files
-#             if compression == 'zip':
-#                 print('zip file')
-#                 zip_pass = request.POST['zip_pass']
-#                 try:
-#                     with ZipFile(file_path) as zf:
-#                         zf.extractall(temp_dir, pwd=zip_pass)
-#                     for root, dirs, files in walk(temp_dir, topdown=False):
-#                         for name in files:
-#                             print(name)
-#                             if not name == upload.name:
-#                                 stored = add_file(os.path.join(root, name), tags, parent)
-#                                 print(stored)
-#                 except Exception as e:
-#                     error = "Error with zipfile - {0}".format(e)
-#                     return main_page(request, project=project, error=error)
-#
-#             # GZip Files
-#             elif compression == 'gz':
-#                 try:
-#                     gzf = GzipFile(file_path, 'rb')
-#                     decompress = gzf.read()
-#                     gzf.close()
-#                     with open(file_path[:-3], "wb") as df:
-#                         df.write(decompress)
-#                     stored = add_file(file_path[:-3], tags, parent)
-#                 except Exception as e:
-#                     error = "Error with gzipfile - {0}".format(e)
-#                     return main_page(request, project=project, error=error)
-#
-#             # BZip2 Files
-#             elif compression == 'bz2':
-#                 try:
-#                     bz2f = BZ2File(file_path, 'rb')
-#                     decompress = bz2f.read()
-#                     bz2f.close()
-#                     with open(file_path[:-3], "wb") as df:
-#                         df.write(decompress)
-#                     stored = add_file(file_path[:-3], tags, parent)
-#                 except Exception as e:
-#                     error = "Error with bzip2file - {0}".format(e)
-#                     return main_page(request, project=project, error=error)
-#
-#             # Tar Files (any, including tar.gz tar.bz2)
-#             elif compression == 'tar':
-#                 try:
-#                     if not tarfile.is_tarfile(file_path):
-#                         error = "This is not a tar file"
-#                         return redirect("/project/{0}".format(project))
-#                     with tarfile.open(file_path, 'r:*') as tarf:
-#                         tarf.extractall(temp_dir)
-#                     for root, dirs, files in walk(temp_dir, topdown=False):
-#                         for name in files:
-#                             if not name == upload.filename:
-#                                 stored = add_file(os.path.join(root, name), tags, parent)
-#                 except Exception as e:
-#                     error = "Error with tarfile - {0}".format(e)
-#                     return main_page(request, project=project, error=error)
-#
-#                     # ToDo 7zip needs a sys call till i find a nice library
-#
-#     return redirect("/project/{0}".format(project))
+        print("Project: {}".format(project))
+
+        return render(request, template_name, {'sample_list': samples,
+                                               'sample_count': sample_count,
+                                               'samples': [first_sample, last_sample],
+                                               'extractors': Extractor().extractors,
+                                               'project': project,
+                                               'projects': project_list()})
 
 
-# add file from url TODO(frennkie) check this
-def url_download(request):
-    url = request.POST['url']
-    tags = request.POST['tag_list']
-    tags = "url,"+tags
-    project = request.POST['project']
-    if 'tor' in request.POST:
-        upload = network.download(url, tor=True)
-    else:
-        upload = network.download(url, tor=False)
-    if upload is None:
-        error = "server can't download from URL"
-        return main_page(request, project=project, error=error)
+class UrlDownloadView(TemplateView, LoginRequiredMixin):
+    """Download a file from URL and add to project"""
+    def post(self, request, *args, **kwargs):
+        # Set Project
+        project = request.POST.get('project', 'default')
+        open_db(project)
 
-    # Set Project
-    project = request.POST['project']
-    if not project:
-        project = 'default'
-    open_db(project)
+        url = request.POST.get('url')
+        tags = request.POST.get('tag_list')
+        tags = "url," + tags
 
-    tf = tempfile.NamedTemporaryFile()
-    tf.write(upload)
-    if not tf:
-        error = "server can't download from URL"
-        return main_page(request, project=project, error=error)
-    tf.flush()
+        if request.POST.get('tor'):
+            downloaded_file = network.download(url, tor=True)
+        else:
+            downloaded_file = network.download(url, tor=False)
 
-    sha_256 = add_file(tf.name, tags, None)
-    if sha_256:
-        return redirect("/project/{0}".format(project))
-    else:
-        error = "Unable to Store The File, already in database"
-        return main_page(request, project=project, error=error)
+        if downloaded_file is None:
+            messages.error(request, "server can't download from URL")
+            return redirect(reverse("main-page-project", kwargs={"project": project}))
+
+        tf = NamedTemporaryFile()
+        tf.write(downloaded_file)
+
+        if not tf:
+            messages.error(request, "server can't download from URL")
+            return redirect(reverse("main-page-project", kwargs={"project": project}))
+        tf.flush()
+
+        sha_256 = add_file(tf.name, name=url.split('/')[-1], tags=tags)
+        if sha_256:
+            messages.success(request, "stored file in database: {}".format(tf.name))
+            return redirect(reverse('main-page-project', kwargs={'project': project}))
+        else:
+            messages.error(request, "Unable to Store The File, already in database")
+            return redirect(reverse("main-page-project", kwargs={"project": project}))
 
 
-# VirusTotal Download TODO(frennkie) check this
-def vt_download(request):
-    vt_hash = request.POST['vt_hash']
-    project = request.POST['project']
-    tags = request.POST['tag_list']
-    cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
+class VtDownloadView(TemplateView, LoginRequiredMixin):
+    """Download a file from Virustotal and add to project"""
 
-    module_results = module_cmdline(cmd_line, False)
+    # VirusTotal Download
+    # TODO(frennkie) this most likely doesn't work
+    #   virustotal -d does not take a parameter - so providing a vt_hash will fail
+    #   virustotal --search <vt_hash> -d would make sense but requires a API key for the
+    #   private VT API (which I don't have)
 
-    if 'Stored' in module_results:
-        return redirect("/project/{0}".format(project))
-    else:
-        error = "Unable to download file {0}".format(module_results)
-        return main_page(request, project=project, error=error)
+    def post(self, request, *args, **kwargs):
+        # Set Project
+        project = request.POST.get('project', 'default')
+        open_db(project)
+
+        vt_hash = request.POST.get('vt_hash')
+        tags = request.POST.get('tag_list')
+        cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
+
+        module_results = module_cmdline(cmd_line, False)
+
+        if 'Stored' in module_results:
+            return redirect(reverse("main-page-project", kwargs={"project": project}))
+        else:
+            messages.error(request, "Unable to download file {0}".format(module_results))
+            return redirect(reverse("main-page-project", kwargs={"project": project}))
 
 
 # File View
-@login_required
-def file_view(request, sha256=None, project='default'):
-    if not sha256:
-        return render(request, '404.html')
+class FileView(TemplateView, LoginRequiredMixin):
+    """Show details for a file/sample"""
+    def get(self, request, *args, **kwargs):
+        template_name = "viperweb/file.html"
 
-    # Open DB and session
-    db = open_db(project)
-    path = get_sample_path(sha256)
-    if not path:
-        return render(request, '404.html')
-    __sessions__.new(path)
+        # default to "default" project if none given
+        project = kwargs.get('project', 'default')
+        db = open_db(project)
 
-    # Get the file info  - TODO (frennkie) this should not be done here.. move it to backend
-    file_info = {
-        'id': __sessions__.current.file.id,
-        'name': __sessions__.current.file.name,
-        'path': __sessions__.current.file.path,
-        'size': __sessions__.current.file.size,
-        'type': __sessions__.current.file.type,
-        'mime': __sessions__.current.file.mime,
-        'md5': __sessions__.current.file.md5,
-        'sha1': __sessions__.current.file.sha1,
-        'sha256': __sessions__.current.file.sha256,
-        'sha512': __sessions__.current.file.sha512,
-        'ssdeep': __sessions__.current.file.ssdeep,
-        'crc32': __sessions__.current.file.crc32,
-        'parent': __sessions__.current.file.parent,
-        'children': __sessions__.current.file.children.split(','),
-        'tag_list': __sessions__.current.file.tags
-    }
+        sha256 = kwargs.get('sha256')
+        if not sha256:
+            log.error("no sha256 hashed provided")
+            raise Http404
 
-    # Get Any Notes
-    note_list = []
-    module_history = []
-    malware = db.find(key='sha256', value=sha256)  # TODO (frennkie) this should not be done here.. move it to backend
-    if not malware:
-        raise Http404
-    else:
+        path = get_sample_path(sha256)
+        if not path:
+            raise Http404
+        __sessions__.new(path)
+
+        # Get the file info  - TODO (frennkie) this should not be done here.. move it to backend
+        file_info = {
+            'id': __sessions__.current.file.id,
+            'name': __sessions__.current.file.name,
+            'path': __sessions__.current.file.path,
+            'size': __sessions__.current.file.size,
+            'type': __sessions__.current.file.type,
+            'mime': __sessions__.current.file.mime,
+            'md5': __sessions__.current.file.md5,
+            'sha1': __sessions__.current.file.sha1,
+            'sha256': __sessions__.current.file.sha256,
+            'sha512': __sessions__.current.file.sha512,
+            'ssdeep': __sessions__.current.file.ssdeep,
+            'crc32': __sessions__.current.file.crc32,
+            'parent': __sessions__.current.file.parent,
+            'children': __sessions__.current.file.children.split(','),
+            'tag_list': __sessions__.current.file.tags
+        }
+
+        # Get additional details for file
+        malware = db.find(key='sha256', value=sha256)  # TODO (frennkie) this should not be done here.. move it to backend
+        if not malware:
+            raise Http404
+
+        note_list = []
         notes = malware[0].note
         if notes:
             for note in notes:
                 note_list.append({'title': note.title,
                                   'body': note.body,
-                                  'id': note.id
-                                  })
+                                  'id': note.id})
+
+        module_history = []
         analysis_list = malware[0].analysis
         if analysis_list:
-            for ana in analysis_list:
-                module_history.append({'id': ana.id,
-                                       'cmd_line': ana.cmd_line
-                                       })
+            for item in analysis_list:
+                module_history.append({'id': item.id,
+                                       'cmd_line': item.cmd_line})
 
-    tag_list = db.list_tags_for_malware(sha256)
-    # Return the page
-    return render(request, 'viperweb/file.html', {'file_info': file_info,
-                                                  'note_list': note_list,
-                                                  'tag_list': tag_list,
-                                                  'error_line': False,
-                                                  'project': project,
-                                                  'projects': project_list(),
-                                                  'module_history': module_history
-                                                  })
+        tag_list = db.list_tags_for_malware(sha256)
+
+        return render(request, template_name, {'file_info': file_info,
+                                               'note_list': note_list,
+                                               'tag_list': tag_list,
+                                               'project': project,
+                                               'projects': project_list(),
+                                               'module_history': module_history})
 
 
 # Get module output.
-@csrf_exempt  # TODO(frennkie) why is CSRF exempt here?!
-# @login_required
+@login_required
 def run_module(request):
     # Get the hash of the file we want to run a command against
     file_hash = request.POST['file_hash']
@@ -672,23 +568,58 @@ def yara_rules(request):
                                                       })
 
 
-# Create Project
-@login_required
-def create_project(request):
-    project_name = request.POST['project'].replace(' ', '_')
-    __project__.open(project_name)
-    return redirect('/project/{0}'.format(project_name))
+class AboutView(TemplateView):
+    """Show a simple about page"""
+    def get(self, request, *args, **kwargs):
+        template_name = "viperweb/about.html"
+
+        return render(request, template_name, {'projects': project_list(),
+                                               'extractors': Extractor().extractors})
 
 
-# View Config File
-@login_required
-def config_file(request):
-    sections = list(cfg.__dict__)
-    config_values = {}
-    for section in sections:
-        config_values[section] = cfg.get(section)
-    return render(request, 'viperweb/config.html', {'config_values': config_values,
-                                                    'projects': project_list()})
+class ChangelogView(TemplateView):
+    """Show a simple changelog page"""
+    def get(self, request, *args, **kwargs):
+        template_name = "viperweb/changelog.html"
+
+        _changelog = {"foo": "bar"}
+        return render(request, template_name, {'changelog': _changelog,
+                                               'projects': project_list()})
+
+
+class CliView(TemplateView, LoginRequiredMixin):
+    """Show GUI that implement the command line interface (CLI)"""
+    def get(self, request, *args, **kwargs):
+
+        raise NotImplementedError  # TODO(frennkie) not implemented
+        # template_name = "viperweb/cli.html"
+        # return render(request, template_name, {'results': '',
+        #                                        'projects': project_list()})
+
+
+class ConfigView(TemplateView, LoginRequiredMixin):
+    """Show a simple page listing the settings from the config file"""
+    def get(self, request, *args, **kwargs):
+        template_name = "viperweb/config.html"
+
+        sections = list(cfg.__dict__)
+        config_values = {}
+        for section in sections:
+            config_values[section] = cfg.get(section)
+        return render(request, template_name, {'config_values': config_values,
+                                               'projects': project_list()})
+
+
+class CreateProjectView(TemplateView, LoginRequiredMixin):
+    """Create project (if not existing) and switch (redirect) to it"""
+    def post(self, request, *args, **kwargs):
+        project_name = request.POST['project'].replace(' ', '_')
+        if project_name not in project_list():
+            log.debug("creating new project: {}".format(project_name))
+
+        log.debug("redirecting to project: {}".format(project_name))
+        __project__.open(project_name)
+        return redirect(reverse('main-page-project', kwargs={'project': project_name}))
 
 
 # Search
@@ -741,20 +672,17 @@ def search_file(request):
                                                         'projects': project_list()})
 
 
-# View Changelog
-def changelog(request):
-    _changelog = {"foo": "bar"}
-    return render(request, 'viperweb/changelog.html', {'changelog': _changelog,
-                                                       'projects': project_list()})
 
 
-# View Changelog
-def about(request):
-    return render(request, 'viperweb/about.html', {'projects': project_list(),
-                                                   'extractors': Extractor().extractors})
+# Template
+# class IndexView(TemplateView, LoginRequiredMixin):
+#     """Index View"""
+#
+#     def get(self, request, *args, **kwargs):
+#         """get"""
+#         template_name = "touren/index.html"
+#
+#         # messages.success(request, "success: Alles gut (Test)")
+#         # messages.error(request, "error: Test Fehlermeldung")
+#         return render(request, template_name, {})
 
-
-# Cli Commands
-def cli_viewer(request):
-    return render(request, 'viperweb/cli.html', {'results': '',
-                                                 'projects': project_list()})

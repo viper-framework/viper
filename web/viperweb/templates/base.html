@@ -76,8 +76,9 @@
                         <li><a href="https://viper-framework.readthedocs.io/en/latest/">Docs (RTD)</a></li>
                         <li><a href="https://github.com/viper-framework/viper/issues">Issues (GH)</a></li>
                         <li class="divider"></li>
-                        <li><a href="{% url "changelog" %}">ChangeLog</a></li>
                         <li><a href="{% url "about" %}">About</a></li>
+                        <li><a href="{% url "changelog" %}">Changelog</a></li>
+                        <li><a href="{% url "config-file" %}">Config</a></li>
                     </ul>
                 </li>
             </ul>
@@ -139,21 +140,41 @@
 <!-- End Nav -->
 
 <div class="container-fluid">
+
     <p style="margin-bottom: 25px;"><img src="{% static "viperweb/images/viper.png" %}" width="250" height="60" alt="Viper Malware"/></p>
     <!-- End Header  -->
 
-    {% if error %}
-    <div class="alert alert-danger text-center">
-        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-        <strong>Error!</strong> {{ error }}.
-    </div>
-    {% endif %}
 
-    {% if success %}
-    <div class="alert alert-success text-center">
-        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
-        <strong>Success!</strong> {{ success }}.
-    </div>
+    <!-- Bootstrap display flashed messages -->
+    <!-- possible values: alert alert-[info|success|warning|danger] -->
+    <!--
+        from django.contrib import messages
+        messages.info(request, "info: Invalid credentials!")
+        messages.success(request, "success: Invalid credentials!")
+        messages.warning(request, "warning: Invalid credentials!")
+        messages.error(request, "error: Invalid credentials!")
+        # Debug messages ignored by default settings.py: MESSAGE_LEVEL = message_constants.DEBUG
+        messages.debug(request, "debug: Invalid credentials!")
+    -->
+
+    {% if messages %}
+        <div class="page-header">
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                    <div class="alert alert-danger text-center">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <strong>Error: </strong> {{ message }}.</div>
+                {% elif message.tags %}
+                    <div class="alert alert-{{ message.tags }} text-center">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <strong>{{ message.tags }}:</strong> {{ message }}.</div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <strong>Info!</strong> {{ message }}.</div>
+                {% endif %}
+            {% endfor %}
+        </div>
     {% endif %}
 
 {#    {% if user.is_authenticated %}#}

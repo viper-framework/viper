@@ -220,6 +220,7 @@
                 </select>
                 <button type="submit" class="btn btn-default" name="submit">Run</button>
                 <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
+                {% csrf_token %}
 
             </form>
             <hr/>

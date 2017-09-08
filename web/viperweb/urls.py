@@ -8,47 +8,29 @@ from . import views
 from .forms import MyAuthenticationForm
 
 urlpatterns = [
-    # Main Page
-    url(r'^$', views.main_page, name='main_page'),
-
-
+    # login/logout (accounts)
     url(r'^accounts/login/$', login,
         {'template_name': 'viperweb/user_login.html', 'authentication_form': MyAuthenticationForm}, name='login'),
     url(r'^accounts/logout/$', logout,
         {'template_name': 'viperweb/logged_out.html'}, name='logout'),
 
-    # Project Page (Main view)
-    url(r'^project/(?P<project>.+)/$', views.main_page, name='main-page-project'),
+    # Main Page
+    url(r'^$', views.MainPageView.as_view(), name='main_page'),
+    url(r'^project/(?P<project>[^/]+)/$', views.MainPageView.as_view(), name='main-page-project'),  # Project Page (Main view)
 
-    # Changelog Page
-    url(r'^changelog/', views.changelog, name='changelog'),
+    url(r'^about/', views.AboutView.as_view(), name='about'),
+    url(r'^changelog/', views.ChangelogView.as_view(), name='changelog'),
+    url(r'^cli/', views.CliView.as_view(), name='cli'),
+    url(r'^config/$', views.ConfigView.as_view(), name='config-file'),
+    url(r'^create/$', views.CreateProjectView.as_view(), name='create-project'),
 
-    # About Page
-    url(r'^about/', views.about, name='about'),
+    url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/$', views.FileView.as_view(), name='file-view'),  # File Page
+    url(r'^project/(?P<project>[^/]+)/file/$', views.FileView.as_view(), name='file-list'),  # File List for Project TODO(frennkie) not used
 
-    # File Page
-    url(r'^file/(?P<project>.+)/(?P<sha256>[^/]+)/$', views.file_view, name='file-view'),
-    url(r'^file/(?P<project>.+)/$', views.file_view, name='file-list'),
+    url(r'^hex/$', views.hex_view, name='hex-view'),  # Hex
+    url(r'^module/$', views.run_module, name='run-module'),  # Module Ajax
+    url(r'^search/$', views.search_file, name='search-file'),  # Search
+    url(r'^urldownload/', views.UrlDownloadView.as_view(), name='url-download'),  # Upload from URL
+    url(r'^yara/$', views.yara_rules, name='yara-rules'),  # Yara
 
-    # Hex
-    url(r'^hex/$', views.hex_view, name='hex-view'),
-
-    # Module Ajax
-    url(r'^module/$', views.run_module, name='run-module'),
-
-    # Yara
-    url(r'^yara/$', views.yara_rules, name='yara-rules'),
-
-    # Create Project
-    url(r'^create/$', views.create_project, name='create-project'),
-
-
-    # Upload from URL
-    url(r'^urldownload/', views.url_download, name='url-download'),
-
-    # Config File
-    url(r'^config/$', views.config_file, name='config-file'),
-
-    # Search
-    url(r'^search/$', views.search_file, name='search-file'),
 ]
