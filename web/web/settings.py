@@ -148,10 +148,10 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers': ['null'],
-            # 'handlers': ['console'],
+            # 'handlers': ['null'],
+            'handlers': ['console'],
             'propagate': True,
-            'level': 'DEBUG',
+            'level': 'INFO',
         },
         'viper': {
             # 'handlers': ['null'],

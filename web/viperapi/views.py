@@ -98,7 +98,7 @@ class SingleTermMultiFieldStartsWithSearchFilter(SearchFilter):
         if not search_fields or not search_terms:
             return queryset
 
-        # print("Searching for \"{}\" in: {}".format(search_terms[0], search_fields))  # TODO remove this debug line
+        log.debug("Searching for \"{}\" in: {}".format(search_terms[0], search_fields))
         return queryset.filter(or_(*[(getattr(view.model, x).startswith(search_terms[0])) for x in search_fields]))
 
 
