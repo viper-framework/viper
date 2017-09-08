@@ -44,7 +44,7 @@ try:
 except ImportError:
     from commands import getoutput  # commands was deprecated in Py2.
 
-log = logging.getLogger("viper")
+log = logging.getLogger("viper-web")
 cfg = __config__
 
 

@@ -5,9 +5,9 @@
 from django.conf.urls import include, url
 from django.contrib import admin
 
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+cfg = __config__
 
 
 urlpatterns = [

@@ -17,6 +17,7 @@ from viper.common.out import print_info, print_warning, print_error, print_succe
 from viper.common.constants import VIPER_ROOT
 from viper.core.config import __config__
 
+log = logging.getLogger("viper-web")
 # Viper Global Config
 cfg = __config__
 
@@ -101,4 +102,5 @@ if __name__ == '__main__':
 
     # run Django built-in Web Server
     print_info("Starting Web Server on {}:{}".format(web_host, web_port))
+    log.info("Starting Web Server on {}:{}".format(web_host, web_port))
     execute_from_command_line(["manage.py", "runserver", "{}:{}".format(web_host, web_port)])

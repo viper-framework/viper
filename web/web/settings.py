@@ -5,17 +5,10 @@
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 
-from viper.core.config import Config
-cfg = Config()
+from viper.core.config import __config__
+cfg = __config__
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Viper Path
-# V_PATH = os.path.join(os.getcwd())
-# sys.path.append(V_PATH)
-#
-# VIPER_DATA_DIR = "/home/robbie/.viper"  # TODO(frennkie) !
-
 
 # https://github.com/cuckoobox/cuckoo/blob/master/web/web/settings.py
 # Unique secret key generator.
@@ -134,7 +127,8 @@ LOGGING = {
     'version': 1,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            'format': '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s',
+            'datefmt': "%Y-%m-%d %H:%M:%S",
         },
         'simple': {
             'format': '%(levelname)s %(message)s'
@@ -144,18 +138,32 @@ LOGGING = {
         'null': {
             'level': 'DEBUG',
             'class': 'logging.NullHandler',
+            'formatter': 'verbose'
         },
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
         },
     },
     'loggers': {
         'django': {
+            'handlers': ['null'],
+            # 'handlers': ['console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'viper': {
             # 'handlers': ['null'],
             'handlers': ['console'],
             'propagate': True,
             'level': 'INFO',
+        },
+        'viper-web': {
+            # 'handlers': ['null'],
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'DEBUG',
         },
         'sqlalchemy.pool.NullPool': {
             'handlers': ['null'],
