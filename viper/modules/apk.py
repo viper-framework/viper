@@ -2,6 +2,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import binascii
+
+from cryptography.hazmat.primitives import hashes
+
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -27,6 +31,7 @@ class AndroidPackage(Module):
         self.parser.add_argument('-p', '--perm', action='store_true', help='Show APK permissions')
         self.parser.add_argument('-f', '--file', action='store_true', help='Show APK file list')
         self.parser.add_argument('-u', '--url', action='store_true', help='Show URLs in APK')
+        self.parser.add_argument('-c', '--cert', action='store_true', help='Show certificate fingerprint')
         self.parser.add_argument('-a', '--all', action='store_true', help='Run all options excluding dump')
         self.parser.add_argument('-d', '--dump', metavar='dump_path', help='Extract all items from archive')
 
@@ -138,6 +143,16 @@ class AndroidPackage(Module):
             for url in url_set:
                 self.log('item', url.encode('utf-8'))
 
+        # Show certificate fingerprint
+        def andro_cert(a):
+            rsa_signature_filename = a.get_signature_name()
+            cert = a.get_certificate(rsa_signature_filename)
+
+            self.log('info', 'Certificate Fingerprints')
+            for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
+                fingerprint = h.name + ": " + binascii.hexlify(cert.fingerprint(h())).decode("ascii")
+                self.log('item', fingerprint)
+
         # Decompile and Dump all the methods
         def andro_dump(vm, vmx, dump_path):
             # Export each decompiled method
@@ -215,6 +230,8 @@ class AndroidPackage(Module):
             andro_file(a)
         elif self.args.url:
             andro_url(vm)
+        elif self.args.cert:
+            andro_cert(a)
         elif self.args.all:
             andro_info(a)
             andro_perm(a)

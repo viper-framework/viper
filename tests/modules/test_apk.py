@@ -97,6 +97,18 @@ class TestAPK:
         assert re.search(r".*http://schemas.android.com/apk/res/android.*", out)
         assert not re.search(r".*http://foo.example.bar.*", out)
 
+    @pytest.mark.parametrize("filename", ["hello-world.apk"])
+    def test_cert(self, capsys, filename):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = apk.AndroidPackage()
+        instance.command_line = ["-c"]
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r"md5: 2487974b62a94eaa8254b95dd8ce8fc7", out)
+        assert re.search(r"sha1: 652f6129c87d0540bf986fc00efd9ab8a78784de", out)
+
     @pytest.mark.parametrize("filename,pkg_name", [("hello-world.apk", "de.rhab.helloworld")])
     def test_all(self, capsys, filename, pkg_name):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
