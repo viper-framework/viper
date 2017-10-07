@@ -29,6 +29,7 @@ from django.core.files.temp import NamedTemporaryFile
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
+from viper.core.project import get_project_list
 from viper.common.objects import File
 from viper.common import network
 from viper.core.storage import store_sample, get_sample_path
@@ -95,19 +96,6 @@ def upload_temp():
     temp_dir = tempfile.mkdtemp()
     yield temp_dir
     shutil.rmtree(temp_dir)
-
-
-def project_list():
-    # Get a list of projects - TODO (frennkie) shouldn't this come from core/backend/api ?
-    projects_path = os.path.join(__project__.base_path, 'projects')
-    p_list = []
-    if os.path.exists(projects_path):
-        for project in os.listdir(projects_path):
-            project_path = os.path.join(projects_path, project)
-            if os.path.isdir(project_path):
-                p_list.append(project)
-    p_list.append("default")
-    return sorted(p_list)
 
 
 def open_db(project):
@@ -257,7 +245,7 @@ def add_file(file_path, name=None, tags=None, parent=None):
 ##
 
 # Main Page
-class MainPageView(TemplateView, LoginRequiredMixin):
+class MainPageView(LoginRequiredMixin, TemplateView):
     """Main Page"""
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/index.html"
@@ -288,17 +276,15 @@ class MainPageView(TemplateView, LoginRequiredMixin):
         except EmptyPage:
             samples = paginator.page(paginator.num_pages)
 
-        print("Project: {}".format(project))
-
         return render(request, template_name, {'sample_list': samples,
                                                'sample_count': sample_count,
                                                'samples': [first_sample, last_sample],
                                                'extractors': Extractor().extractors,
                                                'project': project,
-                                               'projects': project_list()})
+                                               'projects': get_project_list()})
 
 
-class UrlDownloadView(TemplateView, LoginRequiredMixin):
+class UrlDownloadView(LoginRequiredMixin, TemplateView):
     """Download a file from URL and add to project"""
     def post(self, request, *args, **kwargs):
         # Set Project
@@ -335,7 +321,7 @@ class UrlDownloadView(TemplateView, LoginRequiredMixin):
             return redirect(reverse("main-page-project", kwargs={"project": project}))
 
 
-class VtDownloadView(TemplateView, LoginRequiredMixin):
+class VtDownloadView(LoginRequiredMixin, TemplateView):
     """Download a file from Virustotal and add to project"""
 
     # VirusTotal Download
@@ -363,7 +349,7 @@ class VtDownloadView(TemplateView, LoginRequiredMixin):
 
 
 # File View
-class FileView(TemplateView, LoginRequiredMixin):
+class FileView(LoginRequiredMixin, TemplateView):
     """Show details for a file/sample"""
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/file.html"
@@ -427,11 +413,11 @@ class FileView(TemplateView, LoginRequiredMixin):
                                                'note_list': note_list,
                                                'tag_list': tag_list,
                                                'project': project,
-                                               'projects': project_list(),
+                                               'projects': get_project_list(),
                                                'module_history': module_history})
 
 
-class RunModuleView(TemplateView, LoginRequiredMixin):
+class RunModuleView(LoginRequiredMixin, TemplateView):
     """Run a module and return output"""
     def post(self, request, *args, **kwargs):
         # Get the hash of the file we want to run a command against
@@ -461,7 +447,7 @@ class RunModuleView(TemplateView, LoginRequiredMixin):
         return HttpResponse('<pre>{0}</pre>'.format(str(parse_text(module_results))))
 
 
-class HexView(TemplateView, LoginRequiredMixin):
+class HexView(LoginRequiredMixin, TemplateView):
     """Read file a return as Hex"""
     def post(self, request, *args, **kwargs):
         # get post data
@@ -498,10 +484,10 @@ class HexView(TemplateView, LoginRequiredMixin):
         return HttpResponse(html_string)
 
 
-class YaraRulesView(TemplateView, LoginRequiredMixin):
+class YaraRulesView(LoginRequiredMixin, TemplateView):
     """Manage Yara Rules"""
     def get(self, request, *args, **kwargs):
-
+        template_name = 'viperweb/yara.html'
         rule_path = os.path.join(VIPER_ROOT, 'data/yara')
         rule_list = os.listdir(rule_path)
         # Read Rules
@@ -511,10 +497,9 @@ class YaraRulesView(TemplateView, LoginRequiredMixin):
         rule_text = ''
 
         if action == 'list' or action is None:
-            return render(request, 'viperweb/yara.html', {'rule_list': rule_list,
-                                                          'rule_text': rule_text,
-                                                          'projects': project_list(),
-                                                          })
+            return render(request, template_name, {'rule_list': rule_list,
+                                                   'rule_text': rule_text,
+                                                   'projects': get_project_list()})
         elif action == 'display' and rule:
             # Display Rule Contents
             rule_file = os.path.join(rule_path, rule)
@@ -537,19 +522,21 @@ class YaraRulesView(TemplateView, LoginRequiredMixin):
                 rule_list.remove(rule_name)
             else:
                 rule_text = 'Invalid Rule'
-            return render(request, 'viperweb/yara.html', {'rule_list': rule_list,
-                                                          'rule_text': rule_text,
-                                                          'projects': project_list()})
+            return render(request, template_name, {'rule_list': rule_list,
+                                                   'rule_text': rule_text,
+                                                   'projects': get_project_list()
+                                                   })
         else:
             rule_text = 'Invalid Action'
 
-        return render(request, 'viperweb/yara.html', {'rule_list': rule_list,
-                                                      'rule_name': rule,
-                                                      'rule_text': rule_text,
-                                                      'projects': project_list()})
+        return render(request, template_name, {'rule_list': rule_list,
+                                               'rule_name': rule,
+                                               'rule_text': rule_text,
+                                               'projects': get_project_list()})
 
     # Modify Rules
     def post(self, request, *args, **kwargs):
+        template_name = 'viperweb/yara.html'
 
         rule_path = os.path.join(VIPER_ROOT, 'data/yara')
         rule_list = os.listdir(rule_path)
@@ -566,10 +553,10 @@ class YaraRulesView(TemplateView, LoginRequiredMixin):
         else:
             rule_text = "The File Name did not match the style 'name.yar'"
 
-        return render(request, 'viperweb/yara.html', {'rule_list': rule_list,
-                                                      'rule_name': rule_name,
-                                                      'rule_text': rule_text,
-                                                      'projects': project_list()})
+        return render(request, template_name, {'rule_list': rule_list,
+                                               'rule_name': rule_name,
+                                               'rule_text': rule_text,
+                                               'projects': get_project_list()})
 
 
 class AboutView(TemplateView):
@@ -577,7 +564,7 @@ class AboutView(TemplateView):
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/about.html"
 
-        return render(request, template_name, {'projects': project_list(),
+        return render(request, template_name, {'projects': get_project_list(),
                                                'extractors': Extractor().extractors})
 
 
@@ -588,20 +575,20 @@ class ChangelogView(TemplateView):
 
         _changelog = {"foo": "bar"}
         return render(request, template_name, {'changelog': _changelog,
-                                               'projects': project_list()})
+                                               'projects': get_project_list()})
 
 
-class CliView(TemplateView, LoginRequiredMixin):
+class CliView(LoginRequiredMixin, TemplateView):
     """Show GUI that implement the command line interface (CLI)"""
     def get(self, request, *args, **kwargs):
 
         raise NotImplementedError  # TODO(frennkie) not implemented
         # template_name = "viperweb/cli.html"
         # return render(request, template_name, {'results': '',
-        #                                        'projects': project_list()})
+        #                                        'projects': get_project_list()})
 
 
-class ConfigView(TemplateView, LoginRequiredMixin):
+class ConfigView(LoginRequiredMixin, TemplateView):
     """Show a simple page listing the settings from the config file"""
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/config.html"
@@ -611,14 +598,14 @@ class ConfigView(TemplateView, LoginRequiredMixin):
         for section in sections:
             config_values[section] = cfg.get(section)
         return render(request, template_name, {'config_values': config_values,
-                                               'projects': project_list()})
+                                               'projects': get_project_list()})
 
 
-class CreateProjectView(TemplateView, LoginRequiredMixin):
+class CreateProjectView(LoginRequiredMixin, TemplateView):
     """Create project (if not existing) and switch (redirect) to it"""
     def post(self, request, *args, **kwargs):
         project_name = request.POST['project'].replace(' ', '_')
-        if project_name not in project_list():
+        if project_name not in get_project_list():
             log.debug("creating new project: {}".format(project_name))
 
         log.debug("redirecting to project: {}".format(project_name))
@@ -626,9 +613,10 @@ class CreateProjectView(TemplateView, LoginRequiredMixin):
         return redirect(reverse('main-page-project', kwargs={'project': project_name}))
 
 
-class SearchFileView(TemplateView, LoginRequiredMixin):
+class SearchFileView(LoginRequiredMixin, TemplateView):
     """ Search file"""
     def post(self, request, *args, **kwargs):
+        template_name = "viperweb/search.html"
         key = request.POST.get('key')
         value = request.POST.get('term').lower()
         curr_project = request.POST.get('curr_project')
@@ -645,12 +633,10 @@ class SearchFileView(TemplateView, LoginRequiredMixin):
         # Search All Projects
         if project_search:
             # Get list of project paths
-            projects = project_list()
+            projects = get_project_list()
         else:
             # If not searching all projects what are we searching
             projects.append(curr_project)
-
-        print(projects)
 
         # Search each Project in the list
         for project in projects:
@@ -667,17 +653,17 @@ class SearchFileView(TemplateView, LoginRequiredMixin):
 
         if results:
             # Return some things
-            return render(request, 'viperweb/search.html', {'results': results,
-                                                            'projects': project_list()})
+            return render(request, template_name, {'results': results,
+                                                   'projects': get_project_list()})
         else:
-            return render(request, 'viperweb/search.html', {'results': [],
-                                                            'projects': project_list()})
+            return render(request, template_name, {'results': [],
+                                                   'projects': get_project_list()})
 
 
 
 
 # Template
-# class IndexView(TemplateView, LoginRequiredMixin):
+# class IndexView(LoginRequiredMixin, TemplateView):
 #     """Index View"""
 #
 #     def get(self, request, *args, **kwargs):

@@ -80,3 +80,25 @@ http -a admin:password http://127.0.0.1:8080/api/v3/project/default/tags/1/ tag=
 or
 http http://127.0.0.1:8080/api/v3/project/default/tags/1/ "Authorization: Token 12...89" tag="new_tag"
 ```
+
+
+#### Mac Issues
+
+##### Main Page (Safari)
+
+Upload doesn't do anything
+
+##### Modules
+
+```
+Missing dependency, install virustotal-api (`pip install virustotal-api`)
+Missing dependency, install virustotal-api (`pip install virustotal-api`)
+Something went wrong: name 'BeautifulSoup' is not defined
+```
+
+##### Hex
+
+```
+/bin/sh: hd: command not found
+```
+

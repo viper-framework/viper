@@ -17,6 +17,7 @@ $.ajaxSetup({
     }
 });
 
+/* TODO(frennkie) does any of this work in Safari?!?!? */
 
 $("#upload_form").submit(function (event) {
     console.log("upload_form called");

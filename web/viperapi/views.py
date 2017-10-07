@@ -46,6 +46,7 @@ from .serializers import MalwareDownloadSerializer, MalwareUploadSerializer
 # Viper imports
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
+from viper.core.project import get_project_list
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database, Malware, Tag, Note, Analysis
@@ -59,31 +60,6 @@ except ImportError:
 
 log = logging.getLogger("viper-web")
 cfg = __config__
-
-
-##
-# Helper Functions
-##
-def get_project_list():
-    # get list of projects
-    projects_path = __project__.get_projects_path()
-    p_list = []
-    if os.path.exists(projects_path):
-        for project in os.listdir(projects_path):
-            project_path = os.path.join(projects_path, project)
-            if os.path.isdir(project_path):
-                p_list.append(project)
-    return p_list
-
-# def open_project_db(project):
-#     # check for valid project and return Database object
-#     if project == 'default':
-#         __project__.open(project)
-#     elif project in get_project_list():
-#         __project__.open(project)
-#     else:
-#         return False
-#     return Database()
 
 ################
 # API v3 (DRF) #
@@ -126,14 +102,14 @@ def get_project_open_db():
     def my_decorator(func):
         @wraps(func)
         def func_wrapper(viewset, *args, **kwargs):
-            log.debug("Decorator called: {}".format(viewset))
+            log.debug("running decorator: get_project_open_db - called by: {}".format(viewset))
 
             project = viewset.kwargs.get(viewset.lookup_field_project, None)
             if project == 'default':
                 __project__.open(project)
                 db = Database()
             elif project in get_project_list():
-                print("setting DB")
+                log.debug("setting project to: {}".format(project))
                 __project__.open(project)
                 db = Database()
             else:
@@ -346,17 +322,17 @@ class MalwareViewSet(ViperGenericViewSet):
         instance = self.get_object()
 
         try:
-            log.debug("os.remove Malware sample at path: {}".format(get_sample_path(instance.sha256)))
+            log.debug("deleting (os.remove) Malware sample at path: {}".format(get_sample_path(instance.sha256)))
             os.remove(get_sample_path(instance.sha256))
         except OSError:
             log.error("failed to delete Malware sample: {}".format(get_sample_path(instance.sha256)))
 
-        log.debug("db.delete_file for Malware ID: {}".format(instance.id))
+        log.debug("deleting (db.delete_file) from DB for Malware ID: {}".format(instance.id))
         db.delete_file(instance.id)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # TODO(frennkie) - would make sense.. so.. implement it
+    # TODO(frennkie) - this needs testing
     @detail_route(methods=['get', 'post'], serializer_class=MalwareDownloadSerializer)
     def download(self, request, *args, ** kwargs):
         """Download a Malware instance as a raw or compressed file"""
@@ -365,14 +341,10 @@ class MalwareViewSet(ViperGenericViewSet):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        print(serializer.validated_data)
 
         # get instance
         instance = self.get_object()
-        print(instance)
-
         dl_file = open(get_sample_path(instance.sha256), 'rb')
-        print("Path: {}".format(dl_file))
 
         # TODO(frennkie) encoding?!?! CLRF, LF ?! XXX
         response = HttpResponse(DjangoFile(dl_file), content_type=instance.mime)
@@ -383,7 +355,7 @@ class MalwareViewSet(ViperGenericViewSet):
     def _process_uploaded(db, uploaded_file_path, file_name, tag_list=None):
         """_process_uploaded add one uploaded file to database and to storage then remove uploaded file"""
 
-        print("will add: {} as {}".format(uploaded_file_path, file_name))  # TODO(frennkie) remove
+        log.debug("adding: {} as {}".format(uploaded_file_path, file_name))
 
         malware = File(uploaded_file_path)
         malware.name = file_name
@@ -391,7 +363,7 @@ class MalwareViewSet(ViperGenericViewSet):
         if get_sample_path(malware.sha256):
             error = {"error": {"code": "DuplicateFileHash",
                                "message": "File hash exists already: {} (sha256: {})".format(malware.name, malware.sha256)}}
-            print("failed: {}".format(error))  # TODO(frennkie) write to log
+            log.error("adding failed: {}".format(error))
             raise ValidationError(detail=error)  # TODO(frennkie) raise more specific error?! so that we can catch it..?!
         # Try to store file object into database
         if db.add(obj=malware, tags=tag_list):
@@ -400,13 +372,12 @@ class MalwareViewSet(ViperGenericViewSet):
             # we don't want to have the binary lying in the repository with no
             # associated database record.
             malware_stored_path = store_sample(malware)
-            print("success - Stored file \"{0}\" to {1}".format(malware.name, malware_stored_path))  # TODO(frennkie) remove
+            log.debug("added file \"{0}\" to {1}".format(malware.name, malware_stored_path))
 
         else:
             error = {"error": {"code": "DatabaseAddFailed",
                                "message": "Adding File to Database failed: {} (sha256: {})".format(malware.name, malware.sha256)}}
-            log.error("failed: {}".format(error))
-            print("failed: {}".format(error))  # TODO(frennkie) write to log
+            log.error("adding failed: {}".format(error))
             raise ValidationError(detail=error)
 
         # clean up
@@ -414,7 +385,6 @@ class MalwareViewSet(ViperGenericViewSet):
             os.remove(uploaded_file_path)
         except OSError as err:
             log.error("failed to delete temporary file: {}".format(err))
-            print("failed to delete temporary file: {}".format(err))
 
         return malware
 
@@ -427,11 +397,10 @@ class MalwareViewSet(ViperGenericViewSet):
         """Upload file as new Malware instance"""
         session = db.Session()
 
-        print("Validate POST data")
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        print("Validated Data: {}".format(serializer.validated_data))
+        log.debug("Validated Data: {}".format(serializer.validated_data))
         store_archive = serializer.validated_data.get("store_archive", None)
         archive_pass = serializer.validated_data.get("archive_pass", None)
         extractor = serializer.validated_data.get("extractor", None)
@@ -443,17 +412,17 @@ class MalwareViewSet(ViperGenericViewSet):
         tmp_dirs = list()
 
         for uploaded_file in uploaded_files:
-            print("Working on: {}".format(uploaded_file))
+            log.debug("Working on: {}".format(uploaded_file))
 
             # if a file name was provided (to override name of uploaded file) then us it
             uploaded_file_path = uploaded_file.temporary_file_path()
-            print("Working on (Path): {}".format(uploaded_file_path))
+            log.debug("Working on (Path): {}".format(uploaded_file_path))
 
             if not uploaded_file_name:
                 uploaded_file_name = "{}".format(uploaded_file)
 
             if extractor:
-                print("Extractor: {}".format(extractor))
+                log.debug("Extractor: {}".format(extractor))
 
                 if extractor == "auto":
                     tmp_dir = tempfile.mkdtemp(prefix="viper_tmp_")
@@ -477,7 +446,7 @@ class MalwareViewSet(ViperGenericViewSet):
                     res = ext.extract(archive_path=new_uploaded_file, cls_name=extractor, password=archive_pass)
 
                 if res:
-                    print("Extract Result: {} - Path: {}".format(res, ext.output_path))
+                    log.debug("Extract Result: {} - Path: {}".format(res, ext.output_path))
                     tmp_dirs.append(ext.output_path)
                     for dir_name, dir_names, file_names in walk(ext.output_path):
                         # Add each collected file.
@@ -485,12 +454,12 @@ class MalwareViewSet(ViperGenericViewSet):
                             to_process.append((os.path.join(dir_name, file_name), file_name))
 
                     if store_archive:
-                        print("need to store the Archive too")
+                        log.debug("need to store the Archive too")
                         to_process.insert(0, (new_uploaded_file, os.path.basename(new_uploaded_file)))
                         # TODO(frennkie) Parent Child relation?!
 
                 else:
-                    print("Extract Result: {}".format(res))
+                    log.debug("Extract Result: {}".format(res))
                     # TODO(frennkie) raise?!
 
             else:
@@ -502,18 +471,17 @@ class MalwareViewSet(ViperGenericViewSet):
 
         processed = list()
         for item in to_process:
-            processed.append(self._process_uploaded(db, item[0], item[1], tag_list))  # TODO(frennkie) Error handling (e.g.  duplicate hashes?!)
+            processed.append(self._process_uploaded(db, item[0], item[1], tag_list))  # TODO(frennkie) Error handling (e.g. duplicate hashes?!)
 
-        print("Tmp Dirs: {}".format(tmp_dirs))
+        log.debug("Tmp Dirs: {}".format(tmp_dirs))
         for item in tmp_dirs:
             try:
                 shutil.rmtree(item)
             except OSError as err:
                 log.error("failed to delete temporary dir: {}".format(err))
-                print("failed to delete temporary dir: {}".format(err))
 
         if not len(processed):
-            print("failed..")  # TODO(frennkie) write to log
+            log.error("failed..")
             raise Exception("Something went wrong")
 
         elif len(processed) == 1:
@@ -599,7 +567,7 @@ class MalwareTagViewSet(ViperGenericMalwareViewSet, TagViewSet, CreateModelMixin
         serializer.is_valid(raise_exception=True)
 
         new_tag = serializer.validated_data['tag']
-        print("I will now add tag: {} to Malware: {}".format(new_tag, malware))
+        log.debug("I will now add tag: {} to Malware: {}".format(new_tag, malware))
         db.add_tags(malware.sha256, new_tag)  # add_tags expects a list of tags
 
         obj = session.query(self.model).filter(Tag.tag == new_tag[0]).one_or_none()  # TODO(frennkie) new_tag[0] ..?! this now create multiple
@@ -626,14 +594,12 @@ class MalwareTagViewSet(ViperGenericMalwareViewSet, TagViewSet, CreateModelMixin
 
         if not tag.malware:
             log.error("Tag: {} not related to any Malware - will remove it".format(tag))
-            print("Tag: {} not related to any Malware - will remove it".format(tag))
             try:
                 session.delete(tag)
                 session.commit()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             except Exception as err:
                 log.error("Tag: {} problem".format(tag, err))
-                print("Tag: {} problem".format(tag, err))
 
         malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).one_or_none()
         if not malware:
@@ -708,7 +674,7 @@ class MalwareNoteViewSet(ViperGenericMalwareViewSet, NoteViewSet, UpdateModelMix
 
         new_title = serializer.validated_data['title']
         new_body = serializer.validated_data['body']
-        print("I will now add Note: {} to Malware: {}".format(new_title, malware))  # TODO(frennkie) remove this
+        log.debug("I will now add Note: {} to Malware: {}".format(new_title, malware))
         db.add_note(malware.sha256, new_title, new_body)
 
         try:
@@ -789,8 +755,8 @@ class MalwareAnalysisViewSet(ViperGenericMalwareViewSet, AnalysisViewSet):
 def test(request):
     """Test GET and POST API (**no** authentication)"""
     if request.method == 'POST':
-        return Response({"message": "Got some data! (Authenticated has not been checked)", "data": request.data})
-    return Response({"message": "Hello Anonymous! (Authenticated has not been checked)"})
+        return Response({"message": "Got some data! (Authentication has not been checked)", "data": request.data})
+    return Response({"message": "Hello Anonymous! (Authentication has not been checked)"})
 
 
 @api_view(['GET', 'POST'])
@@ -798,8 +764,8 @@ def test(request):
 def test_authenticated(request):
     """Test GET and POST API (authentication **required**)"""
     if request.method == 'POST':
-        return Response({"message": "Got some data! (You are authenticated)", "data": request.data})
-    return Response({"message": "Hello {}! (You are authenticated)".format(request.user)})
+        return Response({"message": "Got some data! (Authentication validated successfully)", "data": request.data})
+    return Response({"message": "Hello {}! (Authentication validated successfully)".format(request.user)})
 
 # TODO(frennkie) check whether and how to run modules
 
@@ -864,7 +830,7 @@ def test_authenticated(request):
 #                 module.run()
 #
 #                 command_outputs += module.output
-#                 print type(module.output)
+#                 print(type(module.output))
 #                 del(module.output[:])
 #             else:
 #                 command_outputs.append({'message': '{0} is not a valid command'.format(cmd_line)})
