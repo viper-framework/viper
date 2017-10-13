@@ -24,6 +24,7 @@ import tempfile
 import contextlib
 import tarfile
 
+import bleach
 from zipfile import ZipFile
 from gzip import GzipFile
 from bz2 import BZ2File
@@ -113,40 +114,48 @@ def parse(data):
 def print_output(output):
     if not output:
         return '<p class="text-danger">! The command Generated no Output</p>'
+
     return_html = ''
+
     for entry in output:
-        # Skip lines that say seesion opened
-        if 'Session opened on' in entry['data']:
-            continue
-        if entry['type'] == 'info':
-            return_html += '<p class="text-primary">{0}</p>'.format(entry['data'])
-            #self.log('info', entry['data'])
-        elif entry['type'] == 'item':
-            return_html += '<li class="text-primary">{0}</li>'.format(entry['data'])
-        elif entry['type'] == 'warning':
-            return_html += '<p class="text-warning">{0}</p>'.format(entry['data'])
-        elif entry['type'] == 'error':
-            return_html += '<p class="text-danger">{0}</p>'.format(entry['data'])
-        elif entry['type'] == 'success':
-            return_html += '<p class="text-success">{0}</p>'.format(entry['data'])
-        elif entry['type'] == 'table':
+        if entry['type'] == 'table':
             # set the table
             return_html += '<table class="table table-bordered">'
+            
             # Column Titles
             return_html += '<tr>'
             for column in entry['data']['header']:
-                return_html += '<th>{0}</th>'.format(column)
+                return_html += '<th>{0}</th>'.format(bleach.clean(column))
             return_html += '</tr>'
+            
             # Rows
             for row in entry['data']['rows']:
                 return_html += '<tr>'
                 for cell in row:
-                    return_html += u'<td>{0}</td>'.format(cell)
+                    return_html += u'<td>{0}</td>'.format(bleach.clean(cell))
                 return_html += '</tr>'
             # Close table
             return_html += '</table>'
         else:
-            return_html += '<p>{0}</p>'.format(entry['data'])
+            # Skip lines that say seesion opened
+            if 'Session opened on' in entry['data']:
+                continue
+
+            data = bleach.clean(entry['data'])
+
+            if entry['type'] == 'info':
+                return_html += '<p class="text-primary">{0}</p>'.format(data)
+            elif entry['type'] == 'item':
+                return_html += '<li class="text-primary">{0}</li>'.format(data)
+            elif entry['type'] == 'warning':
+                return_html += '<p class="text-warning">{0}</p>'.format(data)
+            elif entry['type'] == 'error':
+                return_html += '<p class="text-danger">{0}</p>'.format(data)
+            elif entry['type'] == 'success':
+                return_html += '<p class="text-success">{0}</p>'.format(data)
+            else:
+                return_html += '<p>{0}</p>'.format(data)
+
     return return_html
 
 def parse_text(module_text):
@@ -406,10 +415,7 @@ def add_file():
 
         # Add each file
         for new_file in file_list:
-            print new_file
-            obj = File(new_file)
             new_path = store_sample(obj)
-            print new_path
             success = True
             if new_path:
                 # Add file to the database.
@@ -785,11 +791,13 @@ if __name__ == '__main__':
 
     bv = bottle.__version__.split('.')[1]
     if int(bv) < 12:
-        print "Please Upgrade Bottle to the latest version 'sudo pip install --upgrade bottle'"
+        print("Please Upgrade Bottle to the latest version 'sudo pip install --upgrade bottle'")
         sys.exit()
 
     if not os.path.exists('projects'):
         os.mkdir('projects')
+
+    print("viper-web is currenly unmaintained! Please use at your own risk!")
 
     # Set template dir
     bottle.TEMPLATE_PATH.insert(0,os.path.join(VIPER_ROOT, 'data/web'))
