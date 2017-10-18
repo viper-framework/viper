@@ -240,6 +240,10 @@
         $(document).ready(function () {
             console.log("working on Project: {{ project }}");
         });
+
+        var malware_upload_url = "{% url 'viperapi_v3:malware-upload' project_name=project %}";
+        var malware_list_url = "{% url 'file-list' project=project %}";
+
     </script>
 {% endblock %}
 
