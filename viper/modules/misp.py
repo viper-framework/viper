@@ -9,7 +9,11 @@ import json
 import logging
 
 try:
-    from pymisp import PyMISP, PyMISPError, MISPEvent, EncodeFull
+    from pymisp import PyMISP, PyMISPError, MISPEvent
+    try:
+        from pymisp import MISPEncode
+    except ImportError:
+        from pymisp import EncodeFull as MISPEncode
     HAVE_PYMISP = True
 except:
     HAVE_PYMISP = False
@@ -169,7 +173,13 @@ class MISP(Module):
         # Hashes
         # Generic add
         temp_me = MISPEvent()
-        for t in sorted(temp_me.types):
+        if hasattr(temp_me, "types"):
+            known_types = temp_me.types
+        else:
+            # New API
+            known_types = temp_me.get_known_types()
+
+        for t in known_types:
             sp = subparsers_add.add_parser(t, help="Add {} to the event.".format(t))
             sp.add_argument(t, nargs='+')
 
@@ -398,7 +408,7 @@ class MISP(Module):
 
         path = os.path.join(event_path, filename)
         with open(path, 'w') as f:
-            json.dump(to_dump, f, cls=EncodeFull)
+            json.dump(to_dump, f, cls=MISPEncode)
         self.log('success', '{} stored successfully.'.format(filename.rstrip('.json')))
         return filename
 
