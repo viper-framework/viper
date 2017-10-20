@@ -17,7 +17,6 @@ $.ajaxSetup({
     }
 });
 
-/* TODO(frennkie) does any of this work in Safari?!?!? */
 
 $("#upload_form").submit(function (event) {
     console.log("upload_form called");
@@ -34,7 +33,7 @@ $("#upload_form").submit(function (event) {
             console.log("Submit successful");
             console.log(data);
 
-            // TODO(frennkie) this simply redirect to first..?!
+            // TODO(frennkie) this simply redirects to first..?!
             window.location.replace(malware_list_url + data[0].data.sha256);
         },
         error: function(data){

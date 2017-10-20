@@ -65,8 +65,10 @@
                 </tr>
                 <tr>
                     <th>Ssdeep</th>
-{#                    TODO(frennkie) Fuzzy Search doesn't do anything#}
-                    <td>{{ file_info.ssdeep }} <span><button type="button" class="btn btn-primary btn-xs">Fuzzy Search</button></span></td>
+                    <td>{{ file_info.ssdeep }}
+                        {# TODO(frennkie) Fuzzy Search doesn't do anything#}
+                        {# <span><button type="button" class="btn btn-primary btn-xs">Fuzzy Search</button></span>#}
+                    </td>
                 </tr>
                 <tr>
                     <th>Parent</th>
@@ -82,7 +84,10 @@
                 </tr>
                 <tr>
                     <th></th>
-                    <td><a class="btn btn-primary btn-small" href="{% url "viperapi_v3:malware-download" project_name=project sha256=file_info.sha256 %}">Download</a> <a class="btn btn-primary btn-small" onClick="$('#cuckoo').load('/cuckoo/submit?hash={{ file_info.sha256 }}&amp;project={{ project }}');">Cuckoo</a> <span id="cuckoo"></span></td>
+                    <td>
+                        <a class="btn btn-primary btn-small" href="{% url "viperapi_v3:malware-download" project_name=project sha256=file_info.sha256 %}">Download</a>
+                        <a class="btn btn-primary btn-small" onClick="$('#cuckoo').load('{% url "file-cuckoo-submit" project=project sha256=file_info.sha256 %}');">Cuckoo</a> <span id="cuckoo"></span>
+                    </td>
                 </tr>
             </table>
 

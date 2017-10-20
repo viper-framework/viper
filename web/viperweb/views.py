@@ -9,6 +9,7 @@ import json
 import tempfile
 import contextlib
 import shutil
+import requests
 
 # Logging
 import logging
@@ -611,6 +612,59 @@ class CreateProjectView(LoginRequiredMixin, TemplateView):
         log.debug("redirecting to project: {}".format(project_name))
         __project__.open(project_name)
         return redirect(reverse('main-page-project', kwargs={'project': project_name}))
+
+
+# TODO(frennkie) this needs testing - I currently don't have a running Cuckoo host..
+class CuckooSubmitView(LoginRequiredMixin, TemplateView):
+    """Submit file to a Cuckoo host"""
+    def get(self, request, *args, **kwargs):
+        project = kwargs.get("project", "default")
+        if project not in get_project_list():
+            raise Http404("unknown project: {}".format(project  ))
+
+        sha256 = kwargs.get("sha256")
+        if not sha256:
+            log.error("no sha256 hashed provided")
+            raise Http404("no sha256 hashed provided")
+
+        # Open a session
+        try:
+            path = get_sample_path(sha256)
+            __sessions__.new(path)
+        except Exception as err:
+            log.error("Error: {}".format(err))
+            return HttpResponse('<span class="alert alert-danger">Invalid Submission</span>'.format())
+
+        try:
+            # Return URI For Existing Entry
+            check_uri = '{0}/files/view/sha256/{1}'.format(cfg.cuckoo.cuckoo_host, sha256)
+            check_file = requests.get(check_uri)
+            if check_file.status_code == 200:
+                check_result = dict(check_file.json())
+                cuckoo_id = check_result['sample']['id']
+                return HttpResponse('<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cfg.cuckoo.cuckoo_web, str(cuckoo_id)))
+        except Exception as err:
+            log.error("Error: {}".format(err))
+            return HttpResponse('<span class="alert alert-danger">Error Connecting To Cuckoo</span>'.format())
+
+        # If it doesn't exist, submit it.
+
+        # Get the file data from viper
+        file_data = open(__sessions__.current.file.path, 'rb').read()
+        file_name = __sessions__.current.file.name
+
+        if file_data:
+            # Submit file data to cuckoo
+            uri = '{0}{1}'.format(cfg.cuckoo.cuckoo_host, '/tasks/create/file')
+            options = {'file': (file_name, file_data)}
+            cuckoo_response = requests.post(uri, files=options)
+            if cuckoo_response.status_code == 200:
+                cuckoo_id = dict(cuckoo_response.json())['task_id']
+                return HttpResponse('<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cfg.cuckoo.cuckoo_web, str(cuckoo_id)))
+            else:
+                log.error("Cuckoo Response Code: {}".format(cuckoo_response.status_code))
+
+        return HttpResponse('<span class="alert alert-danger">Unable to Submit File</span>')
 
 
 class SearchFileView(LoginRequiredMixin, TemplateView):
