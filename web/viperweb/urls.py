@@ -27,7 +27,7 @@ urlpatterns = [
     url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/$', views.FileView.as_view(), name='file-view'),  # File Page
     url(r'^project/(?P<project>[^/]+)/file/$', views.FileView.as_view(), name='file-list'),  # File List
 
-    url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/cuckoo/$', views.CuckooSubmitView.as_view(), name='file-cuckoo-submit'),
+    url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/cuckoo/$', views.CuckooCheckOrSubmitView.as_view(), name='file-cuckoo-submit'),
 
     url(r'^hex/$', views.HexView.as_view(), name='hex-view'),  # Hex
     url(r'^module/$', views.RunModuleView.as_view(), name='run-module'),  # Module Ajax

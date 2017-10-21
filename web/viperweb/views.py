@@ -10,6 +10,7 @@ import tempfile
 import contextlib
 import shutil
 import requests
+from operator import itemgetter
 
 # Logging
 import logging
@@ -614,9 +615,8 @@ class CreateProjectView(LoginRequiredMixin, TemplateView):
         return redirect(reverse('main-page-project', kwargs={'project': project_name}))
 
 
-# TODO(frennkie) this needs testing - I currently don't have a running Cuckoo host..
-class CuckooSubmitView(LoginRequiredMixin, TemplateView):
-    """Submit file to a Cuckoo host"""
+class CuckooCheckOrSubmitView(LoginRequiredMixin, TemplateView):
+    """Check if report for file exists on Cuckoo - if not submit"""
     def get(self, request, *args, **kwargs):
         project = kwargs.get("project", "default")
         if project not in get_project_list():
@@ -636,13 +636,15 @@ class CuckooSubmitView(LoginRequiredMixin, TemplateView):
             return HttpResponse('<span class="alert alert-danger">Invalid Submission</span>'.format())
 
         try:
-            # Return URI For Existing Entry
-            check_uri = '{0}/files/view/sha256/{1}'.format(cfg.cuckoo.cuckoo_host, sha256)
-            check_file = requests.get(check_uri)
-            if check_file.status_code == 200:
-                check_result = dict(check_file.json())
-                cuckoo_id = check_result['sample']['id']
-                return HttpResponse('<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cfg.cuckoo.cuckoo_web, str(cuckoo_id)))
+            task_list_url = '{0}/tasks/list'.format(cfg.cuckoo.cuckoo_host)
+            task_list_response = requests.get(task_list_url)
+            if task_list_response.status_code == 200:
+                task_list = task_list_response.json()
+                task_list_filtered = [x for x in task_list["tasks"] if x["sample"]["sha256"] == sha256]
+                if task_list_filtered:
+                    task_list_filtered_sorted = sorted(task_list_filtered, key=itemgetter("added_on"), reverse=True)
+                    task_id = task_list_filtered_sorted[0]["id"]
+                    return HttpResponse('<a href="{0}/analysis/{1}/summary/" target="_blank"> Link to latest existing Cukoo Report</a>'.format(cfg.cuckoo.cuckoo_web, str(task_id)))
         except Exception as err:
             log.error("Error: {}".format(err))
             return HttpResponse('<span class="alert alert-danger">Error Connecting To Cuckoo</span>'.format())
@@ -660,7 +662,7 @@ class CuckooSubmitView(LoginRequiredMixin, TemplateView):
             cuckoo_response = requests.post(uri, files=options)
             if cuckoo_response.status_code == 200:
                 cuckoo_id = dict(cuckoo_response.json())['task_id']
-                return HttpResponse('<a href="{0}/submit/status/{1}" target="_blank"> Link To Cukoo Report</a>'.format(cfg.cuckoo.cuckoo_web, str(cuckoo_id)))
+                return HttpResponse('<a href="{0}/analysis/pending/" target="_blank"> Link To Cuckoo (pending tasks)</a>'.format(cfg.cuckoo.cuckoo_web, str(cuckoo_id)))
             else:
                 log.error("Cuckoo Response Code: {}".format(cuckoo_response.status_code))
 
