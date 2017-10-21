@@ -178,30 +178,12 @@
         </div>
     {% endif %}
 
-{#    {% if user.is_authenticated %}#}
-{#    <div class="container text-center">#}
-{#        <h2>Welcome to the Viper Malware Analysis Framework</h2>#}
-{##}
-{#    </div>#}
-{#    {% else %}#}
-{#    <div class="container text-center">#}
-{#        <h2>Welcome to the Viper Malware Analysis Framework</h2>#}
-{#        <p>This is the interactive web panel that will allow you to add, search and perform analysis across files.<p>#}
-{#        <p>In order to access the Web Panel you must first <a href="{% url "login" %}">Login</a></p>#}
-{##}
-{#    </div>#}
-{#    {% endif %}#}
-
     {% block content %}{% endblock %}
-
 </div>
 
-
-<div class="footer">
-    <div class="container">
-        <div align="center">
-            <p class="muted credit"><a href="http://viper.li">Viper-Framework</a> | Source Code on <a href="https://github.com/viper-framework/viper">Github</a></p>
-        </div>
+<div class="container-fluid footer navbar-fixed-bottom">
+    <div align="center">
+        <p class="muted credit"><a href="http://viper.li">Viper-Framework</a> | Source Code on <a href="https://github.com/viper-framework/viper">Github</a></p>
     </div>
 </div>
 
@@ -211,7 +193,6 @@
 <script type="text/javascript" src="{% static 'viperweb/js/bootstrap.js' %}"></script>
 <script type="text/javascript" src="{% static 'viperweb/js/bootstrap-filestyle.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'viperweb/js/pagination.js' %}"></script>
-
 
 <script type="text/javascript" src="{% static "viperweb/js/js.cookie.js" %}"></script>
 
