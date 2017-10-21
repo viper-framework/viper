@@ -424,13 +424,14 @@ class RunModuleView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         # Get the hash of the file we want to run a command against
         file_hash = request.POST.get('file_hash')
+        print("Here: {}".format(file_hash))
         if len(file_hash) != 64:
             file_hash = False
         # Lot of logic here to decide what command you entered.
         module_name = request.POST.get('module')
         module_args = request.POST.get('args')
         cmd_line = request.POST.get('cmdline')
-        module_history = request.POST.get('moduleHistory')
+        module_history = request.POST.get('moduleHistory', ' ')
         cmd_string = ''
         # Order of precedence
         # moduleHistory, cmd_line, module_name
@@ -583,11 +584,13 @@ class ChangelogView(TemplateView):
 class CliView(LoginRequiredMixin, TemplateView):
     """Show GUI that implement the command line interface (CLI)"""
     def get(self, request, *args, **kwargs):
+        project = kwargs.get("project", "default")
+        if project not in get_project_list():
+            raise Http404("unknown project: {}".format(project))
 
-        raise NotImplementedError  # TODO(frennkie) not implemented
-        # template_name = "viperweb/cli.html"
-        # return render(request, template_name, {'results': '',
-        #                                        'projects': get_project_list()})
+        template_name = "viperweb/cli.html"
+        return render(request, template_name, {'project': project,
+                                               'projects': get_project_list()})
 
 
 class ConfigView(LoginRequiredMixin, TemplateView):
@@ -620,7 +623,7 @@ class CuckooCheckOrSubmitView(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         project = kwargs.get("project", "default")
         if project not in get_project_list():
-            raise Http404("unknown project: {}".format(project  ))
+            raise Http404("unknown project: {}".format(project))
 
         sha256 = kwargs.get("sha256")
         if not sha256:

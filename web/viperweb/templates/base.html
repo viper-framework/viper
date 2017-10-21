@@ -60,7 +60,12 @@
 
                     </ul>
                 </li>
-                <li ><a href="{% url "yara-rules" %}">Yara Rules</a></li>
+                <li><a href="{% url "yara-rules" %}">Yara Rules</a></li>
+                {% if project %}
+                    <li><a href="{% url 'cli' project=project %}">CLI</a></li>
+                {% else %}
+                    <li><a href="{% url 'cli-default' %}">CLI</a></li>
+                {% endif %}
             </ul>
 
             <ul class="nav navbar-nav navbar-right">

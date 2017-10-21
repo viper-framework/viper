@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Index{% endblock %}
+
+{% block content %}
+
+    <ol class="breadcrumb">
+        <li><a href="/">Home</a></li>
+        <li><a href="/project/{{ project }}">{{ project }}</a></li>
+        <li><a href="{% url 'cli' project=project %}">CLI</a></li>
+    </ol>
+
+    <div id="spin_loader"></div>
+
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <p>You can enter commands here as if you were at the console. </p>
+            <form class="form-inline" role="form" id="ajaxsubmit" onsubmit="return false" name="modules">
+                <label for="cmdString">Viper Command</label>
+                <input type="text" class="form-control" name="cmdline" placeholder="Enter CLI Commands">
+                <input type="text" class="form-control" name="file_hash" placeholder="Optional Sha256"/>
+                <button type="submit" class="btn btn-default" name="submit">Run</button>
+                {% csrf_token %}
+            </form>
+            <hr/>
+
+            <div class="panel panel-default">
+            <div class="panel-heading">
+                    <div class="row">
+                        <div class="col-md-8"><h3 class="panel-title">Module Output</h3></div>
+                        <div class="col-md-4" style="text-align: right;">
+                            <button class="btn btn-default btn-xs btn-primary" onclick="clear_div()">Clear</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="ajaxresponse"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

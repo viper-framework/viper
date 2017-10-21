@@ -20,9 +20,11 @@ urlpatterns = [
 
     url(r'^about/', views.AboutView.as_view(), name='about'),
     url(r'^changelog/', views.ChangelogView.as_view(), name='changelog'),
-    url(r'^cli/', views.CliView.as_view(), name='cli'),
     url(r'^config/$', views.ConfigView.as_view(), name='config-file'),
     url(r'^create/$', views.CreateProjectView.as_view(), name='create-project'),
+
+    url(r'^project/default/cli/$', views.CliView.as_view(), name='cli-default'),
+    url(r'^project/(?P<project>[^/]+)/cli/$', views.CliView.as_view(), name='cli'),
 
     url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/$', views.FileView.as_view(), name='file-view'),  # File Page
     url(r'^project/(?P<project>[^/]+)/file/$', views.FileView.as_view(), name='file-list'),  # File List
@@ -30,7 +32,9 @@ urlpatterns = [
     url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/cuckoo/$', views.CuckooCheckOrSubmitView.as_view(), name='file-cuckoo-submit'),
 
     url(r'^hex/$', views.HexView.as_view(), name='hex-view'),  # Hex
-    url(r'^module/$', views.RunModuleView.as_view(), name='run-module'),  # Module Ajax
+
+    url(r'^project/(?P<project>[^/]+)/module/$', views.RunModuleView.as_view(), name='run-module'),  # Module Ajax
+
     url(r'^search/$', views.SearchFileView.as_view(), name='search-file'),  # Search
     url(r'^urldownload/', views.UrlDownloadView.as_view(), name='url-download'),  # Upload from URL
     url(r'^yara/$', views.YaraRulesView.as_view(), name='yara-rules'),  # Yara

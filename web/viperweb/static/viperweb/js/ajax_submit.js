@@ -177,7 +177,7 @@ function delNote(note_id) {
 
 $('#ajaxsubmit').submit(function (event) {
     $.ajax({
-        url: '/module/',
+        url: '/project/default/module/',
         type: 'post',
         dataType: 'html',
         data: $('#ajaxsubmit').serialize(),
