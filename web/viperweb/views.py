@@ -20,9 +20,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, Http404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
@@ -717,19 +715,3 @@ class SearchFileView(LoginRequiredMixin, TemplateView):
         else:
             return render(request, template_name, {'results': [],
                                                    'projects': get_project_list()})
-
-
-
-
-# Template
-# class IndexView(LoginRequiredMixin, TemplateView):
-#     """Index View"""
-#
-#     def get(self, request, *args, **kwargs):
-#         """get"""
-#         template_name = "touren/index.html"
-#
-#         # messages.success(request, "success: Alles gut (Test)")
-#         # messages.error(request, "error: Test Fehlermeldung")
-#         return render(request, template_name, {})
-
