@@ -415,6 +415,7 @@ def add_file():
 
         # Add each file
         for new_file in file_list:
+            obj = File(new_file)
             new_path = store_sample(obj)
             success = True
             if new_path:
