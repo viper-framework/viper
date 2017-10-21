@@ -2,8 +2,12 @@
 
 {% block title %}Viper Configuration Settings{% endblock %}
 
-
 {% block content %}
+
+<ol class="breadcrumb">
+    <li><a href="{% url 'main_page' %}">Home</a></li>
+    <li><a href="{% url 'config-file' %}">Config</a></li>
+</ol>
 
     {% for key, value in config_values.items %}
         <div class="row">

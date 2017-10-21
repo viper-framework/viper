@@ -4,11 +4,11 @@
 
 {% block content %}
 
-    <ol class="breadcrumb">
-        <li><a href="/">Home</a></li>
-        <li><a href="/project/{{ project }}">{{ project }}</a></li>
-        <li><a href="{% url 'cli' project=project %}">CLI</a></li>
-    </ol>
+<ol class="breadcrumb">
+    <li><a href="{% url 'main_page' %}">Home</a></li>
+    <li><a href="/project/{{ project }}">{{ project }}</a></li>
+    <li><a href="{% url 'cli' project=project %}">CLI</a></li>
+</ol>
 
     <div id="spin_loader"></div>
 

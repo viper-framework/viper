@@ -2,10 +2,12 @@
 
 {% block title %}Viper About{% endblock %}
 
-
 {% block content %}
 
-About
+<ol class="breadcrumb">
+    <li><a href="{% url 'main_page' %}">Home</a></li>
+    <li><a href="{% url 'about' %}">About</a></li>
+</ol>
 
     <div class="row">
         <div class="col-md-4"></div>

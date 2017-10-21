@@ -2,8 +2,12 @@
 
 {% block title %}Viper Changelog{% endblock %}
 
-
 {% block content %}
+
+<ol class="breadcrumb">
+    <li><a href="{% url 'main_page' %}">Home</a></li>
+    <li><a href="{% url 'changelog' %}">Changelog</a></li>
+</ol>
 
     {% for key, value in changelog.items %}
         <div class="row">

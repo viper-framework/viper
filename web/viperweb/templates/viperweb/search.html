@@ -2,8 +2,12 @@
 
 {% block title %}Search Results{% endblock %}
 
-
 {% block content %}
+
+<ol class="breadcrumb">
+    <li><a href="{% url 'main_page' %}">Home</a></li>
+    <li><a href="{% url 'search-file' %}">Search</a></li>
+</ol>
 
 {% for project in results %}
 
