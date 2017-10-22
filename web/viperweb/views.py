@@ -487,23 +487,27 @@ class HexView(LoginRequiredMixin, TemplateView):
 
 class YaraRulesView(LoginRequiredMixin, TemplateView):
     """Manage Yara Rules"""
+    yara_rule_path = os.path.join(VIPER_ROOT, 'data/yara')
+
+    def yara_rule_list(self):
+        return sorted(os.listdir(self.yara_rule_path), key=lambda y: y.lower())
+    yara_rule_list = property(yara_rule_list)
+
     def get(self, request, *args, **kwargs):
         template_name = 'viperweb/yara.html'
-        rule_path = os.path.join(VIPER_ROOT, 'data/yara')
-        rule_list = os.listdir(rule_path)
-        # Read Rules
 
+        # Read Rules
         action = request.GET.get('action')
         rule = request.GET.get('rule')
         rule_text = ''
 
         if action == 'list' or action is None:
-            return render(request, template_name, {'rule_list': rule_list,
+            return render(request, template_name, {'rule_list': self.yara_rule_list,
                                                    'rule_text': rule_text,
                                                    'projects': get_project_list()})
         elif action == 'display' and rule:
             # Display Rule Contents
-            rule_file = os.path.join(rule_path, rule)
+            rule_file = os.path.join(self.yara_rule_path, rule)
             if os.path.isfile(rule_file):
                 # Only allow .yar or .yara files to be read
                 file_name, file_ext = os.path.splitext(rule_file)
@@ -517,20 +521,20 @@ class YaraRulesView(LoginRequiredMixin, TemplateView):
         elif action == 'delete':
             rule_name = request.GET.get('rulename')
             if rule_name.split('.')[-1] in ['yar', 'yara']:
-                os.remove(os.path.join(rule_path, rule_name))
+                os.remove(os.path.join(self.yara_rule_path, rule_name))
                 rule_text = 'Rule {0} Deleted'.format(rule_name)
                 # remove from list
-                rule_list.remove(rule_name)
+                self.yara_rule_list.remove(rule_name)
             else:
                 rule_text = 'Invalid Rule'
-            return render(request, template_name, {'rule_list': rule_list,
+            return render(request, template_name, {'rule_list': self.yara_rule_list,
                                                    'rule_text': rule_text,
                                                    'projects': get_project_list()
                                                    })
         else:
             rule_text = 'Invalid Action'
 
-        return render(request, template_name, {'rule_list': rule_list,
+        return render(request, template_name, {'rule_list': self.yara_rule_list,
                                                'rule_name': rule,
                                                'rule_text': rule_text,
                                                'projects': get_project_list()})
@@ -539,12 +543,9 @@ class YaraRulesView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         template_name = 'viperweb/yara.html'
 
-        rule_path = os.path.join(VIPER_ROOT, 'data/yara')
-        rule_list = os.listdir(rule_path)
-
         rule_name = request.POST.get('rule_name')
         rule_text = request.POST.get('rule_text')
-        rule_file = os.path.join(rule_path, rule_name)
+        rule_file = os.path.join(self.yara_rule_path, rule_name)
         # Prevent storing files in a relative path or with a non yar extension
         rule_test = rule_name.split('.')
         if len(rule_test) == 2 and rule_test[-1] in ['yar', 'yara']:
@@ -554,7 +555,7 @@ class YaraRulesView(LoginRequiredMixin, TemplateView):
         else:
             rule_text = "The File Name did not match the style 'name.yar'"
 
-        return render(request, template_name, {'rule_list': rule_list,
+        return render(request, template_name, {'rule_list': self.yara_rule_list,
                                                'rule_name': rule_name,
                                                'rule_text': rule_text,
                                                'projects': get_project_list()})

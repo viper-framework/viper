@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Index{% endblock %}
+{% block title %}Yara{% endblock %}
 
 {% block content %}
 
@@ -23,7 +23,7 @@
         {% if rule_text %}
             <pre>{{rule_text}}</pre>
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editRule">Edit</button>
-            <a class="btn btn-primary" href="/yara?action=delete&amp;rulename={{rule_name}}">Delete</a>
+            <a class="btn btn-primary btn-danger" href="/yara?action=delete&amp;rulename={{rule_name}}">Delete</a>
         {% endif %}
     </div>
 </div>
