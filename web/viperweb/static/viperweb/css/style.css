@@ -31,6 +31,10 @@
 
 /* Customize sticky footer
 -------------------------------------------------- */
+body {
+    padding-bottom: 40px;
+}
+
 .footer {
     padding-top: 5px;
     /* Set the fixed height of the footer here */
