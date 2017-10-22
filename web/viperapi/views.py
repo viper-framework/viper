@@ -447,7 +447,11 @@ class MalwareViewSet(ViperGenericViewSet):
 
                 if res:
                     log.debug("Extract Result: {} - Path: {}".format(res, ext.output_path))
+                    if not os.path.isdir(ext.output_path):
+                        # make sure to only add directories to tmp_dirs list
+                        ext.output_path = os.path.dirname(ext.output_path)
                     tmp_dirs.append(ext.output_path)
+
                     for dir_name, dir_names, file_names in walk(ext.output_path):
                         # Add each collected file.
                         for file_name in file_names:
