@@ -35,7 +35,7 @@ from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
-from viper.core.storage import check_and_deploy_yara_rules
+from viper.core.storage import check_and_deploy_peid, check_and_deploy_yara_rules
 from viper.core.database import Database
 from viper.common import network
 from viper.core.ui.commands import Commands
@@ -68,7 +68,8 @@ for folder in ['/usr/share/viper/web/', os.path.join(VIPER_ROOT, 'data/web')]:
         bottle.TEMPLATE_PATH.insert(0, folder)
         break
 
-# make sure Yara rules are available in storage path
+# make sure PEID info and Yara rules are available in storage path
+check_and_deploy_peid()
 check_and_deploy_yara_rules()
 
 # Module Dicts
