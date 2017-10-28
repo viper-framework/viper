@@ -6,4 +6,4 @@ from django.apps import AppConfig
 
 
 class ViperWebConfig(AppConfig):
-    name = 'web.viperweb'
+    name = 'viper.web.viperweb'

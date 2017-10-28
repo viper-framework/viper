@@ -12,6 +12,7 @@ import argparse
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
 from viper.core.project import __project__
+from viper.core.storage import check_and_deploy_yara_rules
 from viper.core.ui.commands import Commands
 from viper.common.out import print_info, print_warning, print_error, print_success
 from viper.common.constants import VIPER_ROOT
@@ -22,7 +23,7 @@ log = logging.getLogger("viper-web")
 cfg = __config__
 
 # insert path and load Django settings
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "web.web.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "viper.web.settings")
 
 import django  # noqa
 django.setup()
@@ -62,6 +63,8 @@ if __name__ == '__main__':
         web_port = cfg.get("web").port
     else:
         web_port = 8080
+
+    check_and_deploy_yara_rules()
 
     # check Django setup (Migrations?! Admin? Token?)
 

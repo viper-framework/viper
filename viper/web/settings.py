@@ -4,29 +4,31 @@
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import sys
+import logging
 
+from viper.core.project import __project__
 from viper.core.config import __config__
+
+log = logging.getLogger("viper-web")
 cfg = __config__
+
+# add base_path to python path
+sys.path.append(__project__.base_path)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# https://github.com/cuckoobox/cuckoo/blob/master/web/web/settings.py
-# Unique secret key generator.
-# Secret key will be placed in secret_key.py file.
-try:
-    from .secret_key import *  # noqa
-except ImportError:
-    SETTINGS_DIR = os.path.abspath(os.path.dirname(__file__))
+# https://github.com/cuckoosandbox/cuckoo/blob/master/cuckoo/web/web/settings.py
+# Unique secret key generator. Secret key will be placed at $storage_path/.secret_key.
+secret_key_path = os.path.join(__project__.base_path, ".secret_key")
+if not os.path.exists(secret_key_path):
     # Using the same generation schema of Django startproject.
     from django.utils.crypto import get_random_string
-    key = get_random_string(50, "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)")
+    SECRET_KEY = get_random_string(50, "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)")
+    open(secret_key_path, "w").write(SECRET_KEY)
+else:
+    SECRET_KEY = open(secret_key_path, "r").read()
 
-    # Write secret_key.py
-    with open(os.path.join(SETTINGS_DIR, "secret_key.py"), "w") as key_file:
-        key_file.write("SECRET_KEY = \"{0}\"".format(key))
-
-    # Reload key.
-    from .secret_key import *  # noqa
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -51,8 +53,8 @@ INSTALLED_APPS = (
     'rest_framework.authtoken',
     'rest_framework_swagger',
     'bootstrapform',
-    'web.viperweb',
-    'web.viperapi',
+    'viper.web.viperweb',
+    'viper.web.viperapi',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -66,7 +68,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-ROOT_URLCONF = 'web.web.urls'
+ROOT_URLCONF = 'viper.web.urls'
 
 TEMPLATES = [
     {
@@ -107,7 +109,7 @@ FILE_UPLOAD_HANDLERS = [
 FILE_UPLOAD_TEMP_DIR = "/tmp/"
 
 
-WSGI_APPLICATION = 'web.web.wsgi.application'
+WSGI_APPLICATION = 'viper.web.wsgi.application'
 
 
 # Database
@@ -118,7 +120,7 @@ WSGI_APPLICATION = 'web.web.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'admin.db'),
+        'NAME': os.path.join(__project__.base_path, 'admin.db'),
     }
 }
 
@@ -199,3 +201,11 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static/")
+
+
+# Import local settings from $storage_path/settings_local.py
+try:
+    from settings_local import *
+    log.debug("Found the settings_local.py file.\n")
+except ImportError:
+    log.debug("There is no settings_local.py file.\n")

@@ -487,7 +487,7 @@ class HexView(LoginRequiredMixin, TemplateView):
 
 class YaraRulesView(LoginRequiredMixin, TemplateView):
     """Manage Yara Rules"""
-    yara_rule_path = os.path.join(VIPER_ROOT, 'data/yara')
+    yara_rule_path = os.path.join(__project__.base_path, 'yara')
 
     def yara_rule_list(self):
         return sorted(os.listdir(self.yara_rule_path), key=lambda y: y.lower())

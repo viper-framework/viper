@@ -11,8 +11,8 @@ cfg = __config__
 
 
 urlpatterns = [
-    url(r'^', include('web.viperweb.urls')),
+    url(r'^', include('viper.web.viperweb.urls')),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^api/', include('web.viperapi.urls')),
+    url(r'^api/', include('viper.web.viperapi.urls')),
 ]
