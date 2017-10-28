@@ -205,7 +205,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 # Import local settings from $storage_path/settings_local.py
 try:
-    from settings_local import *
+    from settings_local import *  # noqa
     log.debug("Found the settings_local.py file.\n")
 except ImportError:
     log.debug("There is no settings_local.py file.\n")

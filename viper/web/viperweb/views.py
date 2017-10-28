@@ -36,7 +36,6 @@ from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database
 from viper.core.archiver import Extractor
 from viper.core.ui.commands import Commands
-from viper.common.constants import VIPER_ROOT
 from viper.common.autorun import autorun_module
 from viper.core.config import __config__
 
