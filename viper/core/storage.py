@@ -3,9 +3,12 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import shutil
 
-from viper.common.out import print_warning, print_error
+from viper.common.out import print_warning, print_error, print_info
 from viper.core.project import __project__
+from viper.common.constants import VIPER_ROOT
+from viper.common.constants import VIPER_RULES_DIST_DIR
 
 
 def store_sample(file_object):
@@ -55,3 +58,28 @@ def get_sample_path(sha256):
         return None
 
     return path
+
+
+def check_and_deploy_yara_rules():
+    """Yara: check whether rule path exist - if not copy default set of rules to directory"""
+    yara_rules_path = os.path.join(__project__.base_path, "yara")
+    if os.path.exists(yara_rules_path):
+        print_info("Using Yara rules from directory: {}".format(yara_rules_path))
+    else:
+        # Prio 1: rules if Viper was installed with pip
+        yara_path_setup_utils = os.path.join(VIPER_ROOT, VIPER_RULES_DIST_DIR)
+
+        # Prio 2: rules if Viper was checkout from repo
+        yara_path_repo = os.path.join(VIPER_ROOT, "data", "yara")
+
+        if os.path.exists(yara_path_setup_utils):
+            print_warning("Yara rule directory not found - copying default "
+                          "rules ({}) to: {}".format(yara_path_setup_utils, yara_rules_path))
+
+            shutil.copytree(yara_path_setup_utils, yara_rules_path)
+        elif os.path.exists(yara_path_repo):
+            print_warning("Yara rule directory not found - copying default "
+                          "rules ({}) to: {}".format(yara_path_repo, yara_rules_path))
+            shutil.copytree(yara_path_repo, yara_rules_path)
+        else:
+            print_error("No default Yara rules found")

@@ -1,6 +1,12 @@
 include LICENSE
 include README.rst
+include README.md
 include CHANGELOG
 include requirements.txt
 include requirements-*.txt
-recursive-include data *.*
+include viper.conf.sample
+recursive-include data/peid/ *.*
+recursive-include data/yara/ *.*
+recursive-include data/web/ *.*
+global-exclude __pycache__
+global-exclude *.py[co]
