@@ -7,8 +7,7 @@ import shutil
 
 from viper.common.out import print_warning, print_error, print_info
 from viper.core.project import __project__
-from viper.common.constants import VIPER_ROOT
-from viper.common.constants import VIPER_RULES_DIST_DIR
+from viper.common.constants import VIPER_ROOT, DIST_DIR_YARA_RULES, DIST_DIR_PEID
 
 
 def store_sample(file_object):
@@ -67,7 +66,7 @@ def check_and_deploy_yara_rules():
         print_info("Using Yara rules from directory: {}".format(yara_rules_path))
     else:
         # Prio 1: rules if Viper was installed with pip
-        yara_path_setup_utils = os.path.join(VIPER_ROOT, VIPER_RULES_DIST_DIR)
+        yara_path_setup_utils = os.path.join(VIPER_ROOT, DIST_DIR_YARA_RULES)
 
         # Prio 2: rules if Viper was checkout from repo
         yara_path_repo = os.path.join(VIPER_ROOT, "data", "yara")
@@ -83,3 +82,23 @@ def check_and_deploy_yara_rules():
             shutil.copytree(yara_path_repo, yara_rules_path)
         else:
             print_error("No default Yara rules found")
+
+
+def check_and_deploy_peid():
+    """PEID: check whether PEID dir exist - if not copy default to directory"""
+    peid_path = os.path.join(__project__.base_path, "peid")
+    if os.path.exists(peid_path):
+        print_info("Using PEID info from directory: {}".format(peid_path))
+    else:
+        # Prio 1: peid info if Viper was installed with pip
+        peid_path_setup_utils = os.path.join(VIPER_ROOT, DIST_DIR_PEID)
+
+        # Prio 2: peid info if Viper was checkout from repo
+        peid_path_repo = os.path.join(VIPER_ROOT, "data", "peid")
+
+        if os.path.exists(peid_path_setup_utils):
+            shutil.copytree(peid_path_setup_utils, peid_path)
+        elif os.path.exists(peid_path_repo):
+            shutil.copytree(peid_path_repo, peid_path)
+        else:
+            pass
