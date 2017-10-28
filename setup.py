@@ -11,6 +11,7 @@ from setuptools import setup
 from viper.common.version import __version__
 from viper.common.constants import VIPER_RULES_DIST_DIR
 
+
 def get_packages(package):
     """
     Return root package and all sub-packages.
@@ -52,7 +53,6 @@ for req_file in requirement_files:
             links.append(str(item.link))
         if item.req:
             requires.append(str(item.req))
-
 
 description = "Binary Analysis & Management Framework"
 
