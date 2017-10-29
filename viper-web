@@ -4,18 +4,12 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import sys
 import random
 import logging
 import argparse
 
-from viper.core.session import __sessions__
-from viper.core.plugins import __modules__
-from viper.core.project import __project__
+from viper.common.out import print_info, print_warning, print_success
 from viper.core.storage import check_and_deploy_peid, check_and_deploy_yara_rules
-from viper.core.ui.commands import Commands
-from viper.common.out import print_info, print_warning, print_error, print_success
-from viper.common.constants import VIPER_ROOT
 from viper.core.config import __config__
 
 log = logging.getLogger("viper-web")
@@ -27,12 +21,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "viper.web.settings")
 
 import django  # noqa
 django.setup()
-from django.core.management import execute_from_command_line  # noqa
-from django.db.migrations.executor import MigrationExecutor  # noqa
-from django.db import connections, DEFAULT_DB_ALIAS  # noqa
 from django.contrib.auth.models import User  # noqa
-from rest_framework.authtoken.models import Token  # noqa
 from django.core.exceptions import ObjectDoesNotExist  # noqa
+from django.core.management import execute_from_command_line  # noqa
+from django.db import connections, DEFAULT_DB_ALIAS  # noqa
+from django.db.migrations.executor import MigrationExecutor  # noqa
+from rest_framework.authtoken.models import Token  # noqa
 
 
 def is_database_synchronized(database):
@@ -48,6 +42,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-H', '--host', help='bind to host (e.g. 127.0.0.1 or 0.0.0.0)', action='store', required=False)
     parser.add_argument('-p', '--port', help='bind to port (e.g. 8080)', action='store', required=False)
+    parser.add_argument('--tls', help='enable TLS', action='store_true', required=False)
+    parser.add_argument('-c', '--certificate', help='path to .crt file', action='store', required=False)
+    parser.add_argument('-k', '--key', help='path to .key file', action='store', required=False)
     args = parser.parse_args()
 
     if args.host:
@@ -64,10 +61,13 @@ if __name__ == '__main__':
     else:
         web_port = 8080
 
+    if args.tls:
+        if not (args.certificate and args.key):
+            raise Exception("please provide --certificate and --key parameter for TLS")
+
+    # Initials checks (e.g. for new installation/upgrade of Viper)
     check_and_deploy_peid()
     check_and_deploy_yara_rules()
-
-    # check Django setup (Migrations?! Admin? Token?)
 
     # check for outstanding migrations
     if is_database_synchronized(DEFAULT_DB_ALIAS):
@@ -81,12 +81,12 @@ if __name__ == '__main__':
             raise Exception("there was a problem applying the Django DB migrations")
         print_success("Applied outstanding migrations".format())
 
+    # check for admin user
     if cfg.get("web").admin_username:
         admin_username = cfg.get("web").admin_username
     else:
         admin_username = "admin"
 
-    # check for admin user
     try:
         admin = User.objects.filter(username=admin_username).get()
         print_info("Found Admin with username: {}".format(admin_username))
@@ -107,4 +107,10 @@ if __name__ == '__main__':
     # run Django built-in Web Server
     print_info("Starting Web Server on {}:{}".format(web_host, web_port))
     log.info("Starting Web Server on {}:{}".format(web_host, web_port))
-    execute_from_command_line(["manage.py", "runserver", "{}:{}".format(web_host, web_port)])
+
+    if args.tls:
+        execute_from_command_line(["manage.py", "runsslserver",
+                                   "--certificate", args.certificate, "--key", args.key,
+                                   "{}:{}".format(web_host, web_port)])
+    else:
+        execute_from_command_line(["manage.py", "runserver", "{}:{}".format(web_host, web_port)])

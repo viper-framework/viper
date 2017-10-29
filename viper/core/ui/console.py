@@ -108,6 +108,7 @@ class Console(object):
         # log start
         log.info('Starting viper-cli')
 
+        # Initials checks (e.g. for new installation/upgrade of Viper)
         # make sure PEID info and Yara rules are available in storage path
         check_and_deploy_peid()
         check_and_deploy_yara_rules()

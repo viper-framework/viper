@@ -10,8 +10,28 @@
 </ol>
 
     <div class="row">
-        <div class="col-md-4"></div>
-        <div class="col-md-4">
+        <div class="col-md-3"></div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="row">
+                        <div class="text-center"><b>Viper Web Interface (Version: {{ version }})</b></div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <p>The Web interface replicates the most common functions of Viper. It is project aware and most search functions are capable of spanning all projects.</p>
+                    <p>It does not allow for <strong>ALL</strong> the functionality of the Command Line Interface</p>
+                    <p>The Web and CLI are not independent, Files stored in one are visible to the other.</p>
+
+                    <div class="alert alert-danger">
+                        <h4>Warning</h4>
+                        <p>Viper is designed to read and in some cases export files to your environment. The modules interface does not prevent this kind of action</p>
+                        <p>Avoid unauthenticated access to the web interface</p>
+                    </div>
+
+                    <p>Viper web interface was originally created by <a href="http://techanarchy.net/">Kevin Breen</a>.</p>
+                </div>
+            </div>
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <div class="row">
@@ -23,7 +43,7 @@
                     <thead>
                     <th>Name</th>
                     <th>Extensions</th>
-                    <th>Passwords?</th>
+                    <th>Password Support</th>
                     </thead>
                     <tbody>
                     {% for key, row in extractors.items %}
@@ -35,7 +55,9 @@
                                 {% for item in row.supports_extensions %}{{ item }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}
                             </td>
                             <td>
-                                {% if row.supports_password %} <span class="glyphicon glyphicon-lock text-success"></span>{% endif %}
+                                {% if row.supports_password %} <span class="glyphicon glyphicon glyphicon-ok text-success"></span>
+                                {% else %} <span class="glyphicon glyphicon glyphicon-remove text-danger"></span>
+                                {% endif %}
                             </td>
                             </tr>
                         {% endfor %}
@@ -43,7 +65,7 @@
                 </table>
             </div>
         </div>
-        <div class="col-md-4"></div>
+        <div class="col-md-3"></div>
     </div>
 
 {% endblock %}

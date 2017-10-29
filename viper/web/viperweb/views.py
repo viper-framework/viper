@@ -26,18 +26,18 @@ from django.contrib import messages
 from django.core.files.temp import NamedTemporaryFile
 
 # Viper imports
-from viper.core.session import __sessions__
-from viper.core.plugins import __modules__
-from viper.core.project import __project__
-from viper.core.project import get_project_list
-from viper.common.objects import File
 from viper.common import network
-from viper.core.storage import store_sample, get_sample_path
-from viper.core.database import Database
-from viper.core.archiver import Extractor
-from viper.core.ui.commands import Commands
 from viper.common.autorun import autorun_module
+from viper.common.objects import File
+from viper.common.version import __version__
+from viper.core.archiver import Extractor
 from viper.core.config import __config__
+from viper.core.database import Database
+from viper.core.plugins import __modules__
+from viper.core.project import __project__, get_project_list
+from viper.core.session import __sessions__
+from viper.core.storage import store_sample, get_sample_path
+from viper.core.ui.commands import Commands
 
 try:
     from scandir import walk  # noqa
@@ -285,6 +285,9 @@ class MainPageView(LoginRequiredMixin, TemplateView):
 
 class UrlDownloadView(LoginRequiredMixin, TemplateView):
     """Download a file from URL and add to project"""
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
+
     def post(self, request, *args, **kwargs):
         # Set Project
         project = request.POST.get('project', 'default')
@@ -322,6 +325,8 @@ class UrlDownloadView(LoginRequiredMixin, TemplateView):
 
 class VtDownloadView(LoginRequiredMixin, TemplateView):
     """Download a file from Virustotal and add to project"""
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
 
     # VirusTotal Download
     # TODO(frennkie) this most likely doesn't work
@@ -418,6 +423,9 @@ class FileView(LoginRequiredMixin, TemplateView):
 
 class RunModuleView(LoginRequiredMixin, TemplateView):
     """Run a module and return output"""
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
+
     def post(self, request, *args, **kwargs):
         # Get the hash of the file we want to run a command against
         file_hash = request.POST.get('file_hash')
@@ -449,6 +457,9 @@ class RunModuleView(LoginRequiredMixin, TemplateView):
 
 class HexView(LoginRequiredMixin, TemplateView):
     """Read file a return as Hex"""
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
+
     def post(self, request, *args, **kwargs):
         # get post data
         file_hash = request.POST.get('file_hash')
@@ -565,8 +576,9 @@ class AboutView(TemplateView):
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/about.html"
 
-        return render(request, template_name, {'projects': get_project_list(),
-                                               'extractors': Extractor().extractors})
+        return render(request, template_name, {'version': __version__,
+                                               'extractors': Extractor().extractors,
+                                               'projects': get_project_list()})
 
 
 class ChangelogView(TemplateView):
@@ -606,6 +618,9 @@ class ConfigView(LoginRequiredMixin, TemplateView):
 
 class CreateProjectView(LoginRequiredMixin, TemplateView):
     """Create project (if not existing) and switch (redirect) to it"""
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
+
     def post(self, request, *args, **kwargs):
         project_name = request.POST['project'].replace(' ', '_')
         if project_name not in get_project_list():
@@ -672,6 +687,9 @@ class CuckooCheckOrSubmitView(LoginRequiredMixin, TemplateView):
 
 class SearchFileView(LoginRequiredMixin, TemplateView):
     """ Search file"""
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
+
     def post(self, request, *args, **kwargs):
         template_name = "viperweb/search.html"
         key = request.POST.get('key')

@@ -4,6 +4,7 @@ django-crispy-forms==1.6.1
 django-extensions==1.7.8
 django-filter==1.0.2
 django-rest-swagger==2.1.2
+django-sslserver==0.20
 django-url-filter==0.3.0
 djangorestframework==3.6.2
 djangorestframework-queryfields==1.0.0
