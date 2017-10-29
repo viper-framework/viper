@@ -7,6 +7,7 @@ from django.contrib.auth.views import login, logout
 from . import views
 from .forms import MyAuthenticationForm
 
+
 urlpatterns = [
     # login/logout (accounts)
     url(r'^accounts/login/$', login,
@@ -31,9 +32,8 @@ urlpatterns = [
 
     url(r'^project/(?P<project>[^/]+)/file/(?P<sha256>[^/]+)/cuckoo/$', views.CuckooCheckOrSubmitView.as_view(), name='file-cuckoo-submit'),
 
-    url(r'^hex/$', views.HexView.as_view(), name='hex-view'),  # Hex
-
-    url(r'^project/(?P<project>[^/]+)/module/$', views.RunModuleView.as_view(), name='run-module'),  # Module Ajax
+    url(r'^project/(?P<project>[^/]+)/hex/$', views.HexView.as_view(), name='hex-view'),  # Hex View
+    url(r'^project/(?P<project>[^/]+)/module/$', views.RunModuleView.as_view(), name='run-module'),  # Run Module Ajax
 
     url(r'^search/$', views.SearchFileView.as_view(), name='search-file'),  # Search
     url(r'^urldownload/', views.UrlDownloadView.as_view(), name='url-download'),  # Upload from URL

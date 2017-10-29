@@ -178,7 +178,7 @@ def parse_text(module_text):
 
 
 # this will allow complex command line parameters to be passed in via the web gui
-def module_cmdline(cmd_line, file_hash):
+def module_cmdline(project=None, cmd_line=None, file_hash=None):
     html = ""
     cmd = Commands()
     split_commands = cmd_line.split(';')
@@ -195,6 +195,7 @@ def module_cmdline(cmd_line, file_hash):
             elif root in __modules__:
                 # if prev commands did not open a session open one on the current file
                 if file_hash:
+                    __project__.open(project)
                     path = get_sample_path(file_hash)
                     __sessions__.new(path)
                 module = __modules__[root]['obj']()
@@ -343,7 +344,7 @@ class VtDownloadView(LoginRequiredMixin, TemplateView):
         tags = request.POST.get('tag_list')
         cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
 
-        module_results = module_cmdline(cmd_line, False)
+        module_results = module_cmdline(project=project, file_hash=False, cmd_line=cmd_line)
 
         if 'Stored' in module_results:
             return redirect(reverse("main-page-project", kwargs={"project": project}))
@@ -427,13 +428,17 @@ class RunModuleView(LoginRequiredMixin, TemplateView):
         return HttpResponse('This is a POST only view')
 
     def post(self, request, *args, **kwargs):
-        # Get the hash of the file we want to run a command against
+        # Get the project and hash of the file we want to run a command against
+        project = kwargs.get('project', 'default')
         file_hash = request.POST.get('file_hash')
-        print("Here: {}".format(file_hash))
+
         if len(file_hash) != 64:
             file_hash = False
         # Lot of logic here to decide what command you entered.
         module_name = request.POST.get('module')
+        print("Here: {}".format(module_name))
+        if module_name == "module":
+            return HttpResponse("<pre>Error: No Module selected!</pre>")
         module_args = request.POST.get('args')
         cmd_line = request.POST.get('cmdline')
         module_history = request.POST.get('moduleHistory', ' ')
@@ -451,7 +456,7 @@ class RunModuleView(LoginRequiredMixin, TemplateView):
             cmd_string = cmd_line
         elif module_args:
             cmd_string = '{0} {1}'.format(module_name, mod_dict[module_name][module_args])
-        module_results = module_cmdline(cmd_string, file_hash)
+        module_results = module_cmdline(project=project, file_hash=file_hash, cmd_line=cmd_string)
         return HttpResponse('<pre>{0}</pre>'.format(str(parse_text(module_results))))
 
 
@@ -461,7 +466,8 @@ class HexView(LoginRequiredMixin, TemplateView):
         return HttpResponse('This is a POST only view')
 
     def post(self, request, *args, **kwargs):
-        # get post data
+        # Get the project and hash of the file
+        project = kwargs.get('project', 'default')
         file_hash = request.POST.get('file_hash')
         try:
             hex_offset = int(request.POST.get('hex_start'))
@@ -470,6 +476,7 @@ class HexView(LoginRequiredMixin, TemplateView):
         hex_length = 256
 
         # get file path
+        __project__.open(project)
         hex_path = get_sample_path(file_hash)
 
         # create the command string
