@@ -42,6 +42,38 @@ $("#upload_form").submit(function (event) {
             var error = obj.error;
             console.log(error);
             console.log(error.message);
+            alert("Upload failed: " + error.message);
+        }
+    });
+    return false;
+});
+
+
+$("#upload_form_archive").submit(function (event) {
+    console.log("upload_form_archive called");
+    event.preventDefault();
+    var formData = new FormData($(this)[0]);
+    $.ajax({
+        url: malware_upload_url,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+
+        success: function (data) {
+            console.log("Submit successful");
+            console.log(data);
+
+            // TODO(frennkie) this simply redirects to first..?!
+            window.location.replace(malware_list_url + data[0].data.sha256);
+        },
+        error: function(data){
+            console.log("Submit failed");
+            var obj = jQuery.parseJSON(data["responseText"]);
+            var error = obj.error;
+            console.log(error);
+            console.log(error.message);
+            alert("Upload failed: " + error.message);
         }
     });
     return false;

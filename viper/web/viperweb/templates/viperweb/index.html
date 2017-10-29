@@ -10,10 +10,10 @@
         <li><a href="/project/{{ project }}">{{ project }}</a></li>
     </ol>
 
-    <!-- Upload -->
+    <!-- Upload (simple) -->
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Upload Sample</h3>
+            <h3 class="panel-title">Sample Upload (simple)</h3>
         </div>
         <div class="panel-body">
             <form id="upload_form" role="form" class="form-inline" enctype="multipart/form-data">
@@ -27,36 +27,63 @@
                     <input id="tag_list_upload" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
                 </div>
 
-                <div class="form-group">
-                    <label for="extractor">Archive options:</label>
-                    <select id="extractor" name="extractor" class="form-control">
-                        <option value="auto">[*] Detect file extension</option>
-                        <option value="none">[~] No Extractor</option>
-                        <option disabled><hr></option>
-                        {% for key, row in extractors.items %}
-                            <option value="{{ row.cls_name }}">
-                                {{ row.title }}: {% for item in row.supports_extensions %}{{ item }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %} {% if row.supports_password %}(*PW*){% endif %}
-                            </option>
-                        {% endfor %}
-
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="archive_pass"></label>
-                    <input id="archive_pass" name="archive_pass" type="password" class="form-control" placeholder="Archive Password">
-                </div>
-
-                <div class="form-group">
-                    <label for="store_archive"></label>
-                    <select id="store_archive" name="store_archive" class="form-control">
-                        <option value="true">[+] Store archive</option>
-                        <option value="false">[-] Discard archive</option>
-                    </select>
-                </div>
-
                 <button type="submit" class="btn btn-default">Upload</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Upload Archive -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+              <a data-toggle="collapse" href="#collapse_upload_archive">Sample Upload - supports extraction of archive files (e.g. Zip, Rar)</a>
+            </h3>
+        </div>
+
+        <div id="collapse_upload_archive" class="panel-collapse collapse">
+            <div class="panel-body">
+                <form id="upload_form_archive" role="form" class="form-inline" enctype="multipart/form-data">
+
+                    <div class="form-group">
+                        <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tag_list_upload"></label>
+                        <input id="tag_list_upload" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="extractor">Archive options:</label>
+                        <select id="extractor" name="extractor" class="form-control">
+                            <option value="auto">[*] Detect file extension</option>
+                            <option value="none">[~] No Extractor</option>
+                            <option disabled>&nbsp;</option>
+                            {% for key, row in extractors.items %}
+                                <option value="{{ row.cls_name }}">
+                                    {{ row.title }}: {% for item in row.supports_extensions %}{{ item }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %} {% if row.supports_password %}(*PW*){% endif %}
+                                </option>
+                            {% endfor %}
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="archive_pass"></label>
+                        <input id="archive_pass" name="archive_pass" type="password" class="form-control" placeholder="Archive Password">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="store_archive"></label>
+                        <select id="store_archive" name="store_archive" class="form-control">
+                            <option value="true">[+] Store archive</option>
+                            <option value="false">[-] Discard archive</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-default">Upload</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -92,7 +119,7 @@
     </div>
 
 
-    <!-- Download from VirusTotal TODO(frennkie) disabled on 2017-09-08 - requires private VT API key - so I can test it -->
+    <!-- Download from VirusTotal TODO(frennkie) disabled on 2017-09-08 - requires private VT API key - so I can not test it -->
 {#    <div class="panel panel-default">#}
 {#        <div class="panel-heading">#}
 {#            <h3 class="panel-title">VT Download</h3>#}
