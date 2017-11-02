@@ -11,6 +11,8 @@ from setuptools import setup
 from viper.common.version import __version__
 from viper.common.constants import DIST_DIR_YARA_RULES, DIST_DIR_PEID
 
+REQUIREMENT_FILES = ['requirements-base.txt', "requirements-modules.txt", "requirements-web.txt"]
+
 
 def get_packages(package):
     """
@@ -37,22 +39,44 @@ def get_package_data(package):
     return {package: filepaths}
 
 
-# collect requirements for `install_requires` setting
-requirement_files = ['requirements-base.txt', "requirements-modules.txt", "requirements-web.txt"]
+def get_requirements(req_files):
+    """
+    Collect requirements for `install_requires` setting
+    """
+    links = []
+    requires = []
+    for req_file in req_files:
+        requirements = pip.req.parse_requirements(req_file, session=pip.download.PipSession())
 
-links = []
-requires = []
-for req_file in requirement_files:
-    requirements = pip.req.parse_requirements(req_file, session=pip.download.PipSession())
+        for item in requirements:
+            # we want to handle package names and also repo urls
+            if getattr(item, 'url', None):   # older pip has url
+                if str(item.url).startswith("git+https://github.com"):
+                    links.append(str(item.url))
+                    continue
+            if getattr(item, 'link', None):  # newer pip has link
+                if str(item.link).startswith("git+https://github.com"):
+                    links.append(str(item.link))
+                    continue
+            if item.req:  # only record req if neither url nor link is present
+                requires.append(str(item.req))
+    return requires, links
 
-    for item in requirements:
-        # we want to handle package names and also repo urls
-        if getattr(item, 'url', None):   # older pip has url
-            links.append(str(item.url))
-        if getattr(item, 'link', None):  # newer pip has link
-            links.append(str(item.link))
-        if item.req:
-            requires.append(str(item.req))
+
+requires, links = get_requirements(REQUIREMENT_FILES)
+
+# TODO(frennkie) Evil Hack!
+print("===================================================")
+print("Starting installation of dependencies from Github..")
+print("===================================================")
+for idx, link in enumerate(links, 1):
+    print("{} - Source: {}".format(idx, link))
+    pip.main(['install', link])
+
+for idx, url in enumerate(links, 1):
+    print("{} - Source: {}".format(idx, url))
+    pip.main(['install', url])
+
 
 description = "Binary Analysis & Management Framework"
 
@@ -71,7 +95,8 @@ setup(
     packages=get_packages('viper'),
     package_data=get_package_data('viper'),
     install_requires=requires,
-    dependency_links=links,
+    # dependency_links=links,  # broken - using "Evil Hack!" as workaround
+
     data_files=[('/', ['viper.conf.sample']),
                 ('/' + DIST_DIR_PEID, glob.glob("data/peid/*")),
                 ('/' + DIST_DIR_YARA_RULES, glob.glob("data/yara/*"))],
