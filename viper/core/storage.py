@@ -107,11 +107,11 @@ def check_and_deploy_peid():
 
         if os.path.exists(peid_path_setup_utils):
             log.warning("PEID info directory not found - copying default "
-                        "rules ({}) to: {}".format(peid_path_setup_utils, peid_path))
+                        "info ({}) to: {}".format(peid_path_setup_utils, peid_path))
             shutil.copytree(peid_path_setup_utils, peid_path)
         elif os.path.exists(peid_path_repo):
             log.warning("PEID info directory not found - copying default "
-                        "rules ({}) to: {}".format(peid_path_repo, peid_path))
+                        "info ({}) to: {}".format(peid_path_repo, peid_path))
             shutil.copytree(peid_path_repo, peid_path)
         else:
             pass
