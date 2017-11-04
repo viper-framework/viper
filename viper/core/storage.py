@@ -9,7 +9,6 @@ import logging
 from viper.common.out import print_warning, print_error
 from viper.core.project import __project__
 from viper.common.constants import VIPER_ROOT, DIST_DIR_YARA_RULES, DIST_DIR_PEID
-from viper.core.logger import init_logger
 
 log = logging.getLogger('viper')
 
