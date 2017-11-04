@@ -35,6 +35,7 @@ from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.common.objects import File
 from viper.core.storage import store_sample, get_sample_path
+from viper.core.storage import check_and_deploy_peid, check_and_deploy_yara_rules
 from viper.core.database import Database
 from viper.common import network
 from viper.core.ui.commands import Commands
@@ -66,6 +67,10 @@ for folder in ['/usr/share/viper/web/', os.path.join(VIPER_ROOT, 'data/web')]:
         web_root = folder
         bottle.TEMPLATE_PATH.insert(0, folder)
         break
+
+# make sure PEID info and Yara rules are available in storage path
+check_and_deploy_peid()
+check_and_deploy_yara_rules()
 
 # Module Dicts
 mod_dicts = {}
@@ -121,13 +126,13 @@ def print_output(output):
         if entry['type'] == 'table':
             # set the table
             return_html += '<table class="table table-bordered">'
-            
+
             # Column Titles
             return_html += '<tr>'
             for column in entry['data']['header']:
                 return_html += '<th>{0}</th>'.format(bleach.clean(column))
             return_html += '</tr>'
-            
+
             # Rows
             for row in entry['data']['rows']:
                 return_html += '<tr>'
@@ -636,7 +641,7 @@ def run_module():
 def yara_rules():
 
     # Get list of Rules
-    rule_path = os.path.join(VIPER_ROOT, 'data/yara')
+    rule_path = os.path.join(__project__.base_path, 'yara')
     rule_list = os.listdir(rule_path)
 
     # GET is for listing Rules

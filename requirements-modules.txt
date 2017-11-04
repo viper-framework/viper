@@ -32,21 +32,21 @@ simplejson==3.10.0
 virustotal-api==1.1.5
 
 git+https://github.com/viper-framework/pefile.git#egg=pefile
-git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
+git+https://github.com/smarnach/pyexiftool.git#egg=PyExifTool
 
 
 # office module
 olefile==0.44
-git+https://github.com/decalage2/oletools.git
+git+https://github.com/decalage2/oletools.git#egg=oletools
 ## Flash lookup
-git+https://github.com/viper-framework/xxxswf.git
+git+https://github.com/viper-framework/xxxswf.git#egg=xxxswf
 
 # apk module
 ipython < 6; python_version == '2.7'
-git+https://github.com/androguard/androguard.git
+androguard>=3.0
 
 # pe module (verify sigs)
-git+https://github.com/sebdraven/verify-sigs.git
+git+https://github.com/sebdraven/verify-sigs.git#egg=verify-sigs
 
 # archiving
 rarfile==3.0
@@ -54,9 +54,9 @@ rarfile==3.0
 yara-python==3.5.0
 
 # Scraper
-git+https://github.com/viper-framework/ScrapySplashWrapper.git
+git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
 
 # MISP
-git+https://github.com/MISP/PyTaxonomies.git
-git+https://github.com/MISP/PyMISPGalaxies.git
+git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
+git+https://github.com/MISP/PyMISPGalaxies.git#egg=pymispgalaxies
 pymisp==2.4.77
