@@ -281,16 +281,21 @@
                 contentType: false,
                 processData: false,
 
-                success: function (data) {
+                success: function (data, textStatus, jqXHR) {
                     console.log("Submit successful");
-                    console.log(data);
+                    console.log("API Endpoint: " + jqXHR.getResponseHeader('Location'));
 
                     // TODO(frennkie) this simply redirects to first..?!
-                    window.location.replace(malware_list_url + data[0].data.sha256);
+                    window.location.replace(malware_list_url + data[0].data.sha256 + "/");
                 },
-                error: function (data) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
-                    var obj = jQuery.parseJSON(data["responseText"]);
+
+                    console.log("jqXHR:" + jqXHR);
+                    console.log("textStatus:" + textStatus);
+                    console.log("errorThrown:" + errorThrown);
+
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
                     var error = obj.error;
                     console.log(error);
                     console.log(error.message);
@@ -311,16 +316,16 @@
                 contentType: false,
                 processData: false,
 
-                success: function (data) {
+                success: function (data, textStatus, jqXHR) {
                     console.log("Submit successful");
                     console.log(data);
 
                     // TODO(frennkie) this simply redirects to first..?!
-                    window.location.replace(malware_list_url + data[0].data.sha256);
+                    window.location.replace(malware_list_url + data[0].data.sha256 + "/");
                 },
-                error: function (data) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
-                    var obj = jQuery.parseJSON(data["responseText"]);
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
                     var error = obj.error;
                     console.log(error);
                     console.log(error.message);

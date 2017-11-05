@@ -500,8 +500,13 @@ class MalwareViewSet(ViperGenericViewSet):
             return Response(serializer.data, status=201, headers=headers)
 
     def get_success_headers(self, data):
+        log.debug("Success Headers")
+        log.debug("Data: {}".format(data))
+        log.debug("Api Settings: {}".format(api_settings.URL_FIELD_NAME))
+        log.debug("Final: {}".format(data[0][api_settings.URL_FIELD_NAME]))
         try:
-            return {'Location': data[api_settings.URL_FIELD_NAME]}
+            # TODO(frennkie) only return Location for first uploaded file (even if multiple)
+            return {'Location': data[0][api_settings.URL_FIELD_NAME]}
         except (TypeError, KeyError):
             return {}
 

@@ -316,13 +316,13 @@
                 contentType: false,
                 processData: false,
 
-                success: function (data) {
+                success: function (data, textStatus, jqXHR) {
                     console.log("Submit successful");
                     window.location.reload();
                 },
-                error: function (data) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
-                    var obj = jQuery.parseJSON(data["responseText"]);
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
                     alert("Tag: " + obj.tag[0]);
                 }
             });
@@ -335,13 +335,13 @@
             $.ajax({
                     url: malware_tag_list_url + tag_id + '/',
                     type: "DELETE",
-                    success: function (data) {
+                    success: function (data, textStatus, jqXHR) {
                         console.log("deleted");
                         $('#display_tag_' + tag_id).hide();
                     },
-                    error: function (data) {
+                    error: function (jqXHR, textStatus, errorThrown) {
                         console.log("error");
-                        console.log(data);
+                        console.log(jqXHR);
                     }
                 }
             )
@@ -361,16 +361,16 @@
                 contentType: false,
                 processData: false,
 
-                success: function (data) {
+                success: function (data, textStatus, jqXHR) {
                     console.log("Submit successful");
                     console.log(data);
                     // window.location.replace(file_view_url  + "#notes");
                     window.location.reload();
                 },
-                error: function (data) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
-                    var obj = jQuery.parseJSON(data["responseText"]);
-                    console.log(data);
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
+                    console.log(jqXHR);
                     alert("Note: " + obj.title[0])
                 }
             });
@@ -390,13 +390,13 @@
                 contentType: false,
                 processData: false,
 
-                success: function (data) {
+                success: function (data, textStatus, jqXHR) {
                     console.log("Submit successful");
                     window.location.reload();
                 },
-                error: function (data) {
+                error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
-                    var obj = jQuery.parseJSON(data["responseText"]);
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
                     alert("Note: " + obj.title[0]);
                 }
             });
@@ -410,11 +410,11 @@
                 $.ajax({
                         url: malware_note_list_url + note_id + '/',
                         type: "DELETE",
-                        success: function (data) {
+                        success: function (data, textStatus, jqXHR) {
                             console.log("deleted");
                             $('#display_note_' + note_id).hide();
                         },
-                        error: function (data) {
+                        error: function (jqXHR, textStatus, errorThrown) {
                             console.log("error");
                             console.log(data);
                             var obj = jQuery.parseJSON(data["responseText"]);
@@ -466,8 +466,8 @@
                     var hex_start = document.getElementById('hex_start');
                     hex_start.value = parseInt(hex_start.value, 10) + 256;
                 },
-                success: function (response, textStatus, jqXHR) {
-                    $('#hexview').append(response);
+                success: function (data, textStatus, jqXHR) {
+                    $('#hexview').append(data);
 
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
