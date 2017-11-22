@@ -21,15 +21,15 @@ def get_type(data):
         ms = magic.open(magic.MAGIC_NONE)
         ms.load()
         file_type = ms.buffer(data)
-    except:
+    except Exception:
         try:
             file_type = magic.from_buffer(data)
-        except:
+        except Exception:
             return ''
     finally:
         try:
             ms.close()
-        except:
+        except Exception:
             pass
 
     return file_type
@@ -46,7 +46,7 @@ def string_clean(line):
         if isinstance(line, bytes):
             line = line.decode('utf-8')
         return ''.join([x for x in line if x in string.printable])
-    except:
+    except Exception:
         return line
 
 

@@ -58,7 +58,7 @@ def extract_config(rawData):
                 size = entry.directory.entries[0].data.struct.Size
                 data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
                 return data
-    except:
+    except Exception:
         return None
 
 

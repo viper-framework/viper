@@ -187,20 +187,20 @@ class File(object):
             ms = magic.open(magic.MAGIC_NONE)
             ms.load()
             file_type = ms.file(self.path)
-        except:
+        except Exception:
             try:
                 file_type = magic.from_file(self.path)
-            except:
+            except Exception:
                 try:
                     import subprocess
                     file_process = subprocess.Popen(['file', '-b', self.path], stdout=subprocess.PIPE)
                     file_type = file_process.stdout.read().strip()
-                except:
+                except Exception:
                     return ''
         finally:
             try:
                 ms.close()
-            except:
+            except Exception:
                 pass
 
         return file_type
@@ -210,11 +210,11 @@ class File(object):
             ms = magic.open(magic.MIME)
             ms.load()
             mime_type = ms.file(self.path)
-        except:
+        except Exception:
             try:
                 mime = magic.Magic(mime=True)
                 mime_type = mime.from_file(self.path)
-            except:
+            except Exception:
                 return ''
 
         return mime_type

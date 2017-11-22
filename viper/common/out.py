@@ -5,7 +5,7 @@
 try:
     from terminaltables import AsciiTable
     HAVE_TERMTAB = True
-except:
+except ImportError:
     HAVE_TERMTAB = False
 
 import textwrap

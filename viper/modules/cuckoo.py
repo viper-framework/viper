@@ -116,7 +116,7 @@ class Cuckoo(Module):
             # get the JSON
             try:
                 api_status = self.api_query('get', status_url).json()
-            except:
+            except Exception:
                 return
 
             if cfg.cuckoo.cuckoo_modified:
@@ -182,7 +182,7 @@ class Cuckoo(Module):
                                 if result['sample']['sha256'] == __sessions__.current.file.sha256:
                                     rows.append([result['id'], result['started_on'], result['status'], result['completed_on']])
                                     count += 1
-                            except:
+                            except Exception:
                                 pass
                         if len(rows) > 0:
                             self.log('info', "Found {0} Results".format(count))
@@ -211,7 +211,7 @@ class Cuckoo(Module):
         if self.args.dropped and __sessions__.is_set():
             try:
                 task_id = int(self.args.dropped)
-            except:
+            except Exception:
                 self.log('error', "Not a valid task id")
 
             # Handle Modified-Cuckoo

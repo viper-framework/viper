@@ -409,7 +409,7 @@ class VirusTotal(Module):
                     eid, path, name = tmp_samples[int(self.args.download_delete)]
                     os.remove(path)
                     self.log('success', 'Successfully removed {}'.format(path))
-                except:
+                except Exception:
                     self.log('error', 'Invalid id, please use virustotal -dl.')
         elif self.args.search:
             to_search = self.args.search

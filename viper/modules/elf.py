@@ -184,7 +184,7 @@ class ELF(Module):
                     with open(sample_path, 'rb') as fd:
                         elfo = ELFFile(fd)
                     cur_ep = elfo.header.e_entry
-                except:
+                except Exception:
                     continue
 
                 rows.append([sample.md5, sample.name, hex(cur_ep)])
@@ -242,7 +242,7 @@ class ELF(Module):
                     with open(sample_path, 'rb') as fd:
                         elfo = ELFFile(fd)
                     cur_ep = elfo.header.e_entry
-                except:
+                except Exception:
                     continue
 
                 if ep == cur_ep:
@@ -277,7 +277,7 @@ class ELF(Module):
                     with open(sample_path, 'rb') as fd:
                         elfo = ELFFile(fd)
                     cur_machine = elfo.header.e_machine
-                except:
+                except Exception:
                     continue
 
                 rows.append([sample.md5, sample.name, cur_machine])
@@ -335,7 +335,7 @@ class ELF(Module):
                     with open(sample_path, 'rb') as fd:
                         elfo = ELFFile(fd)
                     cur_machine = elfo.header.e_machine
-                except:
+                except Exception:
                     continue
 
                 if machine == cur_machine:
@@ -370,7 +370,7 @@ class ELF(Module):
                     with open(sample_path, 'rb') as fd:
                         elfo = ELFFile(fd)
                     cur_e_type = elfo.header.e_type
-                except:
+                except Exception:
                     continue
 
                 rows.append([sample.md5, sample.name, cur_e_type])
@@ -428,7 +428,7 @@ class ELF(Module):
                     with open(sample_path, 'rb') as fd:
                         elfo = ELFFile(fd)
                     cur_e_type = elfo.header.e_machine
-                except:
+                except Exception:
                     continue
                 if e_type == cur_e_type:
                     rows.append([sample.md5, sample.name])
@@ -520,7 +520,7 @@ class ELF(Module):
                 try:
                     with open(sample_path, 'rb') as fd:
                         cur_ent = self.get_entropy(fd.read())
-                except:
+                except Exception:
                     continue
 
                 if ent == cur_ent:

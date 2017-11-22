@@ -21,7 +21,7 @@ def parse_config(raw_config):
         if line.startswith('<entry key'):
             try:
                 config_dict[re.findall('key="(.*?)"', line)[0]] = re.findall('>(.*?)</entry', line)[0]
-            except:
+            except Exception:
                 config_dict[re.findall('key="(.*?)"', line)[0]] = 'Not Set'
             finally:
                 pass
