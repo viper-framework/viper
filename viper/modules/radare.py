@@ -22,7 +22,7 @@ class Radare(Module):
         command_line = 'r2 {}'.format(__sessions__.current.file.path)
         try:
             os.system(command_line)
-        except:
+        except Exception:
             self.log('error', "Unable to start Radare2")
 
     def command(self, command):

@@ -61,5 +61,5 @@ def autorun_module(file_hash):
                     del(module.output[:])
                 else:
                     print_error("\"{0}\" is not a valid command. Please check your viper.conf file.".format(cmd_line))
-            except:
+            except Exception:
                 print_error("Viper was unable to complete the command {0}".format(cmd_line))

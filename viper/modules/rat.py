@@ -57,7 +57,7 @@ class RAT(Module):
 
         try:
             config = module.config(__sessions__.current.file.data)
-        except:
+        except Exception:
             config = None
         if not config:
             self.log('error', "No Configuration Detected")

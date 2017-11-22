@@ -16,7 +16,7 @@ from Crypto.Cipher import DES, AES
 def derive_key(guid, coded_key):
     try:
         from pbkdf2 import PBKDF2
-    except:
+    except ImportError:
         print("[!] Unable to derive a key. requires 'sudo pip install pbkdf2'")
         sys.exit()
     generator = PBKDF2(guid, guid, 8)
@@ -71,7 +71,7 @@ def deflate_contents(data):
 def string_print(line):
     try:
         return ''.join((char for char in line if 32 < ord(char) < 127))
-    except:
+    except Exception:
         return line
 
 
@@ -125,7 +125,7 @@ def parse_config(raw_config, ver):
             config_dict['UseCustomDNS'] = re.search('UseCustomDnsServer(.*?)\x0c', raw_config).group()[19:-1].encode('hex')
             config_dict['PrimaryDNSServer'] = re.search('PrimaryDnsServer\x0c(.*?)\x0c', raw_config).group()[18:-1]
             config_dict['BackupDNSServer'] = re.search('BackupDnsServer\x0c(.*?)(\x04|\x0c)', raw_config).group()[16:-1]
-        except:
+        except Exception:
             pass
 
     else:
@@ -187,5 +187,5 @@ def config(data):
             # print "    [-] Found Version 1.0x"
             config_dict = decrypt_v1(coded_config)
         return config_dict
-    except:
+    except Exception:
         return

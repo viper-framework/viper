@@ -140,7 +140,7 @@ class Koodous(Module):
         try:
             content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
-        except:
+        except Exception:
             self.log('error', 'You have no file loaded')
 
         try:
@@ -166,7 +166,7 @@ class Koodous(Module):
         try:
             content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
-        except:
+        except Exception:
             self.log('error', 'You have no file loaded')
             return
         try:
