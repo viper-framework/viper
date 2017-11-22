@@ -5,7 +5,7 @@
 try:
     from pymispgalaxies import Clusters
     HAVE_PYGALAXIES = True
-except:
+except ImportError:
     HAVE_PYGALAXIES = False
 
 

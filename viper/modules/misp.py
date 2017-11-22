@@ -15,13 +15,13 @@ try:
     except ImportError:
         from pymisp import EncodeFull as MISPEncode
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 try:
     import requests
     HAVE_REQUESTS = True
-except:
+except ImportError:
     HAVE_REQUESTS = False
 
 
@@ -63,7 +63,7 @@ class MISP(Module):
         self.parser.add_argument("--off", action='store_true', help='Use offline (can only work on pre-downloaded events)')
         self.parser.add_argument("--on", action='store_true', help='Switch to online mode')
         self.parser.add_argument("-k", "--key", help='Your key on the MISP instance')
-        self.parser.add_argument("-v", "--verify", action='store_false', help='Disable certificate verification (for self-signed)')
+        self.parser.add_argument("-v", "--verify", default=True, action='store_false', help='Disable certificate verification (for self-signed)')
         subparsers = self.parser.add_subparsers(dest='subname')
 
         # ##### Upload sample to MISP #####
@@ -346,6 +346,9 @@ class MISP(Module):
         else:
             misp_event = MISPEvent()
             misp_event.load(event)
+        if not hasattr(misp_event, 'id'):
+            # The event doesn't exists upstream, breaking.
+            return
         for a in misp_event.attributes:
             row = None
             if a.type == 'malware-sample':
@@ -533,11 +536,11 @@ class MISP(Module):
             # FIXME: this has been removed upstream: https://github.com/MISP/MISP/issues/1793
             # Keeping it like that for now, until we decide how to re-enable it
             idlist = []
-            if a.RelatedAttribute:
+            if hasattr(a, 'RelatedAtribute') and a.RelatedAttribute:
                 for r in a.RelatedAttribute:
                     # idlist.append(r.id)
                     pass
-            rows.append([a.type, a.value, '\n'.join(textwrap.wrap(a.comment, 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
+            rows.append([a.type, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
         self.log('table', dict(header=header, rows=rows))
         if current_event.published:
             self.log('info', 'This event has been published')

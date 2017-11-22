@@ -7,7 +7,7 @@ import os
 try:
     from pymisp import MISPEvent
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 from viper.core.session import __sessions__

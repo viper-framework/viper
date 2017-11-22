@@ -7,9 +7,9 @@ import glob
 import json
 
 try:
-    from pymisp import MISPEvent, EncodeUpdate
+    from pymisp import MISPEvent
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 from viper.core.session import __sessions__
@@ -59,7 +59,7 @@ def store(self):
                 event = MISPEvent()
                 event.load(path)
                 if 'new_event_' in path:
-                    event = self.misp.add_event(json.dumps(event, cls=EncodeUpdate))
+                    event = self.misp.add_event(event.to_json())
                     try:
                         self._dump(event)
                         os.remove(path)
