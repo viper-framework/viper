@@ -166,7 +166,7 @@ class JoeSandbox(Module):
         # only do this for the first one
         for task in tasks:
             _, content = self.joe.download(task.webid, "irjsonfixed")
-            content = json.loads(content)
+            content = json.loads(content.decode())
             self.log('info', json.dumps(content, indent=4))
 
 
