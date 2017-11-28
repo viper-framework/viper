@@ -23,7 +23,7 @@ class TestConfig:
         assert hasattr(instance, "http_client")
 
         delattr(instance, "http_client")
-        assert not hasattr(instance, "http_client")
+        assert instance.http_client is None
 
         instance.parse_http_client()
         assert hasattr(instance, "http_client")

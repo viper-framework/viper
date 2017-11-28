@@ -33,7 +33,7 @@ class Project(object):
         log_file = os.path.join(self.base_path, "viper.log")
         debug_log = False
 
-        if hasattr(cfg, 'logging'):
+        if cfg.logging:
             if hasattr(cfg.logging, 'log_file') and cfg.logging.log_file:
                 log_file = cfg.logging.log_file
 
