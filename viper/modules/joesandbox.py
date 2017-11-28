@@ -39,13 +39,17 @@ class JoeSandbox(Module):
         group.add_argument('-r', '--report', action='store_true', help='Show a small report.')
         group.add_argument('-c', '--clear', action='store_true', help="Empty the list of tasks.")
 
+    def run(self):
+        super(JoeSandbox, self).run()
+        if not cfg.joesandbox:
+            self.log("error", 'The JoeSandbox module cannot be used unless the configuration is defined.')
+            return
+
         self.joe = jbxapi.JoeSandbox(apiurl=cfg.joesandbox.apiurl,
                                      apikey=cfg.joesandbox.apikey,
                                      accept_tac=cfg.joesandbox.accept_tac,
                                      verify_ssl=cfg.joesandbox.verify)
 
-    def run(self):
-        super(JoeSandbox, self).run()
         if self.args is None:
             return
 

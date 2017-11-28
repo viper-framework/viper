@@ -193,7 +193,7 @@ class Database:
 
     def __init__(self):
 
-        if hasattr(cfg, "database") and cfg.database.connection:
+        if cfg.database and cfg.database.connection:
             self._connect_database(cfg.database.connection)
         else:
             self._connect_database("")

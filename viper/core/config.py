@@ -182,6 +182,10 @@ class Config:
             log.warning("unable to fetch section: {}\n{}".format(section, e))
             print(e)
 
+    def __getattr__(self, attr):
+        log.warning("The section {} is missing in the config file.".format(attr))
+        return None
+
 
 __config__ = Config()
 

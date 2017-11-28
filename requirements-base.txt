@@ -1,11 +1,11 @@
 bitstring==3.1.5
 pbkdf2==1.3
-python-dateutil==2.6.0
+python-dateutil==2.6.1
 python-magic==0.4.13
-requests[socks]==2.13.0
+requests[socks]==2.18.4
 requests-cache==0.4.13
-scandir==1.5
-six==1.10.0
-SQLAlchemy==1.1.9
+scandir==1.6
+six==1.11.0
+SQLAlchemy==1.1.15
 terminaltables==3.1.0
 git+https://github.com/kbandla/pydeep.git#egg=pydeep

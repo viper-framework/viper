@@ -1,5 +1,4 @@
 language: python
-dist: trusty
 sudo: required
 
 cache:
@@ -9,13 +8,12 @@ cache:
 
 python:
     - 2.7
-    - 3.4
     - 3.5
     - "3.5-dev"
     - 3.6
     - "3.6-dev"
-      # - "3.7-dev"
-      # - "nightly"
+    - "3.7-dev"
+    - "nightly"
 
 before_install:
     - sudo apt-get update -qq

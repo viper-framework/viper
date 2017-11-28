@@ -64,3 +64,6 @@ pymisp>=2.4.82
 
 # Scraper
 git+https://github.com/viper-framework/ScrapySplashWrapper.git
+
+# Joe Sandbox
+jbxapi
