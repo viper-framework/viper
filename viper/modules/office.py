@@ -125,7 +125,7 @@ class Office(Module):
             try:
                 if '\x00Attribu' in ole.openstream(obj).read():
                     has_macro = 'Yes'
-            except:
+            except Exception:
                 pass
 
             rows.append([
@@ -365,7 +365,7 @@ class Office(Module):
                         with open(save_path, 'ab') as out:
                             out.write(vba_code)
                         save = True
-                    except:
+                    except Exception:
                         self.log('error', "Unable to write to {0}".format(save_path))
                         return
             # Print all Tables together

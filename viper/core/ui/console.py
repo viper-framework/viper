@@ -49,7 +49,7 @@ def logo():
 
     try:
         db.find('all')
-    except:
+    except Exception:
         print_error("You need to update your Viper database. Run 'python update.py -d'")
         sys.exit()
 
@@ -321,7 +321,7 @@ class Console(object):
                             if cfg.modules.store_output and __sessions__.is_set():
                                 try:
                                     Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
-                                except:
+                                except Exception:
                                     pass
                             del(module.output[:])
                         else:

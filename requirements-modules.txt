@@ -16,7 +16,7 @@ MarkupSafe==1.0
 mccabe==0.6.1
 openapi-codec==1.3.1
 packaging==16.8
-pyasn1==0.2.3
+pyasn1
 pycodestyle==2.3.1
 pycparser==2.17
 pycrypto==2.6.1
@@ -59,7 +59,7 @@ git+https://github.com/viper-framework/ScrapySplashWrapper.git
 # MISP
 git+https://github.com/MISP/PyTaxonomies.git
 git+https://github.com/MISP/PyMISPGalaxies.git
-pymisp==2.4.77
+pymisp==2.4.82
 
 # Joe Sandbox module
 jbxapi==2.3.0

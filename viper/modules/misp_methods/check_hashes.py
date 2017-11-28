@@ -8,13 +8,13 @@ import datetime
 try:
     from pymisp import MISPEvent
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 try:
     import requests
     HAVE_REQUESTS = True
-except:
+except ImportError:
     HAVE_REQUESTS = False
 
 
@@ -124,7 +124,7 @@ def check_hashes(self):
             return
         try:
             result = response.json()
-        except:
+        except Exception:
             self.log('error', 'Unable to get the report of {}'.format(vt_request['resource']))
             continue
         if result['response_code'] == 1:

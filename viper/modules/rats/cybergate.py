@@ -18,10 +18,8 @@ def extract_config(raw_data):
         pe = pefile.PE(data=raw_data)
 
         try:
-            rt_string_idx = [
-                entry.id for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries
-                ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
-        except:
+            rt_string_idx = [entry.id for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+        except Exception:
             return None
 
         rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
@@ -33,7 +31,7 @@ def extract_config(raw_data):
                 data = pe.get_memory_mapped_image()[data_rva:data_rva + size]
                 config = data.split('####@####')
                 return config
-    except:
+    except Exception:
         return None
 
 

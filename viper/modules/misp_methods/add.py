@@ -2,12 +2,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import json
-
 try:
-    from pymisp import MISPEvent, EncodeUpdate
+    from pymisp import MISPEvent
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 from viper.core.session import __sessions__
@@ -33,7 +31,7 @@ def _change_event(self):
         if __sessions__.current.misp_event.event.id:
             event = self.misp.update(__sessions__.current.misp_event.event._json())
         else:
-            event = self.misp.add_event(json.dumps(__sessions__.current.misp_event.event, cls=EncodeUpdate))
+            event = self.misp.add_event(__sessions__.current.misp_event.event.to_json())
         if self._has_error_message(event):
             return
         try:

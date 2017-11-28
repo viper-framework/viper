@@ -5,7 +5,7 @@
 try:
     from pytaxonomies import Taxonomies
     HAVE_PYTAX = True
-except:
+except ImportError:
     HAVE_PYTAX = True
 
 
@@ -75,7 +75,7 @@ def tag(self):
             return
         try:
             taxonomies.revert_machinetag(self.args.event)
-        except:
+        except Exception:
             self.log('error', 'Not a valid machine tag available in misp-taxonomies: "{}".'.format(self.args.event))
             return
         __sessions__.current.misp_event.event.add_tag(self.args.event)
@@ -86,7 +86,7 @@ def tag(self):
         identifier, tag = self.args.attribute
         try:
             taxonomies.revert_machinetag(tag)
-        except:
+        except Exception:
             self.log('error', 'Not a valid machine tag available in misp-taxonomies: "{}".'.format(tag))
             return
         __sessions__.current.misp_event.event.add_attribute_tag(tag, identifier)

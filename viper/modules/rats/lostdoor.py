@@ -38,7 +38,7 @@ def new_decoder(split_list):
         try:
             k, v = line.split(' = ')
             raw_dict[k[1:-1]] = v[1:-1]
-        except:
+        except Exception:
             continue
     return config_cleaner(raw_dict)
 

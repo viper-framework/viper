@@ -5,7 +5,7 @@
 try:
     from pymispgalaxies import Clusters
     HAVE_PYGALAXIES = True
-except:
+except ImportError:
     HAVE_PYGALAXIES = False
 
 
@@ -15,7 +15,7 @@ def _print_cluster_value(self, cluster_value):
         self.log('info', 'Description: {}'.format(cluster_value.description))
     if not cluster_value.meta:
         return
-    for key, value in cluster_value.meta._json().items():
+    for key, value in cluster_value.meta.to_dict().items():
         if isinstance(value, list):
             self.log('info', '{}:'.format(key))
             for e in value:

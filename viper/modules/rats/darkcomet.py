@@ -78,9 +78,7 @@ def extract_config(raw_data, key):
 
     pe = pefile.PE(data=raw_data)
 
-    rt_string_idx = [
-        entry.id for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries
-        ].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
+    rt_string_idx = [entry.id for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries].index(pefile.RESOURCE_TYPE['RT_RCDATA'])
     rt_string_directory = pe.DIRECTORY_ENTRY_RESOURCE.entries[rt_string_idx]
 
     for entry in rt_string_directory.directory.entries:

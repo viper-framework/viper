@@ -2,12 +2,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import json
-
 try:
-    from pymisp import MISPEvent, EncodeUpdate
+    from pymisp import MISPEvent
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 
@@ -44,7 +42,7 @@ def create_event(self):
         __sessions__.current.misp_event.current_dump_file = self._dump()
         __sessions__.current.misp_event.offline()
     else:
-        misp_event = self.misp.add_event(json.dumps(misp_event, cls=EncodeUpdate))
+        misp_event = self.misp.add_event(misp_event.to_json())
         if self._has_error_message(misp_event):
             return
         __sessions__.new(misp_event=MispEvent(misp_event, self.offline_mode))

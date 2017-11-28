@@ -276,7 +276,7 @@ class Database:
                 malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
                 malware_entry.tag.remove(tag)
                 session.commit()
-            except:
+            except Exception:
                 print_error("Tag {0} does not exist for this sample".format(tag_name))
 
             # If tag has no entries drop it

@@ -95,7 +95,7 @@ class SIZE(Module):
 
             try:
                 cur_size = os.path.getsize(sample_path)
-            except:
+            except Exception:
                 continue
 
             if self.file_size == cur_size:

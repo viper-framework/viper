@@ -61,7 +61,7 @@ def open_samples(self):
         if self.args.delete != 'all':
             try:
                 int(self.args.delete)
-            except:
+            except Exception:
                 self.log('error', 'You can only delete all the samples of the samples of a specific event ID.')
                 return
         if self._clean_tmp_samples(self.args.delete):

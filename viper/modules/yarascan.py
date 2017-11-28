@@ -155,7 +155,7 @@ class YaraScan(Module):
             # We need this just for some Yara rules.
             try:
                 ext = os.path.splitext(entry.name)[1]
-            except:
+            except Exception:
                 ext = ''
 
             for match in rules.match(entry_path, externals={'filename': entry.name, 'filepath': entry_path, 'extension': ext, 'filetype': entry.type}):

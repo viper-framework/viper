@@ -47,5 +47,5 @@ def config(data):
             config['WebPanel'] = parts[23]
             config['Remote Delay'] = parts[24]
         return config
-    except:
+    except Exception:
         return None

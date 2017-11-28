@@ -26,7 +26,7 @@ def get_parts(data):
                     dropper = zip.read(name)
                 if name == "config.dat":  # this is the encrypted config file
                     conf = zip.read(name)
-    except:
+    except Exception:
         return None, None
     if enckey and conf:
         return enckey, conf
@@ -51,7 +51,7 @@ def get_dropper(enckey, dropper):
         new_zipdata = decrypt_aes(key, dropper)
         new_key, conf = get_parts(new_zipdata)
         return new_key, conf
-    except:
+    except Exception:
         return None, None
 
 

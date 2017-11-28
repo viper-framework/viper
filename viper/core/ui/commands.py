@@ -113,7 +113,7 @@ class About(Command):
     def run(self, *args):
         try:
             self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         rows = list()
@@ -160,7 +160,7 @@ class Analysis(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if not __sessions__.is_set():
@@ -209,7 +209,7 @@ class Clear(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         os.system('clear')
@@ -228,7 +228,7 @@ class Close(Command):
     def run(self, *args):
         try:
             self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         __sessions__.close()
@@ -260,7 +260,7 @@ class Copy(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if not __sessions__.is_set():
@@ -310,7 +310,7 @@ class Delete(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         while True:
@@ -378,7 +378,7 @@ class Export(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # This command requires a session to be opened.
@@ -471,7 +471,7 @@ class Find(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # One of the most useful search terms is by tag. With the --tags
@@ -556,7 +556,7 @@ class Help(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         self.log('info', "Commands")
@@ -593,7 +593,7 @@ class Info(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if __sessions__.is_set():
@@ -630,7 +630,7 @@ class New(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         title = input("Enter a title for the new file: ")
@@ -664,7 +664,7 @@ class Notes(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if not __sessions__.is_set():
@@ -779,7 +779,7 @@ class Open(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         target = " ".join(args.value)
@@ -864,7 +864,7 @@ class Parent(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # This command requires a session to be opened.
@@ -927,7 +927,7 @@ class Projects(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if cfg.get('paths').storage_path:
@@ -979,7 +979,7 @@ class Rename(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if __sessions__.is_set():
@@ -1020,7 +1020,7 @@ class Sessions(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if args.list:
@@ -1071,7 +1071,7 @@ class Stats(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # Set all Counters Dict
@@ -1180,7 +1180,7 @@ class Store(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if args.folder is not None:
@@ -1307,7 +1307,7 @@ class Tags(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # This command requires a session to be opened.
