@@ -4,6 +4,7 @@
 
 import os
 import re
+import sys
 
 import pytest
 
@@ -131,6 +132,7 @@ class TestAPK:
 
         assert re.search(r".*argument -d/--dump: expected one argument.*", out)
 
+    @pytest.mark.skipif(sys.version_info < (3, 3), reason="Too slow on python2.7, makes travis fail.")
     @pytest.mark.usefixtures("cleandir")
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_dump(self, capsys, filename):
