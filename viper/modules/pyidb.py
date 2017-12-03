@@ -68,8 +68,8 @@ class PyIdb(Module):
         for h in set(heads):
             try:
                 op = api.idc._disassemble(h)
-                code = "%x: %s %s" % (h, op.mnemonic, op.op_str)
-                print code
+                code = "{0}: {1} {2}".format(hex(h), op.mnemonic, op.op_str)
+                print(code)
             except:
                 continue
 
