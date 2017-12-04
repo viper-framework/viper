@@ -59,7 +59,7 @@ def store(self):
                 event = MISPEvent()
                 event.load(path)
                 if 'new_event_' in path:
-                    event = self.misp.add_event(event.to_json())
+                    event = self.misp.add_event(event)
                     try:
                         self._dump(event)
                         os.remove(path)
@@ -68,7 +68,7 @@ def store(self):
                 else:
                     eid = event.id
                     try:
-                        event = self.misp.update(event._json())
+                        event = self.misp.update(event)
                     except Exception as e:
                         self.log('error', 'Unable to update event {}: {}.'.format(eid, e))
 

@@ -6,7 +6,8 @@ import time
 import datetime
 
 try:
-    from pymisp import MISPEvent
+    from pymisp import MISPEvent, InvalidMISPObject, MISPObject
+    from pymisp.tools import VTReportObject
     HAVE_PYMISP = True
 except ImportError:
     HAVE_PYMISP = False
@@ -27,17 +28,9 @@ cfg = __config__
 
 # ####### Helpers for check_hashes ########
 
-def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes, sample_hashes, misp_event):
-    new_md5 = False
-    new_sha1 = False
-    new_sha256 = False
-    if md5 not in event_hashes and md5 not in sample_hashes:
-        new_md5 = True
-    if sha1 not in event_hashes:
-        new_sha1 = True
-    if sha256 not in event_hashes:
-        new_sha256 = True
+def _prepare_attributes(self, md5, sha1, sha256, vt_object, base_attr):
 
+    # Figuring out which hash was in MISP and has the rest of the parameters
     curattr = None
     if base_attr.get(sha256):
         curattr = base_attr.get(sha256)
@@ -46,29 +39,45 @@ def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes, 
     else:
         curattr = base_attr.get(md5)
 
-    if new_sha256:
-        misp_event.add_attribute('sha256', sha256, **curattr)
-    if new_sha1:
-        misp_event.add_attribute('sha1', sha1, **curattr)
-    if new_md5:
-        misp_event.add_attribute('md5', md5, **curattr)
+    file_object = MISPObject('file')
+    file_object.add_attribute('md5', value=md5, **curattr)
+    file_object.add_attribute('sha1', value=sha1, **curattr)
+    file_object.add_attribute('sha256', value=sha256, **curattr)
+    file_object.add_reference(vt_object.uuid, 'analysed-with')
 
-    if not link[0]:
-        curattr['to_ids'] = False
-        curattr['category'] = 'External analysis'
-        misp_event.add_attribute('link', link[1], **curattr)
-    return misp_event
+    return file_object
 
 
-def _populate(self, event, original_attributes):
-    if len(event.attributes) == original_attributes:
-        self.log('info', "No new attributes to add.")
+def _populate(self, event, vt_object, file_object):
+    # Get template ID of VT object
+    vt_template_id = self.misp.get_object_template_id(vt_object.template_uuid)
+    # Get template ID of file object
+    file_template_id = self.misp.get_object_template_id(file_object.template_uuid)
+
+    # Add VT object:
+    result = self.misp.add_object(event.id, vt_template_id, vt_object)
+    if self._has_error_message(result):
+        self.log('error', 'foo')
+        self.log('error', vt_object.to_json())
         return
-    event.timestamp = int(time.time())
-    result = self.misp.update(event._json())
+
+    # Add File object
+    result = self.misp.add_object(event.id, file_template_id, file_object)
+    if self._has_error_message(result):
+        self.log('error', 'bar')
+        self.log('error', file_object.to_json())
+        return
+    result = self.misp.add_object_reference(file_object.ObjectReference[0])
+
     if not self._has_error_message(result):
         self.log('success', "All attributes updated successfully")
-        __sessions__.new(misp_event=MispEvent(result, self.offline_mode))
+        event_id = self._get_eventid()
+        if event_id is None:
+            return
+        event = self.misp.get(event_id)
+        if self._has_error_message(event):
+            return
+        __sessions__.new(misp_event=MispEvent(event, self.offline_mode))
 
 
 def check_hashes(self):
@@ -95,70 +104,58 @@ def check_hashes(self):
         elif a.type in ('filename|md5', 'filename|sha1', 'filename|sha256', 'malware-sample'):
             h = a.value.split('|')[1]
             event_hashes.append(h)
+            if a.type == 'malware-sample':
+                sample_hashes.append(h)
+
         if h is not None:
             base_new_attributes[h] = {"category": a.category,
-                                      "comment": '{} - Xchecked via VT: {}'.format(a.comment, h),
                                       "to_ids": a.to_ids,
                                       "Tag": a.Tag,
                                       "distribution": a.distribution}
 
     unk_vt_hashes = []
-    vt_request = {'apikey': cfg.virustotal.virustotal_key}
     # Make sure to start getting reports for the longest possible hashes (reduce risks of collisions)
     hashes_to_check = sorted(event_hashes, key=len)
-    original_attributes = len(misp_event.attributes)
     if cfg.virustotal.virustotal_has_private_key is False:
         quota = 4
         timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
 
     while len(hashes_to_check) > 0:
-        vt_request['resource'] = hashes_to_check.pop()
+        resource = hashes_to_check.pop()
         try:
-            response = requests.post(cfg.misp.misp_vturl, data=vt_request, proxies=cfg.virustotal.proxies)
-        except requests.ConnectionError:
-            self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
+            vt_object = VTReportObject(cfg.virustotal.virustotal_key, resource, vt_proxies=cfg.virustotal.proxies)
+        except requests.exceptions.ConnectionError:
+            self.log('error', 'Failed to connect to VT for {}'.format(resource))
             return
-        if response.status_code == 403:
-            self.log('error', 'This command requires virustotal API key')
-            self.log('error', 'Please check that your key have the right permissions')
-            return
-        try:
-            result = response.json()
-        except Exception:
-            self.log('error', 'Unable to get the report of {}'.format(vt_request['resource']))
+        except InvalidMISPObject as e:
+            self.log('error', e)
+            unk_vt_hashes.append(resource)
             continue
-        if result['response_code'] == 1:
-            md5 = result['md5']
-            sha1 = result['sha1']
-            sha256 = result['sha256']
-            hashes_to_check = [eh for eh in hashes_to_check if eh not in (md5, sha1, sha256)]
-            link = [False, result['permalink']]
-            # Do not re-add a link
-            for a in misp_event.attributes:
-                if a.value == link[1]:
-                    link[0] = True
-            if md5 in sample_hashes:
-                self.log('success', 'Sample available in MISP:')
-            else:
-                self.log('success', 'Sample available in VT:')
-            if self.args.populate:
-                misp_event = self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes, sample_hashes, misp_event)
-            self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(link[1], md5, sha1, sha256))
-            if cfg.virustotal.virustotal_has_private_key is False:
-                if quota > 0:
-                    quota -= 1
-                else:
-                    waiting_time = (timeout - datetime.datetime.now()).seconds
-                    if waiting_time > 0:
-                        self.log('warning', 'No private API key, 4 queries/min is the limit. Waiting for {} seconds.'.format(waiting_time))
-                        time.sleep(waiting_time)
-                    quota = 4
-                    timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
+        result = vt_object.get_report()
+        md5 = result['md5']
+        sha1 = result['sha1']
+        sha256 = result['sha256']
+        hashes_to_check = [eh for eh in hashes_to_check if eh not in (md5, sha1, sha256)]
+        if md5 in sample_hashes:
+            self.log('success', 'Sample available in MISP:')
         else:
-            unk_vt_hashes.append(vt_request['resource'])
+            self.log('success', 'Sample available in VT:')
+        if self.args.populate:
+            file_object = self._prepare_attributes(md5, sha1, sha256, vt_object, base_new_attributes)
+        self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(result["permalink"], md5, sha1, sha256))
+        if cfg.virustotal.virustotal_has_private_key is False:
+            if quota > 0:
+                quota -= 1
+            else:
+                waiting_time = (timeout - datetime.datetime.now()).seconds
+                if waiting_time > 0:
+                    self.log('warning', 'No private API key, 4 queries/min is the limit. Waiting for {} seconds.'.format(waiting_time))
+                    time.sleep(waiting_time)
+                quota = 4
+                timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
 
     if self.args.populate:
-        self.__populate(misp_event, original_attributes)
+        self._populate(misp_event, vt_object, file_object)
     if len(unk_vt_hashes) > 0:
         self.log('error', 'Unknown on VT:')
         for h in unk_vt_hashes:
