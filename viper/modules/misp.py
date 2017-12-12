@@ -5,15 +5,10 @@
 import argparse
 import textwrap
 import os
-import json
 import logging
 
 try:
     from pymisp import PyMISP, PyMISPError, MISPEvent
-    try:
-        from pymisp import MISPEncode
-    except ImportError:
-        from pymisp import EncodeFull as MISPEncode
     HAVE_PYMISP = True
 except ImportError:
     HAVE_PYMISP = False
@@ -48,7 +43,7 @@ class MISP(Module):
     from .misp_methods import admin  # noqa
     from .misp_methods import create_event  # noqa
     from .misp_methods import download  # noqa
-    from .misp_methods import check_hashes, _prepare_attributes, _populate  # noqa
+    from .misp_methods import check_hashes, _populate, _expand_local_sample, _make_VT_object  # noqa
     from .misp_methods import store, _get_local_events  # noqa
     from .misp_methods import tag  # noqa
     from .misp_methods import galaxies  # noqa
@@ -349,7 +344,7 @@ class MISP(Module):
         if not hasattr(misp_event, 'id'):
             # The event doesn't exists upstream, breaking.
             return
-        for a in misp_event.attributes + misp_event.Object:
+        for a in misp_event.attributes + [attribute for obj in misp_event.objects for attribute in obj.attributes]:
             row = None
             if a.type == 'malware-sample':
                 samples_count += 1
@@ -411,7 +406,7 @@ class MISP(Module):
 
         path = os.path.join(event_path, filename)
         with open(path, 'w') as f:
-            json.dump(to_dump, f, cls=MISPEncode)
+            f.write(to_dump.to_json())
         self.log('success', '{} stored successfully.'.format(filename.rstrip('.json')))
         return filename
 
@@ -493,7 +488,7 @@ class MISP(Module):
             nb_hashes = 0
             me = MISPEvent()
             me.load(e)
-            for a in me.attributes + me.Object:
+            for a in me.attributes + [attribute for obj in me.objects for attribute in obj.attributes]:
                 if a.type == 'malware-sample':
                     nb_samples += 1
                 if a.type in ('md5', 'sha1', 'sha256', 'filename|md5', 'filename|sha1', 'filename|sha256'):
@@ -544,11 +539,11 @@ class MISP(Module):
             rows.append([a.type, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
         self.log('table', dict(header=header, rows=rows))
         # #### Objects
-        for obj in current_event.Object:
+        for obj in current_event.objects:
             self.log('info', obj.name)
             header = ['Object relation', 'value', 'comment']
             rows = []
-            for a in obj.Attribute:
+            for a in obj.attributes:
                 rows.append([a.object_relation, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
             self.log('table', dict(header=header, rows=rows))
         # ############

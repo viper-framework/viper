@@ -1,7 +1,7 @@
 from .admin import admin  # noqa
 from .create_event import create_event  # noqa
 from .download import download  # noqa
-from .check_hashes import _prepare_attributes, _populate, check_hashes  # noqa
+from .check_hashes import _populate, check_hashes, _expand_local_sample, _make_VT_object  # noqa
 from .store import _get_local_events, store  # noqa
 from .tag import tag  # noqa
 from .galaxies import galaxies  # noqa
