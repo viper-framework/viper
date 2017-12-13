@@ -60,7 +60,7 @@ rarfile
 # MISP
 git+https://github.com/MISP/PyTaxonomies.git
 git+https://github.com/MISP/PyMISPGalaxies.git
-pymisp>=2.4.82
+pymisp[fileobjects,virustotal] >= 2.4.84
 
 # Scraper
 git+https://github.com/viper-framework/ScrapySplashWrapper.git
