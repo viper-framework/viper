@@ -1,4 +1,4 @@
-Django
+Django >= 2; python_version >= '3.5'
 SQLAlchemy
 beautifulsoup4
 bitstring

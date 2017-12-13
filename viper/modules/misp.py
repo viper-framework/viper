@@ -5,15 +5,10 @@
 import argparse
 import textwrap
 import os
-import json
 import logging
 
 try:
     from pymisp import PyMISP, PyMISPError, MISPEvent
-    try:
-        from pymisp import MISPEncode
-    except ImportError:
-        from pymisp import EncodeFull as MISPEncode
     HAVE_PYMISP = True
 except ImportError:
     HAVE_PYMISP = False
@@ -48,7 +43,7 @@ class MISP(Module):
     from .misp_methods import admin  # noqa
     from .misp_methods import create_event  # noqa
     from .misp_methods import download  # noqa
-    from .misp_methods import check_hashes, _prepare_attributes, _populate  # noqa
+    from .misp_methods import check_hashes, _populate, _expand_local_sample, _make_VT_object  # noqa
     from .misp_methods import store, _get_local_events  # noqa
     from .misp_methods import tag  # noqa
     from .misp_methods import galaxies  # noqa
@@ -232,10 +227,10 @@ class MISP(Module):
         display = subparsers_org.add_parser('display', help="Display an organisation.")
         display.add_argument('id', help='ID of the organisation to display. Use "local" to display all local organisations, "external" for all remote organisations, and "all", for both.')
         # Search
-        search = subparsers_org.add_parser('search', help="Search an organisation by name.")
-        search.add_argument('name', help='(Partial) name of the organisation.')
-        search.add_argument('-t', '--type', default='local', choices=['local', 'external', 'all'],
-                            help='Use "local" to search in all local organisations, "external" for remote organisations, and "all", for both.')
+        search_parser = subparsers_org.add_parser('search', help="Search an organisation by name.")
+        search_parser.add_argument('name', help='(Partial) name of the organisation.')
+        search_parser.add_argument('-t', '--type', default='local', choices=['local', 'external', 'all'],
+                                   help='Use "local" to search in all local organisations, "external" for remote organisations, and "all", for both.')
         # Add
         add_org = subparsers_org.add_parser('add', help="Add an organisation.")
         add_org.add_argument('name', help='Organisation name.')
@@ -268,8 +263,8 @@ class MISP(Module):
         display = subparsers_user.add_parser('display', help="Display a user.")
         display.add_argument('id', help='ID of the user to display. Use "all" to display all users.')
         # Search
-        search = subparsers_user.add_parser('search', help="Search a user by email.")
-        search.add_argument('name', help='(Partial) email of the user.')
+        search_usr = subparsers_user.add_parser('search', help="Search a user by email.")
+        search_usr.add_argument('name', help='(Partial) email of the user.')
         # Add
         add_usr = subparsers_user.add_parser('add', help="Add a user.")
         add_usr.add_argument('email', help='User email address.')
@@ -301,8 +296,8 @@ class MISP(Module):
         # Get
         display = subparsers_role.add_parser('display', help="Display all the roles.")
         # Search
-        search = subparsers_role.add_parser('search', help="Search a role by name.")
-        search.add_argument('name', help='(Partial) name of the role.')
+        search_role = subparsers_role.add_parser('search', help="Search a role by name.")
+        search_role.add_argument('name', help='(Partial) name of the role.')
 
         # Tags
         t = admin_parser.add_parser('tag', help="Tag managment.")
@@ -310,8 +305,8 @@ class MISP(Module):
         # Get
         display = subparsers_tag.add_parser('display', help="Display all the tags.")
         # Search
-        search = subparsers_tag.add_parser('search', help="Search a tag by name.")
-        search.add_argument('name', help='(Partial) name of the tag.')
+        search_tag = subparsers_tag.add_parser('search', help="Search a tag by name.")
+        search_tag.add_argument('name', help='(Partial) name of the tag.')
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
@@ -349,7 +344,7 @@ class MISP(Module):
         if not hasattr(misp_event, 'id'):
             # The event doesn't exists upstream, breaking.
             return
-        for a in misp_event.attributes:
+        for a in misp_event.attributes + [attribute for obj in misp_event.objects for attribute in obj.attributes]:
             row = None
             if a.type == 'malware-sample':
                 samples_count += 1
@@ -411,7 +406,7 @@ class MISP(Module):
 
         path = os.path.join(event_path, filename)
         with open(path, 'w') as f:
-            json.dump(to_dump, f, cls=MISPEncode)
+            f.write(to_dump.to_json())
         self.log('success', '{} stored successfully.'.format(filename.rstrip('.json')))
         return filename
 
@@ -493,7 +488,7 @@ class MISP(Module):
             nb_hashes = 0
             me = MISPEvent()
             me.load(e)
-            for a in me.attributes:
+            for a in me.attributes + [attribute for obj in me.objects for attribute in obj.attributes]:
                 if a.type == 'malware-sample':
                     nb_samples += 1
                 if a.type in ('md5', 'sha1', 'sha256', 'filename|md5', 'filename|sha1', 'filename|sha256'):
@@ -516,7 +511,7 @@ class MISP(Module):
         if self.offline_mode:
             self._dump()
         else:
-            event = self.misp.update(__sessions__.current.misp_event.event._json())
+            event = self.misp.update(__sessions__.current.misp_event.event)
             if not self._has_error_message(event):
                 self.log('success', 'Event {} published.'.format(event['Event']['id']))
                 __sessions__.new(misp_event=MispEvent(event, self.offline_mode))
@@ -530,6 +525,7 @@ class MISP(Module):
             for r, title in related:
                 self.log('item', '{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
 
+        # #### Attributes
         header = ['type', 'value', 'comment', 'related']
         rows = []
         for a in current_event.attributes:
@@ -542,6 +538,15 @@ class MISP(Module):
                     pass
             rows.append([a.type, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
         self.log('table', dict(header=header, rows=rows))
+        # #### Objects
+        for obj in current_event.objects:
+            self.log('info', obj.name)
+            header = ['Object relation', 'value', 'comment']
+            rows = []
+            for a in obj.attributes:
+                rows.append([a.object_relation, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
+            self.log('table', dict(header=header, rows=rows))
+        # ############
         if current_event.published:
             self.log('info', 'This event has been published')
         else:

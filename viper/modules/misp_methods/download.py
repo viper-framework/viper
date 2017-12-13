@@ -58,7 +58,7 @@ def download(self):
         path = os.path.join(samples_path, eid, filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
-        with open(path, 'w') as f:
+        with open(path, 'wb') as f:
             f.write(payload.getvalue())
         to_print.append((eid, path))
 
