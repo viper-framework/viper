@@ -1,22 +1,21 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import os
-import json
 import bottle
 import time
 import argparse
 import tempfile
 
 # Added to allow zip file uploads
-import shutil 
+import shutil
 import contextlib
 from zipfile import ZipFile
 
 
-from bottle import route, request, response, run
+from bottle import route, request, response
 
 from viper.common import network
 from viper.common.objects import File
@@ -32,6 +31,7 @@ db = Database()
 app = application = bottle.default_app()
 
 web_port = 8080
+
 
 @route('/test', method='GET')
 def test():
@@ -51,7 +51,6 @@ def add_file():
     tf_obj = File(tf.name)
     tf_obj.name = upload.filename
 
-
     # Added to support the ability to provide zip file password
     if request.headers.get('compression') == 'zip' or request.headers.get('compression') == 'ZIP':
         with upload_temp() as temp_dir:
@@ -63,26 +62,25 @@ def add_file():
             for root, dirs, files in os.walk(temp_dir, topdown=False):
                 for name in files:
                     if not name == upload.filename:
-                        tf_obj=File(os.path.join(root,name))
+                        tf_obj = File(os.path.join(root, name))
                         new_path = store_sample(tf_obj)
                         success = False
-                        
+
                         if new_path:
                             success = db.add(obj=tf_obj, tags=tags)
-                       
+
                         if success:
-                            stored_files.append({"filename":name,"sha256": tf_obj.sha256, "message": "added"})
+                            stored_files.append({"filename": name, "sha256": tf_obj.sha256, "message": "added"})
                         else:
                             stored_files.append({"filename": name, "sha256": "", "message": "not added"})
 
             if stored_files:
-                #return jsonize({'message': 'Files added: %s' % ','.join(stored_files)})
+                # return jsonize({'message': 'Files added: %s' % ','.join(stored_files)})
                 return {'files': stored_files}
     else:
         tf_obj = File(tf.name)
         tf_obj.name = upload.filename
         new_path = store_sample(tf_obj)
-
 
         success = False
         if new_path:
@@ -99,18 +97,18 @@ def add_file():
 def addurl():
     url = request.forms.get('url')
     tags = request.forms.get('tags') or ""
-    tags = "url,"+tags
+    tags = "url," + tags
     if request.forms.get("tor"):
-        upload = network.download(url,tor=True)
+        upload = network.download(url, tor=True)
     else:
-        upload = network.download(url,tor=False)
-    if upload == None:
+        upload = network.download(url, tor=False)
+    if upload is None:
         response.status = 500
         return {'message': 'server can\'t download from URL'}
     # Set Project
     tf = tempfile.NamedTemporaryFile()
     tf.write(upload)
-    if tf == None:
+    if tf is None:
         response.status = 500
         return {'message': 'server can\'t download from URL'}
     tf.flush()
@@ -372,7 +370,7 @@ def module_cmdline(cmd_line, sha256):
                 del(module.output[:])
             else:
                 command_outputs.append({'message': '{0} is not a valid command'.format(cmd_line)})
-        except:
+        except Exception:
             command_outputs.append({'message': 'Unable to complete the command: {0}'.format(cmd_line)})
     __sessions__.close()
     return command_outputs
@@ -434,8 +432,9 @@ def add_notes(action):
 
     return {'message': 'Unable to complete action'}
 
+
 # Added to support zip file uploads
-# context manager for file uploader   
+# context manager for file uploader
 @contextlib.contextmanager
 def upload_temp():
     temp_dir = tempfile.mkdtemp()
