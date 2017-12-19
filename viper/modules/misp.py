@@ -163,20 +163,21 @@ class MISP(Module):
         h.add_argument("-a", "--sha256", help="SHA256")
 
         # ##### Add attributes #####
-        parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
-        subparsers_add = parser_add.add_subparsers(dest='add')
-        # Hashes
-        # Generic add
-        temp_me = MISPEvent()
-        if hasattr(temp_me, "types"):
-            known_types = temp_me.types
-        else:
-            # New API
-            known_types = temp_me.get_known_types()
+        if HAVE_PYMISP:
+            parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
+            subparsers_add = parser_add.add_subparsers(dest='add')
+            # Hashes
+            # Generic add
+            temp_me = MISPEvent()
+            if hasattr(temp_me, "types"):
+                known_types = temp_me.types
+            else:
+                # New API
+                known_types = temp_me.get_known_types()
 
-        for t in known_types:
-            sp = subparsers_add.add_parser(t, help="Add {} to the event.".format(t))
-            sp.add_argument(t, nargs='+')
+            for t in known_types:
+                sp = subparsers_add.add_parser(t, help="Add {} to the event.".format(t))
+                sp.add_argument(t, nargs='+')
 
         # ##### Show attributes  #####
         subparsers.add_parser('show', help='Show attributes to an existing MISP event.')
