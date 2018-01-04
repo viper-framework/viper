@@ -173,7 +173,7 @@ class MISP(Module):
                 known_types = temp_me.types
             else:
                 # New API
-                known_types = temp_me.get_known_types()
+                known_types = temp_me.known_types
 
             for t in known_types:
                 sp = subparsers_add.add_parser(t, help="Add {} to the event.".format(t))
