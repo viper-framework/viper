@@ -135,7 +135,7 @@ def check_hashes(self):
         if sample.value.split('|')[1] in hashes_expanded:
             # Already expanded in an other object
             continue
-        new_obj, hashes = self._expand_local_sample(pseudofile=sample.get_malware_binary(),
+        new_obj, hashes = self._expand_local_sample(pseudofile=sample.malware_binary,
                                                     filename=sample.value.split('|')[0],
                                                     refobj=ref_uuid,
                                                     default_attributes_paramaters=sample)
@@ -147,7 +147,7 @@ def check_hashes(self):
     hashes_expanded += local_samples_hashes
     for a in misp_event.attributes:
         if a.type == 'malware-sample' and a.value.split('|')[1] not in hashes_expanded:
-            new_obj, hashes = self._expand_local_sample(pseudofile=a.get_malware_binary(),
+            new_obj, hashes = self._expand_local_sample(pseudofile=a.malware_binary,
                                                         filename=a.value.split('|')[0],
                                                         default_attributes_paramaters=a)
             misp_event.Object += new_obj
