@@ -59,7 +59,7 @@ git+https://github.com/viper-framework/ScrapySplashWrapper.git
 # MISP
 git+https://github.com/MISP/PyTaxonomies.git
 git+https://github.com/MISP/PyMISPGalaxies.git
-pymisp[fileobjects,virustotal] >= 2.4.84
+pymisp[fileobjects,virustotal] >= 2.4.85.1
 
 # Joe Sandbox module
 jbxapi==2.3.0
