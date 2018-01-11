@@ -40,13 +40,13 @@ def _populate(self, event):
         __sessions__.new(misp_event=MispEvent(event, self.offline_mode))
 
 
-def _expand_local_sample(self, pseudofile, filename, refobj=None, default_attributes_paramaters={}):
+def _expand_local_sample(self, pseudofile, filename, refobj=None, default_attributes_parameters={}):
     objs = []
     hashes = []
     # Just expand the event with every possible objects
     fo, peo, seos = make_binary_objects(pseudofile=pseudofile, filename=filename,
                                         standalone=False,
-                                        default_attributes_paramaters=default_attributes_paramaters)
+                                        default_attributes_parameters=default_attributes_parameters)
     fo.add_reference(refobj, 'derived-from')
     hashes += [h.value for h in fo.get_attributes_by_relation('sha256')]
     hashes += [h.value for h in fo.get_attributes_by_relation('sha1')]
@@ -60,13 +60,13 @@ def _expand_local_sample(self, pseudofile, filename, refobj=None, default_attrib
     return objs, hashes
 
 
-def _make_VT_object(self, to_search, default_attributes_paramaters):
+def _make_VT_object(self, to_search, default_attributes_parameters):
     try:
         vt_object = VTReportObject(cfg.virustotal.virustotal_key, to_search,
                                    vt_proxies=cfg.virustotal.proxies, standalone=False,
-                                   default_attributes_paramaters=default_attributes_paramaters)
+                                   default_attributes_parameters=default_attributes_parameters)
         if self.args.populate:
-            vt_object.distribution = default_attributes_paramaters.distribution
+            vt_object.distribution = default_attributes_parameters.distribution
         return vt_object
     except requests.exceptions.ConnectionError:
         self.log('error', 'Failed to connect to VT for {}'.format(to_search))
@@ -138,7 +138,7 @@ def check_hashes(self):
         new_obj, hashes = self._expand_local_sample(pseudofile=sample.malware_binary,
                                                     filename=sample.value.split('|')[0],
                                                     refobj=ref_uuid,
-                                                    default_attributes_paramaters=sample)
+                                                    default_attributes_parameters=sample)
         misp_event.Object += new_obj
         local_samples_hashes += hashes
         # Make sure to query VT for the sha256, even if expanded locally
@@ -149,7 +149,7 @@ def check_hashes(self):
         if a.type == 'malware-sample' and a.value.split('|')[1] not in hashes_expanded:
             new_obj, hashes = self._expand_local_sample(pseudofile=a.malware_binary,
                                                         filename=a.value.split('|')[0],
-                                                        default_attributes_paramaters=a)
+                                                        default_attributes_parameters=a)
             misp_event.Object += new_obj
             local_samples_hashes += hashes
             # Make sure to query VT for the sha256, even if expanded locally
@@ -194,7 +194,7 @@ def check_hashes(self):
         if self.args.populate:
             if not all(h in hashes_expanded for h in [md5, sha1, sha256]):
                 # If all the "new" expanded hashes are in the hashes_expanded list, skip
-                file_object = MISPObject('file', default_attributes_paramaters=original_attribute)
+                file_object = MISPObject('file', default_attributes_parameters=original_attribute)
                 file_object.add_attribute('md5', value=md5)
                 file_object.add_attribute('sha1', value=sha1)
                 file_object.add_attribute('sha256', value=sha256)
