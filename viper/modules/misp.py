@@ -505,7 +505,7 @@ class MISP(Module):
             event = self.misp.get(e)
             if not self._has_error_message(event):
                 self._search_local_hashes(event, open_session)
-                self._dump(event)
+                self._dump()
 
     def publish(self):
         __sessions__.current.misp_event.event.publish()
