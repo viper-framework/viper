@@ -2,261 +2,250 @@
 
 {% block title %}Main{% endblock %}
 
-
 {% block content %}
 
-    <ol class="breadcrumb">
-        <li><a href="/">Home</a></li>
-        <li><a href="/project/{{ project }}">{{ project }}</a></li>
-    </ol>
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ project }}</li>
+        </ol>
+    </nav>
 
-    <!-- Upload (simple) -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Sample Upload (simple)</h3>
-        </div>
-        <div class="panel-body">
-            <form id="upload_form" role="form" class="form-inline" enctype="multipart/form-data">
+    <div class="container-fluid">
+        <!-- Add samples -->
+        <div class="row">
+            <div class="col">
 
-                <div class="form-group">
-                    <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
-                </div>
+                <ul class="nav nav-tabs" id="indexTab" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="nav-upload-simple-tab" data-toggle="tab" href="#nav-upload-simple" role="tab" aria-controls="nav-upload-simple" aria-selected="true">
+                            Upload new Sample File
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="nav-upload-archive-tab" data-toggle="tab" href="#nav-upload-archive" role="tab" aria-controls="nav-upload-archive" aria-selected="false">
+                            Upload Sample(s) Archive
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="nav-download-url-tab" data-toggle="tab" href="#nav-download-url" role="tab" aria-controls="nav-download-url" aria-selected="false">
+                            Download Sample from URL
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" id="nav-download-vt-tab" data-toggle="tab" href="#nav-download-vt" role="tab" aria-controls="nav-download-vt" aria-selected="false">
+                            Download Sample from Virustotal (disabled)
+                        </a>
+                    </li>
+                </ul>
 
-                <div class="form-group">
-                    <label for="tag_list_upload"></label>
-                    <input id="tag_list_upload" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
-                </div>
+                <div class="tab-content" id="indexTabContent">
 
-                <button type="submit" class="btn btn-default">Upload</button>
-            </form>
-        </div>
-    </div>
+                    <!-- Upload (simple) -->
+                    <div class="tab-pane show active" id="nav-upload-simple" role="tabpanel" aria-labelledby="nav-upload-simple-tab">
+                        <form id="upload_form" role="form" enctype="multipart/form-data">
+                            <div class="form-row align-items-center">
+                                <div class="col-4">
+                                    <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
+                                </div>
+                                <div class="col-4">
+                                    <input id="tag_list_upload_simple" name="tag_list" type="text" class="form-control" placeholder="Tags for Sample (comma separated)">
+                                </div>
 
-    <!-- Upload Archive -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">
-              <a data-toggle="collapse" href="#collapse_upload_archive">Sample Upload - supports extraction of archive files (e.g. Zip, Rar)</a>
-            </h3>
-        </div>
-
-        <div id="collapse_upload_archive" class="panel-collapse collapse">
-            <div class="panel-body">
-                <form id="upload_form_archive" role="form" class="form-inline" enctype="multipart/form-data">
-
-                    <div class="form-group">
-                        <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tag_list_upload"></label>
-                        <input id="tag_list_upload" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="extractor">Archive options:</label>
-                        <select id="extractor" name="extractor" class="form-control">
-                            <option value="auto">[*] Detect file extension</option>
-                            <option value="none">[~] No Extractor</option>
-                            <option disabled>&nbsp;</option>
-                            {% for key, row in extractors.items %}
-                                <option value="{{ row.cls_name }}">
-                                    {{ row.title }}: {% for item in row.supports_extensions %}{{ item }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %} {% if row.supports_password %}(*PW*){% endif %}
-                                </option>
-                            {% endfor %}
-
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="archive_pass"></label>
-                        <input id="archive_pass" name="archive_pass" type="password" class="form-control" placeholder="Archive Password">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="store_archive"></label>
-                        <select id="store_archive" name="store_archive" class="form-control">
-                            <option value="true">[+] Store archive</option>
-                            <option value="false">[-] Discard archive</option>
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn btn-default">Upload</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Download from URL -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">URL Download</h3>
-        </div>
-        <div class="panel-body">
-            <form id="download_form" role="form" class="form-inline" enctype="multipart/form-data" action="/urldownload/" method="post">
-
-                <div class="form-group">
-                    <label class="sr-only" for="URL">URL</label>
-                    <input type="search" class="form-control" name="url" id="url" placeholder="URL">
-                </div>
-
-                <div class="form-group">
-                    <label for="tag_list_url_dl"></label>
-                    <input id="tag_list_url_dl" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">
-                </div>
-
-                <div class="checkbox">
-                    <label><input type="checkbox" name="tor" value="tor"> Use Tor</label>
-                </div>
-
-                <button type="submit" class="btn btn-default">Run</button>
-                <input type="hidden" name="project" value="{{ project }}"/>
-                {% csrf_token %}
-
-            </form>
-        </div>
-    </div>
-
-
-    <!-- Download from VirusTotal TODO(frennkie) disabled on 2017-09-08 - requires private VT API key - so I can not test it -->
-{#    <div class="panel panel-default">#}
-{#        <div class="panel-heading">#}
-{#            <h3 class="panel-title">VT Download</h3>#}
-{#        </div>#}
-{#        <div class="panel-body">#}
-{##}
-{#            <form id="virustotal_form" role="form" class="form-inline" enctype="multipart/form-data" action="/virustotal/">#}
-{##}
-{#                <div class="form-group">#}
-{#                    <label class="sr-only" for="hash">HASH</label>#}
-{#                    <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="VT HASH">#}
-{#                    <input type="hidden" name="project" value="{{ project }}"/>#}
-{#                </div>#}
-{##}
-{#                <div class="form-group">#}
-{#                    <label for="tag_list_vt_dl"></label>#}
-{#                    <input id="tag_list_vt_dl" name="tag_list" type="text" class="form-control" placeholder="Tags (comma separated)">#}
-{#                </div>#}
-{##}
-{#                <button type="submit" class="btn btn-default">Run</button>#}
-{#                <input type="hidden" name="project" value="{{ project }}"/>#}
-{#                {% csrf_token %}#}
-{##}
-{#            </form>#}
-{#        </div>#}
-{#    </div>#}
-
-
-    <!-- Search -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h3 class="panel-title">Search Samples</h3>
-        </div>
-        <div class="panel-body">
-            <form id="search_form" role="form" class="form-inline" enctype="multipart/form-data" action="/search/" method="POST">
-
-                <div class="form-group">
-                    <label for="search_options"></label>
-                    <select id="search_options" class="form-control" name="key">
-                        <option value="name">Name</option>
-                        <option value="type">Type</option>
-                        <option value="mime">Mime</option>
-                        <option value="md5">MD5</option>
-                        <option value="sha256">SHA256</option>
-                        <option value="tag">Tag</option>
-                        <option value="note">Note</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="sr-only" for="term">Search Term</label>
-                    <input type="text" class="form-control" name="term" id="term" placeholder="Search Term">
-                </div>
-
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox" name="project" value="project"> All Projects
-                    </label>
-                </div>
-                <input type="hidden" name="curr_project" value="{{ project }}"/>
-                <button type="submit" class="btn btn-default">Search</button>
-                {% csrf_token %}
-
-            </form>
-        </div>
-    </div>
-
-
-    <!-- List Samples -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <div class="row">
-                <div class="col-xs-4 text-left">Project: <b>{{ project }}</b></div>
-                <div class="col-xs-4 text-center"></div>
-                <div class="col-xs-4 text-right">Showing {{ samples.0 }} to {{ samples.1 }} (Total: <b>{{ sample_count }}</b>)</div>
-            </div>
-        </div>
-
-        <table class="table table-striped table-bordered table-hover">
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>SHA256</th>
-                <th>Tags</th>
-            </tr>
-            {% for row in sample_list %}
-                <tr>
-                    <td>{{ row.id }}</td>
-                    <td><a href="/project/{{ project }}/file/{{ row.sha256 }}/">{{ row.name }}</a></td>
-                    <td class="mono">{{ row.sha256 }}</td>
-                    <td>
-                        {% for tag in row.tag %}
-                            <div style="display: inline-block;">
-                                <form id="search_tag_form" role="form" enctype="multipart/form-data" accept-charset="utf-8" method="post" action="/search/" style="display:inline">
-                                    <input class="form-control" type="hidden" id="key" name="key" value="tag"/>
-                                    <input class="form-control" type="hidden" id="term" name="term" value="{{ tag.tag }}"/>
-                                    <input class="form-control" type="hidden" id="curr_project" name="curr_project" value="{{ project }}"/>
-
-                                    <button type="submit" class="btn btn-xs btn-primary" name="search" value="{{ tag.tag }}">{{ tag.tag }}</button>
-                                    {% csrf_token %}
-                                </form>
+                                <div class="col-2"></div>
+                                <div class="col-2">
+                                    <button type="submit" class="btn btn-primary">Upload</button>
+                                </div>
                             </div>
+                        </form>
+                    </div>
+
+                    <!-- Upload Archive -->
+                    <div class="tab-pane" id="nav-upload-archive" role="tabpanel" aria-labelledby="nav-upload-archive-tab">
+
+                        <form id="upload_form_archive" role="form" enctype="multipart/form-data">
+                            <div class="form-row align-items-center">
+                                <div class="col-4">
+                                    <input type="file" class="filestyle" data-buttonBefore="true" name="file" multiple>
+                                </div>
+
+                                <div class="col-4">
+                                    <input id="tag_list_upload" name="tag_list" type="text" class="form-control" placeholder="Tags for Sample (comma separated)">
+                                </div>
+
+                                <div class="col-2"></div>
+
+                                <div class="col-2">
+                                    <button type="submit" class="btn btn-primary">Upload</button>
+                                </div>
+
+                            </div>
+
+                            <br>
+                            <h6>Additional settings for Archive (.zip, .rar, .7z ...)</h6>
+                            <div class="form-row align-items-center">
+
+                                <div class="col-4">
+                                    <label for="archive_pass" hidden></label>
+                                    <input id="archive_pass" name="archive_pass" type="password" class="form-control" placeholder="Archive Password">
+                                </div>
+
+                                <div class="col-4">
+                                    <label for="extractor" hidden></label>
+                                    <select id="extractor" name="extractor" class="form-control">
+                                        <option value="auto">[*] Auto Detect file extension</option>
+                                        <option value="none">[~] No Extractor</option>
+                                        <option disabled>&nbsp;</option>
+                                        {% for key, row in extractors.items %}
+                                            <option value="{{ row.cls_name }}">
+                                                {{ row.title }}: {% for item in row.supports_extensions %}{{ item }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %} {% if row.supports_password %}(*PW*){% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="store_archive_radio" id="store_archive" value="true" checked>
+                                        <label class="form-check-label" for="store_archive">
+                                            <b>Store</b> archive
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="store_archive_radio" id="discard_archive" value="false">
+                                        <label class="form-check-label" for="discard_archive">
+                                            <b>Discard</b> archive
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-2"></div>
+                            </div>
+                        </form>
+
+                    </div>
+
+                    <!-- Download from URL -->
+                    <div class="tab-pane" id="nav-download-url" role="tabpanel" aria-labelledby="nav-download-url-tab">
+
+                        <form id="download_form" role="form" enctype="multipart/form-data" action="{% url "url-download" %}" method="post">
+                            <div class="form-row align-items-center">
+                                <div class="col-4">
+                                    <input type="search" class="form-control" name="url" id="url" placeholder="URL - e.g. http://host.example.com/foo/bar/file.html">
+                                </div>
+
+                                <div class="col-4">
+                                    <input id="tag_list_url_dl" name="tag_list" type="text" class="form-control" placeholder="Tags for Sample (comma separated)">
+                                </div>
+
+                                <div class="col-2">
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="checkbox" id="TorCheckbox" name="tor" value="tor">
+                                        <label class="form-check-label" for="TorCheckbox">Use Tor</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-2">
+                                    <button type="submit" class="btn btn-primary">Download</button>
+                                </div>
+
+                                <input type="hidden" name="project" value="{{ project }}"/>
+
+                                {% csrf_token %}
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Download from VirusTotal TODO(frennkie) disabled on 2017-09-08 - requires private VT API key - so I can not test it -->
+                    <div class="tab-pane fade" id="nav-download-vt" role="tabpanel" aria-labelledby="nav-download-vt-tab">
+
+                        <form id="virustotal_form" role="form" enctype="multipart/form-data" action="{% url "vt-download" %}" method="post">
+                            <div class="form-row align-items-center">
+                                <div class="col-4">
+                                    <label class="sr-only" for="hash">HASH</label>
+                                    <input type="search" class="form-control" name="vt_hash" id="hash" placeholder="Virustotal Hash">
+                                </div>
+
+                                <div class="col-4">
+                                    <label for="tag_list_vt_dl" hidden></label>
+                                    <input id="tag_list_vt_dl" name="tag_list" type="text" class="form-control" placeholder="Tags for Sample (comma separated)">
+                                </div>
+
+                                <div class="col-2"></div>
+
+                                <div class="col-2">
+                                    <button type="submit" class="btn btn-primary">Download</button>
+                                </div>
+
+                                <input type="hidden" name="project" value="{{ project }}"/>
+
+                                {% csrf_token %}
+                            </div>
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <br>
+        <!-- Samples Table -->
+        <div class="row">
+
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="float-left">Samples in Project: <b>{{ project }}</b></h6>
+                    </div>
+
+                    <div class="card-body">
+                    <table id="samples" class="table table-hover" cellspacing="0" width="100%">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>SHA256</th>
+                                <th>Name</th>
+                                <th>Mime Type</th>
+                                <th>Size</th>
+                                <th>Tags</th>
+{#                                <th>Added</th>#}
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in sample_list %}
+                            <tr>
+                                <td>{{ row.id }}</td>
+                                <td class="mono small">{{ row.sha256 }}</td>
+                                <td><a href="{% url "file-view" project=project sha256=row.sha256 %}">{{ row.name }}</a></td>
+                                <td>{{ row.mime }}</td>
+                                <td data-search="{{ row.size }}" data-order="{{ row.size }}">{{ row.size|filesizeformat }}</td>
+                                <td>
+                                    {% for tag in row.tag %}
+                                        <div style="display: inline-block;">
+                                            <form id="search_form_row_{{ row.id }}_tag_{{ tag.id }}" role="form" enctype="multipart/form-data" accept-charset="utf-8" method="post" action="{% url "search-file" %}">
+                                                <input class="form-control" type="hidden" name="key" value="tag"/>
+                                                <input class="form-control" type="hidden" name="term" value="{{ tag.tag }}"/>
+                                                <input class="form-control" type="hidden" name="cur_project" value="{{ project }}"/>
+                                                <a href="#">
+                                            <span class="badge badge-dark" aria-hidden="true" onclick="search_form_row_{{ row.id }}_tag_{{ tag.id }}.submit()">
+                                                {{ tag.tag }}</span></a>
+                                                {% csrf_token %}
+                                            </form>
+                                        </div>
+                                    {% endfor %}
+                                </td>
+{#                                <td data-search="{{ row.created_at }}" data-order="{{ row.created_at }}">{{ row.created_at|date:"r" }}</td>#}
+                            </tr>
                         {% endfor %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </table>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="text-center">
-        <nav>
-            <ul class="pagination">
-                {% if config_list.has_previous %}
-                    <li><a href="?page={{ sample_list.previous_page_number }}">&laquo;</a></li>
-                {% else %}
-                    <li class="disabled"><span><span aria-hidden="true">&laquo;</span></span></li>
-                {% endif %}
-
-                {% for page in sample_list.paginator.page_range %}
-                    {% spaceless %}
-                        <li
-                                {% if page == sample_list.number %}
-                                    class="active"
-                                {% endif %}
-                        ><a href="?page={{ page }}">{{ page }}</a></li>
-                    {% endspaceless %}
-                {% endfor %}
-
-                {% if sample_list.has_next %}
-                    <li><a href="?page={{ sample_list.next_page_number }}">&raquo;</a></li>
-                {% else %}
-                    <li class="disabled"><span><span aria-hidden="true">&raquo;</span></span></li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
-
 
 {% endblock %}
 
@@ -335,6 +324,18 @@
             return false;
         });
     </script>
+
+    {% load static from staticfiles %}
+    <script type="text/javascript" src="{% static 'viperweb/js/jquery.dataTables.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'viperweb/js/dataTables.bootstrap4.min.js' %}"></script>
+    <script>
+        $(document).ready(function () {
+            $('#samples').DataTable({
+                "pagingType": "full_numbers"
+                } );
+        });
+    </script>
+
 {% endblock %}
 
 

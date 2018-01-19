@@ -19,7 +19,7 @@ import logging
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse, Http404
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.contrib import messages
@@ -257,28 +257,33 @@ class MainPageView(LoginRequiredMixin, TemplateView):
         # Get all Samples
         sample_list = db.find('all')
 
-        # set pagination details
-        page = request.GET.get('page', 1)
-        page_count = request.GET.get('count', 15)
+        # # set pagination details
+        # page = request.GET.get('page', 1)
+        # page_count = request.GET.get('count', 15)
+        #
+        # sample_count = len(sample_list)
+        # first_sample = int(page) * int(page_count) - int(page_count) + 1
+        # last_sample = int(page) * int(page_count)
+        #
+        # if last_sample > sample_count:
+        #     last_sample = sample_count
+        #
+        # paginator = Paginator(sample_list, page_count)
+        # try:
+        #     samples = paginator.page(page)
+        # except PageNotAnInteger:
+        #     samples = paginator.page(1)
+        # except EmptyPage:
+        #     samples = paginator.page(paginator.num_pages)
+        #
+        # return render(request, template_name, {'sample_list': samples,
+        #                                        'sample_count': sample_count,
+        #                                        'samples': [first_sample, last_sample],
+        #                                        'extractors': Extractor().extractors,
+        #                                        'project': project,
+        #                                        'projects': get_project_list()})
 
-        sample_count = len(sample_list)
-        first_sample = int(page) * int(page_count) - int(page_count) + 1
-        last_sample = int(page) * int(page_count)
-
-        if last_sample > sample_count:
-            last_sample = sample_count
-
-        paginator = Paginator(sample_list, page_count)
-        try:
-            samples = paginator.page(page)
-        except PageNotAnInteger:
-            samples = paginator.page(1)
-        except EmptyPage:
-            samples = paginator.page(paginator.num_pages)
-
-        return render(request, template_name, {'sample_list': samples,
-                                               'sample_count': sample_count,
-                                               'samples': [first_sample, last_sample],
+        return render(request, template_name, {'sample_list': sample_list,
                                                'extractors': Extractor().extractors,
                                                'project': project,
                                                'projects': get_project_list()})
@@ -701,24 +706,31 @@ class SearchFileView(LoginRequiredMixin, TemplateView):
         template_name = "viperweb/search.html"
         key = request.POST.get('key')
         value = request.POST.get('term').lower()
-        curr_project = request.POST.get('curr_project')
+        cur_project = request.POST.get('cur_project', 'default')
 
-        project_search = request.POST.get('project', False)
+        search_all_projects = request.POST.get('search-project-radio', 'search-this-project')
+        print("projects: {}".format(search_all_projects))
 
+        # TODO(frennkie) remove DEBUG
         print("Key: {}".format(key))
         print("Value: {}".format(value))
+
+        if not value:
+            print("no search term provided")
+            messages.error(request, "no search term provided")
+            return redirect(reverse("main-page-project", kwargs={"project": cur_project}))
 
         # Set some data holders
         results = []
         projects = []
 
         # Search All Projects
-        if project_search:
+        if search_all_projects == "search-all-projects":
             # Get list of project paths
             projects = get_project_list()
         else:
             # If not searching all projects what are we searching
-            projects.append(curr_project)
+            projects.append(cur_project)
 
         # Search each Project in the list
         for project in projects:

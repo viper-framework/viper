@@ -36,7 +36,10 @@ urlpatterns = [
     url(r'^project/(?P<project>[^/]+)/module/$', views.RunModuleView.as_view(), name='run-module'),  # Run Module Ajax
 
     url(r'^search/$', views.SearchFileView.as_view(), name='search-file'),  # Search
-    url(r'^urldownload/', views.UrlDownloadView.as_view(), name='url-download'),  # Upload from URL
+    url(r'^urldownload/', views.UrlDownloadView.as_view(), name='url-download'),  # Download from URL
     url(r'^yara/$', views.YaraRulesView.as_view(), name='yara-rules'),  # Yara
+
+
+    url(r'^virustotal/$', views.VtDownloadView.as_view(), name='vt-download'),  # Download form Virustotal
 
 ]
