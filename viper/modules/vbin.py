@@ -12,6 +12,7 @@ try:
 except ImportError:
     HAVE_PYIDB = False
 
+
 class vBin(Module):
     cmd = 'vbin'
     description = 'Viper binary analysis (vBin) module to inspect the sample'
@@ -90,7 +91,7 @@ class vBin(Module):
         fx_start = ea
         fx_end = api.ida_funcs.get_func(fx_start).endEA
         heads = []
-        for addr in xrange(fx_start, fx_end):
+        for addr in range(fx_start, fx_end):
             a = api.idc.NextHead(addr)
             heads.append(a)
         for h in set(heads):
@@ -106,7 +107,7 @@ class vBin(Module):
         super(vBin, self).run()
         if self.args is None:
             return
-       
+
         if not HAVE_PYIDB:
             self.log('error', "Missing dependancy, install python-idb")
             return
@@ -118,13 +119,13 @@ class vBin(Module):
         current_file = __sessions__.current.file.path
         current_dir = self.get_current_file_dir(current_file)
         current_idb = self.get_current_idb_path(current_dir)
-        
+
         if not os.path.exists(current_idb):
             current_idb = self.get_current_idb_path64(current_dir)
-        
+ 
         # Loading IDB
-        db = self.get_db(current_idb) 
-       
+        db = self.get_db(current_idb)
+
         if self.args.subname == "functions":
             self.list_functions(db)
         elif self.args.subname == "disass":
