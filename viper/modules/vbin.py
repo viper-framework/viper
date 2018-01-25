@@ -97,10 +97,11 @@ class vBin(Module):
         for h in set(heads):
             try:
                 op = api.idc._disassemble(h)
-                if op.mnemonic != "call": continue
+                if op.mnemonic != "call":
+                    continue
                 code = "{0}: {1} {2}".format(hex(h), op.mnemonic, op.op_str)
                 print(code)
-            except:
+            except Exception:
                 continue
 
     def run(self):
@@ -122,7 +123,7 @@ class vBin(Module):
 
         if not os.path.exists(current_idb):
             current_idb = self.get_current_idb_path64(current_dir)
- 
+
         # Loading IDB
         db = self.get_db(current_idb)
 
