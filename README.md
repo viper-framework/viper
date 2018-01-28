@@ -84,10 +84,6 @@ http http://127.0.0.1:8080/api/v3/project/default/tags/1/ "Authorization: Token 
 
 #### Mac Issues
 
-##### Main Page (Safari)
-
-Upload doesn't do anything
-
 ##### Modules
 
 ```
