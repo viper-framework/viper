@@ -4,41 +4,51 @@
 
 {% block content %}
 
-<ol class="breadcrumb">
-    <li><a href="{% url 'main_page' %}">Home</a></li>
-    <li><a href="/project/{{ project }}">{{ project }}</a></li>
-    <li><a href="{% url 'cli' project=project %}">CLI</a></li>
-</ol>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'main-page-project' project %}">{{ project }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">CLI</li>
+        </ol>
+    </nav>
 
-    <div id="spin_loader"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <div id="spin_loader"></div>
+            <div class="col">
 
-    <div class="panel panel-default">
-        <div class="panel-body">
-            <p>You can enter commands here as if you were at the console. </p>
-            <form class="form-inline" role="form" id="ajaxsubmit" onsubmit="return false" name="modules">
-                <label for="cmdString">Viper Command</label>
-                <input type="text" class="form-control" name="cmdline" placeholder="Enter CLI Commands">
-                <input type="text" class="form-control" name="file_hash" placeholder="Optional Sha256"/>
-                <button type="submit" class="btn btn-default" name="submit">Run</button>
-                {% csrf_token %}
-            </form>
-            <hr/>
+                <div class="card">
+                    <div class="card-body">
 
-            <div class="panel panel-default">
-            <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-md-8"><h3 class="panel-title">Module Output</h3></div>
-                        <div class="col-md-4" style="text-align: right;">
+                        <p>You can enter commands here as if you were at the console. </p>
+                        <form class="form-inline" role="form" id="ajaxsubmit" onsubmit="return false" name="modules">
+                            <label for="cmdString" class="mr-2">Viper Command</label>
+                            <input type="text" class="form-control mr-2" name="cmdline" placeholder="Enter CLI Commands">
+                            <input type="text" class="form-control mr-2" name="file_hash" placeholder="Optional Sha256"/>
+                            <button type="submit" class="btn btn-primary" name="submit">Run</button>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+                <br>
+
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="float-left">Module Output</h3>
+                        <div class="float-right">
                             <button class="btn btn-default btn-xs btn-primary" onclick="clear_div()">Clear</button>
                         </div>
                     </div>
-                </div>
-                <div class="panel-body">
-                    <div id="ajaxresponse"></div>
+                    <div class="card-body">
+                        <div id="ajaxresponse"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+
 
 {% endblock %}
 

@@ -4,38 +4,46 @@
 
 {% block content %}
 
-<ol class="breadcrumb">
-    <li><a href="{% url 'main_page' %}">Home</a></li>
-    <li><a href="{% url 'search-file' %}">Search</a></li>
-</ol>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Search</li>
+        </ol>
+    </nav>
 
-{% for project in results %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                {% for project in results %}
 
-    {% if project %}
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">Results for Project: <b>{{ project.name }}</b></h3>
-            </div>
-            <div class="panel-body">
-                <table class="table table-striped table-bordered">
-                    <tr>
-                        <th>Name</th>
-                        <th>Sha256</th>
-                    </tr>
-                    {% for item in project.res %}
-                        <tr>
-                            <td><a href="/project/{{project.name}}/file/{{item.1}}">{{item.0}}</a></td>
-                            <td class="mono">{{item.1}}</td>
-                        </tr>
+                    {% if project %}
+                        <div class="card">
+                            <h3 class="card-header">
+                                Results for Project: <b>{{ project.name }}</b>
+                            </h3>
+                            <div class="card-body">
+                                <table class="table table-striped table-bordered">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Sha256</th>
+                                    </tr>
+                                    {% for item in project.res %}
+                                        <tr>
+                                            <td><a href="{% url 'file-view' project.name item.1 %}">{{ item.0 }}</a></td>
+                                            <td class="mono">{{ item.1 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
 
-                   {% endfor %}
-                </table>
+                {% empty %}
+                    No Projects
+                {% endfor %}
+
             </div>
         </div>
-    {% endif %}
-
-{% empty %}
-    No Projects
-{% endfor %}
+    </div>
 
 {% endblock %}

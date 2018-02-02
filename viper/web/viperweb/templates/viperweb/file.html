@@ -2,33 +2,42 @@
 
 {% block title %}File{% endblock %}
 
-
 {% block content %}
 
-    <ol class="breadcrumb">
-        <li><a href="/">Home</a></li>
-{#        <li><a href="/project/{{ project }}">{{ project }}</a></li>#}
-        <li><a href="{% url 'main-page-project' project=project %}">{{ project }}</a></li>
-{#        <li><a href="/project/{{ project }}/file/{{ file_info.sha256 }}">{{ file_info.sha256 }}</a></li>#}
-        <li><a href="{% url 'file-view' project=project sha256=file_info.sha256 %}">{{ file_info.sha256 }}</a></li>
-    </ol>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'main-page-project' project=project %}">{{ project }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ file_info.sha256 }}</li>
+        </ol>
+    </nav>
 
-    <ul id="navTabs" class="nav nav-tabs">
-        <li class="active"><a href="#static" data-toggle="tab">Static</a></li>
-        <li><a href="#notes" data-toggle="tab">Notes</a></li>
-        <li><a href="#modules" data-toggle="tab">Modules</a></li>
-        <li><a href="#hex" data-toggle="tab">Hex View</a></li>
+    <ul class="nav nav-tabs" id="fileTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="nav-static-tab" data-toggle="tab" href="#nav-static" role="tab" aria-controls="nav-static" aria-selected="true">Static</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nav-notes-tab" data-toggle="tab" href="#nav-notes" role="tab" aria-controls="nav-notes" aria-selected="false">Notes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nav-modules-tab" data-toggle="tab" href="#nav-modules" role="tab" aria-controls="nav-modules" aria-selected="false">Modules</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nav-hex-tab" data-toggle="tab" href="#nav-hex" role="tab" aria-controls="nav-   hex" aria-selected="false">Hex View</a>
+        </li>
     </ul>
+
     <div id="spin_loader"></div>
-    <div class="tab-content">
+
+    <div class="tab-content" id="fileTabContent">
         <!-- STATIC -->
-        <div class="tab-pane active" id="static">
+
+        <div class="tab-pane show active" id="nav-static" role="tabpanel" aria-labelledby="nav-static-tab">
             <table class="table table-striped table-bordered table-hover">
                 <tr>
                     <th>File ID</th>
                     <td>{{ file_info.id }}</td>
                 </tr>
-
                 <tr>
                     <th>File Name</th>
                     <td>{{ file_info.name }}</td>
@@ -87,30 +96,38 @@
                 <tr>
                     <th></th>
                     <td>
-                        <a class="btn btn-primary btn-small" href="{% url "viperapi_v3:malware-download" project_name=project sha256=file_info.sha256 %}">Download</a>
-                        <a class="btn btn-primary btn-small" onClick="$('#cuckoo').load('{% url "file-cuckoo-submit" project=project sha256=file_info.sha256 %}');">Cuckoo</a> <span id="cuckoo"></span>
+                        <a class="btn btn-primary btn-sm" href="{% url "viperapi_v3:malware-download" project_name=project sha256=file_info.sha256 %}">Download</a>
+                        <a class="btn btn-primary btn-sm" onClick="$('#cuckoo').load('{% url "file-cuckoo-submit" project=project sha256=file_info.sha256 %}');">Cuckoo</a> <span id="cuckoo"></span>
                     </td>
                 </tr>
             </table>
 
-            <div class="panel panel-default" id="panel_tags">
-                <div class="panel-heading">Tags</div>
-                <div class="panel-body">
+            <div class="card">
+                <h6 class="card-header">
+                    Tags <a href="#" aria-label="add a tag"><i class="fas fa-plus-circle fa-1x" style="color: green;" data-toggle="modal" data-target="#newTag"></i></a>
+                </h6>
+
+                {% load static from staticfiles %}
+
+                <div class="card-body">
                     {% for tag in tag_list %}
                         <div id="display_tag_{{ tag.id }}" style="display: inline-block;">
-                            <form id="search_tag_form" role="form" enctype="multipart/form-data" accept-charset="utf-8" method="post" action="/search/" style="display:inline">
+                            <form id="search_tag_form" role="form" enctype="multipart/form-data" accept-charset="utf-8" method="post" action="{% url "search-file" %}" style="display:inline">
                                 <input class="form-control" type="hidden" id="key" name="key" value="tag"/>
                                 <input class="form-control" type="hidden" id="term" name="term" value="{{ tag.tag }}"/>
-                                <input class="form-control" type="hidden" id="curr_project" name="curr_project" value="{{ project }}"/>
+                                <input class="form-control" type="hidden" id="cur_project" name="cur_project" value="{{ project }}"/>
 
-                                <button type="submit" class="btn btn-xs btn-primary" name="search" value="{{ tag.tag }}">{{ tag.tag }}</button>
+                                <h4><span class="badge badge-dark badge" aria-hidden="true" onclick="search_form_row_{{ row.id }}_tag_{{ tag.id }}.submit()">{{ tag.tag }}</span>
+                                    <a href="#" onclick="delTag('{{ tag.id }}')"><i class="fas fa-times fa-1x mr-3" style="color: red;"></i></a></h4>
+
                                 {% csrf_token %}
                             </form>
 
-                            <a onclick="delTag('{{ tag.id }}')" href="#"><span class="glyphicon glyphicon-remove text-danger small"></span></a>&nbsp;&nbsp;
                         </div>
+
                     {% endfor %}
-                    <a href="#"><span class="glyphicon glyphicon-plus text-success" data-toggle="modal" data-target="#newTag"></span></a>
+
+
                 </div>
             </div>
 
@@ -118,27 +135,28 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                            <h4 class="modal-title" id="newTagLabel">Add New Tag</h4>
+                            <h4 class="modal-title" id="newTagLabel">Add Tags</h4>
                         </div>
                         <div class="modal-body">
-                            <form id="add_tag_form" role="form" enctype="multipart/form-data" accept-charset="utf-8">
-                                <input type="text" class="form-control" name="tag" id="tag" placeholder="Tags (comma separated, lowercase)" autofocus>
-                                <button type="submit" class="btn btn-default">Save</button>
+                            <form id="add_tag_form" role="form" class="form-inline" enctype="multipart/form-data" accept-charset="utf-8">
+                                <input type="text" class="form-control mr-2 w-75" name="tag" id="tag" placeholder="Tags for Sample (comma separated)" autofocus>
+                                <button type="submit" class="btn btn-primary">Save</button>
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-        </div>
+        </div>  <!-- End STATIC -->
 
         <!-- NOTES -->
-        <div class="tab-pane" id="notes">
+        <div class="tab-pane" id="nav-notes" role="tabpanel" aria-labelledby="nav-notes-tab">
             <button class="btn btn-primary btn-small" data-toggle="modal" data-target="#newNote">Add New Note</button>
+            <hr/>
+
             <div class="row">
                 {% for note in note_list %}
                     <div id="display_note_{{ note.id }}" class="col-md-4">
@@ -161,22 +179,21 @@
                 {% endfor %}
             </div>
 
-            <div class="modal fade" id="newNote" tabindex="-1" role="dialog" aria-labelledby="newNoteLabel" aria-hidden="true">
+            <div class="modal" id="newNote" tabindex="-1" role="dialog" aria-labelledby="newNoteLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
                             <h4 class="modal-title" id="newNoteLabel">Add New Note</h4>
                         </div>
                         <div class="modal-body">
                             <form id="add_note_form" role="form" enctype="multipart/form-data" accept-charset="utf-8">
                                 <input type="text" class="form-control" name="title" id="noteTitle" placeholder="Title">
                                 <textarea class="form-control" rows="3" name="body" id="noteBody" placeholder="Note Text"></textarea>
-                                <button type="submit" class="btn btn-default">Save</button>
+                                <button type="submit" class="btn btn-primary">Save</button>
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -184,11 +201,13 @@
         </div>
 
         <!-- MODULES -->
-        <div class="tab-pane" id="modules">
+        <div class="tab-pane" id="nav-modules" role="tabpanel" aria-labelledby="nav-modules-tab">
             <p>Select a module or run a command</p>
             <form class="form-inline" role="form" id="ajaxsubmit" onsubmit="return false" name="modules">
-                <label for="cmdString">Viper Command</label>
-                <select class="form-control" name="module" onchange="setOptions(document.modules.module.options[document.modules.module.selectedIndex].value);">
+                <label for="cmdString" class="mr-2">Viper Command</label>
+
+                <label for="module_name" hidden></label>
+                <select id="module_name" class="form-control mr-2" name="module" onchange="setOptions(document.modules.module.options[document.modules.module.selectedIndex].value);">
                     <option value="module">Module</option>
                     <option value="apk">APK - Parse Android APKs</option>
                     <option value="clamav">ClamaAV - Scan file from local ClamAV daemon</option>
@@ -213,66 +232,69 @@
                     <option value="virustotal">VirusTotal</option>
                     <option value="xor">XOR - Encoded strings</option>
                     <option value="yara">Yara - Scan with Yara rules</option>
-
                 </select>
-                <select class="form-control" name="args">
+
+                <label for="module_args" hidden></label>
+                <select id="module_args" class="form-control mr-2" name="args">
                     <option value=" ">Select a module first</option>
-                </select> |
-                <input type="text" class="form-control" name="cmdline" placeholder="Enter CLI Commands"> |
-                <select class="form-control" name="moduleHistory">
+                </select>
+
+                <input type="text" class="form-control mr-2" name="cmdline" placeholder="Enter CLI Commands">
+
+                <label for="module_history" hidden></label>
+                <select id="module_history" class="form-control mr-2" name="moduleHistory">
                     <option value=" ">Module History</option>
                     {% for cmd in module_history %}
                         <option value="{{ cmd.id }}">{{ cmd.cmd_line }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit" class="btn btn-default" name="submit">Run</button>
+                <button type="submit" class="btn btn-primary" name="submit">Run</button>
                 <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
                 {% csrf_token %}
 
             </form>
             <hr/>
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <div class="row">
-                        <div class="col-md-8"><h3 class="panel-title">Module Output</h3></div>
-                        <div class="col-md-4" style="text-align: right;">
-                            <button class="btn btn-default btn-xs btn-primary" onclick="clear_div()">Clear</button>
-                        </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="float-left">Module Output</h3>
+                    <div class="float-right">
+                        <button class="btn btn-default btn-xs btn-primary" onclick="clear_div()">Clear</button>
                     </div>
                 </div>
-                <div class="panel-body">
+                <div class="card-body">
                     <div id="ajaxresponse"></div>
                 </div>
             </div>
         </div>
 
         <!-- HEX -->
-        <div class="tab-pane" id="hex">
+        <div class="tab-pane" id="nav-hex" role="tabpanel" aria-labelledby="nav-hex-tab">
             <form class="form-inline" role="form" id="hexsubmit" onsubmit="return false" name="hexsubmit">
-                <button type="submit" class="btn btn-default" name="submit">Load More</button>
+                <button type="submit" class="btn btn-primary" name="submit">Load More</button>
                 <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
                 <input type="hidden" id="hex_start" name="hex_start" value="0"/>
                 <input type="hidden" id="hex_end" name="hex_end" value="32"/>
                 {% csrf_token %}
             </form>
             <hr/>
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Hex Viewer</h3>
-                </div>
-                <div class="panel-body">
-                    <div class="text-center" id="hexview">
-                    </div>
+
+            <div class="card">
+                <h3 class="card-header">
+                    Hex Viewer
+                </h3>
+                <div class="card-body">
+                    <div class="text-center" id="hexview"></div>
                 </div>
             </div>
         </div>
     </div>
 
-
 {% endblock %}
 
 
 {% block js %}
+
     <script type='text/javascript'>
 
         // Javascript to enable link to tab
