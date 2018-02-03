@@ -41,12 +41,6 @@ port = 8080
 #admin_password = not-very-secret
 
 
-[api]
-enabled = True
-host = 0.0.0.0
-port = 9090
-
-
 [http_client]
 # http client settings for outgoing requests (e.g. download, VT)
 # will be applied to requests and can be overriden per module
