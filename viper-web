@@ -5,14 +5,14 @@
 
 import os
 import random
-import logging
+# import logging
 import argparse
 
 from viper.common.out import print_info, print_warning, print_success
 from viper.core.storage import check_and_deploy_peid, check_and_deploy_yara_rules
 from viper.core.config import __config__
 
-log = logging.getLogger("viper-web")
+# log = logging.getLogger("viper-web")
 # Viper Global Config
 cfg = __config__
 
@@ -62,7 +62,28 @@ if __name__ == '__main__':
         web_port = 8080
 
     if args.tls:
-        if not (args.certificate and args.key):
+        web_tls = args.tls
+    elif cfg.get("web").tls:
+        web_tls = cfg.get("web").host
+    else:
+        web_tls = False
+
+    if args.certificate:
+        web_certificate = args.certificate
+    elif cfg.get("web").certificate:
+        web_certificate = cfg.get("web").certificate
+    else:
+        web_certificate = None
+
+    if args.key:
+        web_key = args.key
+    elif cfg.get("web").key:
+        web_key = cfg.get("web").key
+    else:
+        web_key = None
+
+    if web_tls:
+        if not (web_certificate and web_key):
             raise Exception("please provide --certificate and --key parameter for TLS")
 
     # Initials checks (e.g. for new installation/upgrade of Viper)
@@ -76,7 +97,7 @@ if __name__ == '__main__':
     else:
         # Unapplied migrations found.
         print_warning("There are outstanding Django DB migrations".format())
-        execute_from_command_line(["web/manage.py", "migrate"])
+        execute_from_command_line(["web/manage.py", "migrate", "--verbosity", "0"])
         if not is_database_synchronized(DEFAULT_DB_ALIAS):
             raise Exception("there was a problem applying the Django DB migrations")
         print_success("Applied outstanding migrations".format())
@@ -99,19 +120,19 @@ if __name__ == '__main__':
         print_success("Created \"{}\" with initial password: {}".format(admin_username, pw))
 
     try:
-        print_info("Found existing API Auth Token for \"{}\": {}".format(admin_username, admin.auth_token.key))
+        admin_auth_token_key = admin.auth_token.key
+        # log.debug("Found existing API Auth Token for \"{}\": {}".format(admin_username, admin_auth_token_key))
     except ObjectDoesNotExist as err:
         Token.objects.create(user=admin)
-        print_success("Created new API Auth Token for \"{}\": {}".format(admin_username, admin.auth_token.key))
+        # print_success("Created new API Auth Token for \"{}\": {}".format(admin_username, admin.auth_token.key))
 
     # run Django built-in Web Server
     print_info("Starting Web Server on {}:{}".format(web_host, web_port))
-    log.info("Starting Web Server on {}:{}".format(web_host, web_port))
+    # log.info("Starting Web Server on {}:{}".format(web_host, web_port))
 
-    if args.tls:
-        execute_from_command_line(["manage.py", "runsslserver",
-                                   "--certificate", args.certificate, "--key", args.key,
+    if web_tls:
+        execute_from_command_line(["manage.py", "runsslserver", "--noreload",
+                                   "--certificate", web_certificate, "--key", web_key,
                                    "{}:{}".format(web_host, web_port)])
     else:
-        execute_from_command_line(["manage.py", "runserver", "{}:{}".format(web_host, web_port)])
-
+        execute_from_command_line(["manage.py", "runserver", "--noreload", "{}:{}".format(web_host, web_port)])

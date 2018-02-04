@@ -52,10 +52,10 @@ INSTALLED_APPS = (
     'sslserver',
     'rest_framework',
     'rest_framework.authtoken',
-    'rest_framework_swagger',
     'bootstrapform',
     'viper.web.viperweb',
     'viper.web.viperapi',
+    'rest_framework_swagger',  # has to come after viperapi so that we can override the template
 )
 
 MIDDLEWARE = [

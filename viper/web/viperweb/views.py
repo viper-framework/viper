@@ -257,32 +257,6 @@ class MainPageView(LoginRequiredMixin, TemplateView):
         # Get all Samples
         sample_list = db.find('all')
 
-        # # set pagination details
-        # page = request.GET.get('page', 1)
-        # page_count = request.GET.get('count', 15)
-        #
-        # sample_count = len(sample_list)
-        # first_sample = int(page) * int(page_count) - int(page_count) + 1
-        # last_sample = int(page) * int(page_count)
-        #
-        # if last_sample > sample_count:
-        #     last_sample = sample_count
-        #
-        # paginator = Paginator(sample_list, page_count)
-        # try:
-        #     samples = paginator.page(page)
-        # except PageNotAnInteger:
-        #     samples = paginator.page(1)
-        # except EmptyPage:
-        #     samples = paginator.page(paginator.num_pages)
-        #
-        # return render(request, template_name, {'sample_list': samples,
-        #                                        'sample_count': sample_count,
-        #                                        'samples': [first_sample, last_sample],
-        #                                        'extractors': Extractor().extractors,
-        #                                        'project': project,
-        #                                        'projects': get_project_list()})
-
         return render(request, template_name, {'sample_list': sample_list,
                                                'extractors': Extractor().extractors,
                                                'project': project,
@@ -378,32 +352,15 @@ class FileView(LoginRequiredMixin, TemplateView):
             raise Http404("could not retrieve file for sha256 hash: {}".format(sha256))
         __sessions__.new(path)
 
-        # Get the file info  - TODO (frennkie) this should not be done here.. move it to backend
-        file_info = {
-            'id': __sessions__.current.file.id,
-            'name': __sessions__.current.file.name,
-            'path': __sessions__.current.file.path,
-            'size': __sessions__.current.file.size,
-            'type': __sessions__.current.file.type,
-            'mime': __sessions__.current.file.mime,
-            'md5': __sessions__.current.file.md5,
-            'sha1': __sessions__.current.file.sha1,
-            'sha256': __sessions__.current.file.sha256,
-            'sha512': __sessions__.current.file.sha512,
-            'ssdeep': __sessions__.current.file.ssdeep,
-            'crc32': __sessions__.current.file.crc32,
-            'parent': __sessions__.current.file.parent,
-            'children': __sessions__.current.file.children.split(','),
-            'tag_list': __sessions__.current.file.tags
-        }
-
         # Get additional details for file
-        malware = db.find(key='sha256', value=sha256)  # TODO (frennkie) this should not be done here.. move it to backend
-        if not malware:
+        malware = db.find(key='sha256', value=sha256)
+        try:
+            malware_obj = malware[0]
+        except IndexError:
             raise Http404("could not find file for sha256 hash: {}".format(sha256))
 
         note_list = []
-        notes = malware[0].note
+        notes = malware_obj.note
         if notes:
             for note in notes:
                 note_list.append({'title': note.title,
@@ -411,7 +368,7 @@ class FileView(LoginRequiredMixin, TemplateView):
                                   'id': note.id})
 
         module_history = []
-        analysis_list = malware[0].analysis
+        analysis_list = malware_obj.analysis
         if analysis_list:
             for item in analysis_list:
                 module_history.append({'id': item.id,
@@ -419,7 +376,8 @@ class FileView(LoginRequiredMixin, TemplateView):
 
         tag_list = db.list_tags_for_malware(sha256)
 
-        return render(request, template_name, {'file_info': file_info,
+        return render(request, template_name, {'file_info': __sessions__.current.file,
+                                               'malware': malware_obj,
                                                'note_list': note_list,
                                                'tag_list': tag_list,
                                                'project': project,
@@ -476,7 +434,7 @@ class HexView(LoginRequiredMixin, TemplateView):
         file_hash = request.POST.get('file_hash')
         try:
             hex_offset = int(request.POST.get('hex_start'))
-        except:
+        except Exception:
             return '<p class="text-danger">Error Generating Request</p>'
         hex_length = 256
 
@@ -535,6 +493,8 @@ class YaraRulesView(LoginRequiredMixin, TemplateView):
                 file_name, file_ext = os.path.splitext(rule_file)
                 if file_ext in ['.yar', '.yara']:
                     rule_text = open(rule_file, 'r').read()
+                    if not rule_text:
+                        rule_text = "Empty Rule"
                 else:
                     rule_text = 'Invalid Rule File'
             else:
@@ -543,10 +503,12 @@ class YaraRulesView(LoginRequiredMixin, TemplateView):
         elif action == 'delete':
             rule_name = request.GET.get('rulename')
             if rule_name.split('.')[-1] in ['yar', 'yara']:
-                os.remove(os.path.join(self.yara_rule_path, rule_name))
+                try:
+                    os.remove(os.path.join(self.yara_rule_path, rule_name))
+                except FileNotFoundError:
+                    raise Http404("Yara rule file not found: {}".format(rule_name))
+                log.debug('Rule {0} Deleted'.format(rule_name))
                 rule_text = 'Rule {0} Deleted'.format(rule_name)
-                # remove from list
-                self.yara_rule_list.remove(rule_name)
             else:
                 rule_text = 'Invalid Rule'
             return render(request, template_name, {'rule_list': self.yara_rule_list,
@@ -703,7 +665,7 @@ class SearchFileView(LoginRequiredMixin, TemplateView):
         return HttpResponse('This is a POST only view')
 
     def post(self, request, *args, **kwargs):
-        template_name = "viperweb/search.html"
+        template_name = "viperweb/search_result.html"
         key = request.POST.get('key')
         value = request.POST.get('term').lower()
         cur_project = request.POST.get('cur_project', 'default')
@@ -748,7 +710,11 @@ class SearchFileView(LoginRequiredMixin, TemplateView):
         if results:
             # Return some things
             return render(request, template_name, {'results': results,
+                                                   'searched_key': key,
+                                                   'searched_value': value,
                                                    'projects': get_project_list()})
         else:
             return render(request, template_name, {'results': [],
+                                                   'searched_key': key,
+                                                   'searched_value': value,
                                                    'projects': get_project_list()})

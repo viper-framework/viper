@@ -29,11 +29,11 @@ class Project(object):
         if not os.path.exists(self.path):
             os.makedirs(self.path)
 
-        # initalize default log settings
+        # initialize default log settings
         log_file = os.path.join(self.base_path, "viper.log")
         debug_log = False
 
-        if cfg.logging:
+        if hasattr(cfg, 'logging'):
             if hasattr(cfg.logging, 'log_file') and cfg.logging.log_file:
                 log_file = cfg.logging.log_file
 

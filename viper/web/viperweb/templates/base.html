@@ -37,16 +37,16 @@
                         Projects
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownProjects">
-                        <a class="dropdown-item" href="/">default</a>
+                        <a class="dropdown-item" href="/"><i class="fas fa-angle-right fa-fw mr-1" style="color: black"></i>default</a>
                         <div class="dropdown-divider"></div>
                         {% for project in projects %}
                             {% if not project == "default" %}
-                                <a class="dropdown-item" href="{% url "main-page-project" project=project %}">{{ project }}</a>
+                                <a class="dropdown-item" href="{% url "main-page-project" project=project %}"><i class="fas fa-angle-right fa-fw mr-1" style="color: black"></i>{{ project }}</a>
                             {% endif %}
                         {% endfor %}
                         <div class="dropdown-divider"></div>
 
-                        <form class="form-inline" action="{% url "create-project" %}" enctype="multipart/form-data" method="post">
+                        <form class="form-inline my-lg-0" action="{% url "create-project" %}" enctype="multipart/form-data" method="post">
                             <input class="form-control mx-2" type="text" name="project" placeholder="switch to/create new">
                             {% csrf_token %}
                         </form>
@@ -96,14 +96,21 @@
                         More
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMoreAuthenticated">
-                        <a class="dropdown-item" href="{% url "admin:index" %}">Admin</a>
-                        <a class="dropdown-item" href="{% url "viperapi_v3:api-root" %}">API (browseable)</a>
-                        <a class="dropdown-item" href="{% url "viperapi_v3:api-docs" %}">API Docs</a>
+                        <a class="dropdown-item" href="{% url "admin:index" %}"><i class="fas fa-cogs fa-fw mx-1" style="color: black"></i> Admin</a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="https://viper-framework.readthedocs.io/en/latest/" rel="noreferrer noopener">Docs (RTD)</a>
-                        <a class="dropdown-item" href="https://github.com/viper-framework/viper/issues" rel="noreferrer noopener">Issues (GH)</a>
+
+                        <a class="dropdown-item" href="https://viper-framework.readthedocs.io/en/latest/" target="_blank" rel="noreferrer noopener">
+                            <i class="fas fa-book fa-fw mx-1" style="color: black"></i>Documentation</a>
+                        <a class="dropdown-item" href="https://github.com/viper-framework/viper/issues" target="_blank" rel="noreferrer noopener">
+                            <i class="fab fa-github fa-fw mx-1" style="color: black"></i>Issues</a>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="{% url "about" %}">About</a>
+
+                        <a class="dropdown-item" href="{% url "viperapi_v3:api-root" %}"><i class="fas fa-code fa-fw mx-1" style="color: black"></i>API</a>
+                        <a class="dropdown-item" href="{% url "viperapi_v3:api-docs" %}"><i class="fas fa-file-code fa-fw mx-1" style="color: black"></i>API Docs</a>
+
+                        <div class="dropdown-divider"></div>
+
+                        <a class="dropdown-item" href="{% url "about" %}"><i class="fas fa-info-circle fa-fw mx-1" style="color: black"></i>About</a>
                         {#                        <a class="dropdown-item" href="{% url "changelog" %}">Changelog (TODO!)</a>#}
                         {#                        <a class="dropdown-item" href="{% url "config-file" %}">Config (TODO!)</a>#}
                     </div>
@@ -125,11 +132,15 @@
                     More
                 </a>
                 <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMoreUnauthenticated">
-                    <a class="dropdown-item" href="https://viper-framework.readthedocs.io/en/latest/" rel="noreferrer noopener">Docs (RTD)</a>
-                    <a class="dropdown-item" href="https://github.com/viper-framework/viper/issues" rel="noreferrer noopener">Issues (GH)</a>
+                    <a class="dropdown-item" href="https://viper-framework.readthedocs.io/en/latest/" target="_blank" rel="noreferrer noopener">
+                        <i class="fas fa-book fa-fw mx-1" style="color: black"></i>Documentation</a>
+                    <a class="dropdown-item" href="https://github.com/viper-framework/viper/issues" target="_blank" rel="noreferrer noopener">
+                        <i class="fab fa-github fa-fw mx-1" style="color: black"></i>Issues</a>
                     <div class="dropdown-divider"></div>
+
                     {#                        <a class="dropdown-item" href="{% url "changelog" %}">Changelog (TODO!)</a>#}
-                    <a class="dropdown-item" href="{% url "about" %}">About</a>
+                    <a class="dropdown-item" href="{% url "about" %}"><i class="fas fa-info-circle fa-fw mx-1" style="color: black"></i>About</a>
+
                 </div>
             </li>
             <li class="nav-item">
@@ -184,8 +195,8 @@
 <br>
 <footer class="footer">
     <div class="container" align="center">
-            <span class="text-muted align-left"><a href="http://viper.li" rel="noreferrer noopener">Viper-Framework</a> |
-                Source Code on <a href="https://github.com/viper-framework/viper" rel="noreferrer noopener">Github</a></span>
+            <span class="text-muted align-left"><a href="http://viper.li" target="_blank"  rel="noreferrer noopener">Viper-Framework</a> |
+                Source Code on <a href="https://github.com/viper-framework/viper" target="_blank" rel="noreferrer noopener" title="Github"><i class="fab fa-github mx-1" style="color: black"></i></a></span>
     </div>
 </footer>
 

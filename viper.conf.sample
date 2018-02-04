@@ -32,13 +32,20 @@ log_file =
 debug = False
 
 [web]
-host = 0.0.0.0
+host = 127.0.0.1
 port = 8080
+
+# tls (default: False): start HTTPS (True) or HTTP (False) server
+tls = False
+# certificate: path to cert file e.g. /etc/ssl/viper.example.com.pem (x509 certificate)
+certificate =
+# key: path to key file e.g. /etc/ssl/viper.example.com.key (must be readable for Viper)
+key =
 
 # user name of superuser (default: "admin")
 #admin_username = admin
 # superuser password (default: auto generate)
-#admin_password = not-very-secret
+#admin_password = changeme
 
 
 [http_client]
