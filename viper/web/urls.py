@@ -12,6 +12,7 @@ cfg = __config__
 
 urlpatterns = [
     url(r'^', include('viper.web.viperweb.urls')),
+    url(r'^', include('favicon.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/', include('viper.web.viperapi.urls')),

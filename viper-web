@@ -21,6 +21,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "viper.web.settings")
 
 import django  # noqa
 django.setup()
+from django.conf import settings
 from django.contrib.auth.models import User  # noqa
 from django.core.exceptions import ObjectDoesNotExist  # noqa
 from django.core.management import execute_from_command_line  # noqa
@@ -126,13 +127,28 @@ if __name__ == '__main__':
         Token.objects.create(user=admin)
         # print_success("Created new API Auth Token for \"{}\": {}".format(admin_username, admin.auth_token.key))
 
+    # setup static files (if DEBUG=True served by Django; if DEBUG=False served by Whitenoise
+    execute_from_command_line(["manage.py", "collectstatic", "--no-input", "--verbosity", "0"])
+
     # run Django built-in Web Server
     print_info("Starting Web Server on {}:{}".format(web_host, web_port))
     # log.info("Starting Web Server on {}:{}".format(web_host, web_port))
 
-    if web_tls:
-        execute_from_command_line(["manage.py", "runsslserver", "--noreload",
-                                   "--certificate", web_certificate, "--key", web_key,
-                                   "{}:{}".format(web_host, web_port)])
+    if settings.DEBUG:
+        print_warning("Running with DEBUG enabled - use this for debugging/development only!")
+        if web_tls:
+            execute_from_command_line(["manage.py", "runsslserver",
+                                       "--nostatic",
+                                       "--certificate", web_certificate, "--key", web_key,
+                                       "{}:{}".format(web_host, web_port)])
+        else:
+            execute_from_command_line(["manage.py", "runserver", "{}:{}".format(web_host, web_port)])
+
     else:
-        execute_from_command_line(["manage.py", "runserver", "--noreload", "{}:{}".format(web_host, web_port)])
+        if web_tls:
+            execute_from_command_line(["manage.py", "runsslserver", "--noreload",
+                                       "--nostatic",
+                                       "--certificate", web_certificate, "--key", web_key,
+                                       "{}:{}".format(web_host, web_port)])
+        else:
+            execute_from_command_line(["manage.py", "runserver", "--noreload", "{}:{}".format(web_host, web_port)])

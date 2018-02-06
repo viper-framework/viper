@@ -49,16 +49,18 @@ class ObjectSerializer(serializers.Serializer):
             url = reverse("viperapi_v3:malware-detail",
                           kwargs={"project_name": self.context["project"], "sha256": obj.sha256},
                           request=self.context["request"])
-            links = list()
-            links.append(reverse("viperapi_v3:malware-analysis-list",
-                         kwargs={"project_name": self.context["project"], "malware_sha256": obj.sha256},
-                         request=self.context["request"]))
-            links.append(reverse("viperapi_v3:malware-note-list",
-                         kwargs={"project_name": self.context["project"], "malware_sha256": obj.sha256},
-                         request=self.context["request"]))
-            links.append(reverse("viperapi_v3:malware-tag-list",
-                         kwargs={"project_name": self.context["project"], "malware_sha256": obj.sha256},
-                         request=self.context["request"]))
+            links = dict()
+            links.update({"analysis": reverse("viperapi_v3:malware-analysis-list",
+                                              kwargs={"project_name": self.context["project"], "malware_sha256": obj.sha256},
+                                              request=self.context["request"])})
+            links.update({"notes": reverse("viperapi_v3:malware-note-list",
+                                           kwargs={"project_name": self.context["project"], "malware_sha256": obj.sha256},
+                                           request=self.context["request"])})
+            links.update({"tags": reverse("viperapi_v3:malware-tag-list",
+                                          kwargs={"project_name": self.context["project"], "malware_sha256": obj.sha256},
+                                          request=self.context["request"])})
+            links.update({"web": reverse("file-view", kwargs={"project": self.context["project"], "sha256": obj.sha256},
+                                         request=self.context["request"])})
             ret.update({"links": links})
         else:
             detail_url_name = "viperapi_v3:{}-detail".format(obj.__class__.__table__)
@@ -141,7 +143,7 @@ class ObjectSerializer(serializers.Serializer):
 
         return instance
 
-    def create(self, validated_data):  # implementing update is required
+    def create(self, validated_data):  # implementing create is required
         pass
 
 
@@ -244,6 +246,7 @@ class ProjectSerializer(serializers.Serializer):
                 "malware": reverse("viperapi_v3:malware-list", kwargs={"project_name": obj}, request=self.context["request"]),
                 "notes": reverse("viperapi_v3:note-list", kwargs={"project_name": obj}, request=self.context["request"]),
                 "tags": reverse("viperapi_v3:tag-list", kwargs={"project_name": obj}, request=self.context["request"]),
+                "web": reverse("main-page-project", kwargs={"project": obj}, request=self.context["request"])
             }
         }
 

@@ -2,6 +2,7 @@ Django
 django-bootstrap-form
 django-crispy-forms
 django-extensions
+django-favicon
 django-filter
 django-rest-swagger
 django-sslserver
@@ -9,3 +10,4 @@ django-url-filter
 djangorestframework
 djangorestframework-queryfields
 drf-nested-routers
+whitenoise

@@ -5,9 +5,9 @@
 
 import argparse
 
+from viper.core.ui import console
 from viper.common.version import __version__
 from viper.core.project import __project__
-from viper.core.ui import console
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

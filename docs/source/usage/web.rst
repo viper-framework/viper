@@ -185,3 +185,16 @@ many generic descriptions how to run a Django application in e.g. Apache, Nginx 
 
 For Viper there is currently no finished step-by-step guide. Please feel free to send us a Pull
 Request on Github..  :-D  https://github.com/viper-framework/viper/pulls
+
+
+FAQ
+===
+
+Q: What is the default username and password for the web interface?
+A: The default Username is "admin" and the Password will be auto generated (or the value of ``admin_password`` in your ``viper.conf`` will be used)
+
+Q: I didn't change (or write down) the auto generated password? How can I login?
+A: The easiest way is to delete the Django database (``$storage_path/admin.db``) and restart ``viper-web``.
+
+Q: Where can I find the API tokens?
+A: You can view and edit tokens in the Django admin site: http://127.0.0.1:8080/admin/authtoken/token/
