@@ -470,8 +470,12 @@ class MalwareViewSet(ViperGenericViewSet):
                 log.debug("No Extractor will be used, just store uploaded file")
                 if uploaded_file_name:
                     to_process.append((uploaded_file_path, uploaded_file_name))
+
                 else:
                     to_process.append((uploaded_file_path, "{}".format(uploaded_file)))
+
+            # reset uploaded_file_name
+            uploaded_file_name = None
 
         processed = list()
         for item in to_process:
