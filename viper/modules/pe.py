@@ -307,8 +307,7 @@ class PE(Module):
         def get_signatures():
             userdb_path = None
             for path_attempt in ['/usr/share/viper/peid/UserDB.TXT',
-                                 os.path.join(__project__.base_path, 'peid/UserDB.TXT'),
-                                 os.path.join(VIPER_ROOT, 'data/peid/UserDB.TXT')]:
+                                 os.path.join(__project__.base_path, 'peid/UserDB.TXT')]:
                 if os.path.exists(path_attempt):
                     userdb_path = path_attempt
                     break
