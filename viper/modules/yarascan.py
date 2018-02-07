@@ -61,8 +61,7 @@ class YaraScan(Module):
 
         self.rules_paths = [
             '/usr/share/viper/yara',
-            self.local_rules,
-            os.path.join(VIPER_ROOT, 'data', 'yara')
+            self.local_rules
         ]
 
     def _get_rules(self):
