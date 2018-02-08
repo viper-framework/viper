@@ -374,8 +374,9 @@ class MalwareViewSet(ViperGenericViewSet):
             malware_stored_path = store_sample(malware)
             log.debug("added file \"{0}\" to {1}".format(malware.name, malware_stored_path))
 
-            db.add_note(malware.sha256, note_title, note_body)
-            log.debug("added note: \"{0}\"".format(note_title))
+            if note_title and note_body:
+                db.add_note(malware.sha256, note_title, note_body)
+                log.debug("added note: \"{0}\"".format(note_title))
 
         else:
             error = {"error": {"code": "DatabaseAddFailed",
