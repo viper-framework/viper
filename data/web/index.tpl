@@ -157,7 +157,7 @@
 
 <%
 # number of pages
-num_pages = count / 25
+num_pages = count // 25
 if num_pages % 25 > 0:
     num_pages += 1
 end
