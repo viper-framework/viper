@@ -109,6 +109,7 @@ class Radiff2(Module):
             return
         
         if not __sessions__.is_set():
+            self.log('error', "No open session")
             return
 
         db = Database()
@@ -119,6 +120,7 @@ class Radiff2(Module):
             samples = db.find(key='all')
 
         if samples is None:
+            self.log('error', "No samples found")
             return
         
         session_file = __sessions__.current.file.name
