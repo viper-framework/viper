@@ -389,7 +389,6 @@ class FileView(LoginRequiredMixin, TemplateView):
         path = get_sample_path(sha256)
         if not path:
             raise Http404("could not retrieve file for sha256 hash: {}".format(sha256))
-        __sessions__.new(path)
 
         # Get additional details for file
         malware = db.find(key='sha256', value=sha256)
@@ -414,14 +413,17 @@ class FileView(LoginRequiredMixin, TemplateView):
                                        'cmd_line': item.cmd_line})
 
         tag_list = db.list_tags_for_malware(sha256)
+        children = db.list_children(malware_obj.id)
+        parent = db.get_parent(malware_obj.id)
 
-        return render(request, template_name, {'file_info': __sessions__.current.file,
-                                               'malware': malware_obj,
+        return render(request, template_name, {'malware': malware_obj,
                                                'note_list': note_list,
                                                'tag_list': tag_list,
+                                               'children': children,
+                                               'parent': parent,
+                                               'module_history': module_history,
                                                'project': project,
-                                               'projects': get_project_list(),
-                                               'module_history': module_history})
+                                               'projects': get_project_list()})
 
 
 class RunModuleView(LoginRequiredMixin, TemplateView):

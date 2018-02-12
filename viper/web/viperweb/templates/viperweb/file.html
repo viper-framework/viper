@@ -8,7 +8,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
             <li class="breadcrumb-item"><a href="{% url 'main-page-project' project=project %}">{{ project }}</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ file_info.sha256 }}</li>
+            <li class="breadcrumb-item active" aria-current="page">{{ malware.sha256 }}</li>
         </ol>
     </nav>
 
@@ -36,9 +36,9 @@
 
             <div class="card">
                 <div class="card-header">
-                    <h3 class="float-left">{{ file_info.name }}</h3>
+                    <h3 class="float-left">{{ malware.name }}</h3>
                     <div class="float-right">
-                        <a class="btn btn-primary" href="{% url "viperapi_v3:malware-download" project_name=project sha256=file_info.sha256 %}">Download</a>
+                        <a class="btn btn-primary" href="{% url "viperapi_v3:malware-download" project_name=project sha256=malware.sha256 %}">Download</a>
                         <a href="#" class="btn btn-danger my-1" onclick="delSample()">Delete</a>
                     </div>
                 </div>
@@ -48,7 +48,7 @@
                         <tr>
                             <td rowspan="2" class="font-weight-bold" title="Viper Internal Information">Meta</td>
                             <td width="150px">File ID</td>
-                            <td>{{ file_info.id }}</td>
+                            <td>{{ malware.id }}</td>
                         </tr>
                         <tr>
                             <td>Uploaded</td>
@@ -58,52 +58,52 @@
                         <tr>
                             <td rowspan="4" class="font-weight-bold" title="Details about File">File Info</td>
                             <td>Name</td>
-                            <td>{{ file_info.name }}</td>
+                            <td>{{ malware.name }}</td>
                         </tr>
                         <tr>
                             <td>Size</td>
-                            <td>{{ file_info.size|filesizeformat }} ({{ file_info.size }} bytes)</td>
+                            <td>{{ malware.size|filesizeformat }} ({{ malware.size }} bytes)</td>
                         </tr>
                         <tr>
                             <td>Type</td>
-                            <td>{{ file_info.type }}</td>
+                            <td>{{ malware.type }}</td>
                         </tr>
                         <tr>
                             <td>Mime</td>
-                            <td>{{ file_info.mime }}</td>
+                            <td>{{ malware.mime }}</td>
                         </tr>
 
                         <tr>
                             <td rowspan="6" class="font-weight-bold" title="Hashes or Checksums of Sample">Hashes</td>
                             <td>MD5</td>
-                            <td class="mono">{{ file_info.md5 }}</td>
+                            <td class="mono">{{ malware.md5 }}</td>
                         </tr>
                         <tr>
                             <td>SHA1</td>
-                            <td class="mono">{{ file_info.sha1 }}</td>
+                            <td class="mono">{{ malware.sha1 }}</td>
                         </tr>
                         <tr>
                             <td>SHA256</th>
-                            <td class="mono">{{ file_info.sha256 }}</td>
+                            <td class="mono">{{ malware.sha256 }}</td>
                         </tr>
                         <tr>
                             <td>SHA512</td>
-                            <td class="mono">{{ file_info.sha512 }}</td>
+                            <td class="mono">{{ malware.sha512 }}</td>
                         </tr>
                         <tr>
                             <td>CRC32</td>
-                            <td class="mono">{{ file_info.crc32 }}</td>
+                            <td class="mono">{{ malware.crc32 }}</td>
                         </tr>
                         <tr>
                             <td>Ssdeep Fuzzy</td>
                             <td class="mono">
                                 <form role="form" id="fuzzysubmit" onsubmit="return false" name="fuzzy">
-                                    {{ file_info.ssdeep }}
+                                    {{ malware.ssdeep }}
                                     <input type="hidden" name="module" value="fuzzy"/>
                                     <input type="hidden" name="args" value="run"/>
                                     <input type="hidden" name="cmdline" value="">
                                     <input type="hidden" name="moduleHistory" value=" ">
-                                    <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
+                                    <input type="hidden" name="file_hash" value="{{ malware.sha256 }}"/>
                                     <button type="submit" class="btn btn-primary btn-sm mx-2" name="submit">Fuzzy Search</button>
                                     {% csrf_token %}
                                 </form>
@@ -114,22 +114,33 @@
                             <td rowspan="2" class="font-weight-bold" title="Relations to other Samples">Relations</td>
                             <td>Parent</td>
                             <td>
-                                {% load viper_template_tags %}
-                                {% if file_info.parent %}
-{#                                     TODO(frennkie) workaround - should be able to use correct url#}
-                                    <a href="{% url "file-view" project=project sha256=file_info.parent|slice_parent %}">{{ file_info.parent }}</a>
+                                {% if parent %}
+                                  <a href="{% url "file-view" project=project sha256=parent.sha256 %}">{{ parent.name }} ({{ parent.sha256 }})</a>
                                 {% endif %}
+
+{#                                {% load viper_template_tags %}#}
+{#                                {% if malware.parent %}#}
+{#                                     TODO(frennkie) workaround - should be able to use correct url#}
+{#                                    <a href="{% url "file-view" project=project sha256=malware.parent|slice_parent %}">{{ malware.parent }}</a>#}
+{#                                {% endif %}#}
                             </td>
                         </tr>
                         <tr>
                             <td>Children</td>
                             <td>
-                                {% if file_info.children %}
-                                    {% for child in file_info.children|split_children %}
-{#                                         TODO(frennkie) workaround - should be able to use correct url#}
-                                        <a href="{% url "file-view" project=project sha256=child %}">{{ child }}</a>{% if not forloop.last %} - {% endif %}
+                                {% if children %}
+                                    {% for child in children %}
+                                        <a href="{% url "file-view" project=project sha256=child.sha256 %}">{{ child.name }} ({{ child.sha256 }})</a>{% if not forloop.last %} - {% endif %}
                                     {% endfor %}
                                 {% endif %}
+
+{#                                #}
+{#                                {% if malware.children %}#}
+{#                                    {% for child in malware.children|split_children %}#}
+{#                                         TODO(frennkie) workaround - should be able to use correct url#}
+{#                                        <a href="{% url "file-view" project=project sha256=child %}">{{ child }}</a>{% if not forloop.last %} - {% endif %}#}
+{#                                    {% endfor %}#}
+{#                                {% endif %}#}
                             </td>
                         </tr>
 
@@ -137,7 +148,7 @@
                             <td class="font-weight-bold" title="Relations to other Samples">External</td>
                             <td>Cuckoo</td>
                             <td>
-                                <a href="#" id="cuckoo_link" class="btn btn-primary btn-sm mr-2" onClick="$('#cuckoo').load('{% url "file-cuckoo-submit" project=project sha256=file_info.sha256 %}');">Cuckoo</a>
+                                <a href="#" id="cuckoo_link" class="btn btn-primary btn-sm mr-2" onClick="$('#cuckoo').load('{% url "file-cuckoo-submit" project=project sha256=malware.sha256 %}');">Cuckoo</a>
                                     <span class="my-0 mx-0 small" id="cuckoo"></span>
                             </td>
                         </tr>
@@ -304,7 +315,7 @@
                     {% endfor %}
                 </select>
                 <button type="submit" class="btn btn-primary" name="submit">Run</button>
-                <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
+                <input type="hidden" name="file_hash" value="{{ malware.sha256 }}"/>
                 {% csrf_token %}
 
             </form>
@@ -327,7 +338,7 @@
         <div class="tab-pane" id="nav-hex" role="tabpanel" aria-labelledby="nav-hex-tab">
             <form class="form-inline" role="form" id="hexsubmit" onsubmit="return false" name="hexsubmit">
                 <button type="submit" class="btn btn-primary my-1" name="submit">Load More</button>
-                <input type="hidden" name="file_hash" value="{{ file_info.sha256 }}"/>
+                <input type="hidden" name="file_hash" value="{{ malware.sha256 }}"/>
                 <input type="hidden" id="hex_start" name="hex_start" value="0"/>
                 <input type="hidden" id="hex_end" name="hex_end" value="32"/>
                 {% csrf_token %}
@@ -370,7 +381,7 @@
 
         $(document).ready(function (event) {
             console.log("working on Project: {{ project }}");
-            console.log("working on File: {{ file_info.sha256 }}");
+            console.log("working on File: {{ malware.sha256 }}");
 
             $('ul.nav.nav-tabs a:first').tab('show'); // Select first tab
             $('ul.nav.nav-tabs a[href="' + window.location.hash + '"]').tab('show'); // Select tab by name if provided in location hash
@@ -379,9 +390,9 @@
             });
         });
 
-        var malware_detail_url = "{% url 'viperapi_v3:malware-detail' project_name=project sha256=file_info.sha256 %}";
+        var malware_detail_url = "{% url 'viperapi_v3:malware-detail' project_name=project sha256=malware.sha256 %}";
         function delSample() {
-            console.log("del_sample called for sha256: {{ file_info.sha256 }} in project: {{ project }}");
+            console.log("del_sample called for sha256: {{ malware.sha256 }} in project: {{ project }}");
 
             if (confirm('Are you sure you want to delete this Sample?')) {
                 $.ajax({
@@ -401,7 +412,7 @@
         }
 
         // Tag: add, delete (as function)
-        var malware_tag_list_url = "{% url 'viperapi_v3:malware-tag-list' project_name=project malware_sha256=file_info.sha256 %}";
+        var malware_tag_list_url = "{% url 'viperapi_v3:malware-tag-list' project_name=project malware_sha256=malware.sha256 %}";
         $("#add_tag_form").submit(function (event) {
             console.log("add_tag_form called");
             event.preventDefault();
@@ -446,7 +457,7 @@
         }
 
         // Note: add, update, delete (as function)
-        var malware_note_list_url = "{% url 'viperapi_v3:malware-note-list' project_name=project malware_sha256=file_info.sha256 %}";
+        var malware_note_list_url = "{% url 'viperapi_v3:malware-note-list' project_name=project malware_sha256=malware.sha256 %}";
         $("#add_note_form").submit(function (event) {
             console.log("add_note_form called");
             event.preventDefault();
