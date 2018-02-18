@@ -67,6 +67,7 @@ def run_migrations_online():
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
+            render_as_batch=True,
             target_metadata=target_metadata
         )
 
