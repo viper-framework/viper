@@ -47,12 +47,6 @@ def logo():
     db = Database()
     count = db.get_sample_count()
 
-    try:
-        db.find('all')
-    except Exception:
-        print_error("You need to update your Viper database. Run 'python update.py -d'")
-        sys.exit()
-
     if __project__.name:
         name = __project__.name
     else:

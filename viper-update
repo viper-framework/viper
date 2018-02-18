@@ -5,11 +5,11 @@
 
 import os
 import sys
+import logging
 import hashlib
 from zipfile import ZipFile
 from optparse import OptionParser
-from sqlalchemy import create_engine
-from datetime import datetime
+import glob
 
 try:
     from io import BytesIO
@@ -20,10 +20,11 @@ from viper.common.out import print_info
 from viper.common.out import print_warning
 from viper.common.out import print_error
 from viper.common.out import print_success
-from viper.common.out import print_item
 from viper.common.network import download
 from viper.common.objects import File
 from viper.core.config import Config
+from viper.core.database import upgrade_database
+from viper.core.logger import init_logger
 from viper.core.project import __project__
 
 # For python2 & 3 compatibility, a bit dirty,
@@ -32,6 +33,8 @@ try:
     input = raw_input
 except NameError:
     pass
+
+log = logging.getLogger('viper')
 
 url = 'https://github.com/viper-framework/viper/archive/master.zip'
 
@@ -145,74 +148,11 @@ def update():
     zip_data.close()
 
 
-def update_db():
-    print_item("Backing up Sqlite DB")
-
-    # backup of database name with a timestamp to avoid to be overwritten
-    db_backupname = "viper_{0}.db.bak".format(datetime.utcnow().strftime("%Y%m%d-%H%M%S"))
-
-    try:
-        os.rename('viper.db', db_backupname)
-    except Exception as e:
-        print_error("Failed to Backup. {0} Stopping".format(e))
-        return
-
-    print_item("Creating New DataBase File")
-    from viper.core.database import Database
-    Database()
-
-    print_item("Connecting to Viper Databases")
-    old_engine = create_engine('sqlite:///{0}'.format(db_backupname))
-    db_path = os.path.join(__project__.get_path(), 'viper.db')
-    new_engine = create_engine('sqlite:///{0}'.format(db_path))
-
-    print_item("Reading data from Old Database")
-    malware = old_engine.execute('SELECT * FROM malware').fetchall()
-    association = old_engine.execute('SELECT * FROM association').fetchall()
-    notes = old_engine.execute('SELECT * FROM note').fetchall()
-    tags = old_engine.execute('SELECT * FROM tag').fetchall()
-
-    print_item(" Adding rows to New Database")
-
-    # Add all the rows back in
-    for row in notes:
-        new_engine.execute("INSERT INTO note VALUES ('{0}', '{1}', '{2}')".format(row[0], row[1], row[2]))
-
-    for row in tags:
-        new_engine.execute("INSERT INTO tag VALUES ('{0}', '{1}')".format(row[0], row[1]))
-
-    for row in malware:
-        new_engine.execute("INSERT INTO malware VALUES ('{0}', '{1}', '{2}', '{3}', '{4}', "
-                           "'{5}', '{6}', '{7}', '{8}', '{9}', '{10}', '{11}', 'Null')".format(row[0], row[1], row[2],
-                                                                                               row[3], row[4], row[5],
-                                                                                               row[6], row[7], row[8],
-                                                                                               row[9], row[10], row[11])
-                           )
-
-    # Rebuild association table with foreign keys
-    for row in association:
-        if row[0] is None:
-            tag_id = "Null"
-        else:
-            tag_id = "(SELECT id from tag WHERE id='{0}')".format(row[0])
-        if row[1] is None:
-            note_id = "Null"
-        else:
-            note_id = "(SELECT id from note WHERE id='{0}')".format(row[1])
-        if row[2] is None:
-            malware_id = "Null"
-        else:
-            malware_id = "(SELECT id from malware WHERE id='{0}')".format(row[2])
-
-        new_engine.execute("INSERT INTO association VALUES ({0}, {1}, {2}, 'Null')".format(tag_id, note_id, malware_id))
-
-    print_info("Update Complete")
-
-
 if __name__ == '__main__':
-    parser = OptionParser(usage='usage: %prog -c|-d')
+    parser = OptionParser(usage='usage: %prog -c|-d [--verbose]')
     parser.add_option("-d", "--db", action='store_true', default=False, help="Update DB Tables")
     parser.add_option("-c", "--core", action='store_true', default=False, help="Update Core Files")
+    parser.add_option("-v", "--verbose", action='store_true', default=False, help="Print more progress messages")
 
     (options, args) = parser.parse_args()
 
@@ -226,12 +166,43 @@ if __name__ == '__main__':
         parser.print_help()
         sys.exit()
 
-    if options.db:
-        print_warning("To update Projects you will need to copy their viper.db file in to the main viper folder")
-        print_warning("Run the DB update then move the new db file back to the project folder. ")
-        print_info("Updating to New DB format")
+    init_logger(log_file_path="./viper-web.log", debug=True)
+    log.info("starting viper-update")
 
-        update_db()
+    if options.db:
+        # lookup database type in from viper.conf ([database] - connection)
+        cfg = Config()
+        connection = cfg.database.connection
+
+        if connection.startswith("mysql+pymysql"):
+            db_type = "mysql"
+        elif connection.startswith("mysql"):
+            db_type = "mysql"
+        elif connection.startswith("postgresql"):
+            db_type = "postgresql"
+        else:
+            db_type = "sqlite"
+
+        if db_type == "sqlite":
+            print_info("Detected Database Backend: sqlite (Backups supported)")
+
+            dbs = [("{}/viper.db".format(__project__.base_path))]
+            dbs.extend(glob.glob("{}/projects/*/viper.db".format(__project__.base_path)))
+
+            for db_path in dbs:
+                db_url = "sqlite:///{}".format(db_path)
+                upgrade_database(db_url, db_type, verbose=options.verbose)
+
+        else:
+            print_info("Detected Database Backend: Non sqlite (Backups are _not_ supported!)")
+            print_warning("Backups are currently only supported on sqlite DB. You need to create a backup manually!")
+            choice = input("Are you sure you want to proceed? [y/N] ")
+
+            if choice.lower() != 'y':
+                sys.exit()
+
+            upgrade_database(connection, db_type, verbose=options.verbose)
 
     if options.core:
         update()
+

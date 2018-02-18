@@ -3,20 +3,27 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import shutil
 import sys
 import json
 import logging
 from datetime import datetime
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
-from sqlalchemy import Table, Index, create_engine, and_
+from sqlalchemy import Table, Index, MetaData, create_engine, and_
+
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.orm import subqueryload
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-from viper.common.out import print_warning, print_error, print_success
+from alembic import command
+from alembic.config import Config as AlembicConfig
+from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
+
+from viper.common.out import print_error, print_info, print_item, print_success, print_warning
 from viper.common.exceptions import Python2UnsupportedUnicode
 from viper.common.objects import File
 from viper.core.storage import get_sample_path, store_sample
@@ -28,7 +35,18 @@ log = logging.getLogger('viper')
 
 cfg = __config__
 
+INITIAL_ALEMBIC_DB_REVISION = "74c7becae858"
+
 Base = declarative_base()
+
+# http://alembic.zzzcomputing.com/en/latest/naming.html
+Base.metadata = MetaData(naming_convention={
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+})
 
 association_table = Table(
     'association',
@@ -193,6 +211,9 @@ class Database:
 
     def __init__(self):
 
+        self.url = None
+        self.type = None  # either sqlite, mysql or postgresql
+
         if cfg.database and cfg.database.connection:
             self._connect_database(cfg.database.connection)
         else:
@@ -204,6 +225,9 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
+        if not check_database(self.url):
+            upgrade_database(self.url, self.type, verbose=True)
+
         self.added_ids = {}
         self.copied_id_sha256 = []
 
@@ -211,15 +235,21 @@ class Database:
         return "<{}>".format(self.__class__.__name__)
 
     def _connect_database(self, connection):
+        self.url = connection
         if connection.startswith("mysql+pymysql"):
-            self.engine = create_engine(connection)
+            self.type = "mysql"
+            self.engine = create_engine(self.url)
         elif connection.startswith("mysql"):
-            self.engine = create_engine(connection, connect_args={"check_same_thread": False})
+            self.type = "mysql"
+            self.engine = create_engine(self.url, connect_args={"check_same_thread": False})
         elif connection.startswith("postgresql"):
-            self.engine = create_engine(connection, connect_args={"sslmode": "disable"})
+            self.type = "postgresql"
+            self.engine = create_engine(self.url, connect_args={"sslmode": "disable"})
         else:
+            self.type = "sqlite"
             db_path = os.path.join(__project__.get_path(), 'viper.db')
-            self.engine = create_engine('sqlite:///{0}'.format(db_path), poolclass=NullPool)
+            self.url = 'sqlite:///{0}'.format(db_path)
+            self.engine = create_engine(self.url, poolclass=NullPool)
 
     def add_tags(self, sha256, tags):
         session = self.Session()
@@ -663,3 +693,264 @@ class Database:
         session = self.Session()
         rows = session.query(Analysis).all()
         return rows
+
+
+def backup_database(database_url, sqlite=True, verbose=False):
+    # for sqlite a DB backup is easy (just copy the file)
+    if sqlite:
+        if not database_url.startswith('sqlite:///'):
+            raise Exception("Malformed sqlite database URL (should start with sqlite:///): {}".format(database_url))
+
+        # get path from url (for backup)
+        database_path = database_url[10:]  # strip sqlite:/// to get path
+
+        # backup of database name with a timestamp to avoid it to be overwritten
+        db_dir = os.path.dirname(database_path)
+        db_backup_path = os.path.join(db_dir, "viper_db_backup_{0}.db".format(datetime.utcnow().strftime("%Y%m%d-%H%M%S")))
+        if verbose:
+            print_item("Backing up Sqlite DB to: {}".format(db_backup_path))
+
+        try:
+            shutil.copy(database_path, db_backup_path)
+        except Exception as e:
+            print_error("Failed to Backup. {0} Stopping".format(e))
+            return
+
+    else:
+        print_info("Skipping DB backup for non sqlite DB (e.g. MariaDB/PostgreSQL)")
+
+
+# SQLAlchemy/Alembic database migration (update)
+def _migrate_db_to_alembic_management(db_url, db_type, rev, alembic_cfg=None, engine=None, verbose=False):
+    """ migrate a non alembic database to a specified revision
+
+    :param db: viper.core.database.Database object
+    :type db: viper.core.database.Database
+    :param rev: Alembic revision string which should be used
+    :type rev: String
+    :param alembic_cfg: configured AlembicConfig instance
+    :type alembic_cfg: object
+    :param engine: connected SQL Alchemy engine instance
+    :type engine: object
+    :param verbose: If True, print more status messages
+    :type verbose: Boolean
+    """
+
+    if not alembic_cfg:
+        # set URL and setup Alembic config
+        alembic_cfg = AlembicConfig()
+        alembic_cfg.set_main_option("script_location", "viper:alembic")
+        alembic_cfg.set_main_option("sqlalchemy.url", db_url)
+
+    if not engine:
+        # setup SQLAlchemy engine and connect to db
+        engine = create_engine(db_url)
+
+    if verbose:
+        print_item("Reading data from Database")
+    log.debug("Reading data from Database")
+
+    malware = engine.execute('SELECT * FROM malware').fetchall()
+    analysis = engine.execute('SELECT * FROM analysis').fetchall()
+    association = engine.execute('SELECT * FROM association').fetchall()
+    notes = engine.execute('SELECT * FROM note').fetchall()
+    tags = engine.execute('SELECT * FROM tag').fetchall()
+
+    validation_check = True
+    try:
+        log.debug("# cols malware: {}".format(len(malware[0])))
+        if not len(malware[0]) == 13:
+            validation_check = False
+    except IndexError:
+        log.debug("# cols malware: no rows")
+
+    try:
+        log.debug("# cols analysis: {}".format(len(analysis[0])))
+        if not len(analysis[0]) == 4:
+            validation_check = False
+    except IndexError:
+        log.debug("# cols analysis: no rows")
+
+    try:
+        log.debug("# cols association: {}".format(len(association[0])))
+        if not len(association[0]) == 4:
+            validation_check = False
+    except IndexError:
+        log.debug("# cols association: no rows")
+
+    try:
+        log.debug("# cols notes: {}".format(len(notes[0])))
+        if not len(notes[0]) == 3:
+            validation_check = False
+    except IndexError:
+        log.debug("# cols notes: no rows")
+
+    try:
+        log.debug("# cols tags: {}".format(len(tags[0])))
+        if not len(tags[0]) == 2:
+            validation_check = False
+    except IndexError:
+        log.debug("# cols tags: no rows")
+
+    if validation_check:
+        log.debug("successfully validated old DB schema")
+    else:
+        log.debug("failed to validated old DB schema")
+        print_error("Unsupported DB state - Exiting!")
+        sys.exit(1)
+
+    if verbose:
+        print_item("Dropping tables from Database")
+
+    if db_type == "sqlite":
+        engine.execute("DROP TABLE analysis;")
+        engine.execute("DROP TABLE note;")
+        engine.execute("DROP TABLE tag;")
+        engine.execute("DROP TABLE association;")
+        engine.execute("DROP TABLE malware;")
+    elif db_type == "mysql":
+        pass  # TODO(frennkie) implement this
+    elif db_type == "postgresql":
+        engine.execute("DROP TABLE malware CASCADE;")
+        engine.execute("DROP TABLE association CASCADE;")
+        engine.execute("DROP TABLE analysis CASCADE;")
+        engine.execute("DROP TABLE note CASCADE;")
+        engine.execute("DROP TABLE tag CASCADE;")
+    else:
+        pass
+
+    # re-create tables according to initial rev schema
+    if verbose:
+        print_item("Creating initial schema in Database (Revision: {})".format(rev))
+    command.upgrade(alembic_cfg, rev)
+
+    if verbose:
+        print_item("Inserting data back into Database")
+
+    # Add all the rows back in
+    for row in analysis:
+        engine.execute("INSERT INTO analysis VALUES ('{0}', '{1}', '{2}', '{3}')".format(row[0], row[1], row[2], row[3]))
+
+    for row in notes:
+        engine.execute("INSERT INTO note VALUES ('{0}', '{1}', '{2}')".format(row[0], row[1], row[2]))
+
+    for row in tags:
+        engine.execute("INSERT INTO tag VALUES ('{0}', '{1}')".format(row[0], row[1]))
+
+    for row in malware:
+        engine.execute("INSERT INTO malware VALUES ("
+                       "'{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', "
+                       "'{7}', '{8}', '{9}', '{10}', '{11}', '{12}'"
+                       ")".format(row[0], row[1], row[2], row[3], row[4], row[5], row[6],
+                                  row[7], row[8], row[9], row[10], row[11], row[12]))
+
+    # Rebuild association table with foreign keys
+    for row in association:
+        if row[0] is None:
+            tag_id = "Null"
+        else:
+            tag_id = "(SELECT id from tag WHERE id='{0}')".format(row[0])
+        if row[1] is None:
+            note_id = "Null"
+        else:
+            note_id = "(SELECT id from note WHERE id='{0}')".format(row[1])
+        if row[2] is None:
+            malware_id = "Null"
+        else:
+            malware_id = "(SELECT id from malware WHERE id='{0}')".format(row[2])
+
+        if row[3] is None:
+            analysis_id = "Null"
+        else:
+            analysis_id = "(SELECT id from analysis WHERE id='{0}')".format(row[3])
+
+        engine.execute("INSERT INTO association VALUES ({0}, {1}, {2}, {3})".format(tag_id, note_id, malware_id, analysis_id))
+
+
+def _is_alembic_enabled(engine):
+    context = MigrationContext.configure(engine.connect())
+    if context.get_current_revision():
+        return True
+    else:
+        return False
+
+
+def _is_alembic_up2date_with_rev(engine, rev):
+    context = MigrationContext.configure(engine.connect())
+    if context.get_current_revision() == rev:
+        return True
+    else:
+        return False
+
+
+def _get_current_script_head(alembic_cfg):
+    # set URL and setup Alembic config
+    script = ScriptDirectory.from_config(alembic_cfg)
+    return script.get_current_head()
+
+
+def check_database(database_url):
+    # set URL and setup Alembic config
+    alembic_cfg = AlembicConfig()
+    alembic_cfg.set_main_option("script_location", "viper:alembic")
+    alembic_cfg.set_main_option("sqlalchemy.url", database_url)
+
+    engine = create_engine(database_url)
+    if not _is_alembic_enabled(engine):
+        return False
+
+    current_head = _get_current_script_head(alembic_cfg)
+    if not _is_alembic_up2date_with_rev(engine, current_head):
+        return False
+
+    return True
+
+
+def upgrade_database(db_url, db_type, create_backup=True, verbose=False):
+    if check_database(db_url):
+        print_info("Already up2date!")
+        return
+
+    if create_backup:
+        if db_type == "sqlite":
+            backup_database(db_url, sqlite=True, verbose=verbose)
+        else:
+            backup_database(db_url, sqlite=False, verbose=verbose)
+
+    # set URL and setup Alembic config
+    alembic_cfg = AlembicConfig()
+    alembic_cfg.set_main_option("script_location", "viper:alembic")
+    alembic_cfg.set_main_option("sqlalchemy.url", db_url)
+
+    # setup SQLAlchemy engine and connect to db
+    if verbose:
+        print_item("Connecting to Viper Databases: {}".format(db_url))
+    engine = create_engine(db_url)
+
+    if not _is_alembic_enabled(engine):
+        log.warning("Database ({}) has never seen an Alembic migration".format(db_url))
+        if verbose:
+            print_warning("Database ({}) has never seen an Alembic migration".format(db_url))
+
+        # migrate to initial alembic revision for Viper
+        _migrate_db_to_alembic_management(db_url, db_type, INITIAL_ALEMBIC_DB_REVISION, alembic_cfg, engine, verbose=verbose)
+
+    else:
+        log.debug("is_alembic_enabled: True")
+
+    current_head = _get_current_script_head(alembic_cfg)
+    if _is_alembic_up2date_with_rev(engine, current_head):
+        log.debug("is_alembic_up2date_with_rev (Rev: {}): True".format(current_head))
+        if verbose:
+            print_item("Database is now up-to-date".format(current_head))
+
+    else:
+        log.debug("is_alembic_up2date_with_rev (Rev: {}): False".format(current_head))
+
+        log.info("Migrating to head ({})".format(current_head))
+        if verbose:
+            print_warning("Migrating to head ({})".format(current_head))
+        command.upgrade(alembic_cfg, current_head)
+
+    if verbose:
+        print_success("DB update finished successfully")

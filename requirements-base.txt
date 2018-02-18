@@ -1,3 +1,4 @@
+alembic
 bitstring==3.1.5
 pbkdf2==1.3
 python-dateutil==2.6.1
