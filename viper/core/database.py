@@ -724,8 +724,10 @@ def backup_database(database_url, sqlite=True, verbose=False):
 def _migrate_db_to_alembic_management(db_url, db_type, rev, alembic_cfg=None, engine=None, verbose=False):
     """ migrate a non alembic database to a specified revision
 
-    :param db: viper.core.database.Database object
-    :type db: viper.core.database.Database
+    :param db_url: e.g. sqlite:///viper.db
+    :type db_url: String
+    :param db_type: e.g. sqlite, mysql, postgresql
+    :type db_type: String
     :param rev: Alembic revision string which should be used
     :type rev: String
     :param alembic_cfg: configured AlembicConfig instance
