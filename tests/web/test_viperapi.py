@@ -168,7 +168,8 @@ class ViperAPIv3Test(TestCase):
                 "tags": "http://testserver/api/v3/project/default/tag/",
                 "malware": "http://testserver/api/v3/project/default/malware/",
                 "analysis": "http://testserver/api/v3/project/default/analysis/",
-                "notes": "http://testserver/api/v3/project/default/note/"
+                "notes": "http://testserver/api/v3/project/default/note/",
+                "web": "http://testserver/project/default/"
             }
         }
 
@@ -189,7 +190,8 @@ class ViperAPIv3Test(TestCase):
                 "tags": "http://testserver/api/v3/project/api_test/tag/",
                 "malware": "http://testserver/api/v3/project/api_test/malware/",
                 "analysis": "http://testserver/api/v3/project/api_test/analysis/",
-                "notes": "http://testserver/api/v3/project/api_test/note/"
+                "notes": "http://testserver/api/v3/project/api_test/note/",
+                "web": "http://testserver//project/api_test/"
             }
         }
 
