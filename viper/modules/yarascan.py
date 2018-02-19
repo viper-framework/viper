@@ -5,6 +5,7 @@
 import os
 import string
 import subprocess
+from os.path import expanduser
 
 try:
     from scandir import walk
@@ -13,11 +14,9 @@ except ImportError:
 
 from viper.common.abstracts import Module
 from viper.core.database import Database
-from viper.core.project import __project__
 from viper.core.session import __sessions__
 from viper.core.storage import get_sample_path
 from viper.core.config import __config__
-from viper.common.constants import VIPER_ROOT
 
 try:
     import yara
@@ -57,8 +56,7 @@ class YaraScan(Module):
         parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
         parser_rules.add_argument('-u', '--update', action='store_true', help='Download latest rules from selected repositories')
 
-        self.local_rules = os.path.join(__project__.base_path, 'yara')
-
+        self.local_rules = os.path.join(expanduser('~'), '.viper', 'data', 'yara')
         self.rules_paths = [
             '/usr/share/viper/yara',
             self.local_rules
