@@ -191,7 +191,7 @@ class ViperAPIv3Test(TestCase):
                 "malware": "http://testserver/api/v3/project/api_test/malware/",
                 "analysis": "http://testserver/api/v3/project/api_test/analysis/",
                 "notes": "http://testserver/api/v3/project/api_test/note/",
-                "web": "http://testserver//project/api_test/"
+                "web": "http://testserver/project/api_test/"
             }
         }
 
