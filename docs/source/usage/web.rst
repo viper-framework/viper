@@ -2,12 +2,12 @@
 HTTP Interfaces
 ===============
 
-Viper has two HTTP Components that can optionally be enabled alongside the console access.
+Viper has two HTTP interfaces that can optionally be enabled alongside the console access.
 
     * Web interface
     * REST based API interface
 
-The first one provides an user-friendly alternative to the traditional command-line interface,
+The first one provides a graphical alternative to the traditional command-line interface,
 while the second one can be used to easily integrate Viper with other tools.
 
 
@@ -18,32 +18,32 @@ Both the web interface and the REST API are implemented using the open source Py
 Django (https://www.djangoproject.com/). Django is very widely used and the developers put a strong
 emphasis on web security.
 
-Viper uses built-in features of Django to provide username/password login to the web interface and
-token based authentication for the REST API. Django also provides a built-in web server that can be
-used to either run a HTTP or a HTTPS web server. This works fine for small setups (e.g. single user
-with only a limited number of samples) but it is discouraged for big production scenarios.
+Viper uses built-in features of Django to provide username/password based login to the web interface
+and token based authentication for the REST API. Django also provides a built-in web server that can 
+be used to run a HTTP or a HTTPS web server. This works fine for small setups (e.g. single user with
+only a limited number of samples), but it is not recommended for bigger production scenarios.
 
-Although both interfaces are developed with security in mind users MUST be aware that exposing them
-to the Internet could potentially severely impact the security of your system(s).
+Although both interfaces are developed with security in mind, users MUST be aware that exposing them
+to the Internet could potentially have a severe impact on the security of your system(s).
 
 Malicious users/attackers that are able to gain access to the web interface or the REST API will not
-only have **full access to your Viper sample database** but will also be able to **execute
-commands on the hosting system**. Access could be gained by stealing/phishing the username/password,
-bruteforceing credentials or through authentications bypasses caused by implementation mistakes in
+only have **full access to your Viper sample database** but will also be able to **execute commands 
+on the hosting system**. Access could be gained by stealing/phishing the username/password,
+brute-forcing credentials or through authentication bypasses caused by implementation mistakes in
 Viper or bugs/design flaws in Django.
 
 
 Web Interface
 =============
 
-Viper comes with a basic HTML5 Browser interface that can run alongside the command-line interface.
+Viper comes with a basic HTML5 browser interface that can run alongside the command-line interface.
 
 Its main features are:
 
     * Project Switching / Creation
     * Multiple File Upload
     * File Download
-    * Unpack Compressed uploads
+    * Extraction of Compressed uploads
     * Full Search (including tag, name, mime, note, type)
     * Hex Viewer
     * Run Modules
@@ -56,7 +56,7 @@ Configuration
 
 For the configuration of the web interface please refer to the ``[web]`` section in your ``viper.conf``
 file. There you can specify the IP address (e.g. 0.0.0.0 or 127.0.0.1) and port to listen on.
-Additionally you can configure Django to start a HTTPS server. This requires a certificate and a key.
+Additionally you can configure HTTPS using TLS. This requires an x509 certificate and private key.
 Lastly you can setup the initial admin account and its password::
 
     [web]
@@ -68,11 +68,11 @@ Lastly you can setup the initial admin account and its password::
     admin_username = admin
     admin_password = changeme
 
-Launch the web interface
+Launching the web interface
 ------------------------
 
-To launch the web application move into the viper directory and run the ``viper-web`` script.
-By default it launches a single threaded Django development web server on ``localhost:8080``
+To launch the web application, change into the viper directory and run the ``viper-web`` script.
+By default it launches a single threaded http Django development web server on ``localhost:8080``
 .
 Please note that if there is no ``admin_password`` set, then a random password will be generated::
 
@@ -90,7 +90,7 @@ Please note that if there is no ``admin_password`` set, then a random password w
     Starting development server at http://127.0.0.1:8080/
     Quit the server with CONTROL-C.
 
-You can set the listening IP address and port with options ``-H`` and ``-p``::
+You can set the listening IP address and port on the commandline with parameters ``-H`` and ``-p``::
 
     user@localhost:~/viper_django$ ./viper-web -h
     usage: viper-web [-h] [-H HOST] [-p PORT] [--tls] [-c CERTIFICATE] [-k KEY]
@@ -104,9 +104,9 @@ You can set the listening IP address and port with options ``-H`` and ``-p``::
                             path to .crt file
       -k KEY, --key KEY     path to .key file
 
-You can also start a HTTPS web server. This requires a regular x509 SSL/TLS certificate and key::
+You can also start an HTTPS web server with TLS enabled. This requires a regular x509 SSL/TLS certificate and key::
 
-    $: ./viper-web -H 0.0.0.0 -p 443 --tls --certificate ssl-cert.pem --key ssl-cert.key
+    $: ./viper-web -H 0.0.0.0 -p 443 --tls --certificate viper.pem --key viper.key
     [*] Using PEID info from directory: /home/user/.viper/peid
     [*] Using Yara rules from directory: /home/user/.viper/yara
     [!] There are outstanding Django DB migrations
@@ -130,18 +130,18 @@ Viper provides a REST API through which the samples in all projects can be acces
 commands that are available in the CLI can be executed. The REST API is a crucial part of the
 web interface and is therefore automatically started by the ``viper-web`` script.
 
-In the past the REST API was started separately from the web interface. This is no longer possible
+In the past, the REST API was started separately from the web interface. This is no longer possible
 and the ``viper-api`` script has been removed.
 
 The REST API is implemented using the [Django REST framework](http://www.django-rest-framework.org/),
-short DRF and is reachable after starting ``viper-web`` at http://127.0.0.1:8080/api/v3/.
+short DRF and is reachable at http://127.0.0.1:8080/api/v3/ after starting ``viper-web``.
 
-Additionally Viper makes use of django-rest-swagger (https://marcgibbons.com/django-rest-swagger/)
-which automatically creates an interactive API documentation, all technical details about API
+Additionally Viper makes use of [django-rest-swagger](https://marcgibbons.com/django-rest-swagger/),
+which automatically creates an interactive API documentation; all technical details about API
 endpoints and how to use them can be found there: http://127.0.0.1:8080/api/v3/docs/.
 
 All requests to the REST API need to be authenticated with the only exception being a test interface
-(http://127.0.0.1:8080/api/v3/test/). Authentication can either done by providing a username/password
+(http://127.0.0.1:8080/api/v3/test/). Authentication can either be done by providing a username/password
 or by sending an authorization header containing a token. These credentials can be managed
 in the Django admin interface (http://127.0.0.1:8080/admin/).
 
@@ -177,11 +177,11 @@ Response (HTTP Status Code: 201 Created)::
        }
     }]
 
-Use Viper in a (web) production environment
+Using Viper in a (web) production environment
 -------------------------------------------
 
 In production use, its often not recommended to use the Django development web server. There are
-many generic descriptions how to run a Django application in e.g. Apache, Nginx or uWSGI.
+many generic descriptions of how to run a Django application in e.g. Apache, Nginx or uWSGI.
 
 For Viper there is currently no finished step-by-step guide. Please feel free to send us a Pull
 Request on Github..  :-D  https://github.com/viper-framework/viper/pulls
@@ -191,9 +191,9 @@ FAQ
 ===
 
 Q: What is the default username and password for the web interface?
-A: The default Username is "admin" and the Password will be auto generated (or the value of ``admin_password`` in your ``viper.conf`` will be used)
+A: The default username is "admin" and the password will be auto generated (or the value of ``admin_password`` in your ``viper.conf`` will be used)
 
-Q: I didn't change (or write down) the auto generated password? How can I login?
+Q: I didn't change (or write down) the auto generated password? How can I log in?
 A: The easiest way is to delete the Django database (``$storage_path/admin.db``) and restart ``viper-web``.
 
 Q: Where can I find the API tokens?
