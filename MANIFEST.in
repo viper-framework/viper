@@ -8,6 +8,5 @@ include viper.conf.sample
 include settings_local.py.sample
 recursive-include data/peid/ *.*
 recursive-include data/yara/ *.*
-recursive-include data/web/ *.*
 global-exclude __pycache__
 global-exclude *.py[co]
