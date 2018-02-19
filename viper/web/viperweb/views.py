@@ -48,6 +48,11 @@ try:
 except ImportError:
     from commands import getoutput  # commands was deprecated in Py2.
 
+try:
+    FileNotFoundError
+except NameError:
+    FileNotFoundError = IOError  # Py2
+
 log = logging.getLogger("viper-web")
 cfg = __config__
 
