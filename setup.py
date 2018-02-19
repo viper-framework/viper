@@ -5,7 +5,6 @@
 
 import os
 import pip
-import glob
 from setuptools import setup
 
 from viper.common.version import __version__
