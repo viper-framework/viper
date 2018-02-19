@@ -2,7 +2,7 @@
 HTTP Interfaces
 ===============
 
-Viper has two HTTP Components that can optionally be enabled alongside the console access.
+Viper has two HTTP components that can optionally be enabled alongside the console access.
 
     * Web interface
     * REST based API interface
