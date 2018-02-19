@@ -9,7 +9,6 @@ import random
 import argparse
 
 from viper.common.out import print_info, print_warning, print_success
-from viper.core.storage import check_and_deploy_peid, check_and_deploy_yara_rules
 from viper.core.config import __config__
 
 # log = logging.getLogger("viper-web")
@@ -86,10 +85,6 @@ if __name__ == '__main__':
     if web_tls:
         if not (web_certificate and web_key):
             raise Exception("please provide --certificate and --key parameter for TLS")
-
-    # Initials checks (e.g. for new installation/upgrade of Viper)
-    check_and_deploy_peid()
-    check_and_deploy_yara_rules()
 
     # check for outstanding migrations
     if is_database_synchronized(DEFAULT_DB_ALIAS):
