@@ -3,11 +3,9 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import shutil
 
-from viper.common.out import print_warning, print_error, print_info
+from viper.common.out import print_warning, print_error
 from viper.core.project import __project__
-from viper.common.constants import VIPER_ROOT
 
 
 def store_sample(file_object):
