@@ -9,7 +9,6 @@ import glob
 from setuptools import setup
 
 from viper.common.version import __version__
-from viper.common.constants import DIST_DIR_YARA_RULES, DIST_DIR_PEID
 
 
 def get_packages(package):
@@ -72,9 +71,7 @@ setup(
     package_data=get_package_data('viper'),
     install_requires=requires,
     dependency_links=links,
-    data_files=[('/', ['viper.conf.sample']),
-                ('/' + DIST_DIR_PEID, glob.glob("data/peid/*")),
-                ('/' + DIST_DIR_YARA_RULES, glob.glob("data/yara/*"))],
+    data_files=[('/', ['viper.conf.sample'])],
     zip_safe=False,
 
     tests_require=['pytest'],
