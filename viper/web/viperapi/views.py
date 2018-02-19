@@ -314,7 +314,6 @@ class MalwareViewSet(ViperGenericViewSet):
     #     """Update a Malware instance (with partial data)"""
     #     return super(MalwareViewSet, self).partial_update(request, *args, **kwargs)
 
-    # TODO(frennkie) - would make sense.. so.. implement it
     @get_project_open_db()
     def destroy(self, request, project=None, db=None, *args, **kwargs):
         """Delete a Malware instance"""

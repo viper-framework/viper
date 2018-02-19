@@ -9,8 +9,7 @@
 
     <title>Viper - {% block title %}{% endblock %}</title>
 
-    {#    TODO(frennkie) check this https://docs.djangoproject.com/en/1.10/ref/templates/builtins/#static#}
-    {% load static from staticfiles %}
+    {% load static %}
 
     <link rel="stylesheet" href="{% static "viperweb/css/bootstrap.min.css" %}">
     <link rel="stylesheet" href="{% static "viperweb/css/dataTables.bootstrap4.min.css" %}"/>
@@ -20,8 +19,6 @@
 
 <body role="document">
 <!-- Start Navbar -->
-{# TODO(frennkie) highlight active part in Navbar#}
-{#<nav class="navbar navbar-dark" style="background-color: #000000;">#}
 <nav class="navbar navbar-expand-sm navbar-dark bg-dark">
     <a class="navbar-brand" href="#"><img src="{% static "viperweb/images/viper_inverse.png" %}" width="92" height="25" alt="Viper"></a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
