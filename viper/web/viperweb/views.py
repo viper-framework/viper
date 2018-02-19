@@ -508,9 +508,14 @@ class HexView(LoginRequiredMixin, TemplateView):
 
 class YaraRulesView(LoginRequiredMixin, TemplateView):
     """Manage Yara Rules"""
+
+    # TODO(frennkie) this depends on - not yet merged - #649
     yara_rule_path = os.path.join(__project__.base_path, 'yara')
 
     def yara_rule_list(self):
+        # TODO(frennkie) clean this up when merging #649
+        if not os.path.isdir(self.yara_rule_path):
+            os.makedirs(self.yara_rule_path)
         return sorted(os.listdir(self.yara_rule_path), key=lambda y: y.lower())
     yara_rule_list = property(yara_rule_list)
 
