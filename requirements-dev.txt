@@ -1,4 +1,3 @@
-Django >= 2; python_version >= '3.5'
 SQLAlchemy
 beautifulsoup4
 bitstring
@@ -20,6 +19,7 @@ pypdns
 pypssl
 pytest
 pytest-cov
+pytest-django
 python-dateutil
 python-magic
 r2pipe

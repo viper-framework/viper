@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Log in{% endblock %}
+
+{% block content %}
+
+    {% if next %}
+        {% if user.is_authenticated %}
+            <p class="text-danger">You are not authorized to perform this action.</p>
+        {% else %}
+            <p class="text-danger">Please login to view this page.</p>
+        {% endif %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-xs-1 col-sm-3"></div>
+        <div class="col-xs-10 col-sm-6">
+            <div align="center">
+                <h2>Welcome to the Viper Malware Analysis Framework</h2>
+                <p>This is the interactive web panel that will allow you to add, search and perform analysis across files.</p>
+                <p>&nbsp;</p>
+            </div>
+        </div>
+        <div class="col-xs-1 col-sm-3"></div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-4"></div>
+        <div class="col-sm-4">
+            {% load bootstrap %}
+            <form method="post" action="{% url 'login' %}?next={{ request.GET.next }}">
+                {% csrf_token %}
+                {{ form|bootstrap_inline }}
+
+                <div class="form-group" align="center">
+                    <div>
+                        <button type="submit" class="btn btn-viper">Login</button>
+                        <input type="hidden" name="next" value={{ request.GET.next }} />
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-sm-4"></div>
+    </div>
+
+
+
+{% endblock %}

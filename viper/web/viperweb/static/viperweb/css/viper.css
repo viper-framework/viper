@@ -1,0 +1,124 @@
+/* style.css  - CSS customizations */
+
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  line-height: 60px; /* Vertically center the text there */
+  background-color: #f5f5f5;
+}
+
+/* Upload Form
+-------------------------------------------------- */
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 100px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+
+/* Adds padding to Note Rows.
+-------------------------------------------------- */
+.note-box {
+    padding-top: 20px;
+}
+
+/* Misc
+-------------------------------------------------- */
+.mono {
+    font-family: monospace;
+}
+
+/* Adding style to tabs
+-------------------------------------------------- */
+.tab-content {
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 20px;
+}
+
+.nav-tabs {
+    margin-bottom: 0;
+}
+
+
+a:hover {
+ text-decoration: none;
+}
+
+.label:hover {
+ text-decoration: none;
+}
+
+/*http://blog.koalite.com/bbg/ */
+.btn-viper {
+  color: #ffffff;
+  background-color: #2A282B;
+  border-color: #6242FF;
+}
+
+.btn-viper:hover,
+.btn-viper:focus,
+.btn-viper:active,
+.btn-viper.active,
+.open .dropdown-toggle.btn-viper {
+  color: #ffffff;
+  background-color: #2F3FA8;
+  border-color: #6242FF;
+}
+
+.btn-viper:active,
+.btn-viper.active,
+.open .dropdown-toggle.btn-viper {
+  background-image: none;
+}
+
+.btn-viper.disabled,
+.btn-viper[disabled],
+fieldset[disabled] .btn-viper,
+.btn-viper.disabled:hover,
+.btn-viper[disabled]:hover,
+fieldset[disabled] .btn-viper:hover,
+.btn-viper.disabled:focus,
+.btn-viper[disabled]:focus,
+fieldset[disabled] .btn-viper:focus,
+.btn-viper.disabled:active,
+.btn-viper[disabled]:active,
+fieldset[disabled] .btn-viper:active,
+.btn-viper.disabled.active,
+.btn-viper[disabled].active,
+fieldset[disabled] .btn-viper.active {
+  background-color: #2A282B;
+  border-color: #6242FF;
+}
+
+.btn-viper .badge {
+  color: #2A282B;
+  background-color: #ffffff;
+}
