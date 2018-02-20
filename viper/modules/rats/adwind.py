@@ -61,7 +61,7 @@ def config(data):
                 try:
                     config = zip.read(name)
                     result = decrypt_des(Key[:-4], config)
-                except:
+                except Exception:
                     config = zip.read(name)
                     result = decrypt_rc4(Key, config)
                 xml = [x for x in result if x in string.printable]

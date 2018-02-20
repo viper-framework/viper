@@ -15,7 +15,7 @@ from viper.common.abstracts import ArgumentErrorCallback
 from viper.core.session import __sessions__
 
 
-class TestOffice:
+class TestSWF:
     def test_init(self):
         instance = swf.SWF()
         assert isinstance(instance, swf.SWF)

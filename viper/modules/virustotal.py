@@ -5,6 +5,7 @@
 import os
 import glob
 import shutil
+import logging
 import json
 
 try:
@@ -21,9 +22,12 @@ from viper.common.abstracts import Module
 from viper.common.objects import MispEvent
 from viper.core.session import __sessions__
 from viper.core.project import __project__
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+log = logging.getLogger('viper')
+
+cfg = __config__
+cfg.parse_http_client(cfg.virustotal)
 
 
 class VirusTotal(Module):
@@ -38,12 +42,12 @@ class VirusTotal(Module):
             return
         self.cur_path = __project__.get_path()
         if cfg.virustotal.virustotal_has_private_key:
-            self.vt = vt_priv(cfg.virustotal.virustotal_key)
+            self.vt = vt_priv(cfg.virustotal.virustotal_key, proxies=cfg.virustotal.proxies)
         else:
-            self.vt = vt(cfg.virustotal.virustotal_key)
+            self.vt = vt(cfg.virustotal.virustotal_key, proxies=cfg.virustotal.proxies)
 
         if cfg.virustotal.virustotal_has_intel_key:
-            self.vt_intel = vt_intel(cfg.virustotal.virustotal_key)
+            self.vt_intel = vt_intel(cfg.virustotal.virustotal_key, proxies=cfg.virustotal.proxies)
 
         self.parser.add_argument('--search', help='Search a hash.')
         self.parser.add_argument('-c', '--comment', nargs='+', help='Comment to add to the file')
@@ -405,7 +409,7 @@ class VirusTotal(Module):
                     eid, path, name = tmp_samples[int(self.args.download_delete)]
                     os.remove(path)
                     self.log('success', 'Successfully removed {}'.format(path))
-                except:
+                except Exception:
                     self.log('error', 'Invalid id, please use virustotal -dl.')
         elif self.args.search:
             to_search = self.args.search

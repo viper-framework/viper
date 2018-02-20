@@ -33,11 +33,11 @@ from viper.core.project import __project__
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
-from viper.core.config import Config, console_output
+from viper.core.config import __config__, console_output
 from viper.common.autorun import autorun_module
 from viper.core.archiver import Compressor
 
-cfg = Config()
+cfg = __config__
 
 # For python2 & 3 compat, a bit dirty, but it seems to be the least bad one
 try:
@@ -113,7 +113,7 @@ class About(Command):
     def run(self, *args):
         try:
             self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         rows = list()
@@ -160,7 +160,7 @@ class Analysis(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if not __sessions__.is_set():
@@ -209,7 +209,7 @@ class Clear(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         os.system('clear')
@@ -228,7 +228,7 @@ class Close(Command):
     def run(self, *args):
         try:
             self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         __sessions__.close()
@@ -260,7 +260,7 @@ class Copy(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if not __sessions__.is_set():
@@ -310,7 +310,7 @@ class Delete(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         while True:
@@ -378,7 +378,7 @@ class Export(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # This command requires a session to be opened.
@@ -465,13 +465,13 @@ class Find(Command):
 
         group = self.parser.add_mutually_exclusive_group()
         group.add_argument('-t', '--tags', action='store_true', help="List available tags and quit")
-        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha256", "tag", "note", "any", "ssdeep"], help="Where to search.")
+        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha1", "sha256", "tag", "note", "any", "ssdeep"], help="Where to search.")
         self.parser.add_argument("value", nargs='?', help="String to search.")
 
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # One of the most useful search terms is by tag. With the --tags
@@ -556,7 +556,7 @@ class Help(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         self.log('info', "Commands")
@@ -593,7 +593,7 @@ class Info(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if __sessions__.is_set():
@@ -630,7 +630,7 @@ class New(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         title = input("Enter a title for the new file: ")
@@ -664,7 +664,7 @@ class Notes(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if not __sessions__.is_set():
@@ -779,7 +779,7 @@ class Open(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         target = " ".join(args.value)
@@ -864,7 +864,7 @@ class Parent(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # This command requires a session to be opened.
@@ -927,7 +927,7 @@ class Projects(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if cfg.get('paths').storage_path:
@@ -979,7 +979,7 @@ class Rename(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if __sessions__.is_set():
@@ -1020,7 +1020,7 @@ class Sessions(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if args.list:
@@ -1071,7 +1071,7 @@ class Stats(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # Set all Counters Dict
@@ -1180,7 +1180,7 @@ class Store(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         if args.folder is not None:
@@ -1307,7 +1307,7 @@ class Tags(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except:
+        except SystemExit:
             return
 
         # This command requires a session to be opened.

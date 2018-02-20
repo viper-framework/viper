@@ -4,6 +4,7 @@
 
 import re
 import json
+import logging
 import getpass
 
 try:
@@ -23,9 +24,12 @@ except ImportError:
 from viper.common.utils import string_clean
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+log = logging.getLogger('viper')
+
+cfg = __config__
+cfg.parse_http_client(cfg.reports)
 
 
 class Reports(Module):
@@ -37,7 +41,6 @@ class Reports(Module):
         super(Reports, self).__init__()
         self.parser.add_argument('--malwr', action='store_true', help='Find reports on Malwr')
         self.parser.add_argument('--threat', action='store_true', help='Find reports on ThreatExchange')
-        self.parser.add_argument('--joe', action='store_true', help='Find reports on Joe Sandbox')
         self.parser.add_argument('--meta', action='store_true', help='Find reports on metascan')
 
     def authenticate(self):
@@ -77,18 +80,21 @@ class Reports(Module):
             sess = requests.Session()
             sess.auth = (username, password)
 
-            sess.get(cfg.reports.malwr_login, verify=False)
+            sess.get(cfg.reports.malwr_login, proxies=cfg.reports.proxies, verify=cfg.reports.verify, cert=cfg.reports.cert)
             csrf = sess.cookies['csrftoken']
 
             sess.post(
                 cfg.reports.malwr_login,
                 {'username': username, 'password': password, 'csrfmiddlewaretoken': csrf},
                 headers=dict(Referer=cfg.reports.malwr_login),
-                verify=False,
-                timeout=60
+                timeout=60,
+                proxies=cfg.reports.proxies,
+                verify=cfg.reports.verify,
+                cert=cfg.reports.cert
             )
-        except:
+        except Exception as err:
             self.log('info', "Error while connecting to malwr")
+            log.error("Error while connecting to malwr: \n{}".format(err))
             return
         payload = {'search': __sessions__.current.file.sha256, 'csrfmiddlewaretoken': csrf}
         headers = {"Referer": cfg.reports.malwr_search}
@@ -97,7 +103,9 @@ class Reports(Module):
             payload,
             headers=headers,
             timeout=60,
-            verify=False
+            proxies=cfg.reports.proxies,
+            verify=cfg.reports.verify,
+            cert=cfg.reports.cert
         )
 
         reports = self.malwr_parse(p.text)
@@ -110,7 +118,7 @@ class Reports(Module):
     def threat(self):
         # need the URL and the date
         url = 'http://www.threatexpert.com/report.aspx?md5={0}'.format(__sessions__.current.file.md5)
-        page = requests.get(url)
+        page = requests.get(url, proxies=cfg.reports.proxies, verify=cfg.reports.verify, cert=cfg.reports.cert)
         reports = []
         soup = BeautifulSoup(page.text)
         if soup.title.text.startswith('ThreatExpert Report'):
@@ -122,19 +130,9 @@ class Reports(Module):
         else:
             self.log('info', "No reports for opened file")
 
-    def joe(self):
-        url = 'http://www.joesecurity.org/reports/report-{0}.html'.format(__sessions__.current.file.md5)
-        page = requests.get(url)
-        if '<h2>404 - File Not Found</h2>' in page.text or 'Apparently the requested URL could not be found' in page.text:
-            self.log('info', "No reports for opened file")
-        elif '403 Forbidden' in page.text:
-            self.log('info', "Permission to joe denied")
-        else:
-            self.log('info', "Report found at {0}".format(url))
-
     def meta(self):
         url = 'https://www.metascan-online.com/en/scanresult/file/{0}'.format(__sessions__.current.file.md5)
-        page = requests.get(url)
+        page = requests.get(url, proxies=cfg.reports.proxies, verify=cfg.reports.verify, cert=cfg.reports.cert)
         reports = []
         if '<title>Error</title>' in page.text:
             self.log('info', "No reports for opened file")
@@ -151,7 +149,7 @@ class Reports(Module):
                 return
 
     def usage(self):
-        self.log('', "Usage: reports <malwr|threat|joe|meta>")
+        self.log('', "Usage: reports <malwr|threat|meta>")
 
     def run(self):
         super(Reports, self).run()
@@ -170,8 +168,6 @@ class Reports(Module):
             self.malwr()
         elif self.args.threat:
             self.threat()
-        elif self.args.joe:
-            self.joe()
         elif self.args.meta:
             self.meta()
         else:

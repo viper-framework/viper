@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}About{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">About</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="card">
+                    <h5 class="card-header">
+                        Viper Web Interface (Version: {{ version }})
+                    </h5>
+                    <div class="card-body">
+                        <p>The Web interface replicates the most common functions of Viper. It is project aware and most search functions are capable of spanning all projects.</p>
+                        <p>It does not allow for <strong>ALL</strong> the functionality of the Command Line Interface</p>
+                        <p>The Web and CLI are not independent, Files stored in one are visible to the other.</p>
+
+                        <div class="alert alert-danger">
+                            <h4>Warning</h4>
+                            <p>Viper is designed to read and in some cases export files to your environment. The modules interface does not prevent this kind of action.</p>
+                            <p>Avoid unauthenticated access to the web interface!</p>
+                        </div>
+
+                        <p>The Viper Django Web Interface was originally created by <a href="http://techanarchy.net/">Kevin Breen</a>.</p>
+                    </div>
+                </div>
+
+                <br>
+                <div class="card">
+                    <h5 class="card-header">
+                        Available Extractors
+                    </h5>
+
+                    <div class="card-body">
+                        <table class="table table-striped table-bordered table-hover">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Extensions</th>
+                                <th>Password Support</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for key, row in extractors.items %}
+                                <tr id="{{ key }}">
+                                    <td>
+                                        <b>{{ row.title }} </b>
+                                    </td>
+                                    <td>
+                                        {% for item in row.supports_extensions %}{{ item }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}
+                                    </td>
+                                    <td>
+                                        {% if row.supports_password %}<i class="fas fa-check-circle" style="color: green"></i>
+                                        {% else %} <i class="fas fa-times-circle" style="color: red"></i>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2"></div>
+        </div>
+    </div>
+{% endblock %}

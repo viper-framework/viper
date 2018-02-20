@@ -21,12 +21,12 @@ from viper.common.exceptions import Python2UnsupportedUnicode
 from viper.common.objects import File
 from viper.core.storage import get_sample_path, store_sample
 from viper.core.project import __project__
-from viper.core.config import Config
+from viper.core.config import __config__
 
 
 log = logging.getLogger('viper')
 
-cfg = Config()
+cfg = __config__
 
 Base = declarative_base()
 
@@ -193,7 +193,7 @@ class Database:
 
     def __init__(self):
 
-        if hasattr(cfg, "database") and cfg.database.connection:
+        if cfg.database and cfg.database.connection:
             self._connect_database(cfg.database.connection)
         else:
             self._connect_database("")
@@ -276,7 +276,7 @@ class Database:
                 malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
                 malware_entry.tag.remove(tag)
                 session.commit()
-            except:
+            except Exception:
                 print_error("Tag {0} does not exist for this sample".format(tag_name))
 
             # If tag has no entries drop it
@@ -627,6 +627,15 @@ class Database:
         finally:
             session.close()
 
+    def get_parent(self, malware_id):
+        session = self.Session()
+        malware = session.query(Malware).get(malware_id)
+        if not malware.parent_id:
+            return None
+        else:
+            parent = session.query(Malware).get(malware.parent_id)
+            return parent
+
     def get_children(self, parent_id):
         session = self.Session()
         children = session.query(Malware).filter(Malware.parent_id == parent_id).all()
@@ -634,6 +643,11 @@ class Database:
         for child in children:
             child_samples += '{0},'.format(child.sha256)
         return child_samples
+
+    def list_children(self, parent_id):
+        session = self.Session()
+        children = session.query(Malware).filter(Malware.parent_id == parent_id).all()
+        return children
 
     # Store Module / Cmd Output
     def add_analysis(self, sha256, cmd_line, results):

@@ -9,7 +9,7 @@ from struct import unpack
 def calc_length(byte_str):
     try:
         return unpack('<H', byte_str)[0]
-    except:
+    except Exception:
         return None
 
 
@@ -48,7 +48,7 @@ def walk_data(data):
             this.append((date_type, ''.join(temp)))
             offset += length + 4
             max_count += 1
-        except:
+        except Exception:
             return this
     return this
 
@@ -128,5 +128,5 @@ def config(data):
         two = walk_data(one)
         # Let's Process this and format the config.
         return extract_config(two)
-    except:
+    except Exception:
         return None

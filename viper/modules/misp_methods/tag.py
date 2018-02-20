@@ -2,12 +2,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
-
 try:
     from pytaxonomies import Taxonomies
     HAVE_PYTAX = True
-except:
+except ImportError:
     HAVE_PYTAX = True
 
 
@@ -19,11 +17,7 @@ def tag(self):
         self.log('error', "Missing dependency, install PyTaxonomies (`pip install git+https://github.com/MISP/PyTaxonomies.git`)")
         return
 
-    try:
-        taxonomies = Taxonomies(manifest_path=os.path.join(self.local_dir_taxonomies, 'MANIFEST.json'))
-    except Exception as e:
-        self.log('error', 'Unable to open the taxonomies, please fix the config file ([misp] - misp_taxonomies_directory): {}'.format(e))
-        return
+    taxonomies = Taxonomies()
 
     if self.args.list:
         self.log('table', dict(header=['Name', 'Description'], rows=[(title, tax.description)
@@ -81,7 +75,7 @@ def tag(self):
             return
         try:
             taxonomies.revert_machinetag(self.args.event)
-        except:
+        except Exception:
             self.log('error', 'Not a valid machine tag available in misp-taxonomies: "{}".'.format(self.args.event))
             return
         __sessions__.current.misp_event.event.add_tag(self.args.event)
@@ -92,7 +86,7 @@ def tag(self):
         identifier, tag = self.args.attribute
         try:
             taxonomies.revert_machinetag(tag)
-        except:
+        except Exception:
             self.log('error', 'Not a valid machine tag available in misp-taxonomies: "{}".'.format(tag))
             return
         __sessions__.current.misp_event.event.add_attribute_tag(tag, identifier)

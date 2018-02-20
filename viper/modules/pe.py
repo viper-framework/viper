@@ -126,7 +126,7 @@ class PE(Module):
                         else:
                             name = symbol.name
                         self.log('item', "{0}: {1}".format(hex(symbol.address), name))
-                except:
+                except Exception:
                     continue
 
     def exports(self):
@@ -155,7 +155,7 @@ class PE(Module):
 
                 try:
                     cur_ep = pefile.PE(sample_path).OPTIONAL_HEADER.AddressOfEntryPoint
-                except:
+                except Exception:
                     continue
 
                 rows.append([sample.md5, sample.name, cur_ep])
@@ -176,7 +176,7 @@ class PE(Module):
 
                 try:
                     cur_ep = pefile.PE(sample_path).OPTIONAL_HEADER.AddressOfEntryPoint
-                except:
+                except Exception:
                     continue
 
                 if cur_ep not in cluster:
@@ -217,7 +217,7 @@ class PE(Module):
 
                 try:
                     cur_ep = pefile.PE(sample_path).OPTIONAL_HEADER.AddressOfEntryPoint
-                except:
+                except Exception:
                     continue
 
                 if ep == cur_ep:
@@ -245,7 +245,7 @@ class PE(Module):
                 try:
                     cur_pe = pefile.PE(sample_path)
                     cur_compile_time = get_compiletime(cur_pe)
-                except:
+                except Exception:
                     continue
 
                 results.append([sample.name, sample.md5, cur_compile_time])
@@ -280,7 +280,7 @@ class PE(Module):
                 try:
                     cur_pe = pefile.PE(sample_path)
                     cur_compile_time = get_compiletime(cur_pe)
-                except:
+                except Exception:
                     continue
 
                 if compile_time == cur_compile_time:
@@ -358,7 +358,7 @@ class PE(Module):
                 try:
                     cur_pe = pefile.PE(sample_path)
                     cur_peid_matches = get_matches(cur_pe, signatures)
-                except:
+                except Exception:
                     continue
 
                 if peid_matches == cur_peid_matches:
@@ -474,7 +474,7 @@ class PE(Module):
                 # Open PE instance.
                 try:
                     cur_pe = pefile.PE(sample_path)
-                except:
+                except Exception:
                     continue
 
                 # Obtain the list of resources for the current iteration.
@@ -517,7 +517,7 @@ class PE(Module):
 
                 try:
                     cur_imphash = pefile.PE(sample_path).get_imphash()
-                except:
+                except Exception:
                     continue
 
                 if cur_imphash not in cluster:
@@ -562,7 +562,7 @@ class PE(Module):
 
                     try:
                         cur_imphash = pefile.PE(sample_path).get_imphash()
-                    except:
+                    except Exception:
                         continue
 
                     if imphash == cur_imphash:
@@ -607,7 +607,7 @@ class PE(Module):
                 # Open PE instance.
                 try:
                     cur_pe = pefile.PE(sample_path)
-                except:
+                except Exception:
                     continue
 
                 cur_cert_data = get_certificate(cur_pe)

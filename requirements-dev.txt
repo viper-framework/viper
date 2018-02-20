@@ -1,4 +1,3 @@
-Django
 SQLAlchemy
 beautifulsoup4
 bitstring
@@ -20,6 +19,7 @@ pypdns
 pypssl
 pytest
 pytest-cov
+pytest-django
 python-dateutil
 python-magic
 r2pipe
@@ -59,7 +59,11 @@ rarfile
 
 # MISP
 git+https://github.com/MISP/PyTaxonomies.git
-pymisp
+git+https://github.com/MISP/PyMISPGalaxies.git
+pymisp[fileobjects,virustotal] >= 2.4.84
 
 # Scraper
 git+https://github.com/viper-framework/ScrapySplashWrapper.git
+
+# Joe Sandbox
+jbxapi

@@ -59,7 +59,7 @@ class EmailParse(Module):
             # If it came from outlook we may need to trim some lines
             try:
                 email_h = email_h.split(b'Version 2.0\x0d\x0a', 1)[1]
-            except:
+            except Exception:
                 pass
 
             if not email_h:
@@ -91,7 +91,7 @@ class EmailParse(Module):
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
                     rows.append([i, att_size, att_md5, att_filename, att_mime])
-                except:
+                except Exception:
                     pass
                 # ASCII
                 try:
@@ -101,7 +101,7 @@ class EmailParse(Module):
                     att_size = len(att_data)
                     att_md5 = hashlib.md5(att_data).hexdigest()
                     rows.append([i, att_size, att_md5, att_filename, att_mime])
-                except:
+                except Exception:
                     pass
             self.log('table', dict(header=header, rows=rows))
 
@@ -121,13 +121,13 @@ class EmailParse(Module):
                         att_filename = ole.openstream(stream_name + '/__substg1.0_3704001F').read()
                         att_filename = att_filename.replace(b'\x00', b'').decode()
                         att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
-                    except:
+                    except Exception:
                         pass
                     # ASCII
                     try:
                         att_filename = ole.openstream(stream_name + '/__substg1.0_3704001E').read().decode()
                         att_data = ole.openstream(stream_name + '/__substg1.0_37010102').read()
-                    except:
+                    except Exception:
                         pass
                     if i == att_id:
                         self.log('info', "Switching session to {0}".format(att_filename))
@@ -308,7 +308,7 @@ class EmailParse(Module):
                             if bydomain == m.group(1):
                                 bymatch = True
                     self.log('table', dict(header=['Key', 'Value'], rows=domains))
-                except:
+                except Exception:
                     domains.append(['MX for ' + fromdomain, "not registered in DNS"])
                     self.log('table', dict(header=['Key', 'Value'], rows=domains))
                 if bymatch:
@@ -367,7 +367,7 @@ class EmailParse(Module):
                         att_md5 = hashlib.md5(att_data).hexdigest()
                         rows.append([i, att_filename, att_mime, att_size, att_md5])
                         att_count += 1
-                    except:
+                    except Exception:
                         pass
                     # ASCII
                     try:
@@ -378,7 +378,7 @@ class EmailParse(Module):
                         att_md5 = hashlib.md5(att_data).hexdigest()
                         rows.append([i, att_filename, att_mime, att_size, att_md5])
                         att_count += 1
-                    except:
+                    except Exception:
                         pass
 
             else:
@@ -457,7 +457,7 @@ class EmailParse(Module):
             if not msg:
                 return
             ole_flag = True
-        except:
+        except Exception:
             ole_flag = False
             if sys.version_info < (3, 0):
                 msg = email.message_from_string(__sessions__.current.file.data)

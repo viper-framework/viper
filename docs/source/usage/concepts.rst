@@ -99,9 +99,9 @@ Please note that if you switch to a whole different project, you'll lose the ope
 Commands & Modules
 ==================
 
-The operations you can execute within Viper are fundamentally distinguished between **commands** and **modules**. Commands are functions that are provided by the Viper's core and enable you to interact with the file repository (by adding, searching, tagging and removing files), with projects and with sessions. They are static and they should not be modified.
+The operations you can execute within Viper are fundamentally distinguished between **commands** and **modules**. Commands are functions that are provided by Viper's core and enable you to interact with the file repository (by adding, searching, tagging and removing files), with projects and with sessions. They are static and they should not be modified.
 
-Modules are instead plugins that are dynamically loaded by Viper at startup and are contained under the ``modules/`` folder. Modules implement additional analytical functions that can be executed on an opened file or on the whole repository, for example: analyzing PE32 executables, parsing PDF documents, analyzing Office documents, clustering files by fuzzy hashing or imphash, etc.
+Modules are plugins that are dynamically loaded by Viper at startup and are contained under the ``modules/`` folder. Modules implement additional analytical functions that can be executed on an opened file or on the whole repository, for example: analyzing PE32 executables, parsing PDF documents, analyzing Office documents, clustering files by fuzzy hashing or imphash, etc.
 
 Modules are the most actively developed portion of Viper and they represent the most important avenue for contributions from the community: if you have an idea or you want to re-implement a script that you have lying around, make sure you `submit it`_ to Viper.
 
@@ -110,7 +110,7 @@ Modules are the most actively developed portion of Viper and they represent the 
 Database
 ========
 
-The database that stores all meta inforation is per default an sqlite database stored at::
+The database that stores all meta inforation is per default in an sqlite database stored at::
    
     $HOME/.viper/viper.db
 

@@ -10,7 +10,7 @@ from glob import glob
 from shutil import copy2
 
 from viper.common.abstracts import Module
-from viper.core.config import Config
+from viper.core.config import __config__
 from viper.core.project import __project__
 import logging
 
@@ -31,10 +31,10 @@ except ImportError:
 try:
     from har2tree import CrawledTree
     HAVE_ETE = True
-except:
+except ImportError:
     HAVE_ETE = False
 
-cfg = Config()
+cfg = __config__
 
 
 class Scraper(Module):
@@ -46,7 +46,7 @@ class Scraper(Module):
         super(Scraper, self).__init__()
         try:
             self.user_agents = cfg.useragents.ua.split('\n')
-        except:
+        except Exception:
             # Use a generic user agent in case the viper user didn't update their config file
             self.user_agents = ['Mozilla/5.0 (Windows NT 6.3; WOW64; rv:53.0) Gecko/20100101 Firefox/53.0']
         self.scraper_store = os.path.join(__project__.get_path(), 'scraper')

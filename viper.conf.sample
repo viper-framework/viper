@@ -32,13 +32,43 @@ log_file =
 debug = False
 
 [web]
-host = 0.0.0.0
+host = 127.0.0.1
 port = 8080
 
-[api]
-enabled = True
-host = 0.0.0.0
-port = 9090
+# tls (default: False): start HTTPS (True) or HTTP (False) server
+tls = False
+# certificate: path to cert file e.g. /etc/ssl/viper.example.com.pem (x509 certificate)
+certificate =
+# key: path to key file e.g. /etc/ssl/viper.example.com.key (must be readable for Viper)
+key =
+
+# user name of superuser (default: "admin")
+#admin_username = admin
+# superuser password (default: auto generate)
+#admin_password = changeme
+
+
+[http_client]
+# http client settings for outgoing requests (e.g. download, VT)
+# will be applied to requests and can be overriden per module
+
+# Proxy specific settings:
+# * https_proxy = e.g. http://user:pass@prx.example.com:3128 (will also set http_proxy)
+# * no_proxy = host1.example.com,internal.domain
+# If https_proxy and no_proxy are not set then settings from the environment will be used.
+# If no proxy should be used then use https_proxy = False (overrides environment)
+#https_proxy =
+#no_proxy =
+
+# tls_verify (default: True): Whether TLS certificates should be validated or not
+#tls_verify = True|False
+
+# tls_ca_bundle: Path to a (custom) ca/ca_bundle file for TLS certificate validation
+#tls_ca_bundle = /root/my_ca_bundle.crt
+
+# tls_client_cert: Path to a TLS client certificate (cert and key) which should be used
+# for authentication
+#tls_client_cert = /root/my_client_cert.pem
 
 
 [autorun]
@@ -68,6 +98,38 @@ cuckoo_modified = False
 cuckoo_host = http://localhost:8090
 cuckoo_web = http://localhost:8000
 
+[joesandbox]
+apiurl = https://jbxcloud.joesecurity.org/api
+#apiurl = http://localhost/joesandbox/api
+apikey =
+# https://jbxcloud.joesecurity.org/download/termsandconditions.pdf (Cloud only)
+accept_tac = False
+
+# Submission parameters, refer to the API documentation for a description.
+#systems = w7 w7x64
+#comments =
+#analysis-time = 120
+#office-files-password =
+#localized-internet-country = Sweden
+#tags = malware email
+#internet-access = True
+#report-cache = True
+#hybrid-code-analysis = True
+#hybrid-decompilation = True
+#adaptive-internet-simulation = True
+#ssl-inspection = True
+#vba-instrumentation = True
+#js-instrumentation = True
+#email-notification = True
+
+# Cloud exclusive parameters
+#smart-filter = False
+#hyper-mode = False
+#export-to-jbxview = False
+
+# On-premise exclusive parameters
+#priority = 5
+
 [reports]
 malwr_login = https://malwr.com/account/login/
 malwr_user =
@@ -78,16 +140,14 @@ malwr_prefix = https://malwr.com
 [misp]
 misp_url =
 misp_key =
-misp_verify = True
 misp_vturl = https://www.virustotal.com/vtapi/v2/file/report
-# To use the misp taxonomies, you need to clone https://github.com/MISP/misp-taxonomies
-# and set the path to the directory here:
-misp_taxonomies_directory = ./misp-taxonomies
 # Set the following to select default distribution and sharing group (if in use)
 # Distribution ranges from 0-4, with sharing group only set when distribution is 4.
 # Leave empty to use PyMISP default
-misp_distribution = 
-misp_sharinggroup = 
+misp_distribution =
+misp_sharinggroup =
+https_proxy = False
+tls_verify = True
 
 [pssl]
 pssl_url =

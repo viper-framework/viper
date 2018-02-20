@@ -25,6 +25,14 @@ class Fuzzy(Module):
         super(Fuzzy, self).__init__()
         self.parser.add_argument('-v', '--verbose', action='store_true', help="Prints verbose logging")
         self.parser.add_argument('-c', '--cluster', action='store_true', help="Cluster all available samples by ssdeep")  # noqa
+        self.parser.add_argument('-t', '--threshold', type=int, default=40, help="Score threshold")
+
+    def _get_ssdeep_bytes(self, ssdeep):
+        # In an older database, you may endup with some hashes in binary form...
+        if isinstance(ssdeep, bytes):
+            # TODO: update database
+            return ssdeep
+        return ssdeep.encode('utf-8')
 
     def run(self):
         super(Fuzzy, self).run()
@@ -73,7 +81,8 @@ class Fuzzy(Module):
                             member_hash = member[0]
 
                             member_ssdeep = db.find(key='md5', value=member_hash)[0].ssdeep
-                            if pydeep.compare(sample.ssdeep, member_ssdeep) > 40:
+                            if pydeep.compare(self._get_ssdeep_bytes(sample.ssdeep),
+                                              self._get_ssdeep_bytes(member_ssdeep)) > self.args.threshold:
                                 if arg_verbose:
                                     self.log('info', "Found home for {0} in cluster {1}".format(sample.md5, cluster_name))
 
@@ -116,9 +125,10 @@ class Fuzzy(Module):
                     if not sample.ssdeep:
                         continue
 
-                    score = pydeep.compare(__sessions__.current.file.ssdeep, sample.ssdeep)
+                    score = pydeep.compare(self._get_ssdeep_bytes(__sessions__.current.file.ssdeep),
+                                           self._get_ssdeep_bytes(sample.ssdeep))
 
-                    if score > 40:
+                    if score > self.args.threshold:
                         matches.append(['{0}%'.format(score), sample.name, sample.sha256])
 
                     if arg_verbose:

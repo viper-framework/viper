@@ -2,12 +2,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import json
-
 try:
-    from pymisp import MISPEvent, EncodeUpdate
+    from pymisp import MISPEvent, MISPObject
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 from viper.core.session import __sessions__
@@ -31,9 +29,9 @@ def _change_event(self):
         self._dump()
     else:
         if __sessions__.current.misp_event.event.id:
-            event = self.misp.update(__sessions__.current.misp_event.event._json())
+            event = self.misp.update(__sessions__.current.misp_event.event)
         else:
-            event = self.misp.add_event(json.dumps(__sessions__.current.misp_event.event, cls=EncodeUpdate))
+            event = self.misp.add_event(__sessions__.current.misp_event.event)
         if self._has_error_message(event):
             return
         try:
@@ -49,12 +47,12 @@ def add_hashes(self):
         if not __sessions__.is_attached_file(True):
             self.log('error', "Not attached to a file, please set the hashes manually.")
             return False
-        __sessions__.current.misp_event.event.add_attribute('filename|md5', '{}|{}'.format(
-            __sessions__.current.file.name, __sessions__.current.file.md5), comment=__sessions__.current.file.tags)
-        __sessions__.current.misp_event.event.add_attribute('filename|sha1', '{}|{}'.format(
-            __sessions__.current.file.name, __sessions__.current.file.sha1), comment=__sessions__.current.file.tags)
-        __sessions__.current.misp_event.event.add_attribute('filename|sha256', '{}|{}'.format(
-            __sessions__.current.file.name, __sessions__.current.file.sha256), comment=__sessions__.current.file.tags)
+        file_object = MISPObject('file')
+        file_object.add_attribute('filename', value=__sessions__.current.file.name, comment=__sessions__.current.file.tags)
+        file_object.add_attribute('md5', value=__sessions__.current.file.md5, comment=__sessions__.current.file.tags)
+        file_object.add_attribute('sha1', value=__sessions__.current.file.sha1, comment=__sessions__.current.file.tags)
+        file_object.add_attribute('sha256', value=__sessions__.current.file.sha256, comment=__sessions__.current.file.tags)
+        __sessions__.current.misp_event.event.add_object(file_object)
     else:
         if self.args.filename:
             if self.args.md5:

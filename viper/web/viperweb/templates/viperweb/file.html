@@ -1,0 +1,639 @@
+{% extends "base.html" %}
+
+{% block title %}File{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'main-page-project' project=project %}">{{ project }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ malware.sha256 }}</li>
+        </ol>
+    </nav>
+
+    <ul class="nav nav-tabs" id="fileTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="nav-static-tab" data-toggle="tab" href="#nav-static" role="tab" aria-controls="nav-static" aria-selected="true">Sample Info</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nav-notes-tab" data-toggle="tab" href="#nav-notes" role="tab" aria-controls="nav-notes" aria-selected="false">Notes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nav-modules-tab" data-toggle="tab" href="#nav-modules" role="tab" aria-controls="nav-modules" aria-selected="false">Modules</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nav-hex-tab" data-toggle="tab" href="#nav-hex" role="tab" aria-controls="nav-hex" aria-selected="false">Hex View</a>
+        </li>
+    </ul>
+
+    <div id="spin_loader"></div>
+
+    <div class="tab-content" id="fileTabContent">
+
+        <!-- STATIC -->
+        <div class="tab-pane show active" id="nav-static" role="tabpanel" aria-labelledby="nav-static-tab">
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="float-left">{{ malware.name }}</h3>
+                    <div class="float-right">
+                        <a class="btn btn-primary" href="{% url "viperapi_v3:malware-download" project_name=project sha256=malware.sha256 %}">Download</a>
+                        <a href="#" class="btn btn-danger my-1" onclick="delSample()">Delete</a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                      <table class="table table-hover">
+                        <tr>
+                            <td rowspan="2" class="font-weight-bold" title="Viper Internal Information">Meta</td>
+                            <td width="150px">File ID</td>
+                            <td>{{ malware.id }}</td>
+                        </tr>
+                        <tr>
+                            <td>Uploaded</td>
+                            <td>{{ malware.created_at|date:'r' }}</td>
+                        </tr>
+
+                        <tr>
+                            <td rowspan="4" class="font-weight-bold" title="Details about File">File Info</td>
+                            <td>Name</td>
+                            <td>{{ malware.name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Size</td>
+                            <td>{{ malware.size|filesizeformat }} ({{ malware.size }} bytes)</td>
+                        </tr>
+                        <tr>
+                            <td>Type</td>
+                            <td>{{ malware.type }}</td>
+                        </tr>
+                        <tr>
+                            <td>Mime</td>
+                            <td>{{ malware.mime }}</td>
+                        </tr>
+
+                        <tr>
+                            <td rowspan="6" class="font-weight-bold" title="Hashes or Checksums of Sample">Hashes</td>
+                            <td>MD5</td>
+                            <td class="mono">{{ malware.md5 }}</td>
+                        </tr>
+                        <tr>
+                            <td>SHA1</td>
+                            <td class="mono">{{ malware.sha1 }}</td>
+                        </tr>
+                        <tr>
+                            <td>SHA256</th>
+                            <td class="mono">{{ malware.sha256 }}</td>
+                        </tr>
+                        <tr>
+                            <td>SHA512</td>
+                            <td class="mono">{{ malware.sha512 }}</td>
+                        </tr>
+                        <tr>
+                            <td>CRC32</td>
+                            <td class="mono">{{ malware.crc32 }}</td>
+                        </tr>
+                        <tr>
+                            <td>Ssdeep Fuzzy</td>
+                            <td class="mono">
+                                <form role="form" id="fuzzysubmit" onsubmit="return false" name="fuzzy">
+                                    {{ malware.ssdeep }}
+                                    <input type="hidden" name="module" value="fuzzy"/>
+                                    <input type="hidden" name="args" value="run"/>
+                                    <input type="hidden" name="cmdline" value="">
+                                    <input type="hidden" name="moduleHistory" value=" ">
+                                    <input type="hidden" name="file_hash" value="{{ malware.sha256 }}"/>
+                                    <button type="submit" class="btn btn-primary btn-sm mx-2" name="submit">Fuzzy Search</button>
+                                    {% csrf_token %}
+                                </form>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td rowspan="2" class="font-weight-bold" title="Relations to other Samples">Relations</td>
+                            <td>Parent</td>
+                            <td>
+                                {% if parent %}
+                                  <a href="{% url "file-view" project=project sha256=parent.sha256 %}">{{ parent.name }} ({{ parent.sha256 }})</a>
+                                {% endif %}
+
+{#                                {% load viper_template_tags %}#}
+{#                                {% if malware.parent %}#}
+{#                                     TODO(frennkie) workaround - should be able to use correct url#}
+{#                                    <a href="{% url "file-view" project=project sha256=malware.parent|slice_parent %}">{{ malware.parent }}</a>#}
+{#                                {% endif %}#}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Children</td>
+                            <td>
+                                {% if children %}
+                                    {% for child in children %}
+                                        <a href="{% url "file-view" project=project sha256=child.sha256 %}">{{ child.name }} ({{ child.sha256 }})</a>{% if not forloop.last %} - {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+
+{#                                #}
+{#                                {% if malware.children %}#}
+{#                                    {% for child in malware.children|split_children %}#}
+{#                                         TODO(frennkie) workaround - should be able to use correct url#}
+{#                                        <a href="{% url "file-view" project=project sha256=child %}">{{ child }}</a>{% if not forloop.last %} - {% endif %}#}
+{#                                    {% endfor %}#}
+{#                                {% endif %}#}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="font-weight-bold" title="Relations to other Samples">External</td>
+                            <td>Cuckoo</td>
+                            <td>
+                                <a href="#" id="cuckoo_link" class="btn btn-primary btn-sm mr-2" onClick="$('#cuckoo').load('{% url "file-cuckoo-submit" project=project sha256=malware.sha256 %}');">Cuckoo</a>
+                                    <span class="my-0 mx-0 small" id="cuckoo"></span>
+                            </td>
+                        </tr>
+                    </table>
+
+                </div>
+            </div>
+
+            <div class="card my-2">
+                <h6 class="card-header">
+                    Tags <a href="#" aria-label="add a tag"><i class="fas fa-plus-circle fa-1x" style="color: green;" data-toggle="modal" data-target="#newTag"></i></a>
+                </h6>
+
+                <div class="card-body">
+                    {% for tag in tag_list %}
+                        <div id="display_tag_{{ tag.id }}" style="display: inline-block;">
+                            <form id="search_form_tag_{{ tag.id }}" role="form" enctype="multipart/form-data" accept-charset="utf-8" method="post" action="{% url "search-file" %}" style="display:inline">
+                                <input class="form-control" type="hidden" id="key" name="key" value="tag"/>
+                                <input class="form-control" type="hidden" id="term" name="term" value="{{ tag.tag }}"/>
+                                <input class="form-control" type="hidden" id="cur_project" name="cur_project" value="{{ project }}"/>
+
+                                <h5><a href="#" class="badge badge-dark" aria-hidden="true" onclick="search_form_tag_{{ tag.id }}.submit()">{{ tag.tag }}</a>
+                                    <a href="#" onclick="delTag('{{ tag.id }}')"><i class="fas fa-times fa-1x mr-3" style="color: red;"></i></a></h5>
+
+                                {% csrf_token %}
+                            </form>
+                        </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+
+            <div class="modal fade" id="newTag" tabindex="-1" role="dialog" aria-labelledby="newTagLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title" id="newTagLabel">Add Tags</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add_tag_form" role="form" class="form-inline" enctype="multipart/form-data" accept-charset="utf-8">
+                                <input type="text" class="form-control mr-2 w-75" name="tag" id="tag" placeholder="Tags for Sample (comma separated)" autofocus>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>  <!-- End STATIC -->
+
+        <!-- NOTES -->
+        <div class="tab-pane" id="nav-notes" role="tabpanel" aria-labelledby="nav-notes-tab">
+
+            <button class="btn btn-primary my-1" data-toggle="modal" data-target="#addNote">Add Note</button>
+
+            <div class="modal" id="addNote" tabindex="-1" role="dialog" aria-labelledby="addNoteLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title" id="addNoteLabel">Add Note</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form id="add_note_form" role="form" enctype="multipart/form-data" accept-charset="utf-8">
+                                <input type="text" class="form-control my-2" name="title" id="noteTitle" placeholder="Title">
+                                <textarea class="form-control my-2" rows="3" name="body" id="noteBody" placeholder="Note Text"></textarea>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% for note in note_list %}
+                <div class="card my-2" id="card_note_{{ note.id }}">
+                    <div class="card-header">
+                        <h3 class="float-left">{{ note.title }}</h3>
+                        <div class="float-right">
+                            <button class="btn btn-primary my-1" data-toggle="modal" data-target="#updateNote_{{ note.id }}">Edit</button>
+                            <button class="btn btn-danger my-1" onclick="delNote('{{ note.id }}')">Delete</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {{ note.body }}
+                    </div>
+                </div>
+
+                <div class="modal" id="updateNote_{{ note.id }}" tabindex="-1" role="dialog" aria-labelledby="updateNoteLabel_{{ note.id }}" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" id="updateNoteLabel_{{ note.id }}">Edit New Note</h4>
+                            </div>
+                            <div class="modal-body">
+                                <form id="update_note_form_{{ note.id }}" role="form" enctype="multipart/form-data" accept-charset="utf-8">
+                                    <input type="text" name="id" title="noteId" id="noteId" value="{{ note.id }}" hidden>
+                                    <input type="text" class="form-control my-2" name="title" id="noteTitle" value="{{ note.title }}" placeholder="Title">
+                                    <textarea class="form-control my-2" rows="3" name="body" id="noteBody" placeholder="Note Text">{{ note.body }}</textarea>
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+        <!-- MODULES (see also viper_dropdown.js) -->
+        <div class="tab-pane" id="nav-modules" role="tabpanel" aria-labelledby="nav-modules-tab">
+            <p>Select a module or run a command</p>
+            <form class="form-inline" role="form" id="ajaxsubmit" onsubmit="return false" name="modules">
+                <label for="cmdString" class="mr-2">Viper Command</label>
+
+                <label for="module_name" hidden></label>
+                <select id="module_name" class="form-control mr-2" name="module" onchange="setOptions(document.modules.module.options[document.modules.module.selectedIndex].value);">
+                    <option value="module">Module</option>
+                    <option value="apk">APK - Parse Android APKs</option>
+                    <option value="clamav">ClamaAV - Scan file from local ClamAV daemon</option>
+                    <option value="debup">Debup - Parse McAfee BUP Files</option>
+                    <option value="editdistance">Edit Distance - Filename Edit Distance</option>
+                    <option value="elf">ELF - Extract information from ELF headers</option>
+                    <option value="email">Email - Parse eml and msg Files</option>
+                    <option value="exif">Exif - Extract MetaData</option>
+                    <option value="fuzzy">Fuzzy - SSdeep CTPH Scan</option>
+                    <option value="html">HTML - Parse HTML Data</option>
+                    <option value="idx">IDX - Parse Java IDX Files</option>
+                    <option value="image">Image - Perfom analysis on images</option>
+                    <option value="jar">JAR - Parse Java archives</option>
+                    <option value="office">Office - Office document parser</option>
+                    <option value="pdf">PDF - PDF document parser</option>
+                    <option value="pe">PE - Parse PE32 files</option>
+                    <option value="rat">RAT - Extract config from common rats</option>
+                    <option value="reports">Reports - Online sandbox reports</option>
+                    <option value="shellcode">ShellCode - Identify shellCode patterns</option>
+                    <option value="strings">Strings - Extract strings</option>
+                    <option value="swf">SWF - Parse SWF files</option>
+                    <option value="virustotal">VirusTotal</option>
+                    <option value="xor">XOR - Encoded strings</option>
+                    <option value="yara">Yara - Scan with Yara rules</option>
+                </select>
+
+                <label for="module_args" hidden></label>
+                <select id="module_args" class="form-control mr-2" name="args">
+                    <option value=" ">Select a module first</option>
+                </select>
+
+                <input type="text" class="form-control mr-2" name="cmdline" placeholder="Enter CLI Commands">
+
+                <label for="module_history" hidden></label>
+                <select id="module_history" class="form-control mr-2" name="moduleHistory">
+                    <option value=" ">Module History</option>
+                    {% for cmd in module_history %}
+                        <option value="{{ cmd.id }}">{{ cmd.cmd_line }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary" name="submit">Run</button>
+                <input type="hidden" name="file_hash" value="{{ malware.sha256 }}"/>
+                {% csrf_token %}
+
+            </form>
+
+
+            <div class="card my-2">
+                <div class="card-header">
+                    <h3 class="float-left">Module Output</h3>
+                    <div class="float-right">
+                        <button class="btn btn-default btn-xs btn-danger" onclick="clear_div()">Clear</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="ajaxresponse"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HEX -->
+        <div class="tab-pane" id="nav-hex" role="tabpanel" aria-labelledby="nav-hex-tab">
+            <form class="form-inline" role="form" id="hexsubmit" onsubmit="return false" name="hexsubmit">
+                <button type="submit" class="btn btn-primary my-1" name="submit">Load More</button>
+                <input type="hidden" name="file_hash" value="{{ malware.sha256 }}"/>
+                <input type="hidden" id="hex_start" name="hex_start" value="0"/>
+                <input type="hidden" id="hex_end" name="hex_end" value="32"/>
+                {% csrf_token %}
+            </form>
+
+
+            <div class="card my-2">
+                <h3 class="card-header">
+                    Hex Viewer
+                </h3>
+                <div class="card-body">
+                    <div class="text-center" id="hexview"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block js %}
+
+    <script type='text/javascript'>
+        {#    TODO(frennkie) debug output #}
+        // Javascript to enable link to tab
+        var url = document.location.toString();
+        if (url.match('#')) {
+            $('.nav-tabs a[href="#' + url.split('#')[1] + '-tab"]').tab('show');
+        } //add a suffix
+
+        // Change hash for page-reload
+        $('.nav-tabs a').on('shown.bs.tab', function (e) {
+            window.location.hash = e.target.hash;
+        });
+
+        // Every time a modal is shown, if it has an autofocus element, focus on it.
+        $('.modal').on('shown.bs.modal', function () {
+            $(this).find('[autofocus]').focus();
+        });
+
+        $(document).ready(function (event) {
+            console.log("working on Project: {{ project }}");
+            console.log("working on File: {{ malware.sha256 }}");
+
+            $('ul.nav.nav-tabs a:first').tab('show'); // Select first tab
+            $('ul.nav.nav-tabs a[href="' + window.location.hash + '"]').tab('show'); // Select tab by name if provided in location hash
+            $('ul.nav.nav-tabs a[data-toggle="tab"]').on('shown', function (event) {    // Update the location hash to current tab
+                window.location.hash = event.target.hash;
+            });
+        });
+
+        var malware_detail_url = "{% url 'viperapi_v3:malware-detail' project_name=project sha256=malware.sha256 %}";
+        function delSample() {
+            console.log("del_sample called for sha256: {{ malware.sha256 }} in project: {{ project }}");
+
+            if (confirm('Are you sure you want to delete this Sample?')) {
+                $.ajax({
+                        url: malware_detail_url,
+                        type: "DELETE",
+                        success: function (data, textStatus, jqXHR) {
+                            console.log("deleted");
+                            window.location.replace("{% url 'main-page-project' project=project %}");
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.log("error");
+                            console.log(jqXHR);
+                        }
+                    }
+                )
+            }
+        }
+
+        // Tag: add, delete (as function)
+        var malware_tag_list_url = "{% url 'viperapi_v3:malware-tag-list' project_name=project malware_sha256=malware.sha256 %}";
+        $("#add_tag_form").submit(function (event) {
+            console.log("add_tag_form called");
+            event.preventDefault();
+            var formData = new FormData($(this)[0]);
+
+            $.ajax({
+                url: malware_tag_list_url,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+
+                success: function (data, textStatus, jqXHR) {
+                    console.log("Submit successful");
+                    window.location.reload();
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log("Submit failed");
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
+                    alert("Tag: " + obj.tag[0]);
+                }
+            });
+            return false;
+        });
+
+        function delTag(tag_id) {
+            console.log("del_tag called for: " + tag_id);
+
+            $.ajax({
+                    url: malware_tag_list_url + tag_id + '/',
+                    type: "DELETE",
+                    success: function (data, textStatus, jqXHR) {
+                        console.log("deleted");
+                        $('#display_tag_' + tag_id).hide();
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.log("error");
+                        console.log(jqXHR);
+                    }
+                }
+            )
+        }
+
+        // Note: add, update, delete (as function)
+        var malware_note_list_url = "{% url 'viperapi_v3:malware-note-list' project_name=project malware_sha256=malware.sha256 %}";
+        $("#add_note_form").submit(function (event) {
+            console.log("add_note_form called");
+            event.preventDefault();
+            var formData = new FormData($(this)[0]);
+
+            $.ajax({
+                url: malware_note_list_url,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+
+                success: function (data, textStatus, jqXHR) {
+                    console.log("Submit successful");
+                    console.log(data);
+                    // window.location.replace(malware_note_list_url  + "#nav-notes");
+                    window.location.reload();
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log("Submit failed");
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
+                    console.log(jqXHR);
+                    alert("Note: " + obj.title[0])
+                }
+            });
+            return false;
+        });
+
+        {#wildcard to catch all forms#}
+        $("[id^=update_note_form_]").submit(function (event) {
+            console.log("update_note_form called");
+            event.preventDefault();
+            var formData = new FormData($(this)[0]);
+            console.log(formData.get("id"));
+
+            $.ajax({
+                url: malware_note_list_url + formData.get("id") + '/',
+                type: 'PUT',
+                data: formData,
+                contentType: false,
+                processData: false,
+
+                success: function (data, textStatus, jqXHR) {
+                    console.log("Submit successful");
+                    location.reload();
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log("Submit failed");
+                    var obj = jQuery.parseJSON(jqXHR["responseText"]);
+                    alert("Note: " + obj.title[0]);
+                }
+            });
+            return false;
+        });
+
+        function delNote(note_id) {
+            console.log("del_note called for: " + note_id);
+
+            if (confirm('Are you sure you want to delete this note?')) {
+                $.ajax({
+                        url: malware_note_list_url + note_id + '/',
+                        type: "DELETE",
+                        success: function (data, textStatus, jqXHR) {
+                            console.log("deleted");
+                            $('#card_note_' + note_id).hide();
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.log("error");
+                            console.log(data);
+                            var obj = jQuery.parseJSON(data["responseText"]);
+                            alert("Note: " + obj.title[0]);
+                        }
+                    }
+                )
+            }
+        }
+
+        // Sample Info tab - fuzzy:
+        $('#fuzzysubmit').submit(function (event) {
+            $.ajax({
+                url: "{% url 'run-module' project=project %}",
+                type: 'post',
+                dataType: 'html',
+                data: $('#fuzzysubmit').serialize(),
+                beforeSend: function () {
+                    var target = document.getElementById('spin_loader');
+                    var spinner = new Spinner(opts).spin(target);
+                    $(target).data('spinner', spinner);
+                },
+                complete: function () {
+                    $('#spin_loader').data('spinner').stop();
+                },
+                success: function (response, textStatus, jqXHR) {
+                    $('#ajaxresponse').prepend(response);
+                    $('#nav-modules-tab').tab('show');
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log('error(s):' + textStatus, errorThrown);
+                }
+            });
+        });
+
+        // Modules tab:
+        $('#ajaxsubmit').submit(function (event) {
+            $.ajax({
+                url: "{% url 'run-module' project=project %}",
+                type: 'post',
+                dataType: 'html',
+                data: $('#ajaxsubmit').serialize(),
+                beforeSend: function () {
+                    var target = document.getElementById('spin_loader');
+                    var spinner = new Spinner(opts).spin(target);
+                    $(target).data('spinner', spinner);
+                },
+                complete: function () {
+                    $('#spin_loader').data('spinner').stop();
+                },
+                success: function (response, textStatus, jqXHR) {
+                    $('#ajaxresponse').prepend(response);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log('error(s):' + textStatus, errorThrown);
+                }
+            });
+        });
+
+        // Hex tab:
+        $('#hexsubmit').submit(function (event) {
+            $.ajax({
+                url: "{% url 'hex-view' project=project %}",
+                type: 'post',
+                dataType: 'html',
+                data: $('#hexsubmit').serialize(),
+                beforeSend: function () {
+                    var target = document.getElementById('spin_loader');
+                    var spinner = new Spinner(opts).spin(target);
+                    $(target).data('spinner', spinner);
+                },
+                complete: function () {
+                    $('#spin_loader').data('spinner').stop();
+                    var hex_start = document.getElementById('hex_start');
+                    hex_start.value = parseInt(hex_start.value, 10) + 256;
+                },
+                success: function (data, textStatus, jqXHR) {
+                    $('#hexview').append(data);
+
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log('error(s):' + textStatus, errorThrown);
+                }
+            });
+        });
+
+        function clear_div() {
+            document.getElementById("ajaxresponse").innerHTML = "";
+        }
+
+
+        // used in Run Module and Hex View
+        var opts = {
+            lines: 13, // The number of lines to draw
+            length: 20, // The length of each line
+            width: 10, // The line thickness
+            radius: 30, // The radius of the inner circle
+            corners: 1, // Corner roundness (0..1)
+            rotate: 0, // The rotation offset
+            direction: 1, // 1: clockwise, -1: counterclockwise
+            color: '#000', // #rgb or #rrggbb or array of colors
+            speed: 0.9, // Rounds per second
+            trail: 52, // Afterglow percentage
+            shadow: false, // Whether to render a shadow
+            hwaccel: false, // Whether to use hardware acceleration
+            className: 'spinner', // The CSS class to assign to the spinner
+            zIndex: 2e9, // The z-index (defaults to 2000000000)
+            top: '400', // Top position relative to parent
+            left: '50%' // Left position relative to parent
+        };
+    </script>
+{% endblock %}

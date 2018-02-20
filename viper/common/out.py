@@ -5,7 +5,7 @@
 try:
     from terminaltables import AsciiTable
     HAVE_TERMTAB = True
-except:
+except ImportError:
     HAVE_TERMTAB = False
 
 import textwrap
@@ -57,6 +57,7 @@ def table(header, rows):
         content.append(to_append)
     t = AsciiTable(content)
     if not t.ok:
+        t.inner_row_border = True
         longest_col = t.column_widths.index(max(t.column_widths))
         max_length_col = t.column_max_width(longest_col)
         if max_length_col > 0:

@@ -1,25 +1,21 @@
 language: python
-dist: trusty
 sudo: required
 
 cache:
     pip: true
-    directories:
-        - .tox
 
 python:
     - 2.7
-    - 3.4
     - 3.5
     - "3.5-dev"
     - 3.6
     - "3.6-dev"
-      # - "3.7-dev"
-      # - "nightly"
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor -qq
+    - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor clamav-daemon -qq
+    - sudo freshclam
+    - sudo /etc/init.d/clamav-daemon start
 install:
     - pip install -U -r requirements.txt
     - pip install -U tox-travis

@@ -6,9 +6,9 @@ from pypssl import PyPSSL
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+cfg = __config__
 
 
 class Pssl(Module):

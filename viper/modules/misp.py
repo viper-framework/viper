@@ -5,18 +5,18 @@
 import argparse
 import textwrap
 import os
-import json
+import logging
 
 try:
-    from pymisp import PyMISP, PyMISPError, MISPEvent, EncodeFull
+    from pymisp import PyMISP, PyMISPError, MISPEvent
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 try:
     import requests
     HAVE_REQUESTS = True
-except:
+except ImportError:
     HAVE_REQUESTS = False
 
 
@@ -27,9 +27,12 @@ from viper.core.project import __project__
 from viper.core.storage import get_sample_path
 from viper.common.objects import MispEvent
 from viper.common.constants import VIPER_ROOT
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+log = logging.getLogger('viper')
+
+cfg = __config__
+cfg.parse_http_client(cfg.misp)
 
 
 class MISP(Module):
@@ -40,9 +43,10 @@ class MISP(Module):
     from .misp_methods import admin  # noqa
     from .misp_methods import create_event  # noqa
     from .misp_methods import download  # noqa
-    from .misp_methods import check_hashes, _prepare_attributes, _populate  # noqa
+    from .misp_methods import check_hashes, _populate, _expand_local_sample, _make_VT_object  # noqa
     from .misp_methods import store, _get_local_events  # noqa
     from .misp_methods import tag  # noqa
+    from .misp_methods import galaxies  # noqa
     from .misp_methods import version  # noqa
     from .misp_methods import open_samples, _load_tmp_samples, _display_tmp_files, _clean_tmp_samples  # noqa
     from .misp_methods import add, add_hashes, _check_add, _change_event  # noqa
@@ -54,7 +58,7 @@ class MISP(Module):
         self.parser.add_argument("--off", action='store_true', help='Use offline (can only work on pre-downloaded events)')
         self.parser.add_argument("--on", action='store_true', help='Switch to online mode')
         self.parser.add_argument("-k", "--key", help='Your key on the MISP instance')
-        self.parser.add_argument("-v", "--verify", action='store_false', help='Disable certificate verification (for self-signed)')
+        self.parser.add_argument("-v", "--verify", default=True, action='store_false', help='Disable certificate verification (for self-signed)')
         subparsers = self.parser.add_subparsers(dest='subname')
 
         # ##### Upload sample to MISP #####
@@ -159,14 +163,21 @@ class MISP(Module):
         h.add_argument("-a", "--sha256", help="SHA256")
 
         # ##### Add attributes #####
-        parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
-        subparsers_add = parser_add.add_subparsers(dest='add')
-        # Hashes
-        # Generic add
-        temp_me = MISPEvent()
-        for t in sorted(temp_me.types):
-            sp = subparsers_add.add_parser(t, help="Add {} to the event.".format(t))
-            sp.add_argument(t, nargs='+')
+        if HAVE_PYMISP:
+            parser_add = subparsers.add_parser('add', help='Add attributes to an existing MISP event.')
+            subparsers_add = parser_add.add_subparsers(dest='add')
+            # Hashes
+            # Generic add
+            temp_me = MISPEvent()
+            if hasattr(temp_me, "types"):
+                known_types = temp_me.types
+            else:
+                # New API
+                known_types = temp_me.known_types
+
+            for t in known_types:
+                sp = subparsers_add.add_parser(t, help="Add {} to the event.".format(t))
+                sp.add_argument(t, nargs='+')
 
         # ##### Show attributes  #####
         subparsers.add_parser('show', help='Show attributes to an existing MISP event.')
@@ -200,6 +211,13 @@ class MISP(Module):
         s.add_argument("-e", "--event", help="Add tag to the current event.")
         s.add_argument("-a", "--attribute", nargs='+', help="Add tag to an attribute of the current event. Syntax: <identifier for the attribute> <machinetag>")
 
+        # Galaxies
+        s = subparsers.add_parser('galaxies', help='Use misp-galaxy with PyMISPGalaxies.')
+        s.add_argument("-l", "--list", action='store_true', help="List existing galaxies.")
+        s.add_argument("-d", "--details", help="Display all values of a galaxy.")
+        s.add_argument("-v", "--cluster-value", nargs='+', help="Display all details of a cluster value.")
+        s.add_argument("-s", "--search", nargs='+', help="Search all galaxies matching a value.")
+
         # Admin
         s = subparsers.add_parser('admin', help='Administration options.')
         admin_parser = s.add_subparsers(dest='admin')
@@ -210,10 +228,10 @@ class MISP(Module):
         display = subparsers_org.add_parser('display', help="Display an organisation.")
         display.add_argument('id', help='ID of the organisation to display. Use "local" to display all local organisations, "external" for all remote organisations, and "all", for both.')
         # Search
-        search = subparsers_org.add_parser('search', help="Search an organisation by name.")
-        search.add_argument('name', help='(Partial) name of the organisation.')
-        search.add_argument('-t', '--type', default='local', choices=['local', 'external', 'all'],
-                            help='Use "local" to search in all local organisations, "external" for remote organisations, and "all", for both.')
+        search_parser = subparsers_org.add_parser('search', help="Search an organisation by name.")
+        search_parser.add_argument('name', help='(Partial) name of the organisation.')
+        search_parser.add_argument('-t', '--type', default='local', choices=['local', 'external', 'all'],
+                                   help='Use "local" to search in all local organisations, "external" for remote organisations, and "all", for both.')
         # Add
         add_org = subparsers_org.add_parser('add', help="Add an organisation.")
         add_org.add_argument('name', help='Organisation name.')
@@ -246,8 +264,8 @@ class MISP(Module):
         display = subparsers_user.add_parser('display', help="Display a user.")
         display.add_argument('id', help='ID of the user to display. Use "all" to display all users.')
         # Search
-        search = subparsers_user.add_parser('search', help="Search a user by email.")
-        search.add_argument('name', help='(Partial) email of the user.')
+        search_usr = subparsers_user.add_parser('search', help="Search a user by email.")
+        search_usr.add_argument('name', help='(Partial) email of the user.')
         # Add
         add_usr = subparsers_user.add_parser('add', help="Add a user.")
         add_usr.add_argument('email', help='User email address.')
@@ -279,8 +297,8 @@ class MISP(Module):
         # Get
         display = subparsers_role.add_parser('display', help="Display all the roles.")
         # Search
-        search = subparsers_role.add_parser('search', help="Search a role by name.")
-        search.add_argument('name', help='(Partial) name of the role.')
+        search_role = subparsers_role.add_parser('search', help="Search a role by name.")
+        search_role.add_argument('name', help='(Partial) name of the role.')
 
         # Tags
         t = admin_parser.add_parser('tag', help="Tag managment.")
@@ -288,8 +306,8 @@ class MISP(Module):
         # Get
         display = subparsers_tag.add_parser('display', help="Display all the tags.")
         # Search
-        search = subparsers_tag.add_parser('search', help="Search a tag by name.")
-        search.add_argument('name', help='(Partial) name of the tag.')
+        search_tag = subparsers_tag.add_parser('search', help="Search a tag by name.")
+        search_tag.add_argument('name', help='(Partial) name of the tag.')
 
         self.categories = {0: 'Payload delivery', 1: 'Artifacts dropped', 2: 'Payload installation', 3: 'External analysis'}
 
@@ -324,7 +342,10 @@ class MISP(Module):
         else:
             misp_event = MISPEvent()
             misp_event.load(event)
-        for a in misp_event.attributes:
+        if not hasattr(misp_event, 'id'):
+            # The event doesn't exists upstream, breaking.
+            return
+        for a in misp_event.attributes + [attribute for obj in misp_event.objects for attribute in obj.attributes]:
             row = None
             if a.type == 'malware-sample':
                 samples_count += 1
@@ -386,7 +407,7 @@ class MISP(Module):
 
         path = os.path.join(event_path, filename)
         with open(path, 'w') as f:
-            json.dump(to_dump, f, cls=EncodeFull)
+            f.write(to_dump.to_json())
         self.log('success', '{} stored successfully.'.format(filename.rstrip('.json')))
         return filename
 
@@ -468,7 +489,7 @@ class MISP(Module):
             nb_hashes = 0
             me = MISPEvent()
             me.load(e)
-            for a in me.attributes:
+            for a in me.attributes + [attribute for obj in me.objects for attribute in obj.attributes]:
                 if a.type == 'malware-sample':
                     nb_samples += 1
                 if a.type in ('md5', 'sha1', 'sha256', 'filename|md5', 'filename|sha1', 'filename|sha256'):
@@ -484,14 +505,14 @@ class MISP(Module):
             event = self.misp.get(e)
             if not self._has_error_message(event):
                 self._search_local_hashes(event, open_session)
-                self._dump(event)
+                self._dump()
 
     def publish(self):
         __sessions__.current.misp_event.event.publish()
         if self.offline_mode:
             self._dump()
         else:
-            event = self.misp.update(__sessions__.current.misp_event.event._json())
+            event = self.misp.update(__sessions__.current.misp_event.event)
             if not self._has_error_message(event):
                 self.log('success', 'Event {} published.'.format(event['Event']['id']))
                 __sessions__.new(misp_event=MispEvent(event, self.offline_mode))
@@ -505,18 +526,28 @@ class MISP(Module):
             for r, title in related:
                 self.log('item', '{}/events/view/{} - {}'.format(self.url.rstrip('/'), r, title))
 
+        # #### Attributes
         header = ['type', 'value', 'comment', 'related']
         rows = []
         for a in current_event.attributes:
             # FIXME: this has been removed upstream: https://github.com/MISP/MISP/issues/1793
             # Keeping it like that for now, until we decide how to re-enable it
             idlist = []
-            if a.RelatedAttribute:
+            if hasattr(a, 'RelatedAtribute') and a.RelatedAttribute:
                 for r in a.RelatedAttribute:
                     # idlist.append(r.id)
                     pass
-            rows.append([a.type, a.value, '\n'.join(textwrap.wrap(a.comment, 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
+            rows.append([a.type, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
         self.log('table', dict(header=header, rows=rows))
+        # #### Objects
+        for obj in current_event.objects:
+            self.log('info', obj.name)
+            header = ['Object relation', 'value', 'comment']
+            rows = []
+            for a in obj.attributes:
+                rows.append([a.object_relation, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
+            self.log('table', dict(header=header, rows=rows))
+        # ############
         if current_event.published:
             self.log('info', 'This event has been published')
         else:
@@ -562,7 +593,7 @@ class MISP(Module):
         if not self.args.verify:
             verify = False
         else:
-            verify = cfg.misp.misp_verify
+            verify = cfg.misp.tls_verify
 
         # Capture default distribution and sharing group settings. Backwards compatability and empty string check
         self.distribution = cfg.misp.get("misp_distribution", None)
@@ -577,12 +608,9 @@ class MISP(Module):
             self.sharinggroup = None
             self.log('info', "The sharing group stored in viper config is not an integer, setting to None")
 
-        if cfg.misp.misp_taxonomies_directory:
-            self.local_dir_taxonomies = cfg.misp.misp_taxonomies_directory
-
         if not self.offline_mode:
             try:
-                self.misp = PyMISP(self.url, self.key, verify, 'json')
+                self.misp = PyMISP(self.url, self.key, ssl=verify, proxies=cfg.misp.proxies, cert=cfg.misp.cert)
             except PyMISPError as e:
                 self.log('error', e.message)
                 return
@@ -626,6 +654,8 @@ class MISP(Module):
                 self.store()
             elif self.args.subname == 'tag':
                 self.tag()
+            elif self.args.subname == 'galaxies':
+                self.galaxies()
             elif self.args.subname == 'admin':
                 self.admin()
             else:

@@ -11,14 +11,19 @@ except ImportError:
     HAVE_REQUESTS = False
 
 from io import BytesIO
+import logging
 import hashlib
 import tempfile
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
+log = logging.getLogger('viper')
+
+cfg = __config__
+cfg.parse_http_client(cfg.koodous)
+# Call: requests.get(url, proxies=cfg.koodous.proxies, verify=cfg.koodous.verify, cert=cfg.koodous.cert)
 
 
 class Koodous(Module):
@@ -74,10 +79,12 @@ class Koodous(Module):
 
         headers = {'Authorization': 'Token %s' % cfg.koodous.token}
 
-        response = requests.get(url=url, headers=headers)
+        response = requests.get(url=url, headers=headers, proxies=cfg.koodous.proxies,
+                                verify=cfg.koodous.verify, cert=cfg.koodous.cert)
         if response.status_code == 200:
             down_url = response.json().get('download_url', None)
-            response = requests.get(url=down_url)
+            response = requests.get(url=down_url, proxies=cfg.koodous.proxies,
+                                    verify=cfg.koodous.verify, cert=cfg.koodous.cert)
 
             sha256_downloaded = hashlib.sha256(response.content).hexdigest()
             if sha256_downloaded != sha256:
@@ -98,64 +105,80 @@ class Koodous(Module):
             return
         sha256 = hashlib.sha256(content_file).hexdigest()
 
-        url = '%s/%s/get_upload_url' % (cfg.koodous.koodous_url, sha256)
-        headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
+        url = '%s/%s/get_upload_url' % (cfg.koodous.base_url, sha256)
+        headers = {"Authorization": "Token %s" % cfg.koodous.token}
 
-        response = requests.get(url=url, headers=headers)
-        if response.status_code == 200:
-            upload_url = response.json().get('upload_url', None)
-            files = {'file': BytesIO(__sessions__.current.file.data)}
-            response = requests.post(url=upload_url, files=files)
-            if response == 200:
-                self.log("File uploaded correctly.")
-                return
-        elif response.status_code == 409:
-            self.log('info', 'This file already exists in Koodous.')
-        else:
-            self.log('error', 'Unknown error, sorry!')
+        try:
+            response = requests.get(url=url, headers=headers, proxies=cfg.koodous.proxies,
+                                    verify=cfg.koodous.verify, cert=cfg.koodous.cert)
+
+            if response.status_code == 200:
+                upload_url = response.json().get('upload_url', None)
+                files = {'file': BytesIO(__sessions__.current.file.data)}
+                response = requests.post(url=upload_url, files=files, proxies=cfg.koodous.proxies,
+                                         verify=cfg.koodous.verify, cert=cfg.koodous.cert)
+
+                if response == 200:
+                    self.log("File uploaded correctly.")
+                    return
+            elif response.status_code == 409:
+                self.log('info', 'This file already exists in Koodous.')
+            else:
+                self.log('error', 'Unknown error, sorry!')
+                log.error("Unknown error, sorry! Response: \n{}".format(response.status_code))
+
+        except Exception as err:
+            self.log('error', 'Network problem, please try again.')
+            log.error("Network problem, please try again: \n{}".format(err))
 
     def _comment(self, comment):
         """
             Function to comment an APK in Koodous
         """
-        headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
+        headers = {"Authorization": "Token %s" % cfg.koodous.token}
 
         try:
             content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
-        except:
+        except Exception:
             self.log('error', 'You have no file loaded')
 
         try:
-            url = '%s/%s/comments' % (cfg.koodous.koodous_url, sha256)
+            url = '%s/%s/comments' % (cfg.koodous.base_url, sha256)
             data = {'text': comment}
-            response = requests.post(url=url, headers=headers, data=data)
+            response = requests.post(url=url, headers=headers, data=data,
+                                     proxies=cfg.koodous.proxies, verify=cfg.koodous.verify, cert=cfg.koodous.cert)
+
             if response.status_code == 201:
                 self.log('info', 'Comment made successfully.')
             else:
                 self.log('error', 'Some problem saving the comment, please try again.')
-        except:
+        except Exception as err:
             self.log('error', 'Network problem, please try again.')
+            log.error("Network problem, please try again: \n{}".format(err))
 
     def _show_comments(self):
         """
             Function to view comments of a sample in Koodous
         """
-        headers = {"Authorization": "Token %s" % cfg.koodous.koodous_token}
+        headers = {"Authorization": "Token %s" % cfg.koodous.token}
 
         try:
             content_file = __sessions__.current.file.data
             sha256 = hashlib.sha256(content_file).hexdigest()
-        except:
+        except Exception:
             self.log('error', 'You have no file loaded')
             return
         try:
-            url = '%s/%s/comments' % (cfg.koodous.koodous_url, sha256)
-            response = requests.get(url=url, headers=headers)
+            url = '%s/%s/comments' % (cfg.koodous.base_url, sha256)
+            response = requests.get(url=url, headers=headers, proxies=cfg.koodous.proxies,
+                                    verify=cfg.koodous.verify, cert=cfg.koodous.cert)
+
             if response.json().get('count') == 0:
                 self.log('info', 'This sample has no comments.')
                 return
             for result in response.json().get('results'):
                 self.log('info', "[{}]: {}".format(result['author']['username'], result['text']))
-        except:
+        except Exception as err:
             self.log('error', 'Network problem, please try again.')
+            log.error("Network problem, please try again: \n{}".format(err))

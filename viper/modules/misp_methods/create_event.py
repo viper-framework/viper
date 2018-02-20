@@ -2,12 +2,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import json
-
 try:
-    from pymisp import MISPEvent, EncodeUpdate
+    from pymisp import MISPEvent
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 
@@ -35,16 +33,16 @@ def create_event(self):
         self.log('info', "Sharing group can only be set if distribution is 4. Clearing set value")
 
     misp_event = MISPEvent()
-    misp_event.set_all_values(info=info, distribution=self.args.distrib,
-                              sharing_group_id=self.args.sharing, threat_level_id=self.args.threat,
-                              analysis=self.args.analysis, date=self.args.date)
+    misp_event.from_dict(info=info, distribution=self.args.distrib,
+                         sharing_group_id=self.args.sharing, threat_level_id=self.args.threat,
+                         analysis=self.args.analysis, date=self.args.date)
     self._search_local_hashes(misp_event)
     if self.offline_mode:
         # New event created locally, no ID
         __sessions__.current.misp_event.current_dump_file = self._dump()
         __sessions__.current.misp_event.offline()
     else:
-        misp_event = self.misp.add_event(json.dumps(misp_event, cls=EncodeUpdate))
+        misp_event = self.misp.add_event(misp_event)
         if self._has_error_message(misp_event):
             return
         __sessions__.new(misp_event=MispEvent(misp_event, self.offline_mode))

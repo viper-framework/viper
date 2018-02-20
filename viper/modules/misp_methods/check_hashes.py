@@ -6,69 +6,74 @@ import time
 import datetime
 
 try:
-    from pymisp import MISPEvent
+    from pymisp import MISPEvent, InvalidMISPObject, MISPObject
+    from pymisp.tools import VTReportObject, make_binary_objects
     HAVE_PYMISP = True
-except:
+except ImportError:
     HAVE_PYMISP = False
 
 try:
     import requests
     HAVE_REQUESTS = True
-except:
+except ImportError:
     HAVE_REQUESTS = False
 
 
 from viper.core.session import __sessions__
 from viper.common.objects import MispEvent
-from viper.core.config import Config
+from viper.core.config import __config__
 
-cfg = Config()
-
-
-# ####### Helpers for check_hashes ########
-
-def _prepare_attributes(self, md5, sha1, sha256, link, base_attr, event_hashes, sample_hashes, misp_event):
-    new_md5 = False
-    new_sha1 = False
-    new_sha256 = False
-    if md5 not in event_hashes and md5 not in sample_hashes:
-        new_md5 = True
-    if sha1 not in event_hashes:
-        new_sha1 = True
-    if sha256 not in event_hashes:
-        new_sha256 = True
-
-    curattr = None
-    if base_attr.get(sha256):
-        curattr = base_attr.get(sha256)
-    elif base_attr.get(sha1):
-        curattr = base_attr.get(sha1)
-    else:
-        curattr = base_attr.get(md5)
-
-    if new_sha256:
-        misp_event.add_attribute('sha256', sha256, **curattr)
-    if new_sha1:
-        misp_event.add_attribute('sha1', sha1, **curattr)
-    if new_md5:
-        misp_event.add_attribute('md5', md5, **curattr)
-
-    if not link[0]:
-        curattr['to_ids'] = False
-        curattr['category'] = 'External analysis'
-        misp_event.add_attribute('link', link[1], **curattr)
-    return misp_event
+cfg = __config__
 
 
-def _populate(self, event, original_attributes):
-    if len(event.attributes) == original_attributes:
-        self.log('info', "No new attributes to add.")
-        return
-    event.timestamp = int(time.time())
-    result = self.misp.update(event._json())
+def _populate(self, event):
+    result = self.misp.update(event)
+
     if not self._has_error_message(result):
         self.log('success', "All attributes updated successfully")
-        __sessions__.new(misp_event=MispEvent(result, self.offline_mode))
+        event_id = self._get_eventid()
+        if event_id is None:
+            return
+        event = self.misp.get(event_id)
+        if self._has_error_message(event):
+            return
+        __sessions__.new(misp_event=MispEvent(event, self.offline_mode))
+
+
+def _expand_local_sample(self, pseudofile, filename, refobj=None, default_attributes_parameters={}):
+    objs = []
+    hashes = []
+    # Just expand the event with every possible objects
+    fo, peo, seos = make_binary_objects(pseudofile=pseudofile, filename=filename,
+                                        standalone=False,
+                                        default_attributes_parameters=default_attributes_parameters)
+    fo.add_reference(refobj, 'derived-from')
+    hashes += [h.value for h in fo.get_attributes_by_relation('sha256')]
+    hashes += [h.value for h in fo.get_attributes_by_relation('sha1')]
+    hashes += [h.value for h in fo.get_attributes_by_relation('md5')]
+    if self.args.populate:
+        objs.append(fo)
+        if peo:
+            objs.append(peo)
+        if seos:
+            objs += seos
+    return objs, hashes
+
+
+def _make_VT_object(self, to_search, default_attributes_parameters):
+    try:
+        vt_object = VTReportObject(cfg.virustotal.virustotal_key, to_search,
+                                   vt_proxies=cfg.virustotal.proxies, standalone=False,
+                                   default_attributes_parameters=default_attributes_parameters)
+        if self.args.populate:
+            vt_object.distribution = default_attributes_parameters.distribution
+        return vt_object
+    except requests.exceptions.ConnectionError:
+        self.log('error', 'Failed to connect to VT for {}'.format(to_search))
+        return
+    except InvalidMISPObject as e:
+        self.log('error', e)
+    return None
 
 
 def check_hashes(self):
@@ -84,81 +89,141 @@ def check_hashes(self):
 
     misp_event = MISPEvent()
     misp_event.load(event)
-    event_hashes = []
-    sample_hashes = []
-    base_new_attributes = {}
+    hashes_to_expand = {}
+    hashes_expanded = []  # Thoses hashes are known and already processed
+    local_samples_hashes = []
+    partial_objects = {}
+    for o in misp_event.Object:
+        if o.name != 'file':
+            continue
+        if o.has_attributes_by_relation(['md5', 'sha1', 'sha256']):
+            # This object has all the hashes we care about
+            tmphashes = []
+            tmphashes += [h.value for h in o.get_attributes_by_relation('md5')]
+            tmphashes += [h.value for h in o.get_attributes_by_relation('sha1')]
+            tmphashes += [h.value for h in o.get_attributes_by_relation('sha256')]
+            # Make sure to query VT for the sha256, even if expanded locally
+            hashes_to_expand[o.get_attributes_by_relation('sha256')[0].value] = o.get_attributes_by_relation('sha256')[0]
+            if o.has_attributes_by_relation(['malware-sample']):
+                # ... and it has a malware sample
+                local_samples_hashes += tmphashes
+            hashes_expanded += tmphashes
+        elif o.has_attributes_by_relation(['malware-sample']):
+            # This object has a malware sample, but is missing hashes. We can expand locally.
+            # get the MD5 from the malware-sample attribute
+            malware_sample = o.get_attributes_by_relation('malware-sample')[0]  # at most one sample/file object
+            local_samples_hashes.append(malware_sample.value.split('|')[1])
+            local_samples_hashes += [h.value for h in o.get_attributes_by_relation('md5')]
+            local_samples_hashes += [h.value for h in o.get_attributes_by_relation('sha1')]
+            local_samples_hashes += [h.value for h in o.get_attributes_by_relation('sha256')]
+            if self.args.populate:
+                # The object is missing hashes, keeping track of it for expansion if it isn't already done.
+                partial_objects[o.uuid] = malware_sample
+
+        else:
+            sha256 = {attribute.value: attribute for attribute in o.get_attributes_by_relation('sha256')}
+            sha1 = {attribute.value: attribute for attribute in o.get_attributes_by_relation('sha1')}
+            md5 = {attribute.value: attribute for attribute in o.get_attributes_by_relation('md5')}
+            if sha256:
+                hashes_to_expand.update(sha256)
+            elif sha1:
+                hashes_to_expand.update(sha1)
+            elif md5:
+                hashes_to_expand.update(md5)
+
+    for ref_uuid, sample in partial_objects.items():
+        if sample.value.split('|')[1] in hashes_expanded:
+            # Already expanded in an other object
+            continue
+        new_obj, hashes = self._expand_local_sample(pseudofile=sample.malware_binary,
+                                                    filename=sample.value.split('|')[0],
+                                                    refobj=ref_uuid,
+                                                    default_attributes_parameters=sample)
+        misp_event.Object += new_obj
+        local_samples_hashes += hashes
+        # Make sure to query VT for the sha256, even if expanded locally
+        hashes_to_expand[hashes[0]] = sample
+
+    hashes_expanded += local_samples_hashes
     for a in misp_event.attributes:
-        h = None
-        if a.type in ('md5', 'sha1', 'sha256'):
-            h = a.value
-            event_hashes.append(h)
-        elif a.type in ('filename|md5', 'filename|sha1', 'filename|sha256', 'malware-sample'):
-            h = a.value.split('|')[1]
-            event_hashes.append(h)
-        if h is not None:
-            base_new_attributes[h] = {"category": a.category,
-                                      "comment": '{} - Xchecked via VT: {}'.format(a.comment, h),
-                                      "to_ids": a.to_ids,
-                                      "Tag": a.Tag,
-                                      "distribution": a.distribution}
+        if a.type == 'malware-sample' and a.value.split('|')[1] not in hashes_expanded:
+            new_obj, hashes = self._expand_local_sample(pseudofile=a.malware_binary,
+                                                        filename=a.value.split('|')[0],
+                                                        default_attributes_parameters=a)
+            misp_event.Object += new_obj
+            local_samples_hashes += hashes
+            # Make sure to query VT for the sha256, even if expanded locally
+            hashes_to_expand[hashes[0]] = a
+        elif a.type in ('filename|md5', 'filename|sha1', 'filename|sha256'):
+            # We don't care if the hashes are in hashes_expanded or hashes_to_expand: they are firtered out later anyway
+            fname, hashval = a.value.split('|')
+            hashes_to_expand[hashval] = a
+        elif a.type in ('md5', 'sha1', 'sha256'):
+            # We don't care if the hashes are in hashes_expanded or hashes_to_expand: they are firtered out later anyway
+            hashes_to_expand[a.value] = a
 
     unk_vt_hashes = []
-    vt_request = {'apikey': cfg.virustotal.virustotal_key}
-    # Make sure to start getting reports for the longest possible hashes (reduce risks of collisions)
-    hashes_to_check = sorted(event_hashes, key=len)
-    original_attributes = len(misp_event.attributes)
     if cfg.virustotal.virustotal_has_private_key is False:
         quota = 4
         timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
 
-    while len(hashes_to_check) > 0:
-        vt_request['resource'] = hashes_to_check.pop()
-        try:
-            response = requests.post(cfg.misp.misp_vturl, data=vt_request)
-        except requests.ConnectionError:
-            self.log('error', 'Failed to connect to VT for {}'.format(vt_request['resource']))
-            return
-        if response.status_code == 403:
-            self.log('error', 'This command requires virustotal API key')
-            self.log('error', 'Please check that your key have the right permissions')
-            return
-        try:
-            result = response.json()
-        except:
-            self.log('error', 'Unable to get the report of {}'.format(vt_request['resource']))
+    hashes_expanded += local_samples_hashes
+    processed_on_vt = []
+    # Make sure to start getting reports for the longest possible hashes (reduce risks of collisions)
+    for to_expand in sorted(list(set(hashes_to_expand)), key=len):
+        if to_expand in processed_on_vt:
+            # Always run VT, once per sample
             continue
-        if result['response_code'] == 1:
-            md5 = result['md5']
-            sha1 = result['sha1']
-            sha256 = result['sha256']
-            hashes_to_check = [eh for eh in hashes_to_check if eh not in (md5, sha1, sha256)]
-            link = [False, result['permalink']]
-            # Do not re-add a link
-            for a in misp_event.attributes:
-                if a.value == link[1]:
-                    link[0] = True
-            if md5 in sample_hashes:
-                self.log('success', 'Sample available in MISP:')
-            else:
-                self.log('success', 'Sample available in VT:')
-            if self.args.populate:
-                misp_event = self._prepare_attributes(md5, sha1, sha256, link, base_new_attributes, event_hashes, sample_hashes, misp_event)
-            self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(link[1], md5, sha1, sha256))
-            if cfg.virustotal.virustotal_has_private_key is False:
-                if quota > 0:
-                    quota -= 1
-                else:
-                    waiting_time = (timeout - datetime.datetime.now()).seconds
-                    if waiting_time > 0:
-                        self.log('warning', 'No private API key, 4 queries/min is the limit. Waiting for {} seconds.'.format(waiting_time))
-                        time.sleep(waiting_time)
-                    quota = 4
-                    timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
+        original_attribute = hashes_to_expand[to_expand]
+        if original_attribute.get('object_id'):
+            original_object_id = original_attribute.get('object_id')
+        vt_object = self._make_VT_object(to_expand, original_attribute)
+        if not vt_object:
+            unk_vt_hashes.append(to_expand)
+            continue
+        result = vt_object.get_report()
+        md5 = result['md5']
+        sha1 = result['sha1']
+        sha256 = result['sha256']
+        processed_on_vt += [sha256, sha1, md5]
+        if all(h in local_samples_hashes for h in [md5, sha1, sha256]):
+            self.log('success', 'Sample available in MISP:')
         else:
-            unk_vt_hashes.append(vt_request['resource'])
+            self.log('success', 'Sample available in VT:')
+        self.log('item', '{}\n\t{}\n\t{}\n\t{}'.format(result["permalink"], md5, sha1, sha256))
+        if self.args.populate:
+            if not all(h in hashes_expanded for h in [md5, sha1, sha256]):
+                # If all the "new" expanded hashes are in the hashes_expanded list, skip
+                file_object = MISPObject('file', default_attributes_parameters=original_attribute)
+                file_object.add_attribute('md5', value=md5)
+                file_object.add_attribute('sha1', value=sha1)
+                file_object.add_attribute('sha256', value=sha256)
+                file_object.add_reference(vt_object.uuid, 'analysed-with')
+                misp_event.Object.append(file_object)
+                hashes_expanded += [md5, sha1, sha256]
+            else:
+                if not original_object_id or original_object_id == '0':
+                    # Not an object, but the hashes are in an other object, skipping
+                    continue
+                else:
+                    # We already have a MISP object, adding the link to the new VT object
+                    file_object = misp_event.get_object_by_id(original_object_id)
+                    file_object.add_reference(vt_object.uuid, 'analysed-with')
+            misp_event.Object.append(vt_object)
+
+        if cfg.virustotal.virustotal_has_private_key is False:
+            if quota > 0:
+                quota -= 1
+            else:
+                waiting_time = (timeout - datetime.datetime.now()).seconds
+                if waiting_time > 0:
+                    self.log('warning', 'No private API key, 4 queries/min is the limit. Waiting for {} seconds.'.format(waiting_time))
+                    time.sleep(waiting_time)
+                quota = 4
+                timeout = datetime.datetime.now() + datetime.timedelta(minutes=1)
 
     if self.args.populate:
-        self.__populate(misp_event, original_attributes)
+        self._populate(misp_event)
     if len(unk_vt_hashes) > 0:
         self.log('error', 'Unknown on VT:')
         for h in unk_vt_hashes:

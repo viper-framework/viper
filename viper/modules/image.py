@@ -3,6 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 from io import BytesIO
+import logging
 
 try:
     import requests
@@ -13,6 +14,11 @@ except ImportError:
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from viper.core.config import __config__
+
+log = logging.getLogger('viper')
+
+cfg = __config__
 
 
 class Image(Module):
@@ -32,7 +38,8 @@ class Image(Module):
         payload = dict(private='true', json='true')
         files = dict(image=BytesIO(__sessions__.current.file.data))
 
-        response = requests.post('http://www.imageforensic.org/api/submit/', data=payload, files=files)
+        response = requests.post('http://www.imageforensic.org/api/submit/', data=payload, files=files,
+                                 proxies=cfg.http_client.proxies, verify=cfg.http_client.verify, cert=cfg.http_client.cert)
         results = response.json()
 
         if results['success']:

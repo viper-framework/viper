@@ -86,5 +86,5 @@ class Ida(Module):
 
         try:
             self.open_ida(__sessions__.current.file.path)
-        except:
+        except Exception:
             self.log('error', "Unable to start IDA Pro")
