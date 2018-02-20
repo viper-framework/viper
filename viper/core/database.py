@@ -657,6 +657,15 @@ class Database:
         finally:
             session.close()
 
+    def get_parent(self, malware_id):
+        session = self.Session()
+        malware = session.query(Malware).get(malware_id)
+        if not malware.parent_id:
+            return None
+        else:
+            parent = session.query(Malware).get(malware.parent_id)
+            return parent
+
     def get_children(self, parent_id):
         session = self.Session()
         children = session.query(Malware).filter(Malware.parent_id == parent_id).all()
@@ -664,6 +673,11 @@ class Database:
         for child in children:
             child_samples += '{0},'.format(child.sha256)
         return child_samples
+
+    def list_children(self, parent_id):
+        session = self.Session()
+        children = session.query(Malware).filter(Malware.parent_id == parent_id).all()
+        return children
 
     # Store Module / Cmd Output
     def add_analysis(self, sha256, cmd_line, results):

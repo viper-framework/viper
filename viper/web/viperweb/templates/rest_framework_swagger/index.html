@@ -1,0 +1,6 @@
+{% extends "rest_framework_swagger/base.html" %}
+
+{% block extra_styles %}
+  {% load static from staticfiles %}
+  <link rel="stylesheet" href="{% static "swagger-ui-themes/css/theme-feeling-blue.css" %}">
+{% endblock %}

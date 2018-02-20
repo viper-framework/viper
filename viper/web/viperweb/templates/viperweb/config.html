@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Config{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Config</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col">
+                {% for key, value in config_values.items %}
+                    <div class="row">
+                        <div class="col-sm-5">
+                            <div class="card">
+                                <h2 class="card-header">
+                                    Config Section - {{ key }}
+                                </h2>
+
+                                <div class="card-body">
+                                    <table class="table table-striped table-bordered table-hover">
+                                        {% for key2, value2 in value.items %}
+                                            <tr>
+                                                <th>{{ key2 }}</th>
+                                                <td>{{ value2 }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
