@@ -22,7 +22,6 @@ MANDATORY_SECTIONS = [
     "database",
     "logging",
     "web",
-    "api",
     "autorun"
 ]
 
