@@ -29,7 +29,7 @@ from viper.common.abstracts import get_argparse_parser_actions
 from viper.common.network import download
 from viper.common.version import __version__
 from viper.core.session import __sessions__
-from viper.core.project import __project__
+from viper.core.project import __project__, get_project_list
 from viper.core.plugins import __modules__
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
@@ -945,7 +945,17 @@ class Projects(Command):
             self.log('info', "Projects Available:")
 
             rows = []
-            for project in os.listdir(projects_path):
+
+            if not __project__.name:
+                current = 'Yes'
+            elif __project__.name == "default":
+                current = 'Yes'
+            else:
+                current = ''
+            rows.append(["# default #", time.ctime(os.path.getctime(__project__.base_path)), current])
+            rows.append([])
+
+            for project in get_project_list(exclude_default=True):
                 project_path = os.path.join(projects_path, project)
                 if os.path.isdir(project_path):
                     current = ''
