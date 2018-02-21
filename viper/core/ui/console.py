@@ -214,9 +214,10 @@ class Console(object):
             # TODO: perhaps this block should be moved into the session so that
             # the generation of the prompt is done only when the session's
             # status changes.
-            prefix = ''
             if __project__.name:
                 prefix = bold(cyan(__project__.name)) + ' '
+            else:
+                prefix = bold(cyan('default')) + ' '
 
             if __sessions__.is_set():
                 stored = ''
