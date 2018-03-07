@@ -77,7 +77,7 @@ class Radiff2(Module):
         self.log('success', out)
         frac = 'Code overlap is about {}%.'.format(percent)
         self.log('success', frac)
-    
+
     def print_result(self, matches, parial, new_sym, sess_file, diff):
         header = ['fraction', sess_file + ' func', 'lenght', 'offset',
                   'offset', 'length', diff + ' func']
@@ -85,14 +85,14 @@ class Radiff2(Module):
             self.log('success', 'Match')
             match_array = []
             for m in matches:
-                match_array.append([m['weight'], m['sym_1'], m['len_1'], m['off_1'], 
+                match_array.append([m['weight'], m['sym_1'], m['len_1'], m['off_1'],
                                     m['off_2'], m['len_2'], m['sym_2']])
             self.log('table', dict(header=header, rows=match_array))
         if len(parial) > 0:
             self.log('success', 'Partial')
             partial_array = []
             for m in parial:
-                partial_array.append([m['weight'], m['sym_1'], m['len_1'], m['off_1'], 
+                partial_array.append([m['weight'], m['sym_1'], m['len_1'], m['off_1'],
                                       m['off_2'], m['len_2'], m['sym_2']])
             self.log('table', dict(header=header, rows=partial_array))
         if len(new_sym) > 0:
@@ -107,7 +107,7 @@ class Radiff2(Module):
         super(Radiff2, self).run()
         if self.args is None:
             return
-        
+
         if not __sessions__.is_set():
             self.log('error', "No open session")
             return
@@ -122,7 +122,7 @@ class Radiff2(Module):
         if samples is None:
             self.log('error', "No samples found")
             return
-        
+
         session_file = __sessions__.current.file.name
         for malware in samples:
             if malware.sha256 == __sessions__.current.file.sha256:
@@ -133,3 +133,4 @@ class Radiff2(Module):
             if self.args.verbose:
                 self.print_result(match, part, no_match, session_file, malware.name)
             self.print_stat(stat, session_file, malware.name)
+
