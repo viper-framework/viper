@@ -3,17 +3,43 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
+import pip
+from setuptools import setup
+
 from viper.common.version import __version__
 
-# Always prefer setuptools over distutils
-from setuptools import setup, find_packages
-import pip
+
+def get_packages(package):
+    """
+    Return root package and all sub-packages.
+    """
+    return [dirpath
+            for dirpath, dirnames, filenames in os.walk(package)
+            if os.path.exists(os.path.join(dirpath, '__init__.py'))]
+
+
+def get_package_data(package):
+    """
+    Return all files under the root package, that are not in a
+    package themselves.
+    """
+    walk = [(dirpath.replace(package + os.sep, '', 1), filenames)
+            for dirpath, dirnames, filenames in os.walk(package)
+            if not os.path.exists(os.path.join(dirpath, '__init__.py'))]
+
+    filepaths = []
+    for base, filenames in walk:
+        filepaths.extend([os.path.join(base, filename)
+                          for filename in filenames])
+    return {package: filepaths}
+
+
+# collect requirements for `install_requires` setting
+requirement_files = ['requirements-base.txt', "requirements-modules.txt", "requirements-web.txt"]
 
 links = []
 requires = []
-
-requirement_files = ['requirements-base.txt']
-
 for req_file in requirement_files:
     requirements = pip.req.parse_requirements(req_file, session=pip.download.PipSession())
 
@@ -38,10 +64,14 @@ setup(
     url='http://viper.li',
 
     platforms='any',
-    scripts=['viper-cli', 'viper-api', 'viper-web', 'viper-update'],
-    packages=find_packages(exclude=['tests', 'tests.*']),
+    scripts=['viper-cli', 'viper-web', 'viper-update'],
+
+    packages=get_packages('viper'),
+    package_data=get_package_data('viper'),
     install_requires=requires,
     dependency_links=links,
+    data_files=[('/', ['viper.conf.sample'])],
+    zip_safe=False,
 
     tests_require=['pytest'],
 

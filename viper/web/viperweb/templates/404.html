@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Error Page</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-2"></div>
+            <div class="col-md-8">
+                <div class="card card-primary">
+                    <h5 class="card-header alert-danger">
+                        404 - Not Found
+                    </h5>
+                    <div class="card-body card-danger">
+                        <p>If the error persists please
+                            check the <a href="https://viper-framework.readthedocs.io/en/latest/" target="_blank">Documentation</a> or
+                            ask for help on the <a href="https://github.com/viper-framework/viper/issues" target="_blank">Github Issues</a> page.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

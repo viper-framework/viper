@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}CLI{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'main-page-project' project %}">{{ project }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">CLI</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div id="spin_loader"></div>
+            <div class="col">
+
+                <div class="card">
+                    <div class="card-body">
+
+                        <p>You can enter commands here as if you were at the console. </p>
+                        <form class="form-inline" role="form" id="ajaxsubmit" onsubmit="return false" name="modules">
+                            <label for="cmdString" class="mr-2">Viper Command</label>
+                            <input type="text" class="form-control mr-2" name="cmdline" placeholder="Enter CLI Commands">
+                            <input type="text" class="form-control mr-2" name="file_hash" placeholder="Optional Sha256"/>
+                            <button type="submit" class="btn btn-primary" name="submit">Run</button>
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+                <br>
+
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="float-left">Module Output</h3>
+                        <div class="float-right">
+                            <button class="btn btn-default btn-xs btn-primary" onclick="clear_div()">Clear</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="ajaxresponse"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+{% endblock %}
+
+{% block js %}
+    <script type='text/javascript'>
+        $('#ajaxsubmit').submit(function (event) {
+            $.ajax({
+                url: "{% url 'run-module' project=project %}",
+                type: 'post',
+                dataType: 'html',
+                data: $('#ajaxsubmit').serialize(),
+                beforeSend: function () {
+                    var target = document.getElementById('spin_loader');
+                    var spinner = new Spinner(opts).spin(target);
+                    $(target).data('spinner', spinner);
+                },
+                complete: function () {
+                    $('#spin_loader').data('spinner').stop();
+                },
+                success: function (response, textStatus, jqXHR) {
+                    $('#ajaxresponse').prepend(response);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log('error(s):' + textStatus, errorThrown);
+                }
+            });
+        });
+
+        function clear_div() {
+            document.getElementById("ajaxresponse").innerHTML = "";
+        }
+
+        // used in Run Module and Hex View
+        var opts = {
+            lines: 13, // The number of lines to draw
+            length: 20, // The length of each line
+            width: 10, // The line thickness
+            radius: 30, // The radius of the inner circle
+            corners: 1, // Corner roundness (0..1)
+            rotate: 0, // The rotation offset
+            direction: 1, // 1: clockwise, -1: counterclockwise
+            color: '#000', // #rgb or #rrggbb or array of colors
+            speed: 0.9, // Rounds per second
+            trail: 52, // Afterglow percentage
+            shadow: false, // Whether to render a shadow
+            hwaccel: false, // Whether to use hardware acceleration
+            className: 'spinner', // The CSS class to assign to the spinner
+            zIndex: 2e9, // The z-index (defaults to 2000000000)
+            top: '400', // Top position relative to parent
+            left: '50%' // Left position relative to parent
+        };
+    </script>
+{% endblock %}

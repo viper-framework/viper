@@ -32,7 +32,7 @@ simplejson==3.10.0
 virustotal-api==1.1.7
 
 git+https://github.com/viper-framework/pefile.git#egg=pefile
-git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
+git+https://github.com/smarnach/pyexiftool.git
 
 
 # office module

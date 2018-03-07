@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Yara{% endblock %}
+
+{% block content %}
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'main_page' %}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Yara</li>
+        </ol>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <h3 class="card-header"> Yara Rules
+                        <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#addRule">Add new rule</button>
+                    </h3>
+
+                    <ul  class="list-group">
+                        {% for rule in rule_list %}
+                            {% if rule == rule_name %}
+                                <a href="{% url 'yara-rules' %}?action=display&amp;rule={{ rule }}" class="list-group-item list-group-item-action active">{{ rule }}</a>
+                            {% else %}
+                                <a href="{% url 'yara-rules' %}?action=display&amp;rule={{ rule }}" class="list-group-item list-group-item-action">{{ rule }}</a>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+
+                </div>
+            </div>
+
+            {% if rule_text %}
+            <div class="col-md-9">
+                <div class="card">
+                    <h3 class="card-header"> Rule: {{ rule_name }}
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#editRule">Edit</button>
+                            <a class="btn btn-primary btn-danger" href="{% url 'yara-rules' %}?action=delete&amp;rulename={{ rule_name }}">Delete</a>
+                    </h3>
+
+                    <div class="card-body">
+                        <pre>{{ rule_text }}</pre>
+                    </div>
+
+                </div>
+            </div>
+            {% endif %}
+
+            {# Modal: Add Rule #}
+            <div class="modal fade" id="addRule" tabindex="-1" role="dialog" aria-labelledby="addLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title" id="editLabel">Add Rule</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form role="form" action="{% url 'yara-rules' %}" enctype="multipart/form-data" method="post" onsubmit="window.location.reload();">
+                                <input type="text" class="form-control my-2" name="rule_name" placeholder="Rule Name"/>
+                                <textarea class="form-control my-2" rows="10" name="rule_text" id="ruleText" placeholder="Add your rule here. No Syntax Checking"></textarea>
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Modal: Edit Rule #}
+            <div class="modal fade" id="editRule" tabindex="-1" role="dialog" aria-labelledby="editLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title" id="editLabel">Edit Rule: {{ rule_name }}</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form role="form" action="{% url 'yara-rules' %}" enctype="multipart/form-data" method="post" onsubmit="window.location.reload();">
+                                <input type="text" class="form-control my-2" name="rule_name" value="{{ rule_name }}" placeholder="Rule Name"/>
+                                <textarea class="form-control my-2" rows="10" name="rule_text" id="ruleText" placeholder="Add your rule here. No Syntax Checking">{{ rule_text }}</textarea>
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}

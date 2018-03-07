@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <meta name="description" content="Viper Malware Analysis">
+    <meta name="keywords" content="viper,malware,yara">
+
+    <title>Viper - {% block title %}{% endblock %}</title>
+
+    {% load static %}
+
+    <link rel="stylesheet" href="{% static "viperweb/css/bootstrap.min.css" %}">
+    <link rel="stylesheet" href="{% static "viperweb/css/dataTables.bootstrap4.min.css" %}"/>
+    <link rel="stylesheet" href="{% static "viperweb/css/fontawesome-all.css" %}">
+    <link rel="stylesheet" href="{% static "viperweb/css/viper.css" %}"/>
+</head>
+
+<body role="document">
+<!-- Start Navbar -->
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+    <a class="navbar-brand" href="#"><img src="{% static "viperweb/images/viper_inverse.png" %}" width="92" height="25" alt="Viper"></a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    {% if user.is_authenticated %}
+
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProjects" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Projects
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownProjects">
+                        <a class="dropdown-item" href="/"><i class="fas fa-angle-right fa-fw mr-1" style="color: black"></i>default</a>
+                        <div class="dropdown-divider"></div>
+                        {% for project in projects %}
+                            {% if not project == "default" %}
+                                <a class="dropdown-item" href="{% url "main-page-project" project=project %}"><i class="fas fa-angle-right fa-fw mr-1" style="color: black"></i>{{ project }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        <div class="dropdown-divider"></div>
+
+                        <form class="form-inline my-lg-0" action="{% url "create-project" %}" enctype="multipart/form-data" method="post">
+                            <input class="form-control mx-2" type="text" name="project" placeholder="switch to/create new">
+                            {% csrf_token %}
+                        </form>
+
+                    </div>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url "yara-rules" %}">Yara Rules</a>
+                </li>
+
+                {% if project %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'cli' project=project %}">CLI</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'cli-default' %}">CLI</a>
+                    </li>
+                {% endif %}
+
+            </ul>
+
+            <form id="search_form_navbar" class="form-inline my-2 my-lg-0" role="form" enctype="multipart/form-data" action="{% url "search-file" %}" method="POST">
+                <input class="form-control mr-sm-2" type="search" name="term" id="term" placeholder="Search in all Projects">
+
+                <label for="search_options" hidden></label>
+                <select class="form-control mx-0 my-2 my-sm-0" id="search_options" name="key">
+                    <option value="name">Name</option>
+                    <option value="type">Type</option>
+                    <option value="mime">Mime</option>
+                    <option value="md5">MD5</option>
+                    <option value="sha256">SHA256</option>
+                    <option value="tag">Tag</option>
+                    <option value="note">Note</option>
+                </select>
+
+                <button class="btn mx-2 my-2 my-sm-0" type="submit">Search</button>
+                <input type="hidden" name="search-project-radio" value="search-all-projects"/>
+                {% csrf_token %}
+            </form>
+
+            <ul class="navbar-nav ml-auto">
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMoreAuthenticated" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        More
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMoreAuthenticated">
+                        <a class="dropdown-item" href="{% url "admin:index" %}"><i class="fas fa-cogs fa-fw mx-1" style="color: black"></i> Admin</a>
+                        <div class="dropdown-divider"></div>
+
+                        <a class="dropdown-item" href="https://viper-framework.readthedocs.io/en/latest/" target="_blank" rel="noreferrer noopener">
+                            <i class="fas fa-book fa-fw mx-1" style="color: black"></i>Documentation</a>
+                        <a class="dropdown-item" href="https://github.com/viper-framework/viper/issues" target="_blank" rel="noreferrer noopener">
+                            <i class="fab fa-github fa-fw mx-1" style="color: black"></i>Issues</a>
+                        <div class="dropdown-divider"></div>
+
+                        <a class="dropdown-item" href="{% url "viperapi_v3:api-root" %}"><i class="fas fa-code fa-fw mx-1" style="color: black"></i>API</a>
+                        <a class="dropdown-item" href="{% url "viperapi_v3:api-docs" %}"><i class="fas fa-file-code fa-fw mx-1" style="color: black"></i>API Docs</a>
+
+                        <div class="dropdown-divider"></div>
+
+                        <a class="dropdown-item" href="{% url "about" %}"><i class="fas fa-info-circle fa-fw mx-1" style="color: black"></i>About</a>
+                        {#                        <a class="dropdown-item" href="{% url "changelog" %}">Changelog (TODO!)</a>#}
+                        {#                        <a class="dropdown-item" href="{% url "config-file" %}">Config (TODO!)</a>#}
+                    </div>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url "logout" %}" title="Logout">Logout ({{ user }}) <i class="fas fa-sign-out-alt"></i>  </a>
+                </li>
+
+            </ul>
+        </div>
+
+    {% else %}
+
+        <ul class="navbar-nav ml-auto">
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMoreUnauthenticated" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMoreUnauthenticated">
+                    <a class="dropdown-item" href="https://viper-framework.readthedocs.io/en/latest/" target="_blank" rel="noreferrer noopener">
+                        <i class="fas fa-book fa-fw mx-1" style="color: black"></i>Documentation</a>
+                    <a class="dropdown-item" href="https://github.com/viper-framework/viper/issues" target="_blank" rel="noreferrer noopener">
+                        <i class="fab fa-github fa-fw mx-1" style="color: black"></i>Issues</a>
+                    <div class="dropdown-divider"></div>
+
+                    {#                        <a class="dropdown-item" href="{% url "changelog" %}">Changelog (TODO!)</a>#}
+                    <a class="dropdown-item" href="{% url "about" %}"><i class="fas fa-info-circle fa-fw mx-1" style="color: black"></i>About</a>
+
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url "login" %}" title="Login">Login <i class="fas fa-sign-in-alt"></i></a>
+            </li>
+        </ul>
+
+    {% endif %}
+</nav>
+<!-- End Navbar -->
+
+<div class="container-fluid">
+
+    <!-- Bootstrap display flashed messages -->
+    <!-- possible values: alert alert-[info|success|warning|danger] -->
+    <!--
+        from django.contrib import messages
+        messages.info(request, "info: Invalid credentials!")
+        messages.success(request, "success: Invalid credentials!")
+        messages.warning(request, "warning: Invalid credentials!")
+        messages.error(request, "error: Invalid credentials!")
+        # Debug messages ignored by default settings.py: MESSAGE_LEVEL = message_constants.DEBUG
+        messages.debug(request, "debug: Invalid credentials!")
+    -->
+
+    {% if messages %}
+        <div class="page-header">
+            {% for message in messages %}
+                {% if message.tags == "error" %}
+                    <div class="alert alert-danger text-center">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <strong>Error: </strong> {{ message }}.
+                    </div>
+                {% elif message.tags %}
+                    <div class="alert alert-{{ message.tags }} text-center">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <strong>{{ message.tags }}:</strong> {{ message }}.
+                    </div>
+                {% else %}
+                    <div class="alert alert-info text-center">
+                        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                        <strong>Info!</strong> {{ message }}.
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</div>
+
+<br>
+<footer class="footer">
+    <div class="container" align="center">
+            <span class="text-muted align-left"><a href="http://viper.li" target="_blank"  rel="noreferrer noopener">Viper-Framework</a> |
+                Source Code on <a href="https://github.com/viper-framework/viper" target="_blank" rel="noreferrer noopener" title="Github"><i class="fab fa-github mx-1" style="color: black"></i></a></span>
+    </div>
+</footer>
+
+<!-- include libraries(jQuery, Bootstrap4, BS Fileview, Spinner, JS Cookie) -->
+<script type="text/javascript" src="{% static 'viperweb/js/jquery.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/bootstrap.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/bootstrap-filestyle.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/spin.min.js' %}"></script>
+<script type="text/javascript" src="{% static "viperweb/js/js.cookie.js" %}"></script>
+
+<!-- Viper JavaScript -->
+<script type="text/javascript" src="{% static 'viperweb/js/viper_dropdown.js' %}"></script>
+<script type="text/javascript" src="{% static 'viperweb/js/viper_ajax_submit.js' %}"></script>
+
+<!-- JavaScript block per template page -->
+{% block js %}
+{% endblock %}
+
+</body>
+</html>
