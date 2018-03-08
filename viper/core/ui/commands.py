@@ -62,6 +62,7 @@ class Commands(object):
     output = []
 
     def __init__(self):
+        db.__init__()
         # Map commands to their related functions.
         self.commands = dict()
         for item in Command().get_subclasses():
