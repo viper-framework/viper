@@ -28,7 +28,7 @@ class Radiff2(Module):
         self.parser.add_argument('-n', '--nomatch', action='store_true', help='Include non matched functions')
         self.parser.add_argument('-s', '--samples', help="Samples to diff against")
         self.parser.add_argument('-a', '--all', action='store_true', help='Diff against all samples')
-        self.parser.add_argument('-t', '--table', action='store_true', help='Create a diff table')
+        self.parser.add_argument('-t', '--table', action='store_true', help='Create a "cluster" table')
         self.parser.add_argument('-e', '--export', help='In addition to print the table export it to a CSV file')
 
     def parse_line(self, line, parse_new):
@@ -139,7 +139,7 @@ class Radiff2(Module):
             for i in range(0, sample_size):
                 h.append('(' + str(i+1) + ') ' + samples[i].name)
                 mi = st.get_sample_path(samples[i].sha256)
-                self.log('success', 'Processing malware entry number: '+str(i+1) + ' of ' + str(sample_size))
+                self.log('success', 'Processing sample: '+str(i+1) + ' of ' + str(sample_size))
                 row = [i+1]
                 for j in range(0, sample_size):
                     if i == j:
