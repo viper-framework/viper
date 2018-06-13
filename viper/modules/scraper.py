@@ -39,7 +39,7 @@ cfg = __config__
 
 class Scraper(Module):
     cmd = 'scraper'
-    description = 'Scrap a webside using scrapy and splash. Requires a running splash instance, provided as a docker thingie.'
+    description = 'Scrape a website using scrapy and splash. Requires a running splash instance, provided as a docker thingie.'
     authors = ['Raphaël Vinot']
 
     def __init__(self):
