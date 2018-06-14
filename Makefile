@@ -1,10 +1,10 @@
 all: build
 
 build:
-	python setup.py build
+	python3 setup.py build
 
 install:
-	python setup.py install --record installed_files.txt
+	python3 setup.py install --record installed_files.txt
 	mkdir -p /usr/share/viper
 	cp -rf data/* /usr/share/viper
 	cp viper.conf.sample /usr/share/viper/viper.conf.sample
@@ -15,7 +15,7 @@ uninstall:
 	rm -rf /usr/share/viper /etc/viper
 
 dist:
-	python setup.py sdist
+	python3 setup.py sdist
 
 clean:
 	find . -type f -iname '*.pyc' -delete
