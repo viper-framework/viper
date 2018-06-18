@@ -16,9 +16,11 @@ before_install:
     - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor clamav-daemon -qq
     - sudo freshclam
     - sudo /etc/init.d/clamav-daemon start
+
 install:
-    - pip install -U -r requirements.txt
+    - sudo make install
     - pip install -U tox-travis
+
 script:
     - echo "exit" | python viper-cli
     - tox
