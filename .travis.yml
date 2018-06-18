@@ -18,8 +18,7 @@ before_install:
     - sudo /etc/init.d/clamav-daemon start
 
 install:
-    - pip install setuptools
-    - sudo make install
+    - pip install -U -r requirements.txt
     - pip install -U tox-travis
 
 script:
