@@ -7,6 +7,8 @@ from viper.core.session import __sessions__
 from viper.core.database import Database
 import viper.core.storage as st
 
+import csv
+import os
 import re
 from subprocess import Popen, PIPE
 
@@ -26,6 +28,8 @@ class Radiff2(Module):
         self.parser.add_argument('-n', '--nomatch', action='store_true', help='Include non matched functions')
         self.parser.add_argument('-s', '--samples', help="Samples to diff against")
         self.parser.add_argument('-a', '--all', action='store_true', help='Diff against all samples')
+        self.parser.add_argument('-t', '--table', action='store_true', help='Create a "cluster" table')
+        self.parser.add_argument('-e', '--export', help='In addition to print the table export it to a CSV file')
 
     def parse_line(self, line, parse_new):
         li = line.strip()
@@ -71,7 +75,9 @@ class Radiff2(Module):
 
     def print_stat(self, stats, sess_file, diff):
         a = stats['match_count'] + stats['partial_count']
-        percent = round((a / float(stats['total'])) * 100, 2)
+        percent = 0
+        if stats['total'] != 0:
+            percent = round((a / float(stats['total'])) * 100, 2)
         out = 'Of {} functions in {}, {} match(es) and {} partially match(es) functions in {}'.format(
             stats['total'], diff, stats['matches'], stats['partial'], sess_file)
         self.log('success', out)
@@ -108,7 +114,7 @@ class Radiff2(Module):
         if self.args is None:
             return
 
-        if not __sessions__.is_set():
+        if not __sessions__.is_set() and not self.args.table:
             self.log('error', "No open session")
             return
 
@@ -116,11 +122,48 @@ class Radiff2(Module):
         samples = None
         if self.args.samples:
             samples = db.find(key='any', value=self.args.samples)
-        if self.args.all:
+        elif self.args.all:
             samples = db.find(key='all')
+        else:
+            samples = __sessions__.find
 
         if samples is None:
             self.log('error', "No samples found")
+            return
+
+        if self.args.table:
+            table = []
+            h = ['entry']
+            sample_size = len(samples)
+            self.log('info', 'Generating table, this might take a while...')
+            for i in range(0, sample_size):
+                h.append('(' + str(i+1) + ') ' + samples[i].name)
+                mi = st.get_sample_path(samples[i].sha256)
+                self.log('success', 'Processing sample: '+str(i+1) + ' of ' + str(sample_size))
+                row = [i+1]
+                for j in range(0, sample_size):
+                    if i == j:
+                        row.append(100)
+                    else:
+                        if self.args.verbose:
+                            self.log('success', 'Comparing: ' + samples[i].name + ' to ' + samples[j].name)
+                        sample = st.get_sample_path(samples[j].sha256)
+                        out = self.diff_files(mi, sample)
+                        match, part, no_match, stats = self.process_output(out, False)
+                        a = stats['match_count'] + stats['partial_count']
+                        percent = 0
+                        if stats['total'] != 0:
+                            percent = round((a / float(stats['total'])) * 100, 2)
+                        row.append(percent)
+                table.append(row)
+            self.log('table', dict(rows=table, header=h))
+            if self.args.export:
+                file_path = os.path.abspath(os.path.expanduser(self.args.export))
+                with open(file_path, 'w') as csvfile:
+                    csvwriter = csv.writer(csvfile, delimiter=',')
+                    csvwriter.writerow(h)
+                    for row in table:
+                        csvwriter.writerow(row)
             return
 
         session_file = __sessions__.current.file.name
@@ -133,4 +176,3 @@ class Radiff2(Module):
             if self.args.verbose:
                 self.print_result(match, part, no_match, session_file, malware.name)
             self.print_stat(stat, session_file, malware.name)
-
