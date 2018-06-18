@@ -1,8 +1,16 @@
-![Viper](http://viper.li/viper.png)
+![Viper](https://viper.li/en/latest/_images/viper.png)
 
 Viper is a binary analysis and management framework. Its fundamental objective is to provide a solution to easily organize your collection of malware and exploit samples as well as your collection of scripts you created or found over the time to facilitate your daily research.
 
 For more information visit [viper.li](http://viper.li/)
+
+### Installation
+
+Once Python 3 is installed:
+
+``sudo make install``
+
+For all details please refer to the [official documentation](https://viper.li/).
 
 <hr />
 

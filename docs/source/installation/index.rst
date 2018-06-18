@@ -20,31 +20,6 @@ To install Viper::
     $ sudo make install
 
 
-Core dependencies
------------------
-
-Viper makes use of a number of Python library for its core functioning, which can be installed with the command::
-
-    $ sudo pip3 install -r requirements.txt
-
-Although it is optional, we recommend that you install `YARA`_ pattern matching project and the `YARA-Python`_ library by following the setup instructions on their official websites.
-
-Viper can retrieve files remotely through `Tor`_, if you're interested in such feature you should install SocksiPy::
-
-    $ sudo apt-get install python-socksipy
-
-You will also clearly need a running Tor daemon, refer to the official website for setup instructions.
-
-
-Extra dependencies
-------------------
-
-Please be aware that all the modules that are available in Viper might have their own dependencies that are unrelated to Viper's core. We will try to make such dependencies available in our ``requirements.txt`` file that you can provide to ``pip``::
-
-    $ sudo pip3 install -r requirements.txt
-
-In case a dependency is missing or it is not available on PyPi, you should be instructed by the module itself on how to retrieve and install it.
-
 First launch
 ------------
 
