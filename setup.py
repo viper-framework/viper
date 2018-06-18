@@ -6,7 +6,6 @@
 import os
 from setuptools import setup
 
-import pip
 try:
     from pip._internal.req import parse_requirements
 except ImportError:
@@ -46,7 +45,7 @@ requirement_files = ['requirements-base.txt', "requirements-modules.txt", "requi
 links = []
 requires = []
 for req_file in requirement_files:
-    requirements = parse_requirements(req_file, session=pip.download.PipSession())
+    requirements = parse_requirements(req_file, session=False)
 
     for item in requirements:
         # we want to handle package names and also repo urls
