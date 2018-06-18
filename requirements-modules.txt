@@ -27,31 +27,26 @@ pyparsing==2.2.0
 pypdns==1.3
 pypssl==2.1
 pytz==2017.3
+rarfile==3.0
 r2pipe==0.9.1
 simplejson==3.10.0
 virustotal-api==1.1.7
+yara-python==3.7.0
 
+# PE module
 git+https://github.com/viper-framework/pefile.git#egg=pefile
 git+https://github.com/smarnach/pyexiftool.git
 
-
-# office module
+# Office module
 olefile==0.44
 git+https://github.com/decalage2/oletools.git
-## Flash lookup
-git+https://github.com/viper-framework/xxxswf.git
 
-# apk module
+# APK module
 ipython < 6; python_version == '2.7'
 git+https://github.com/androguard/androguard.git
 
-# pe module (verify sigs)
+# PE module (verify sigs)
 git+https://github.com/sebdraven/verify-sigs.git
-
-# archiving
-rarfile==3.0
-
-yara-python==3.7.0
 
 # Scraper
 git+https://github.com/viper-framework/ScrapySplashWrapper.git

@@ -31,10 +31,10 @@ except ImportError:
     HAVE_OLE = False
 
 try:
-    from xxxswf import xxxswf
-    HAVE_XXXSWF = True
+    from oletools import pyxswf
+    HAVE_PYXSWF = True
 except ImportError:
-    HAVE_XXXSWF = False
+    HAVE_PYXSWF = False
 
 
 class Office(Module):
@@ -75,22 +75,23 @@ class Office(Module):
         self.log('item', 'Frace Count: {}'.format(header['frame_count']))
 
     def detect_flash(self, section):
-        if not HAVE_XXXSWF:
-            self.log('warning', 'Unable to search for Flash objects, requires xxxswf')
+        if not HAVE_PYXSWF:
+            self.log('warning', "Unable to search for Flash objects, requires xxxswf")
             return []
+
         section = BytesIO(section)
-        swf = xxxswf.xxxswf()
-        swf_data = swf.find_swf(section)
+        swf_data = pyxswf.xxxswf.findSWF(section)
         if len(swf_data) == 0:
             return []
 
         full_content = section.getvalue()
         to_return = []
         for index, start in enumerate(swf_data):
-            swf = swf.verify_swf(full_content[start:], 0)
+            swf = pyxswf.xxxswf.verifySWF(full_content[start:], 0)
             if swf:
-                headers = xxxswf.SwfHeader(swf)
+                headers = pyxswf.xxxswf.headerInfo(swf)
                 to_return.append((headers.header, swf))
+
         return to_return
 
     ##
