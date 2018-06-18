@@ -10,4 +10,4 @@ django-url-filter
 djangorestframework
 djangorestframework-queryfields
 drf-nested-routers
-whitenoise
+whitenoise==4.0b4
