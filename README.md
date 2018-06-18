@@ -7,6 +7,7 @@ For more information visit [viper.li](http://viper.li/)
 <hr />
 
 [![Build Status](https://api.travis-ci.org/viper-framework/viper.png?branch=master)](https://travis-ci.org/viper-framework/viper)
+[![Documentation Status](https://readthedocs.org/projects/viper-framework/badge/?version=latest)](http://viper-framework.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/viper-framework/viper/branch/master/graph/badge.svg)](https://codecov.io/gh/viper-framework/viper)
 
 **Wanna contribute?** Viper is an open, BSD-licensed, collaborative development effort that heavily relies on contributions from the whole community. We welcome tickets, pull requests, feature suggestions.

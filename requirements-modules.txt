@@ -42,8 +42,9 @@ olefile==0.44
 git+https://github.com/decalage2/oletools.git
 
 # APK module
-ipython < 6; python_version == '2.7'
-git+https://github.com/androguard/androguard.git
+#ipython < 6; python_version == '2.7'
+#git+https://github.com/androguard/androguard.git
+androguard==3.2.0
 
 # PE module (verify sigs)
 git+https://github.com/sebdraven/verify-sigs.git

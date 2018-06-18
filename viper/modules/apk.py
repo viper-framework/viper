@@ -2,10 +2,6 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import binascii
-
-from cryptography.hazmat.primitives import hashes
-
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
@@ -148,10 +144,9 @@ class AndroidPackage(Module):
             rsa_signature_filename = a.get_signature_name()
             cert = a.get_certificate(rsa_signature_filename)
 
-            self.log('info', 'Certificate Fingerprints')
-            for h in [hashes.MD5, hashes.SHA1, hashes.SHA256, hashes.SHA512]:
-                fingerprint = h.name + ": " + binascii.hexlify(cert.fingerprint(h())).decode("ascii")
-                self.log('item', fingerprint)
+            self.log('info', "Certificate Fingerprints")
+            self.log('item', "SHA1: " + cert.sha1_fingerprint)
+            self.log('item', "SHA256: "  + cert.sha256_fingerprint)
 
         # Decompile and Dump all the methods
         def andro_dump(vm, vmx, dump_path):
