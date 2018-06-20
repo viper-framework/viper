@@ -146,7 +146,7 @@ class AndroidPackage(Module):
 
             self.log('info', "Certificate Fingerprints")
             self.log('item', "SHA1: " + cert.sha1_fingerprint)
-            self.log('item', "SHA256: "  + cert.sha256_fingerprint)
+            self.log('item', "SHA256: " + cert.sha256_fingerprint)
 
         # Decompile and Dump all the methods
         def andro_dump(vm, vmx, dump_path):

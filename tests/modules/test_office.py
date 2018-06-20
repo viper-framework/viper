@@ -110,7 +110,7 @@ class TestOffice:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*out_all/ObjectPool-_1398590705-Contents-FLASH-Decompressed1.*", out)
+        assert re.search(r".*out_all/ObjectPool-_1398590705-Contents*", out)
 
     @pytest.mark.usefixtures("cleandir")
     @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
