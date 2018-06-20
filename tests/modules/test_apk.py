@@ -107,8 +107,8 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r"md5: 2487974b62a94eaa8254b95dd8ce8fc7", out)
-        assert re.search(r"sha1: 652f6129c87d0540bf986fc00efd9ab8a78784de", out)
+        assert re.search(r"SHA1: 65 2F 61 29 C8 7D 05 40 BF 98 6F C0 0E FD 9A B8 A7 87 84 DE", out)
+        assert re.search(r"SHA256: 6E 56 64 27 DA 36 DD 91 36 39 B1 11 2F 74 7B 77 40 88 51 B4 85 7A 1D 63 EB F9 1E 02 B0 6F 20 88", out)
 
     @pytest.mark.parametrize("filename,pkg_name", [("hello-world.apk", "de.rhab.helloworld")])
     def test_all(self, capsys, filename, pkg_name):
