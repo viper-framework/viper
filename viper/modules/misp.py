@@ -545,6 +545,13 @@ class MISP(Module):
             header = ['Object relation', 'value', 'comment']
             rows = []
             for a in obj.attributes:
+                # FIXME: this has been removed upstream: https://github.com/MISP/MISP/issues/1793
+                # Keeping it like that for now, until we decide how to re-enable it
+                idlist = []
+                if hasattr(a, 'RelatedAtribute') and a.RelatedAttribute:
+                    for r in a.RelatedAttribute:
+                        # idlist.append(r.id)
+                        pass
                 rows.append([a.object_relation, a.value, '\n'.join(textwrap.wrap(getattr(a, 'comment', ''), 30)), '\n'.join(textwrap.wrap(' '.join(idlist), 15))])
             self.log('table', dict(header=header, rows=rows))
         # ############
