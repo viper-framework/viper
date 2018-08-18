@@ -4,10 +4,10 @@ django-crispy-forms
 django-extensions
 django-favicon
 django-filter
-django-rest-swagger
+django-rest-swagger==2.1.2
 django-sslserver
 django-url-filter
 djangorestframework
 djangorestframework-queryfields
 drf-nested-routers
-whitenoise==4.0b4
+whitenoise
