@@ -189,7 +189,7 @@ class EmailParse(Module):
             # Headers
             rows = []
             for x in msg.keys():
-                # Adding Received to ignore list. this has to be handeled separately if there are more then one line
+                # Adding Received to ignore list. this has to be handled separately if there are more then one line
                 if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature', 'Received']:
                     rows.append([x, string_clean(msg.get(x))])
             for x in msg.get_all('Received'):
@@ -244,7 +244,7 @@ class EmailParse(Module):
                 'Reply-To': email.utils.parseaddr(string_clean(msg.get("Reply-To")))[1],
                 'Return-Path': email.utils.parseaddr(string_clean(msg.get("Return-Path")))[1]
             }
-            if (addr['From'] == ''):
+            if addr['From'] == '':
                 self.log('error', "No From address!")
                 return
             elif addr['Sender'] and (addr['From'] != addr['Sender']):
@@ -279,7 +279,7 @@ class EmailParse(Module):
                     bydomain = str(dns.reversename.from_address(bydomain)).strip('.')
                     domains.append(['Received by reverse lookup', bydomain])
                 # if the email has a Sender header, use that
-                if (addr['Sender'] != ""):
+                if addr['Sender'] != "":
                     m = re.search("(\w+\.\w+)$", addr['Sender'])
                     if not m:
                         self.log('error', "Sender header regex didn't match")
@@ -384,6 +384,7 @@ class EmailParse(Module):
             else:
                 # Walk through email string.
                 for part in msg.walk():
+                    part_content = None
                     content_type = part.get_content_type()
 
                     if content_type == 'multipart':
@@ -442,7 +443,7 @@ class EmailParse(Module):
             self.log('error', "No open session")
             return
 
-        # see if we can load the dns library for MX lookup spoof detecton
+        # see if we can load the dns library for MX lookup spoof detection
         try:
             import dns.resolver
             import dns.reversename
