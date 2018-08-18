@@ -2,7 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 from django.conf.urls import url
-from django.contrib.auth.views import login, logout
+from django.contrib.auth import views as auth_views
 
 from . import views
 from .forms import MyAuthenticationForm
@@ -10,10 +10,9 @@ from .forms import MyAuthenticationForm
 
 urlpatterns = [
     # login/logout (accounts)
-    url(r'^accounts/login/$', login,
-        {'template_name': 'viperweb/user_login.html', 'authentication_form': MyAuthenticationForm}, name='login'),
-    url(r'^accounts/logout/$', logout,
-        {'template_name': 'viperweb/logged_out.html'}, name='logout'),
+    url(r'^accounts/login/$', auth_views.LoginView.as_view(template_name='viperweb/user_login.html',
+                                                           authentication_form=MyAuthenticationForm), name='login'),
+    url(r'^accounts/logout/$', auth_views.LogoutView.as_view(template_name='viperweb/logged_out.html'), name='logout'),
 
     # Main Page
     url(r'^$', views.MainPageView.as_view(), name='main_page'),
