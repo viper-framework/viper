@@ -189,7 +189,7 @@ class EmailParse(Module):
             # Headers
             rows = []
             for x in msg.keys():
-                # Adding Received to ignore list. this has to be handeled separately if there are more then one line
+                # Adding Received to ignore list. this has to be handled separately if there are more then one line
                 if x not in ['Subject', 'From', 'To', 'Date', 'Cc', 'Bcc', 'DKIM-Signature', 'Received']:
                     rows.append([x, string_clean(msg.get(x))])
             for x in msg.get_all('Received'):
@@ -442,7 +442,7 @@ class EmailParse(Module):
             self.log('error', "No open session")
             return
 
-        # see if we can load the dns library for MX lookup spoof detecton
+        # see if we can load the dns library for MX lookup spoof detection
         try:
             import dns.resolver
             import dns.reversename
