@@ -26,7 +26,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import api_view, detail_route, list_route, permission_classes
+from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.settings import api_settings
 
@@ -332,7 +332,7 @@ class MalwareViewSet(ViperGenericViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # TODO(frennkie) - this needs testing
-    @detail_route(methods=['get', 'post'], serializer_class=MalwareDownloadSerializer)
+    @action(detail=True, methods=['get', 'post'], serializer_class=MalwareDownloadSerializer)
     def download(self, request, *args, ** kwargs):
         """Download a Malware instance as a raw or compressed file"""
         # kwargs provided by URLs/Routers: project_name, sha256
@@ -393,9 +393,9 @@ class MalwareViewSet(ViperGenericViewSet):
 
     # TODO(frennkie) - this needs testing and cleaning up!
     @get_project_open_db()
-    @list_route(methods=['post'],
-                serializer_class=MalwareUploadSerializer,
-                parser_classes=[MultiPartParser, FormParser, FileUploadParser])
+    @action(detail=False, methods=['post'],
+            serializer_class=MalwareUploadSerializer,
+            parser_classes=[MultiPartParser, FormParser, FileUploadParser])
     def upload(self, request, project=None, db=None, *args, ** kwargs):
         """Upload file as new Malware instance"""
         session = db.Session()
