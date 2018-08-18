@@ -244,7 +244,7 @@ class EmailParse(Module):
                 'Reply-To': email.utils.parseaddr(string_clean(msg.get("Reply-To")))[1],
                 'Return-Path': email.utils.parseaddr(string_clean(msg.get("Return-Path")))[1]
             }
-            if (addr['From'] == ''):
+            if addr['From'] == '':
                 self.log('error', "No From address!")
                 return
             elif addr['Sender'] and (addr['From'] != addr['Sender']):
@@ -279,7 +279,7 @@ class EmailParse(Module):
                     bydomain = str(dns.reversename.from_address(bydomain)).strip('.')
                     domains.append(['Received by reverse lookup', bydomain])
                 # if the email has a Sender header, use that
-                if (addr['Sender'] != ""):
+                if addr['Sender'] != "":
                     m = re.search("(\w+\.\w+)$", addr['Sender'])
                     if not m:
                         self.log('error', "Sender header regex didn't match")
