@@ -384,6 +384,7 @@ class EmailParse(Module):
             else:
                 # Walk through email string.
                 for part in msg.walk():
+                    part_content = None
                     content_type = part.get_content_type()
 
                     if content_type == 'multipart':
