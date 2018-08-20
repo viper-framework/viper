@@ -46,7 +46,7 @@ class RAT(Module):
 
     def get_config(self, family):
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             return
 
         try:
@@ -78,7 +78,7 @@ class RAT(Module):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             return
 
         rules_paths = [

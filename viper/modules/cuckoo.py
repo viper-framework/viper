@@ -155,7 +155,7 @@ class Cuckoo(Module):
 
         if self.args.file:
             if not __sessions__.is_set():
-                self.log('error', "No open session")
+                self.log('error', "No open session. This command expects a file to be open.")
                 return
 
             if not self.args.resubmit:
@@ -243,7 +243,7 @@ class Cuckoo(Module):
 
             else:
                 if not __sessions__.is_set():
-                    self.log('error', "No open session")
+                    self.log('error', "No open session. This command expects a file to be open.")
                     return
                 try:
                     json_error = dropped_result.json()

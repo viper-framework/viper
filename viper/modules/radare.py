@@ -41,7 +41,7 @@ class Radare(Module):
                 self.open_radare()
                 return
             else:
-                self.log('error', "No open session")
+                self.log('error', "No open session. This command expects a file to be open.")
                 return
 
         if not r2command:

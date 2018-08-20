@@ -255,7 +255,7 @@ class Strings(Module):
                 self.process_strings(strings, sample.name)
         else:
             if not __sessions__.is_set():
-                self.log('error', "No open session")
+                self.log('error', "No open session. This command expects a file to be open.")
                 return
             if os.path.exists(__sessions__.current.file.path):
                 strings = self.get_strings(__sessions__.current.file)

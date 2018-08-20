@@ -47,7 +47,7 @@ class Triage(Module):
         # We're running against the already opened file.
         else:
             if not __sessions__.is_set():
-                self.log('error', "No open session")
+                self.log('error', "No open session. This command expects a file to be open.")
                 return
 
             tags = []

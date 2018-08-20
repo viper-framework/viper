@@ -43,7 +43,7 @@ class LastLine(Module):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             return
 
         if self.args.submit:

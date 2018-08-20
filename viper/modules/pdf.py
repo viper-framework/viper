@@ -196,7 +196,7 @@ class PDF(Module):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             return False
 
         if 'PDF' not in __sessions__.current.file.type:

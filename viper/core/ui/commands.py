@@ -165,7 +165,7 @@ class Analysis(Command):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             return
 
         # check if the file is already stores, otherwise exit
@@ -265,7 +265,7 @@ class Copy(Command):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             return
 
         if not __project__.name:
@@ -384,7 +384,7 @@ class Export(Command):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             self.parser.print_usage()
             return
 
@@ -669,7 +669,7 @@ class Notes(Command):
             return
 
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             return
 
         # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
@@ -870,7 +870,7 @@ class Parent(Command):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             self.parser.print_usage()
             return
 
@@ -1000,7 +1000,7 @@ class Rename(Command):
             self.log('info', "Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
         else:
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
 
 
 class Sessions(Command):
@@ -1288,7 +1288,7 @@ class Store(Command):
                     if cfg.get('autorun').enabled:
                         autorun_module(__sessions__.current.file.sha256)
             else:
-                self.log('error', "No open session")
+                self.log('error', "No open session. This command expects a file to be open.")
 
 
 class Tags(Command):
@@ -1313,7 +1313,7 @@ class Tags(Command):
 
         # This command requires a session to be opened.
         if not __sessions__.is_set():
-            self.log('error', "No open session")
+            self.log('error', "No open session. This command expects a file to be open.")
             self.parser.print_usage()
             return
 
