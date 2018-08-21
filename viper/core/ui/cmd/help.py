@@ -6,11 +6,10 @@ from viper.common.abstracts import Command
 from viper.core.plugins import load_commands, __modules__
 
 class Help(Command):
-    ##
-    # HELP
-    #
-    # This command simply prints the help message.
-    # It lists both embedded commands and loaded modules.
+    """
+    This command simply prints the help message.
+    It lists both embedded commands and loaded modules.
+    """
     cmd = "help"
     description = "Show this help message"
 

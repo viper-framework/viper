@@ -11,11 +11,10 @@ from viper.core.config import __config__
 from viper.core.project import __project__
 
 class About(Command):
-    ##
-    # ABOUT
-    #
-    # This command prints some useful information regarding the running
-    # Viper instance
+    """
+    This command prints some useful information regarding the running
+    Viper instance
+    """
     cmd = "about"
     description = "Show information about this Viper instance"
 
