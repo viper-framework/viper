@@ -5,8 +5,8 @@
 import platform
 
 from viper.common.abstracts import Command
-from viper.core.database import Database
 from viper.common.version import __version__
+from viper.core.database import Database
 from viper.core.config import __config__
 from viper.core.project import __project__
 
