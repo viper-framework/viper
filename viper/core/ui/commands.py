@@ -4,12 +4,10 @@
 
 import os
 import sys
-import platform
 from os.path import expanduser
 import time
 import json
 import shutil
-import inspect
 import fnmatch
 import getpass
 import tempfile
@@ -25,17 +23,18 @@ import viper.common.out as out
 from viper.common.colors import bold
 from viper.common.utils import convert_size
 from viper.common.objects import File
-from viper.common.abstracts import get_argparse_parser_actions
+from viper.common.abstracts import Command, get_argparse_parser_actions
 from viper.common.network import download
-from viper.common.version import __version__
 from viper.core.session import __sessions__
 from viper.core.project import __project__
-from viper.core.plugins import __modules__
+from viper.core.plugins import __modules__, load_commands
 from viper.core.database import Database
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.config import __config__, console_output
 from viper.common.autorun import autorun_module
 from viper.core.archiver import Compressor
+
+from viper.core.ui.cmd import *
 
 cfg = __config__
 
@@ -64,80 +63,7 @@ class Commands(object):
     def __init__(self):
         db.__init__()
         # Map commands to their related functions.
-        self.commands = dict()
-        for item in Command().get_subclasses():
-            instance = item()
-            self.commands.update({instance.cmd: dict(obj=instance.run,
-                                                     description=instance.description,
-                                                     parser_args=get_argparse_parser_actions(instance.parser),
-                                                     fs_path_completion=instance.fs_path_completion)})
-
-
-class Command(object):
-    cmd = ""
-    description = ""
-    command_line = []
-    args = None
-    authors = []
-    output = []
-    fs_path_completion = False
-
-    def __init__(self):
-        self.parser = argparse.ArgumentParser(prog=self.cmd, description=self.description)
-
-    def log(self, event_type, event_data):
-        self.output.append(dict(
-            type=event_type,
-            data=event_data
-        ))
-        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
-
-    def _is_subclass(self, obj):
-        return inspect.isclass(obj) and issubclass(obj, self.__class__)
-
-    def get_subclasses(self):
-        """Yields all subclasses of this class"""
-        for name, obj in inspect.getmembers(sys.modules[__name__], predicate=self._is_subclass):
-            if hasattr(obj, "__bases__") and self.__class__ in obj.__bases__:
-                yield obj
-
-
-class About(Command):
-    ##
-    # ABOUT
-    #
-    # This command prints some useful information regarding the running
-    # Viper instance
-    cmd = "about"
-    description = "Show information about this Viper instance"
-
-    def run(self, *args):
-        try:
-            self.parser.parse_args(args)
-        except SystemExit:
-            return
-
-        rows = list()
-        rows.append(["Viper Version", __version__])
-        rows.append(["Python Version", platform.python_version()])
-        rows.append(["Homepage", "https://viper.li"])
-        rows.append(["Issue Tracker", "https://github.com/viper-framework/viper/issues"])
-
-        self.log('table', dict(header=['About', ''], rows=rows))
-
-        rows = list()
-        rows.append(["Configuration File", cfg.config_file])
-
-        if __project__.name:
-            rows.append(["Active Project", __project__.name])
-            rows.append(["Storage Path", __project__.path])
-            rows.append(["Database Path", db.engine.url])
-        else:
-            rows.append(["Active Project", "default"])
-            rows.append(["Storage Path", __project__.path])
-            rows.append(["Database Path", db.engine.url])
-
-        self.log('table', dict(header=['Configuration', ''], rows=rows))
+        self.commands = load_commands()
 
 
 class Analysis(Command):
@@ -543,42 +469,6 @@ class Find(Command):
         if key == 'ssdeep':
             header.append("Ssdeep")
         self.log("table", dict(header=header, rows=rows))
-
-
-class Help(Command):
-    ##
-    # HELP
-    #
-    # This command simply prints the help message.
-    # It lists both embedded commands and loaded modules.
-    cmd = "help"
-    description = "Show this help message"
-
-    def run(self, *args):
-        try:
-            args = self.parser.parse_args(args)
-        except SystemExit:
-            return
-
-        self.log('info', "Commands")
-
-        rows = []
-        for command_name, command_item in Commands().commands.items():
-            rows.append([command_name, command_item['description']])
-
-        rows.append(["exit, quit", "Exit Viper"])
-        rows = sorted(rows, key=lambda entry: entry[0])
-
-        self.log('table', dict(header=['Command', 'Description'], rows=rows))
-        self.log('info', "Modules")
-
-        rows = []
-        for module_name, module_item in __modules__.items():
-            rows.append([module_name, module_item['description']])
-
-        rows = sorted(rows, key=lambda entry: entry[0])
-
-        self.log('table', dict(header=['Command', 'Description'], rows=rows))
 
 
 class Info(Command):

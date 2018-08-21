@@ -2,7 +2,9 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import sys
 import argparse
+import inspect
 import viper.common.out as out
 from viper.core.config import console_output
 from viper.common.exceptions import ArgumentErrorCallback
@@ -21,6 +23,26 @@ class ArgumentParser(argparse.ArgumentParser):
     def exit(self, status=0, message=None):
         if message is not None:
             raise ArgumentErrorCallback(message)
+
+
+class Command(object):
+    cmd = ""
+    description = ""
+    command_line = []
+    args = None
+    authors = []
+    output = []
+    fs_path_completion = False
+
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(prog=self.cmd, description=self.description)
+
+    def log(self, event_type, event_data):
+        self.output.append(dict(
+            type=event_type,
+            data=event_data
+        ))
+        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
 
 
 class Module(object):
