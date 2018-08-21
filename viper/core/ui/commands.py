@@ -2,7 +2,8 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-from viper.core.plugins import __modules__, load_commands
+from viper.core.plugins import load_commands
+from viper.core.database import Database
 
 class Commands(object):
     output = []

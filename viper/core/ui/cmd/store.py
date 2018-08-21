@@ -2,6 +2,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
 import fnmatch
 try:
     from scandir import walk
@@ -12,6 +13,7 @@ from viper.common.abstracts import Command
 from viper.common.objects import File
 from viper.core.database import Database
 from viper.core.session import __sessions__
+from viper.core.config import __config__
 from viper.core.storage import store_sample, get_sample_path
 from viper.common.autorun import autorun_module
 
@@ -124,7 +126,7 @@ class Store(Command):
 
                         # Add file.
                         add_file(file_obj, args.tags)
-                        if add_file and cfg.get('autorun').enabled:
+                        if add_file and __config__.get('autorun').enabled:
                             autorun_module(file_obj.sha256)
                             # Close the open session to keep the session table clean
                             __sessions__.close()
@@ -142,7 +144,7 @@ class Store(Command):
                 if add_file(__sessions__.current.file, args.tags):
                     # Open session to the new file.
                     Open().run(*[__sessions__.current.file.sha256])
-                    if cfg.get('autorun').enabled:
+                    if __config__.get('autorun').enabled:
                         autorun_module(__sessions__.current.file.sha256)
             else:
                 self.log('error', "No open session. This command expects a file to be open.")
