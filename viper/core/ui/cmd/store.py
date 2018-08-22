@@ -9,6 +9,7 @@ try:
 except ImportError:
     from os import walk
 
+from viper.core.ui.cmd.open import Open
 from viper.common.abstracts import Command
 from viper.common.objects import File
 from viper.core.database import Database
@@ -141,6 +142,7 @@ class Store(Command):
 
                 # Add file.
                 if add_file(__sessions__.current.file, args.tags):
+                    # TODO: review this. Is there a better way?
                     # Open session to the new file.
                     Open().run(*[__sessions__.current.file.sha256])
                     if __config__.get('autorun').enabled:

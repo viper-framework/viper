@@ -23,8 +23,9 @@ class TestCommands:
     cmd = load_commands()
 
     def setup_class(cls):
-        self.cmd['open']['obj']('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
-        self.cmd['store']['obj']()
+        cmd = load_commands()
+        cmd['open']['obj']('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
+        cmd['store']['obj']()
 
     def teardown_method(self):
         self.cmd['close']['obj']()
