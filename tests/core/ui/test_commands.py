@@ -15,7 +15,7 @@ except ImportError:
 from viper.core.plugins import load_commands
 from viper.core.database import Database
 from viper.core.project import Project
-from viper.core.sessions import __sessions__
+from viper.core.session import __sessions__
 from tests.conftest import FIXTURE_DIR
 
 
