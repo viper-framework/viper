@@ -12,6 +12,7 @@ from viper.core.database import Database
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
 
+
 class Open(Command):
     """
     This command is used to open a session on a given file.

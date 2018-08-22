@@ -18,6 +18,7 @@ from viper.core.config import __config__
 from viper.core.storage import store_sample, get_sample_path
 from viper.common.autorun import autorun_module
 
+
 class Store(Command):
     """
     This command stores the opened file in the local repository and tries

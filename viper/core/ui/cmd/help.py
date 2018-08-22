@@ -5,6 +5,7 @@
 from viper.common.abstracts import Command
 from viper.core.plugins import load_commands, __modules__
 
+
 class Help(Command):
     """
     This command simply prints the help message.
@@ -39,4 +40,3 @@ class Help(Command):
         rows = sorted(rows, key=lambda entry: entry[0])
 
         self.log('table', dict(header=['Command', 'Description'], rows=rows))
-

@@ -5,6 +5,7 @@
 from viper.common.abstracts import Command
 from viper.core.session import __sessions__
 
+
 class Close(Command):
     """
     This command resets the open session.

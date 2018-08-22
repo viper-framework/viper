@@ -2,9 +2,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import sys
 import argparse
-import inspect
 import viper.common.out as out
 from viper.core.config import console_output
 from viper.common.exceptions import ArgumentErrorCallback

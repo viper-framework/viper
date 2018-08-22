@@ -6,6 +6,7 @@ import os
 
 from viper.common.abstracts import Command
 
+
 class Clear(Command):
     """
     This command simply clears the shell.

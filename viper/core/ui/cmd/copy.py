@@ -10,6 +10,7 @@ from viper.core.project import __project__
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 
+
 class Copy(Command):
     """
     This command copies the opened file into another project. Analysis, Notes

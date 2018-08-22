@@ -45,6 +45,7 @@ def load_commands():
 
     return plugins
 
+
 def load_modules():
     # Import modules package.
     import viper.modules as modules
@@ -75,5 +76,6 @@ def load_modules():
                                                       subparser_args=get_argparse_subparser_actions(member_object().parser))
 
     return plugins
+
 
 __modules__ = load_modules()

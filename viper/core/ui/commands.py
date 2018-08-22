@@ -5,6 +5,7 @@
 from viper.core.plugins import load_commands
 from viper.core.database import Database
 
+
 class Commands(object):
     output = []
 

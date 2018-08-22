@@ -10,12 +10,14 @@ from viper.common.abstracts import Command
 from viper.core.archiver import Compressor
 from viper.core.session import __sessions__
 
+
 def get_password_twice():
     password = getpass.getpass('Password: ')
     if password == getpass.getpass('confirm Password: '):
         return password
     else:
         return None
+
 
 class Export(Command):
     """

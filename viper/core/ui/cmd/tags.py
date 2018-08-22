@@ -3,9 +3,9 @@
 # See the file 'LICENSE' for copying permission.
 
 from viper.common.abstracts import Command
-from viper.common.utils import convert_size
 from viper.core.database import Database
 from viper.core.session import __sessions__
+
 
 class Tags(Command):
     """

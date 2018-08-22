@@ -14,6 +14,7 @@ from viper.core.session import __sessions__
 from viper.core.project import __project__
 from viper.core.config import __config__
 
+
 class Projects(Command):
     """
     This command retrieves a list of all projects.

@@ -10,6 +10,7 @@ from viper.core.database import Database
 from viper.core.config import __config__
 from viper.core.project import __project__
 
+
 class About(Command):
     """
     This command prints some useful information regarding the running

@@ -5,6 +5,7 @@
 from viper.common.abstracts import Command
 from viper.core.session import __sessions__
 
+
 class Info(Command):
     """
     This command returns information on the open session. It returns details

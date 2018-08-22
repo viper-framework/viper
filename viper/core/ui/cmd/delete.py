@@ -9,6 +9,7 @@ from viper.core.session import __sessions__
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
 
+
 class Delete(Command):
     """
     This command deletes the currently opened file (only if it's stored in

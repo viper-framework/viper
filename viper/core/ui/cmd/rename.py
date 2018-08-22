@@ -7,6 +7,7 @@ from viper.common.colors import bold
 from viper.core.database import Database
 from viper.core.session import __sessions__
 
+
 class Rename(Command):
     """
     This command renames the currently opened file in the database.

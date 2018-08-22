@@ -9,6 +9,7 @@ from viper.common.colors import bold
 from viper.core.session import __sessions__
 from viper.core.database import Database
 
+
 class Analysis(Command):
     """
     This command allows you to view the stored output from modules that have been run

@@ -4,7 +4,9 @@
 
 from viper.common.abstracts import Command
 from viper.core.database import Database
+from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
+
 
 class Parent(Command):
     """

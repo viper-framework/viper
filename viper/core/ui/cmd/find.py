@@ -6,6 +6,7 @@ from viper.common.abstracts import Command
 from viper.core.database import Database
 from viper.core.session import __sessions__
 
+
 class Find(Command):
     """
     This command is used to search for files in the database.
