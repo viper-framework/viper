@@ -145,7 +145,7 @@ class TestCommands:
         p.open("default")
 
     def test_export(self, capsys):
-        self.cmd['exports']['obj']('-h')
+        self.cmd['export']['obj']('-h')
         out, err = capsys.readouterr()
         assert re.search("usage: export \[-h\] .*", out)
 

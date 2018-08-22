@@ -7,6 +7,7 @@ import json
 from viper.common.abstracts import Command
 from viper.common.colors import bold
 from viper.core.session import __sessions__
+from viper.core.database import Database
 
 class Analysis(Command):
     """
@@ -34,6 +35,8 @@ class Analysis(Command):
         if not __sessions__.is_set():
             self.log('error', "No open session. This command expects a file to be open.")
             return
+
+        db = Database()
 
         # check if the file is already stores, otherwise exit
         malware = db.find(key='sha256', value=__sessions__.current.file.sha256)

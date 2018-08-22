@@ -5,6 +5,7 @@
 from viper.common.abstracts import Command
 from viper.core.session import __sessions__
 from viper.core.project import __project__
+from viper.core.database import Database
 
 class Copy(Command):
     """
@@ -42,6 +43,8 @@ class Copy(Command):
             src_project = "default"
         else:
             src_project = __project__.name
+
+        db = Database()
 
         db.copied_id_sha256 = []
         res = db.copy(__sessions__.current.file.id,
