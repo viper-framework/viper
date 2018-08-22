@@ -57,6 +57,12 @@ class Project(object):
         self.name = name
         self.path = path
 
+    def close(self):
+        # We "close" it and switch to default, if it isn't default already.
+        if self.name != 'default':
+            self.path = self.base_path
+            self.name = None
+
     def get_path(self):
         if self.path and os.path.exists(self.path):
             return self.path

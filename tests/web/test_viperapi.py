@@ -10,8 +10,7 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIRequestFactory, APIClient
 
-from viper.core.ui import commands
-
+from viper.core.plugins import load_commands
 
 # import requests
 #
@@ -37,6 +36,8 @@ except ImportError:
 
 
 class ViperAPIv3Test(TestCase):
+    cmd = load_commands()
+
     def setUp(self):
         self.factory = APIRequestFactory()
         self.client = APIClient()
@@ -48,21 +49,21 @@ class ViperAPIv3Test(TestCase):
     def setup_method(self, method):
         """setUp by adding clean file"""
         # create api_test
-        commands.Projects().run('-s', 'api_test')
-        commands.Open().run('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
-        commands.Store().run()
+        self.cmd['projects']['obj']('-s', 'api_test')
+        self.cmd['open']['obj']('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
+        self.cmd['store']['obj']()
 
     def teardown_method(self, method):
         """clean all files"""
-        commands.Projects().run('-s', 'api_test')
-        commands.Close().run()
+        self.cmd['projects']['obj']('-s', 'api_test')
+        self.cmd['close']['obj']()
 
         if sys.version_info <= (3, 0):
-            in_fct = 'viper.core.ui.commands.input'
+            in_fct = 'builtins.raw_input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
-            commands.Delete().run('-a')
+            self.cmd['delete']['obj']('-a')
 
     def _require_login(self):
         self.client.login(username='testuser', password='testing')

@@ -13,8 +13,8 @@ from hashlib import sha256
 import pytest
 from tests.conftest import FIXTURE_DIR
 
+from viper.core.plugins import load_commands
 from viper.core.session import __sessions__
-from viper.core.ui import commands
 from viper.common.exceptions import Python2UnsupportedUnicode
 
 try:
@@ -25,6 +25,8 @@ except ImportError:
 
 
 class TestUseCases:
+
+    cmd = load_commands()
 
     def teardown_method(self):
         __sessions__.close()
@@ -37,14 +39,14 @@ class TestUseCases:
     def test_store(self, capsys, filename, name):
         # use cleandir fixture operate on clean ./ local dir
         copyfile(os.path.join(FIXTURE_DIR, filename), os.path.join(".", os.path.basename(filename)))
-        commands.Open().run('-f', os.path.join(".", os.path.basename(filename)))
-        commands.Store().run()
+        self.cmd['open']['obj']('-f', os.path.join(".", os.path.basename(filename)))
+        self.cmd['store']['obj']()
         if sys.version_info <= (3, 0):
-            in_fct = 'viper.core.ui.commands.input'
+            in_fct = 'builtins.raw_input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
-            commands.Delete().run()
+            self.cmd['delete']['obj']()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -63,14 +65,14 @@ class TestUseCases:
     def test_store_unicode_py2(self, capsys, filename, name):
         # use cleandir fixture operate on clean ./ local dir
         copyfile(os.path.join(FIXTURE_DIR, filename), os.path.join(".", os.path.basename(filename)))
-        commands.Open().run('-f', os.path.join(".", os.path.basename(filename)))
-        commands.Store().run()
+        self.cmd['open']['obj']('-f', os.path.join(".", os.path.basename(filename)))
+        self.cmd['store']['obj']()
         if sys.version_info <= (3, 0):
-            in_fct = 'viper.core.ui.commands.input'
+            in_fct = 'builtins.raw_input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
-            commands.Delete().run()
+            self.cmd['delete']['obj']()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -88,14 +90,14 @@ class TestUseCases:
     def test_store_unicode_py3(self, capsys, filename, name):
         # use cleandir fixture operate on clean ./ local dir
         copyfile(os.path.join(FIXTURE_DIR, filename), os.path.join(".", os.path.basename(filename)))
-        commands.Open().run('-f', os.path.join(".", os.path.basename(filename)))
-        commands.Store().run()
+        self.cmd['open']['obj']('-f', os.path.join(".", os.path.basename(filename)))
+        self.cmd['store']['obj']()
         if sys.version_info <= (3, 0):
-            in_fct = 'viper.core.ui.commands.input'
+            in_fct = 'builtins.raw_input'
         else:
             in_fct = 'builtins.input'
         with mock.patch(in_fct, return_value='y'):
-            commands.Delete().run()
+            self.cmd['delete']['obj']()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -109,9 +111,9 @@ class TestUseCases:
     @pytest.mark.xfail(raises=Python2UnsupportedUnicode)
     @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
     def test_store_all_py2(self, capsys, filename):
-        commands.Open().run('-f', os.path.join(FIXTURE_DIR, filename))
-        commands.Store().run()
-        commands.Store().run('-f', FIXTURE_DIR)
+        self.cmd['open']['obj']('-f', os.path.join(FIXTURE_DIR, filename))
+        self.cmd['store']['obj']()
+        self.cmd['store']['obj']('-f', FIXTURE_DIR)
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -122,9 +124,9 @@ class TestUseCases:
     @pytest.mark.skipif(sys.version_info < (3, 3), reason="requires at least python3.3")
     @pytest.mark.parametrize("filename", ["chromeinstall-8u31.exe"])
     def test_store_all_py3(self, capsys, filename):
-        commands.Open().run('-f', os.path.join(FIXTURE_DIR, filename))
-        commands.Store().run()
-        commands.Store().run('-f', FIXTURE_DIR)
+        self.cmd['open']['obj']('-f', os.path.join(FIXTURE_DIR, filename))
+        self.cmd['store']['obj']()
+        self.cmd['store']['obj']('-f', FIXTURE_DIR)
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -136,9 +138,9 @@ class TestUseCases:
     def test_open(self, capsys, filename):
         with open(os.path.join(FIXTURE_DIR, filename), 'rb') as f:
             hashfile = sha256(f.read()).hexdigest()
-        commands.Open().run(hashfile)
-        commands.Info().run()
-        commands.Close().run()
+        self.cmd['open']['obj'](hashfile)
+        self.cmd['info']['obj']()
+        self.cmd['close']['obj']()
         out, err = capsys.readouterr()
         lines = out.split("\n")
 
@@ -150,13 +152,13 @@ class TestUseCases:
         with open(os.path.join(FIXTURE_DIR, filename), 'rb') as f:
             data = f.read()
             hashfile_sha = sha256(data).hexdigest()
-        commands.Find().run('all')
-        commands.Find().run('sha256', hashfile_sha)
-        commands.Open().run('-l', '1')
-        commands.Close().run()
-        commands.Tags().run('-a', 'blah')
-        commands.Find().run('-t')
-        commands.Tags().run('-d', 'blah')
+        self.cmd['find']['obj']('all')
+        self.cmd['find']['obj']('sha256', hashfile_sha)
+        self.cmd['open']['obj']('-l', '1')
+        self.cmd['close']['obj']()
+        self.cmd['tags']['obj']('-a', 'blah')
+        self.cmd['find']['obj']('-t')
+        self.cmd['tags']['obj']('-d', 'blah')
         out, err = capsys.readouterr()
 
         assert re.search(r".*EICAR.com.*", out)
@@ -164,7 +166,7 @@ class TestUseCases:
         assert re.search(r".*Tag.*|.*# Entries.*", out)
 
     def test_stats(self, capsys):
-        commands.Stats().run()
+        self.cmd['stats']['obj']()
         out, err = capsys.readouterr()
 
         assert re.search(r".*Projects.*Name | Count.*", out)

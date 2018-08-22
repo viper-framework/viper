@@ -23,6 +23,26 @@ class ArgumentParser(argparse.ArgumentParser):
             raise ArgumentErrorCallback(message)
 
 
+class Command(object):
+    cmd = ""
+    description = ""
+    command_line = []
+    args = None
+    authors = []
+    output = []
+    fs_path_completion = False
+
+    def __init__(self):
+        self.parser = argparse.ArgumentParser(prog=self.cmd, description=self.description)
+
+    def log(self, event_type, event_data):
+        self.output.append(dict(
+            type=event_type,
+            data=event_data
+        ))
+        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
+
+
 class Module(object):
     cmd = ''
     description = ''
