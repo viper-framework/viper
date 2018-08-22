@@ -2,6 +2,8 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
+
 from viper.common.abstracts import Command
 from viper.core.session import __sessions__
 from viper.core.project import __project__
