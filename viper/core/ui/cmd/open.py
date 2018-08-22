@@ -13,14 +13,13 @@ from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
 
 class Open(Command):
-    ##
-    # OPEN
-    #
-    # This command is used to open a session on a given file.
-    # It either can be an external file path, or a SHA256 hash of a file which
-    # has been previously imported and stored.
-    # While the session is active, every operation and module executed will be
-    # run against the file specified.
+    """
+    This command is used to open a session on a given file.
+    It either can be an external file path, or a SHA256 hash of a file which
+    has been previously imported and stored.
+    While the session is active, every operation and module executed will be
+    run against the file specified.
+    """
     cmd = "open"
     description = "Open a file"
     fs_path_completion = True

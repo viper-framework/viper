@@ -9,11 +9,10 @@ from viper.core.session import __sessions__
 from viper.core.database import Database
 
 class Delete(Command):
-    ##
-    # DELETE
-    #
-    # This command deletes the currently opened file (only if it's stored in
-    # the local repository) and removes the details from the database
+    """
+    This command deletes the currently opened file (only if it's stored in
+    the local repository) and removes the details from the database
+    """
     cmd = "delete"
     description = "Delete the opened file"
 

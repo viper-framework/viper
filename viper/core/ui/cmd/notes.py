@@ -11,11 +11,10 @@ from viper.core.database import Database
 from viper.core.session import __sessions__
 
 class Notes(Command):
-    ##
-    # NOTES
-    #
-    # This command allows you to view, add, modify and delete notes associated
-    # with the currently opened file.
+    """
+    This command allows you to view, add, modify and delete notes associated
+    with the currently opened file.
+    """
     cmd = "notes"
     description = "View, add and edit notes on the opened file"
 

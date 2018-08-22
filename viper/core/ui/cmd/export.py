@@ -18,10 +18,9 @@ def get_password_twice():
         return None
 
 class Export(Command):
-    ##
-    # EXPORT
-    #
-    # This command will export the current session to file or zip.
+    """
+    This command will export the current session to file or zip.
+    """
     cmd = "export"
     description = "Export the current session to file or zip"
     fs_path_completion = True

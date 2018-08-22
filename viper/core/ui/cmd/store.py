@@ -18,11 +18,10 @@ from viper.core.storage import store_sample, get_sample_path
 from viper.common.autorun import autorun_module
 
 class Store(Command):
-    ##
-    # STORE
-    #
-    # This command stores the opened file in the local repository and tries
-    # to store details in the database.
+    """
+    This command stores the opened file in the local repository and tries
+    to store details in the database.
+    """
     cmd = "store"
     description = "Store the opened file to the local repository"
     fs_path_completion = True

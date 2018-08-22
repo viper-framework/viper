@@ -6,12 +6,11 @@ from viper.common.abstracts import Command
 from viper.core.session import __sessions__
 
 class Close(Command):
-    ##
-    # CLOSE
-    #
-    # This command resets the open session.
-    # After that, all handles to the opened file should be closed and the
-    # shell should be restored to the default prompt.
+    """
+    This command resets the open session.
+    After that, all handles to the opened file should be closed and the
+    shell should be restored to the default prompt.
+    """
     cmd = "close"
     description = "Close the current session"
 

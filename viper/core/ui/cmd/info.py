@@ -6,12 +6,11 @@ from viper.common.abstracts import Command
 from viper.core.session import __sessions__
 
 class Info(Command):
-    ##
-    # INFO
-    #
-    # This command returns information on the open session. It returns details
-    # on the file (e.g. hashes) and other information that might available from
-    # the database.
+    """
+    This command returns information on the open session. It returns details
+    on the file (e.g. hashes) and other information that might available from
+    the database.
+    """
     cmd = "info"
     description = "Show information on the opened file"
 

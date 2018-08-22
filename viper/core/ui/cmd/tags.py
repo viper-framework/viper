@@ -8,10 +8,9 @@ from viper.core.database import Database
 from viper.core.session import __sessions__
 
 class Tags(Command):
-    ##
-    # TAGS
-    #
-    # This command is used to modify the tags of the opened file.
+    """
+    This command is used to modify the tags of the opened file.
+    """
     cmd = "tags"
     description = "Modify tags of the opened file"
 

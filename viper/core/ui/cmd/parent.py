@@ -7,10 +7,9 @@ from viper.core.database import Database
 from viper.core.session import __sessions__
 
 class Parent(Command):
-    ##
-    # PARENT
-    #
-    # This command is used to view or edit the parent child relationship between files.
+    """
+    This command is used to view or edit the parent child relationship between files.
+    """
     cmd = "parent"
     description = "Add or remove a parent file"
 

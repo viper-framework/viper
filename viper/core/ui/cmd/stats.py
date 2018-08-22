@@ -10,10 +10,9 @@ from viper.core.database import Database
 from viper.core.session import __sessions__
 
 class Stats(Command):
-    ##
-    # STATS
-    #
-    # This command allows you to generate basic statistics for the stored files.
+    """
+    This command allows you to generate basic statistics for the stored files.
+    """
     cmd = "stats"
     description = "Viper Collection Statistics"
 

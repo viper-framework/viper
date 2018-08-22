@@ -9,11 +9,10 @@ from viper.common.colors import bold
 from viper.core.session import __sessions__
 
 class Analysis(Command):
-    ##
-    # ANALYSIS
-    #
-    # This command allows you to view the stored output from modules that have been run
-    # with the currently opened file.
+    """
+    This command allows you to view the stored output from modules that have been run
+    with the currently opened file.
+    """
     cmd = "analysis"
     description = "View the stored analysis"
 

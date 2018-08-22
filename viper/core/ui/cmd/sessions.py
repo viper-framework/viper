@@ -6,10 +6,9 @@ from viper.common.abstracts import Command
 from viper.core.session import __sessions__
 
 class Sessions(Command):
-    ###
-    # SESSION
-    #
-    # This command is used to list and switch across all the opened sessions.
+    """
+    This command is used to list and switch across all the opened sessions.
+    """
     cmd = "sessions"
     description = "List or switch sessions"
 

@@ -10,11 +10,10 @@ from viper.common.colors import bold
 from viper.core.session import __sessions__
 
 class New(Command):
-    ##
-    # NEW
-    #
-    # This command is used to create a new session on a new file,
-    # useful for copy & paste of content like Email headers
+    """
+    This command is used to create a new session on a new file,
+    useful for copy & paste of content like Email headers.
+    """
     cmd = "new"
     description = "Create new file"
 

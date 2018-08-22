@@ -7,10 +7,9 @@ import os
 from viper.common.abstracts import Command
 
 class Clear(Command):
-    ##
-    # CLEAR
-    #
-    # This command simply clears the shell.
+    """
+    This command simply clears the shell.
+    """
     cmd = "clear"
     description = "Clear the console"
 

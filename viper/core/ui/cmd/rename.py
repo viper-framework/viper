@@ -8,10 +8,9 @@ from viper.core.database import Database
 from viper.core.session import __sessions__
 
 class Rename(Command):
-    ##
-    # RENAME
-    #
-    # This command renames the currently opened file in the database.
+    """
+    This command renames the currently opened file in the database.
+    """
     cmd = "rename"
     description = "Rename the file in the database"
 

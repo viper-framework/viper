@@ -15,11 +15,10 @@ from viper.core.project import __project__
 from viper.core.config import __config__
 
 class Projects(Command):
-    ##
-    # PROJECTS
-    #
-    # This command retrieves a list of all projects.
-    # You can also switch to a different project.
+    """
+    This command retrieves a list of all projects.
+    You can also switch to a different project.
+    """
     cmd = "projects"
     description = "List or switch existing projects"
 

@@ -7,12 +7,11 @@ from viper.core.session import __sessions__
 from viper.core.project import __project__
 
 class Copy(Command):
-    ##
-    # COPY
-    #
-    # This command copies the opened file into another project. Analysis, Notes
-    # and Tags are - by default - also copies. Children can (optionally) also
-    # be copied (recursively).
+    """
+    This command copies the opened file into another project. Analysis, Notes
+    and Tags are - by default - also copies. Children can (optionally) also
+    be copied (recursively).
+    """
     cmd = "copy"
     description = "Copy opened file(s) into another project"
 
