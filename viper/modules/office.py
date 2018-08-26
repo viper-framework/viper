@@ -428,7 +428,7 @@ class Office(Module):
 
         # Check for old office formats
         try:
-            doctype = ooxml.get_type(filepath)
+            doctype = ooxml.get_type(__sessions__.current.file.path)
             OOXML_FILE = True
         except Exception as exc:
             OOXML_FILE = False
@@ -497,7 +497,7 @@ class Office(Module):
     def get_dde(self, file_path):
         try:
             dde_result = msodde.process_file(file_path, 'only dde')
-            dde_fields = [[i+1, x.strip()] for i,x in enumerate(dde_result.split('\n'))]
+            dde_fields = [[i+1, x.strip()] for i, x in enumerate(dde_result.split('\n'))]
             if (len(dde_fields) == 1) and (dde_fields[0][1] == ''):
                 self.log('info', "No DDE Links Detected.")
             else:
