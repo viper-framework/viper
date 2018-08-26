@@ -21,6 +21,8 @@ from io import BytesIO, open
 
 try:
     import olefile
+    from oletools import msodde
+    from oletools import ooxml
 
     if sys.version_info >= (3, 0):
         from oletools.olevba3 import VBA_Parser, VBA_Scanner
@@ -50,6 +52,7 @@ class Office(Module):
         self.parser.add_argument('-e', '--export', metavar='dump_path', help='Export all objects')
         self.parser.add_argument('-v', '--vba', action='store_true', help='Analyse Macro Code')
         self.parser.add_argument('-c', '--code', metavar="code_path", help='Export Macro Code to File')
+        self.parser.add_argument('-d', '--dde', action='store_true', help='Get DDE Links')
 
     ##
     # HELPER FUNCTIONS
@@ -423,6 +426,25 @@ class Office(Module):
         else:
             MHT_FILE = False
 
+        # Check for old office formats
+        try:
+            doctype = ooxml.get_type(filepath)
+            OOXML_FILE = True
+        except Exception as exc:
+            OOXML_FILE = False
+
+        # set defaults
+        XLSX_FILE = False
+        EXCEL_XML_FILE = False
+        DOCX_FILE = False
+        if OOXML_FILE is True:
+            if doctype == ooxml.DOCTYPE_EXCEL:
+                XLSX_FILE = True
+            elif doctype in (ooxml.DOCTYPE_EXCEL_XML, ooxml.DOCTYPE_EXCEL_XML2003):
+                EXCEL_XML_FILE = True
+            elif doctype in (ooxml.DOCTYPE_WORD_XML, ooxml.DOCTYPE_WORD_XML2003):
+                DOCX_FILE = True
+
         # Tests to check for valid Office structures.
         OLE_FILE = olefile.isOleFile(__sessions__.current.file.path)
         XML_FILE = zipfile.is_zipfile(__sessions__.current.file.path)
@@ -433,6 +455,12 @@ class Office(Module):
         elif OLD_XML:
             pass
         elif MHT_FILE:
+            pass
+        elif DOCX_FILE:
+            pass
+        elif EXCEL_XML_FILE:
+            pass
+        elif XLSX_FILE:
             pass
         else:
             self.log('error', "Not a valid office document")
@@ -460,6 +488,22 @@ class Office(Module):
                 self.log('error', "Not an OLE file")
         elif self.args.vba or self.args.code:
             self.parse_vba(self.args.code)
+        elif self.args.dde:
+            self.get_dde(__sessions__.current.file.path)
         else:
             self.log('error', 'At least one of the parameters is required')
             self.usage()
+
+    def get_dde(self, file_path):
+        try:
+            dde_result = msodde.process_file(file_path, 'only dde')
+            dde_fields = [[i+1, x.strip()] for i,x in enumerate(dde_result.split('\n'))]
+            if (len(dde_fields) == 1) and (dde_fields[0][1] == ''):
+                self.log('info', "No DDE Links Detected.")
+            else:
+                self.log('success', "DDE Links Detected.")
+                header = ['#', 'DDE']
+                self.log('table', dict(header=header,
+                                       rows=dde_fields))
+        except Exception as exc:
+            self.log('error', "Unable to Process File")
