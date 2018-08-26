@@ -1,8 +1,6 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-from __future__ import unicode_literals  # make all strings unicode in python2
-
 import logging
 import logging.handlers
 
