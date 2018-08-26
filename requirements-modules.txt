@@ -37,8 +37,8 @@ yara-python==3.7.0
 
 # PE module
 git+https://github.com/viper-framework/pefile.git#egg=pefile
-pyexiftool==0.1
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
+pyexiftool==0.1
 
 # Office module
 olefile==0.44
