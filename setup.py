@@ -74,7 +74,9 @@ setup(
     package_data=get_package_data('viper'),
     install_requires=requires,
     dependency_links=links,
-    data_files=[('/', ['viper.conf.sample'])],
+    data_files=[('/', ['viper.conf.sample']),
+                ('/usr/share/viper/data/yara/', ['data/yara/*.yara']),
+                ('/usr/share/viper/data/peid/', ['data/peid/UserDB.TXT'])],
     zip_safe=False,
 
     tests_require=['pytest'],
