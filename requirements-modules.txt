@@ -36,8 +36,8 @@ xxxswf==2.0.0
 yara-python==3.7.0
 
 # PE module
-git+https://github.com/viper-framework/pefile.git@master#egg=pefile
-git+https://github.com/smarnach/pyexiftool.git@0.1#egg=pyexiftool
+git+https://github.com/viper-framework/pefile.git#egg=pefile
+git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 
 # Office module
 olefile==0.44
@@ -49,14 +49,14 @@ git+https://github.com/decalage2/oletools.git#egg=oletools
 androguard==3.2.0
 
 # PE module (verify sigs)
-git+https://github.com/sebdraven/verify-sigs.git@a94e78c1bc7256a76a84f51049d73517f359b979#egg=verify-sigs
+git+https://github.com/sebdraven/verify-sigs.git#egg=verify-sigs
 
 # Scraper
-git+https://github.com/viper-framework/ScrapySplashWrapper.git@master#egg=ScrapySplashWrapper
+git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
 
 # MISP
-git+https://github.com/MISP/PyTaxonomies.git@master#egg=PyTaxonomies
-git+https://github.com/MISP/PyMISPGalaxies.git@master#egg=PyMISPGalaxies
+git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
+git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
 pymisp[fileobjects,virustotal] >= 2.4.85.1
 
 # Joe Sandbox module
