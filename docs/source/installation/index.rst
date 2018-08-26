@@ -9,7 +9,7 @@ Before proceeding, you should make sure you have the basic tools installed to be
 
 In order to have support for certain modules, you will need to install the following dependencies too before proceeding::
 
-    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev
+    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev p7zip-full
 
 To install Viper::
 
