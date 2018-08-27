@@ -1,0 +1,15 @@
+# Scraper
+git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=Scrapy
+# PE module (verify sigs)
+git+https://github.com/sebdraven/verify-sigs.git#egg=verify-sigs
+git+https://github.com/viper-framework/pefile.git#egg=pefile
+
+# Office module
+git+https://github.com/decalage2/oletools.git#egg=oletools
+
+# MISP
+git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
+git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
+
+# EXIF Module
+git+https://github.com/smarnach/pyexiftool.git#egg=PyExifTool

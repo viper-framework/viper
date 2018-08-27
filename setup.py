@@ -4,6 +4,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import pip
 from setuptools import setup
 
 try:
@@ -40,13 +41,14 @@ def get_package_data(package):
 
 
 # collect requirements for `install_requires` setting
-requirement_files = ['requirements-base.txt', "requirements-modules.txt", "requirements-web.txt"]
+requirement_files = ['requirements-base.txt',
+                     "requirements-modules.txt",
+                     "requirements-web.txt"]
 
 links = []
 requires = []
 for req_file in requirement_files:
     requirements = parse_requirements(req_file, session=False)
-
     for item in requirements:
         # we want to handle package names and also repo urls
         if getattr(item, 'url', None):   # older pip has url
@@ -55,6 +57,20 @@ for req_file in requirement_files:
             links.append(str(item.link))
         if item.req:
             requires.append(str(item.req))
+
+# TODO(frennkie) Evil Hack!
+print("===================================================")
+print("Starting installation of dependencies from Github..")
+print("===================================================")
+
+for idx, link in enumerate(links, 1):
+    print("{} - Source: {}".format(idx, link))
+    pip.main(['install', link])
+
+data_files = [('/usr/share/viper/', ['viper.conf.sample']),
+              ('/usr/share/viper/peid/', ['data/peid/UserDB.TXT'])]
+for rule_name in os.listdir('data/yara/'):
+    data_files.append(('/usr/share/viper/yara/', ['data/yara/{0}'.format(rule_name)]))
 
 description = "Binary Analysis & Management Framework"
 
@@ -73,10 +89,8 @@ setup(
     packages=get_packages('viper'),
     package_data=get_package_data('viper'),
     install_requires=requires,
-    dependency_links=links,
-    data_files=[('/', ['viper.conf.sample']),
-                ('/usr/share/viper/data/yara/', ['data/yara/*.yara']),
-                ('/usr/share/viper/data/peid/', ['data/peid/UserDB.TXT'])],
+    dependency_links=[],
+    data_files=data_files,
     zip_safe=False,
 
     tests_require=['pytest'],
