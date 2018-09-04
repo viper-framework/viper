@@ -122,6 +122,12 @@ The ``delete`` command you simply remove the currently opened file from the loca
     shell >
     
     
+exit, quit
+==========
+
+Exit Viper
+
+
 export
 ======
 
@@ -165,6 +171,11 @@ For example::
     +---+---------------+-----------------------+----------------------------------+
 
 
+help
+====
+
+Show help message
+
 info
 ====
 
@@ -188,6 +199,52 @@ The ``info`` command will return you some basic information on the file you curr
     | CRC32  | 4090D32C                                                                                                                         |
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
     
+
+new
+===
+
+Create new file
+
+
+notes
+=====
+
+During an analysis you might want to keep track of your discoveries and results. Instead of having unorganized text files lying around, Viper allows you to create notes directly linked to the relevant files and even search across them.
+When you have a file opened, you can add any number of text notes associated to it through the ``notes`` command. This is the help message::
+
+    usage: notes [-h] [-l] [-a] [-e <note id>] [-d <note id>]
+
+    Options:
+        --help (-h) Show this help message
+        --list (-h) List all notes available for the current file
+        --add (-a)  Add a new note to the current file
+        --view (-v) View the specified note
+        --edit (-e) Edit an existing note
+        --delete (-d)   Delete an existing note
+
+As shown in the help message, you can list add a note::
+
+    shell poisonivy.exe > notes --add
+    Enter a title for the new note:
+
+Now you should enter a title, when you proceed Viper will open your default editor to edit the body of the note. Once done and the editor is closed, the new note will be stored::
+
+    [*] New note with title "Domains" added to the current file
+
+Now you can see the new note in the list and view its content::
+
+    shell poisonivy.exe > notes --list
+    +----+---------+
+    | ID | Title   |
+    +----+---------+
+    | 1  | Domains |
+    +----+---------+
+    shell poisonivy.exe > notes --view 1
+    [*] Title: Domains
+    [*] Body:
+    - poisonivy.malicious.tld
+    - poisonivy2.malicious.tld
+
 
 open
 ====
@@ -244,6 +301,11 @@ Through the ``open`` command you can also directly open one of the entries from 
     shell poisonivy.exe >
 
 
+parent
+======
+
+Add or remove a parent file
+
 projects
 ========
 
@@ -294,6 +356,11 @@ You can eventually switch to a different one::
 Note that if you specify a name of a project that doesn't exist to the ``--switch`` parameter, Viper will create that project and open it nevertheless.
 
 
+rename
+======
+
+Rename the file in the database
+
 sessions
 ========
 
@@ -321,6 +388,11 @@ An example of execution is the following::
     [*] Switched to session #2 on ~/viper/binaries/6/7/6/a/676a818365c573e236245e8182db87ba1bc021c5d8ee7443b9f673f26e7fd7d1
     shell zeus.exe >
 
+
+stats
+=====
+
+Viper Collection Statistics
 
 store
 =====
@@ -354,46 +426,6 @@ If you want, you can already specify a list of comma separated tags to apply to 
 Following is an example::
 
     shell > store --folder /tmp/malware --file-type PE32 --file-size 10000000 --file-name apt_* --tags apt,trojan
-
-
-notes
-=====
-
-During an analysis you might want to keep track of your discoveries and results. Instead of having unorganized text files lying around, Viper allows you to create notes directly linked to the relevant files and even search across them.
-When you have a file opened, you can add any number of text notes associated to it through the ``notes`` command. This is the help message::
-
-    usage: notes [-h] [-l] [-a] [-e <note id>] [-d <note id>]
-
-    Options:
-        --help (-h) Show this help message
-        --list (-h) List all notes available for the current file
-        --add (-a)  Add a new note to the current file
-        --view (-v) View the specified note
-        --edit (-e) Edit an existing note
-        --delete (-d)   Delete an existing note
-
-As shown in the help message, you can list add a note::
-
-    shell poisonivy.exe > notes --add
-    Enter a title for the new note:
-
-Now you should enter a title, when you proceed Viper will open your default editor to edit the body of the note. Once done and the editor is closed, the new note will be stored::
-
-    [*] New note with title "Domains" added to the current file
-
-Now you can see the new note in the list and view its content::
-
-    shell poisonivy.exe > notes --list
-    +----+---------+
-    | ID | Title   |
-    +----+---------+
-    | 1  | Domains |
-    +----+---------+
-    shell poisonivy.exe > notes --view 1
-    [*] Title: Domains
-    [*] Body:
-    - poisonivy.malicious.tld
-    - poisonivy2.malicious.tld
 
 
 tags
