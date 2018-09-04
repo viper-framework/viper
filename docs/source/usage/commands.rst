@@ -185,11 +185,19 @@ export
 
 The ``export`` command is used to export the currently opened file to the target path or archive name. You can zip up the file in a new archive too::
 
-    usage: export [-h] [-z] <path or archive name>
+    usage: export [-h] [-z] [-7] [-p] value
 
-    Options:
-        --help (-h) Show this help message
-        --zip (-z)  Export session in a zip archive
+    Export the current session to file or zip
+
+    positional arguments:
+        value           path or archive name
+
+    optional arguments:
+        -h, --help      show this help message and exit
+        -z, --zip       Export session in a zip archive (PW support: No)
+        -7, --sevenzip  Export session in a 7z archive (PW support: Yes)
+        -p, --password  Protect archive with a password (PW) if supported
+
 
 
 find
