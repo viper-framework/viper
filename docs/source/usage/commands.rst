@@ -361,7 +361,70 @@ Through the ``open`` command you can also directly open one of the entries from 
 parent
 ======
 
-Add or remove a parent file
+Add or remove a parent file.::
+
+    viper viper_docu_demo.txt > parent --h
+    usage: parent [-h] [-a SHA256] [-d] [-o]
+
+    Add or remove a parent file
+
+    optional arguments:
+        -h, --help            show this help message and exit
+        -a SHA256, --add SHA256
+                        Add parent file by sha256
+        -d, --delete          Delete Parent
+        -o, --open            Open The Parent
+
+To add a parent file for an file **parent -a** is used::
+
+        viper viper_docu_demo.txt > parent -a 749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8
+        [*] parent added to the currently opened file
+        [*] Refreshing session to update attributes...
+        [*] Session opened on       /home/viper/.viper/projects/demo/binaries/1/c/d/6/1cd63c1dc1004f9d43321be71fa05a4331083e85c500c7b8dade894d82358061
+         viper viper_docu_demo.txt > info
+        +----------+--------------------------------------------------------------------------------------------------------  --------------------------+
+        | Key      | Value                                                                                                                            |
+        +----------+----------------------------------------------------------------------------------------------------------------------------------+
+        | Name     | viper_docu_demo.txt                                                                                                              |
+        | Tags     |                                                                                                                                  |
+        | Path     | /home/viper/.viper/projects/demo/binaries/1/c/d/6/1cd63c1dc1004f9d43321be71fa05a4331083e85c500c7b8dade894d82358061            |
+        | Size     | 11                                                                                                                               |
+        | Type     | UTF-8 Unicode text                                                                                                               |
+        | Mime     | text/plain                                                                                                                       |
+        | MD5      | b6d4a40a6bb103123288f8baeef2069e                                                                                                 |
+        | SHA1     | 1a32142a4136c14f251d180353f7e24d2feafcf5                                                                                         |
+        | SHA256   | 1cd63c1dc1004f9d43321be71fa05a4331083e85c500c7b8dade894d82358061                                                                 |
+        | SHA512   | eac1f26077f774bfa179bb3bc3640657f844d1d37ba10f5ec95f1b5955a6f8a38d671306a112a73564c91b73ecf3aa790879df570b6cac452f8221f62571e66a |
+        | SSdeep   | 3:oEg:oEg                                                                                                                        |
+        | CRC32    | 49A098FC                                                                                                                         |
+        | Parent   | aasf.jpg - 749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8                                                      |
+        | Children |                                                                                                                                  |
+        +----------+----------------------------------------------------------------------------------------------------------------------------------+
+
+To open a session for the parent file **parrent -o** is used (note the **children** section)::
+
+    viper viper_docu_demo.txt > parent -o
+    [*] Session opened on   /home/viper/.viper/projects/demo/binaries/7/4/9/b/749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8
+    demo viper aasf.jpg > info
+    +----------+----------------------------------------------------------------------------------------------------------------------------------+
+    | Key      | Value                                                                                                                            |
+    +----------+----------------------------------------------------------------------------------------------------------------------------------+
+    | Name     | aasf.jpg                                                                                                                         |
+    | Tags     |                                                                                                                                  |
+    | Path     | /home/viper/.viper/projects/demo/binaries/7/4/9/b/749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8            |
+    | Size     | 1120                                                                                                                             |
+    | Type     | data                                                                                                                             |
+    | Mime     | application/octet-stream                                                                                                         |
+    |   MD5      | 6296ff1a94c30a68d18748e7948c3ffa                                                                                                 |
+    | SHA1     | bae357a94bffb3f33cae6f2610822f4008fa29e2                                                                                         |
+    | SHA256   | 749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8                                                                 |
+    | SHA512   | e1408441b83346bb23a8929d86610cc7ac164a3d9b1e963e14b1b6588779766b60fb13c3b10f801052b669a244c659012c4250fca8c221fed906c56cce67aec7 |
+    | SSdeep   | 24:k3McZOX52TnV7/d1QLykkmjoOGBfBKWDZ2hy3tkRCoNplXNkye13N0B0rLO:k3McE8V7jQnjVG9wYcs3tVOXNky6N0KG                                  |
+    | CRC32    | 220A0DE7                                                                                                                         |
+    | Parent   |                                                                                                                                  |
+    | Children | 1cd63c1dc1004f9d43321be71fa05a4331083e85c500c7b8dade894d82358061,                                                                |
+    +----------+----------------------------------------------------------------------------------------------------------------------------------+
+
 
 projects
 ========
