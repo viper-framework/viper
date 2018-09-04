@@ -45,8 +45,8 @@ The **about** command can be used to display some useful information regarding t
     +----------------+-------------------------------------------------+
     | About          |                                                 |
     +----------------+-------------------------------------------------+
-    | Viper Version  | 1.3-dev                                         |
-    | Python Version | 3.4.3                                           |
+    | Viper Version  | 2.0-dev                                         |
+    | Python Version | 3.6.5                                           |
     | Homepage       | https://viper.li                                |
     | Issue Tracker  | https://github.com/viper-framework/viper/issues |
     +----------------+-------------------------------------------------+
@@ -54,6 +54,7 @@ The **about** command can be used to display some useful information regarding t
     | Configuration            |                                                |
     +--------------------------+------------------------------------------------+
     | Configuration File       | /home/user/.viper/viper.conf                   |
+    | Active Project           | demo                                           |
     | Storage Path             | /home/user/.viper                              |
     | Current Project Database | Engine(sqlite:////home/user/.viper/viper.db)   |
     +--------------------------+------------------------------------------------+
