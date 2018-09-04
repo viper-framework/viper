@@ -205,11 +205,21 @@ find
 
 In order to quickly recover files you previously stored in the local repository, you can use the ``find`` command. Following is its help message::
 
-    usage: find [-h] [-t] <all|latest|name|md5|sha256|tag|note> <value>
+        usage: find [-h] [-t]
+            [{all,latest,name,type,mime,md5,sha1,sha256,tag,note,any,ssdeep}]
+            [value]
 
-    Options:
-        --help (-h) Show this help message
-        --tags (-t) List tags
+        Find a file
+
+        positional arguments:
+            {all,latest,name,type,mime,md5,sha1,sha256,tag,note,any,ssdeep}
+                        Where to search.
+            value         String to search.
+
+        optional arguments:
+            -h, --help            show this help message and exit
+            -t, --tags            List available tags and quit
+
 
 This command expects a key and eventually a value. As shown by the help message, these are the available keys:
 
@@ -220,6 +230,8 @@ This command expects a key and eventually a value. As shown by the help message,
     * **sha256** *(required value)*: search by sha256 hash.
     * **tag** *(required value)*: search by tag name.
     * **note** *(required value)*: find files that possess notes matching the given pattern.
+    * **any** *(required value)*: find files that possess any matching the given pattern.
+    * **ssdeep** *(required value)*: find files that possess any matching the given sseep value.
 
 For example::
 
@@ -256,7 +268,9 @@ The ``info`` command will return you some basic information on the file you curr
     | SHA256 | 50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26                                                                 |
     | SHA512 | 6743b06e8b243d513457949ad407d80992254c99b9835eb1ed03fbc0e88a062f0bb09bfd4dd9c0d43093b2a5419ecdb689574c2d2b0d72720080acf9af1b0a84 |
     | SSdeep | 3072:I4lRkAehGfzmuqTPryFm8le+ZNX2TpF3Vb:I4lRkAehaKuqT+FDl7NXs7B                                                                  |
-    | CRC32  | 4090D32C                                                                                                                         |
+    | CRC32  | 4090D32C                                                                                                         
+    | Parent  |                                                                                                          | 
+    | Children  |                                                                                                          
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
     
 
@@ -460,7 +474,7 @@ For example, this is how to launch Viper with a specific project::
        _   _ _ ____  _____  ____
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |
-        \_/ |_|  __/|_____)_| v1.1
+        \_/ |_|  __/|_____)_| v2.0-dev
               |_|
 
     You have 0 files in your test1 repository
@@ -521,12 +535,13 @@ sessions
 
 You can see which sessions are currently active and eventually switch from one to another through the ``sessions`` command. Following is the help message::
 
-    usage: sessions [-h] [-l] [-s=session]
+    usage: sessions [-h] [-l] [-s SWITCH]
 
     Options:
         --help (-h) Show this help message
         --list (-l) List all existing sessions
-        --switch (-s)   Switch to the specified session
+        -s SWITCH, --switch SWITCH
+                        Switch to the specified session
 
 An example of execution is the following::
 
@@ -628,12 +643,13 @@ tags
 
 In order to easily group and identify files, Viper allows you to create one or more tags to be associated with them. This is the help message::
 
-    usage: tags [-h] [-a=tags] [-d=tag]
+    usage: tags [-h] [-a TAG] [-d TAG]
 
-    Options:
-        --help (-h) Show this help message
-        --add (-a)  Add tags to the opened file (comma separated)
-        --delete (-d)   Delete a tag from the opened file
+    optional arguments:
+        -h, --help            show this help message and exit
+        -a TAG, --add TAG     Add tags to the opened file (comma separated)
+        -d TAG, --delete TAG  Delete a tag from the opened file
+
 
 Once you have a file opened, you can add one ore more tags separated by a comma::
 
@@ -660,4 +676,6 @@ Once added, the session will be refreshed so that the new attributes will be vis
     | SHA512 | 6743b06e8b243d513457949ad407d80992254c99b9835eb1ed03fbc0e88a062f0bb09bfd4dd9c0d43093b2a5419ecdb689574c2d2b0d72720080acf9af1b0a84 |
     | SSdeep | 3072:I4lRkAehGfzmuqTPryFm8le+ZNX2TpF3Vb:I4lRkAehaKuqT+FDl7NXs7B                                                                  |
     | CRC32  | 4090D32C                                                                                                                         |
+    | Parent  |                                                                                                                          |
+    | Children  |                                                                                                                          |
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
