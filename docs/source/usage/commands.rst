@@ -62,8 +62,59 @@ The **about** command can be used to display some useful information regarding t
 analysis
 ========
 
-TBD
+The **analysis** command can be used to display stored analysis.::
 
+    viper foo.txt > analysis -h
+    usage: analysis [-h] [-l | -v ANALYSIS ID | -d ANALYSIS ID]
+
+    View the stored analysis
+
+    optional arguments:
+        -h, --help            show this help message and exit
+        -l, --list            List all module results available for the current file
+        -v ANALYSIS ID, --view ANALYSIS ID
+                        View the specified analysis
+        -d ANALYSIS ID, --delete ANALYSIS ID
+                        Delete an existing analysis
+                        
+This stores the modules run with the file in question, so after you did some scans and run **analysis -l** to see all stored analysis::
+
+    viper aasf.jpg > analysis -l
+    +----+--------------+----------------------------+
+    | ID | Cmd Line     | Saved On (UTC)             |
+    +----+--------------+----------------------------+
+    | 1  | yara scan -t | 2018-09-04 13:23:09.250948 |
+    | 2  | triage       | 2018-09-04 13:23:09.285285 |
+    | 3  | yara         | 2018-09-04 13:26:21.377030 |
+    | 4  | yara scan    | 2018-09-04 13:26:24.212498 |
+    +----+--------------+----------------------------+
+
+To view the output of a previously ran analysis use **analysis -v** this has the advantage that it is much faster than run modules again::
+
+    viper aasf.jpg > analysis -v 6
+    [*] Cmd Line: xor
+    [*] Searching for the following strings:
+    - This Program
+    - GetSystemDirectory
+    - CreateFile
+    - IsBadReadPtr
+    - IsBadWritePtrGetProcAddress
+    - LoadLibrary
+    - WinExec
+    - CreateFileShellExecute
+    - CloseHandle
+    - UrlDownloadToFile
+    - GetTempPath
+    - ReadFile
+    - WriteFile
+    - SetFilePointer
+    - GetProcAddr
+    - VirtualAlloc
+    - http
+    [*] Hold on, this might take a while...
+    [*] Searching XOR
+
+To safe space it might be useful to delete a stored analysis using **analysis -d**
 
 clear
 =====
