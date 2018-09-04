@@ -254,7 +254,13 @@ The ``info`` command will return you some basic information on the file you curr
 new
 ===
 
-Create new file
+To create new file within viper the new command will then open the default text editor to write input for the file. After exiting the editor a session with the **not stored** file is opened in viper. This might save time without the need to exit viper to touch a new textfile in the viper session::
+
+    viper > new
+    Enter a title for the new file: viper_docu_demo.txt
+    [*] Session opened on /tmp/tmpjo86tcr1
+    [*] New file with title "viper_docu_demo.txt" added to the current session
+
 
 
 notes
