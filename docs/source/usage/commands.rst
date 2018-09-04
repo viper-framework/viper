@@ -479,7 +479,33 @@ Note that if you specify a name of a project that doesn't exist to the ``--switc
 rename
 ======
 
-Rename the file in the database
+Rename the file in the database with a prompt for the new filename (note: this will not rename the file on disk)::
+
+    viper aasf.jpg > rename
+    [*] Current name is: aasf.jpg
+    New name: helloworld.jpg
+    [*] Refreshing session to update attributes...
+    [*] Session opened on   /home/viper/.viper/projects/demo/binaries/7/4/9/b/749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8
+    demo viper helloworld.jpg > info
+    +----------+----------------------------------------------------------------------------------------------------------------------------------+
+    | Key      | Value                                                                                                                            |
+    +----------+----------------------------------------------------------------------------------------------------------------------------------+
+    | Name     | helloworld.jpg                                                                                                                   |
+    | Tags     |                                                                                                                                  |
+    | Path     | /home/viper/.viper/projects/demo/binaries/7/4/9/b/749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8             |
+    | Size     | 1120                                                                                                                             |
+    | Type     | data                                                                                                                             |
+    | Mime     | application/octet-stream                                                                                                         |
+    | MD5      | 6296ff1a94c30a68d18748e7948c3ffa                                                                                                 |
+    | SHA1     | bae357a94bffb3f33cae6f2610822f4008fa29e2                                                                                         |
+    | SHA256   | 749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8                                                                 |
+    | SHA512   | e1408441b83346bb23a8929d86610cc7ac164a3d9b1e963e14b1b6588779766b60fb13c3b10f801052b669a244c659012c4250fca8c221fed906c56cce67aec7 |
+    | SSdeep   | 24:k3McZOX52TnV7/d1QLykkmjoOGBfBKWDZ2hy3tkRCoNplXNkye13N0B0rLO:k3McE8V7jQnjVG9wYcs3tVOXNky6N0KG                                  |
+    | CRC32    | 220A0DE7                                                                                                                         |
+    | Parent   |                                                                                                                                  |
+    | Children | 1cd63c1dc1004f9d43321be71fa05a4331083e85c500c7b8dade894d82358061,                                                                |
+    +----------+----------------------------------------------------------------------------------------------------------------------------------+
+
 
 sessions
 ========
@@ -512,7 +538,47 @@ An example of execution is the following::
 stats
 =====
 
-Viper Collection Statistics
+Viper Collection Statistics::
+
+    viper abc_report1.doc > stats
+    [*] Projects
+    +------+-------+
+    | Name | Count |
+    +------+-------+
+    | Main | 6     |
+    | Next | 10    |
+    +------+-------+
+    [*] Current Project
+    [*] Extensions
+    +------+-------+
+    | Ext  | Count |
+    +------+-------+
+    | jpg  | 1     |
+    | txt  | 1     |
+    | mp3  | 1     |
+    | pdf  | 1     |
+    | doc  | 1     |
+    | docx | 1     |
+    +------+-------+
+    [*] Mime Types
+    +--------------------------+-------+
+    | Mime                     | Count |
+    +--------------------------+-------+
+    | application/octet-stream | 5     |
+    | text/plain               | 1     |
+    +--------------------------+-------+
+    [*] Tags
+    +--------+-------+
+    | Tag    | Count |
+    +--------+-------+
+    | tag333 | 1     |
+    | tag1   | 1     |
+    +--------+-------+
+    [*] Size Stats
+    - Largest  109.44 KiB
+    - Smallest  11.00 B
+    - Average  59.97 KiB
+
 
 store
 =====
