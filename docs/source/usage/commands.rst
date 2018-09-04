@@ -59,55 +59,135 @@ The **about** command can be used to display some useful information regarding t
     +--------------------------+------------------------------------------------+
 
 
-projects
+analysis
 ========
 
-As anticipated in the :doc:`concepts` section, Viper provides a way to create multiple **projects** which represent isolated collections of files.
-You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper-cli``.
+TBD
 
-From within the Viper shell, you can list the existing projects and switch from one to another by simply using the ``projects`` command. Following is the help message::
 
-    usage: projects [-h] [-l] [-s=project]
+clear
+=====
+
+Clear the console
+
+
+close
+=====
+
+This command simply abandon a session that was previously opened. Note that the session will actually remain available in case you want to re-open it later.
+
+
+copy
+======
+
+The ``copy`` command let's you copy the opened file into another project. By default the stored analysis results,
+notes and tags will also be copied. If the file has children related to it then these will not be copied by default.
+Also copying all children (recursively) can be enabled by passing the ``--children`` or ``-c`` flag.
+
+If the ``--delete`` or ``-d`` is passed then the files will be copied to the specified project and then deleted from the
+local project::
+
+    viper foo.txt > copy -h
+    usage: copy [-h] [-d] [--no-analysis] [--no-notes] [--no-tags] [-c] project
+
+    Copy opened file into another project
+
+    positional arguments:
+      project         Project to copy file(s) to
+
+    optional arguments:
+      -h, --help      show this help message and exit
+      -d, --delete    delete original file(s) after copy ('move')
+      --no-analysis   do not copy analysis details
+      --no-notes      do not copy notes
+      --no-tags       do not copy tags
+      -c, --children  also copy all children - if --delete was selected also the
+                      children will be deleted from current project after copy
+
+
+    viper foo.txt > copy -d foobar
+    [+] Copied: e2c94230decedbf4174ac3e35c6160a4c9324862c37cf45124920e63627624c1 (foo.txt)
+    [*] Deleted: e2c94230decedbf4174ac3e35c6160a4c9324862c37cf45124920e63627624c1
+    [+] Successfully copied sample(s)
+ 
+
+delete
+======
+
+The ``delete`` command you simply remove the currently opened file from the local repository::
+
+    shell poisonivy.exe > delete
+    Are you sure you want to delete this binary? Can't be reverted! [y/n] y
+    [+] File deleted
+    shell >
+    
+    
+export
+======
+
+The ``export`` command is used to export the currently opened file to the target path or archive name. You can zip up the file in a new archive too::
+
+    usage: export [-h] [-z] <path or archive name>
 
     Options:
         --help (-h) Show this help message
-        --list (-l) List all existing projects
-        --switch (-s)   Switch to the specified project
+        --zip (-z)  Export session in a zip archive
 
-Each project will have its own local file repository, its own ``viper.db`` SQLite database and its own ``.viperhistory`` file, which is used to record the history of commands you entered in the terminal.
 
-For example, this is how to launch Viper with a specific project::
+find
+====
 
-    nex@nex:$ viper-cli --project test1
-             _
-            (_)
-       _   _ _ ____  _____  ____
-      | | | | |  _ \| ___ |/ ___)
-       \ V /| | |_| | ____| |
-        \_/ |_|  __/|_____)_| v1.1
-              |_|
+In order to quickly recover files you previously stored in the local repository, you can use the ``find`` command. Following is its help message::
 
-    You have 0 files in your test1 repository
-    test1 shell >
+    usage: find [-h] [-t] <all|latest|name|md5|sha256|tag|note> <value>
 
-From within the terminal, you can see which projects exist::
+    Options:
+        --help (-h) Show this help message
+        --tags (-t) List tags
 
-    test1 shell > projects -l
-    [*] Projects Available:
-    +--------------+--------------------------+---------+
-    | Project Name | Creation Time            | Current |
-    +--------------+--------------------------+---------+
-    | test1        | Sat Jul 12 00:53:06 2014 | Yes     |
-    +--------------+--------------------------+---------+
+This command expects a key and eventually a value. As shown by the help message, these are the available keys:
 
-You can eventually switch to a different one::
+    * **all**: this will simply return all available files.
+    * **latest** *(optional limit value)*: this will return the latest 5 (or whichever limit you specified) files added to the local repository.
+    * **name** *(required value)*: this will find files matching the given name pattern (you can use wildcards).
+    * **md5** *(required value)*: search by md5 hash.
+    * **sha256** *(required value)*: search by sha256 hash.
+    * **tag** *(required value)*: search by tag name.
+    * **note** *(required value)*: find files that possess notes matching the given pattern.
 
-    test1 shell > projects --switch test2
-    [*] Switched to project test2
-    test2 shell >
+For example::
 
-Note that if you specify a name of a project that doesn't exist to the ``--switch`` parameter, Viper will create that project and open it nevertheless.
+    shell > find tag rat
+    +---+---------------+-----------------------+----------------------------------+
+    | # | Name          | Mime                  | MD5                              |
+    +---+---------------+-----------------------+----------------------------------+
+    | 1 | poisonivy.exe | application/x-dosexec | 22f77c113cc6d43d8c12ed3c9fb39825 |
+    +---+---------------+-----------------------+----------------------------------+
 
+
+info
+====
+
+The ``info`` command will return you some basic information on the file you currently have opened, for example::
+
+    shell poisonivy.exe > info
+    +--------+----------------------------------------------------------------------------------------------------------------------------------+
+    | Key    | Value                                                                                                                            |
+    +--------+----------------------------------------------------------------------------------------------------------------------------------+
+    | Name   | poisonivy.exe                                                                                                                    |
+    | Tags   | rat, poisonivy                                                                                                                   |
+    | Path   | ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26                                        |
+    | Size   | 133007                                                                                                                           |
+    | Type   | PE32 executable (GUI) Intel 80386, for MS Windows                                                                                |
+    | Mime   | application/x-dosexec                                                                                                            |
+    | MD5    | 22f77c113cc6d43d8c12ed3c9fb39825                                                                                                 |
+    | SHA1   | dd639a7f682e985406256468d6df8a717e77b7f3                                                                                         |
+    | SHA256 | 50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26                                                                 |
+    | SHA512 | 6743b06e8b243d513457949ad407d80992254c99b9835eb1ed03fbc0e88a062f0bb09bfd4dd9c0d43093b2a5419ecdb689574c2d2b0d72720080acf9af1b0a84 |
+    | SSdeep | 3072:I4lRkAehGfzmuqTPryFm8le+ZNX2TpF3Vb:I4lRkAehaKuqT+FDl7NXs7B                                                                  |
+    | CRC32  | 4090D32C                                                                                                                         |
+    +--------+----------------------------------------------------------------------------------------------------------------------------------+
+    
 
 open
 ====
@@ -164,6 +244,56 @@ Through the ``open`` command you can also directly open one of the entries from 
     shell poisonivy.exe >
 
 
+projects
+========
+
+As anticipated in the :doc:`concepts` section, Viper provides a way to create multiple **projects** which represent isolated collections of files.
+You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper-cli``.
+
+From within the Viper shell, you can list the existing projects and switch from one to another by simply using the ``projects`` command. Following is the help message::
+
+    usage: projects [-h] [-l] [-s=project]
+
+    Options:
+        --help (-h) Show this help message
+        --list (-l) List all existing projects
+        --switch (-s)   Switch to the specified project
+
+Each project will have its own local file repository, its own ``viper.db`` SQLite database and its own ``.viperhistory`` file, which is used to record the history of commands you entered in the terminal.
+
+For example, this is how to launch Viper with a specific project::
+
+    nex@nex:$ viper-cli --project test1
+             _
+            (_)
+       _   _ _ ____  _____  ____
+      | | | | |  _ \| ___ |/ ___)
+       \ V /| | |_| | ____| |
+        \_/ |_|  __/|_____)_| v1.1
+              |_|
+
+    You have 0 files in your test1 repository
+    test1 shell >
+
+From within the terminal, you can see which projects exist::
+
+    test1 shell > projects -l
+    [*] Projects Available:
+    +--------------+--------------------------+---------+
+    | Project Name | Creation Time            | Current |
+    +--------------+--------------------------+---------+
+    | test1        | Sat Jul 12 00:53:06 2014 | Yes     |
+    +--------------+--------------------------+---------+
+
+You can eventually switch to a different one::
+
+    test1 shell > projects --switch test2
+    [*] Switched to project test2
+    test2 shell >
+
+Note that if you specify a name of a project that doesn't exist to the ``--switch`` parameter, Viper will create that project and open it nevertheless.
+
+
 sessions
 ========
 
@@ -190,24 +320,6 @@ An example of execution is the following::
     shell poisonivy.exe > sessions --switch 2
     [*] Switched to session #2 on ~/viper/binaries/6/7/6/a/676a818365c573e236245e8182db87ba1bc021c5d8ee7443b9f673f26e7fd7d1
     shell zeus.exe >
-
-
-export
-======
-
-The ``export`` command is used to export the currently opened file to the target path or archive name. You can zip up the file in a new archive too::
-
-    usage: export [-h] [-z] <path or archive name>
-
-    Options:
-        --help (-h) Show this help message
-        --zip (-z)  Export session in a zip archive
-
-
-close
-=====
-
-This command simply abandon a session that was previously opened. Note that the session will actually remain available in case you want to re-open it later.
 
 
 store
@@ -242,61 +354,6 @@ If you want, you can already specify a list of comma separated tags to apply to 
 Following is an example::
 
     shell > store --folder /tmp/malware --file-type PE32 --file-size 10000000 --file-name apt_* --tags apt,trojan
-
-
-find
-====
-
-In order to quickly recover files you previously stored in the local repository, you can use the ``find`` command. Following is its help message::
-
-    usage: find [-h] [-t] <all|latest|name|md5|sha256|tag|note> <value>
-
-    Options:
-        --help (-h) Show this help message
-        --tags (-t) List tags
-
-This command expects a key and eventually a value. As shown by the help message, these are the available keys:
-
-    * **all**: this will simply return all available files.
-    * **latest** *(optional limit value)*: this will return the latest 5 (or whichever limit you specified) files added to the local repository.
-    * **name** *(required value)*: this will find files matching the given name pattern (you can use wildcards).
-    * **md5** *(required value)*: search by md5 hash.
-    * **sha256** *(required value)*: search by sha256 hash.
-    * **tag** *(required value)*: search by tag name.
-    * **note** *(required value)*: find files that possess notes matching the given pattern.
-
-For example::
-
-    shell > find tag rat
-    +---+---------------+-----------------------+----------------------------------+
-    | # | Name          | Mime                  | MD5                              |
-    +---+---------------+-----------------------+----------------------------------+
-    | 1 | poisonivy.exe | application/x-dosexec | 22f77c113cc6d43d8c12ed3c9fb39825 |
-    +---+---------------+-----------------------+----------------------------------+
-
-
-info
-====
-
-The ``info`` command will return you some basic information on the file you currently have opened, for example::
-
-    shell poisonivy.exe > info
-    +--------+----------------------------------------------------------------------------------------------------------------------------------+
-    | Key    | Value                                                                                                                            |
-    +--------+----------------------------------------------------------------------------------------------------------------------------------+
-    | Name   | poisonivy.exe                                                                                                                    |
-    | Tags   | rat, poisonivy                                                                                                                   |
-    | Path   | ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26                                        |
-    | Size   | 133007                                                                                                                           |
-    | Type   | PE32 executable (GUI) Intel 80386, for MS Windows                                                                                |
-    | Mime   | application/x-dosexec                                                                                                            |
-    | MD5    | 22f77c113cc6d43d8c12ed3c9fb39825                                                                                                 |
-    | SHA1   | dd639a7f682e985406256468d6df8a717e77b7f3                                                                                         |
-    | SHA256 | 50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26                                                                 |
-    | SHA512 | 6743b06e8b243d513457949ad407d80992254c99b9835eb1ed03fbc0e88a062f0bb09bfd4dd9c0d43093b2a5419ecdb689574c2d2b0d72720080acf9af1b0a84 |
-    | SSdeep | 3072:I4lRkAehGfzmuqTPryFm8le+ZNX2TpF3Vb:I4lRkAehaKuqT+FDl7NXs7B                                                                  |
-    | CRC32  | 4090D32C                                                                                                                         |
-    +--------+----------------------------------------------------------------------------------------------------------------------------------+
 
 
 notes
@@ -377,48 +434,3 @@ Once added, the session will be refreshed so that the new attributes will be vis
     | SSdeep | 3072:I4lRkAehGfzmuqTPryFm8le+ZNX2TpF3Vb:I4lRkAehaKuqT+FDl7NXs7B                                                                  |
     | CRC32  | 4090D32C                                                                                                                         |
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
-
-
-copy
-======
-
-The ``copy`` command let's you copy the opened file into another project. By default the stored analysis results,
-notes and tags will also be copied. If the file has children related to it then these will not be copied by default.
-Also copying all children (recursively) can be enabled by passing the ``--children`` or ``-c`` flag.
-
-If the ``--delete`` or ``-d`` is passed then the files will be copied to the specified project and then deleted from the
-local project::
-
-    viper foo.txt > copy -h
-    usage: copy [-h] [-d] [--no-analysis] [--no-notes] [--no-tags] [-c] project
-
-    Copy opened file into another project
-
-    positional arguments:
-      project         Project to copy file(s) to
-
-    optional arguments:
-      -h, --help      show this help message and exit
-      -d, --delete    delete original file(s) after copy ('move')
-      --no-analysis   do not copy analysis details
-      --no-notes      do not copy notes
-      --no-tags       do not copy tags
-      -c, --children  also copy all children - if --delete was selected also the
-                      children will be deleted from current project after copy
-
-
-    viper foo.txt > copy -d foobar
-    [+] Copied: e2c94230decedbf4174ac3e35c6160a4c9324862c37cf45124920e63627624c1 (foo.txt)
-    [*] Deleted: e2c94230decedbf4174ac3e35c6160a4c9324862c37cf45124920e63627624c1
-    [+] Successfully copied sample(s)
-
-
-delete
-======
-
-The ``delete`` command you simply remove the currently opened file from the local repository::
-
-    shell poisonivy.exe > delete
-    Are you sure you want to delete this binary? Can't be reverted! [y/n] y
-    [+] File deleted
-    shell >
