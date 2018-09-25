@@ -4,8 +4,8 @@ HTTP Interfaces
 
 Viper has two HTTP interfaces that can optionally be enabled alongside the console access.
 
-    * Web interface
-    * REST based API interface
+* Web interface
+* REST based API interface
 
 The first one provides a graphical alternative to the traditional command-line interface,
 while the second one can be used to easily integrate Viper with other tools.
@@ -134,11 +134,15 @@ In the past, the REST API was started separately from the web interface. This is
 and the ``viper-api`` script has been removed.
 
 The REST API is implemented using the [Django REST framework](http://www.django-rest-framework.org/),
-short DRF and is reachable at http://127.0.0.1:8080/api/v3/ after starting ``viper-web``.
+short DRF and is reachable after starting ``viper-web`` at:
+
+   http://127.0.0.1:8080/api/v3/
 
 Additionally Viper makes use of [django-rest-swagger](https://marcgibbons.com/django-rest-swagger/),
 which automatically creates an interactive API documentation; all technical details about API
-endpoints and how to use them can be found there: http://127.0.0.1:8080/api/v3/docs/.
+endpoints and how to use them can be found at:
+
+   http://127.0.0.1:8080/api/v3/docs/
 
 All requests to the REST API need to be authenticated with the only exception being a test interface
 (http://127.0.0.1:8080/api/v3/test/). Authentication can either be done by providing a username/password
@@ -176,6 +180,11 @@ Response (HTTP Status Code: 201 Created)::
             "name":"your_file_name.txt"
        }
     }]
+
+User management
+---------------
+
+The credentials can be managed in the Django admin interface (http://127.0.0.1:8080/admin/).
 
 Using Viper in a (web) production environment
 -------------------------------------------
