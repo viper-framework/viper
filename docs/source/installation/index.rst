@@ -5,11 +5,11 @@ Viper is written in Python requires **Python >= 3.4**. As of Viper 2.0, Python 2
 
 Before proceeding, you should make sure you have the basic tools installed to be able to compile additional Python extensions::
 
-    $ sudo apt-get install gcc python3-dev python3-pip
+    $ sudo apt-get install git gcc python3-dev python3-pip
 
-In order to have support for certain modules, you will need to install the following dependencies too before proceeding::
+In order to have support for the most basic modules, you will need to install the following dependencies too before proceeding::
 
-    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev
+    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev unrar p7zip-full
 
 To install Viper::
 
@@ -17,7 +17,8 @@ To install Viper::
     $ cd viper
     $ git submodule init
     $ git submodule update
-    $ sudo make install
+    $ pip3 install setuptools wheel --upgrade
+    $ pip3 install .
 
 
 First launch
@@ -48,4 +49,27 @@ Uninstall
 To uninstall Viper::
 
     $ cd viper
-    $ sudo make uninstall
+    $ pip3 uninstall -y viper
+    $ pip3 uninstall -y -r requirements.txt
+
+
+Module Dependencies
+------------------
+
+The following dependencies are requried to use specific modules.
+
+Exif::
+
+    $ sudo apt-get intall exiftool
+
+ClamAV::
+
+    $ sudo apt-get install clamav-daemon
+
+Tor::
+
+    $ sudo apt-get install tor
+
+Scraper::
+
+    $ sudo apt-get install libdpkg-perl
