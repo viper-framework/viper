@@ -4,7 +4,6 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import pip
 from setuptools import setup
 
 try:
