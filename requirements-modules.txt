@@ -40,6 +40,9 @@ xxxswf==2.0.0
 pyparsing==2.2.0
 packaging==16.8
 
+# PE module
+pefile==2018.8.8
+
 # PE module (verify sigs)
 # SEE: bitstring in requirements-core.txt
 pyasn1==0.4.2
@@ -48,10 +51,8 @@ cryptography==2.3.1
 cffi==1.11.2
 asn1crypto==0.24.0
 idna==2.6
-pycrypto==2.6.1
 ipaddress==1.0.22
 pycparser==2.18
-pefile==2018.8.8
 
 # PSSL Module
 pypssl
@@ -70,6 +71,9 @@ virustotal-api==1.1.7
 
 # Yara Module
 yara-python==3.7.0
+
+# Rats
+pycrypto==2.6.1
 
 
 # Source Code Dependencies
