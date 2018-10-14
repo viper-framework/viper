@@ -751,7 +751,7 @@ class PE(Module):
 
         def check_module(iat, match):
             for imp in iat:
-                if imp.find(match) != -1:
+                if imp.find(match.encode('utf-8')) != -1:
                     return True
 
             return False
