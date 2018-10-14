@@ -37,13 +37,13 @@ When a module is invoked from the Viper shell it can be provided with a number o
 
         from viper.common.abstracts import Module
 
-        class MyModule(ModuleName):
+        class MyModule(Module):
             cmd = 'mycmd'
             description = 'This module does this and that'
             authors = ['YourName']
 
             def __init__(self):
-                super(ModuleName, self).__init__()
+                super(MyModule, self).__init__()
                 self.parser.add_argument('-t', '--this', action='store_true', help='Do This Thing')
                 self.parser.add_argument('-b', '--that', action='store_true', help='Do That')
 
@@ -260,4 +260,3 @@ You can also easily print tables, such as in the following example:
                 ]
 
                 self.log('table', dict(header=header, rows=rows))
-
