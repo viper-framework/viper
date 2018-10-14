@@ -17,8 +17,8 @@ To install Viper::
     $ cd viper
     $ git submodule init
     $ git submodule update
-    $ pip3 install setuptools wheel --upgrade
-    $ pip3 install .
+    $ sudo pip3 install setuptools wheel --upgrade
+    $ sudo pip3 install .
 
 
 First launch
@@ -26,7 +26,7 @@ First launch
 
 If everything worked out fine, you should be able to launch Viper's shell without raising any exceptions, like following::
 
-    nex@nex:~/$ ./viper-cli
+    nex@nex:~/$ viper-cli
              _
             (_)
        _   _ _ ____  _____  ____
