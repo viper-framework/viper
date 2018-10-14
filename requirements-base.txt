@@ -8,4 +8,8 @@ scandir==1.6
 six==1.11.0
 SQLAlchemy==1.1.15
 terminaltables==3.1.0
+future==0.16.0 # Python2 Support
 git+https://github.com/kbandla/pydeep.git#egg=pydeep
+
+# Archiver Module
+rarfile==3.0

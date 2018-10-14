@@ -4,11 +4,14 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+import pip
 from setuptools import setup
 
 try:
+    from pip._internal import main as pip_main
     from pip._internal.req import parse_requirements
 except ImportError:
+    from pip import main as pip_main
     from pip.req import parse_requirements
 
 from viper.common.version import __version__
@@ -39,14 +42,15 @@ def get_package_data(package):
     return {package: filepaths}
 
 
-# collect requirements for `install_requires` setting
-requirement_files = ['requirements-base.txt', "requirements-modules.txt", "requirements-web.txt"]
+# Collect requirements for `install_requires` setting
+requirement_files = ['requirements-base.txt',
+                     "requirements-modules.txt",
+                     "requirements-web.txt"]
 
 links = []
 requires = []
 for req_file in requirement_files:
     requirements = parse_requirements(req_file, session=False)
-
     for item in requirements:
         # we want to handle package names and also repo urls
         if getattr(item, 'url', None):   # older pip has url
@@ -56,10 +60,24 @@ for req_file in requirement_files:
         if item.req:
             requires.append(str(item.req))
 
+# TODO(frennkie) Evil Hack!
+print("===================================================")
+print("Starting installation of dependencies from Github..")
+print("===================================================")
+
+for idx, link in enumerate(links, 1):
+    print("{} - Source: {}".format(idx, link))
+    pip_main(['install', link])
+
+data_files = [('/usr/share/viper/', ['viper.conf.sample']),
+              ('/usr/share/viper/peid/', ['data/peid/UserDB.TXT'])]
+for rule_name in os.listdir('data/yara/'):
+    data_files.append(('/usr/share/viper/yara/', ['data/yara/{0}'.format(rule_name)]))
+
 description = "Binary Analysis & Management Framework"
 
 setup(
-    name='viper',
+    name='viper-framework',
     version=__version__,
     author='Claudio Guarnieri',
     author_email='nex@nex.sx',
@@ -73,8 +91,8 @@ setup(
     packages=get_packages('viper'),
     package_data=get_package_data('viper'),
     install_requires=requires,
-    dependency_links=links,
-    data_files=[('/', ['viper.conf.sample'])],
+    dependency_links=[],
+    data_files=data_files,
     zip_safe=False,
 
     tests_require=['pytest'],
@@ -87,16 +105,11 @@ setup(
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         'Topic :: Security',
-
         'License :: OSI Approved :: BSD License',
-
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-
         'Operating System :: POSIX :: Linux',
     ],
 

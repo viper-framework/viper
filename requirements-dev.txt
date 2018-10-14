@@ -38,13 +38,13 @@ git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 git+https://github.com/kbandla/pydeep.git#egg=pydeep
 
 # pe module (verify sigs)
-git+https://github.com/sebdraven/verify-sigs.git
+git+https://github.com/sebdraven/verify-sigs.git#egg=verify-sigs
 
 # office module
 olefile
-git+https://github.com/decalage2/oletools.git
+git+https://github.com/decalage2/oletools.git#egg=oletools
 ## Flash lookup
-git+https://github.com/viper-framework/xxxswf.git
+git+https://github.com/viper-framework/xxxswf.git#egg=xxxswf
 
 
 # clamd module
@@ -52,18 +52,18 @@ pyclamd
 
 # apk module
 ipython < 6; python_version == '2.7'
-git+https://github.com/androguard/androguard.git
+git+https://github.com/androguard/androguard.git#egg=androguard
 
 # archiving
 rarfile
 
 # MISP
-git+https://github.com/MISP/PyTaxonomies.git
-git+https://github.com/MISP/PyMISPGalaxies.git
+git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
+git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
 pymisp[fileobjects,virustotal] >= 2.4.84
 
 # Scraper
-git+https://github.com/viper-framework/ScrapySplashWrapper.git
+git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
 
 # Joe Sandbox
 jbxapi
