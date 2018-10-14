@@ -82,7 +82,7 @@ class PE(Module):
         parser_lang.add_argument('-s', '--scan', action='store_true', help='Scan the repository')
 
         parser_sect = subparsers.add_parser('sections', help='List PE Sections')
-        parser_sect.add_argument('-d', '--dump', metavar='folder', help='Destionation directory to dump all sections in')
+        parser_sect.add_argument('-d', '--dump', metavar='folder', help='Destination directory to dump all sections in')
 
         parser_peh = subparsers.add_parser('pehash', help='Calculate the PEhash and compare them')
         parser_peh.add_argument('-a', '--all', action='store_true', help='Prints the PEhash of all files in the project')
@@ -995,7 +995,7 @@ class PE(Module):
             return
 
         if not HAVE_PEFILE:
-            self.log('error', "Missing dependency, install pefile (`pip install pefile`)")
+            self.log('error', "Missing dependency, install pefile (`pip3 install pefile`)")
             return
 
         if self.args.subname == 'imports':
