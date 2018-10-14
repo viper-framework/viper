@@ -32,7 +32,7 @@ If everything worked out fine, you should be able to launch Viper's shell withou
        _   _ _ ____  _____  ____
       | | | | |  _ \| ___ |/ ___)
        \ V /| | |_| | ____| |
-        \_/ |_|  __/|_____)_| v1.3
+        \_/ |_|  __/|_____)_| v2.0
               |_|
 
     You have 0 files in your default repository

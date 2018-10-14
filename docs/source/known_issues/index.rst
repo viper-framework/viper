@@ -78,7 +78,7 @@ Error Messages in log: ssl.SSLEOFError: EOF occurred in violation of protocol
 =============================================================================
 
 When running the built-in HTTPS server several error messages are logged, then the favicon is accessed.
-This does no represent a problem and the favicon is loaded and display. So this is currently in status ``wontfix``.
+This does not represent a problem and the favicon is loaded and display. So this is currently in status ``wontfix``.
 
 Log::
 
