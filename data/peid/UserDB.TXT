@@ -489,11 +489,11 @@ ep_only = true
 signature = 55 E8 00 00 00 00 5D 81 ED ?? ?? 00 00 BE 00 ?? 00 00 03 F5 BA 00 00 ?? ?? 2B D5 8B DD 33 C0 AC 3C 00 74 3D 3C 01 74 0E 3C 02 74 0E 3C 03 74 0D 03 D8 29 13 EB E7 66 AD EB F6 AD EB F3 AC 0F B6 C8 3C 00 74 06 3C 01 74 09 EB 0A 66 AD 0F B7 C8 EB 03 AD 8B C8
 ep_only = true
 
-[FreePascal 2.0.0 Win32 -> (Bérczi Gábor, Pierre Muller & Peter Vreman)]
+[FreePascal 2.0.0 Win32 -> (Bé–czi Gé†”or, Pierre Muller & Peter Vreman)]
 signature = C6 05 ?? ?? ?? ?? 01 E8 74 00 00 00 C6 05 00 80 40 00 00 E8 68 00 00 00 50 E8 00 00 00 00 FF 25 D8 A1 40 00 90 90 90 90 90 90 90 90 90 90 90 90 55 89 E5 83 EC 04 89 5D FC E8 92 00 00 00 E8 ED 00 00 00 89 C3 B9 ?? 70 40 00 89 DA B8 00 00 00 00 E8 0A 01 00
 ep_only = true
 
-[FreePascal 2.0.0 Win32 -> (Bérczi Gábor, Pierre Muller & Peter Vreman)]
+[FreePascal 2.0.0 Win32 -> (Bé–czi Gé†”or, Pierre Muller & Peter Vreman)]
 signature = C6 05 00 80 40 00 01 E8 74 00 00 00 C6 05 00 80 40 00 00 E8 68 00 00 00 50 E8 00 00 00 00 FF 25 D8 A1 40 00 90 90 90 90 90 90 90 90 90 90 90 90 55 89 E5 83 EC 04 89 5D FC E8 92 00 00 00 E8 ED 00 00 00 89 C3 B9 ?? 70 40 00 89 DA B8 00 00 00 00 E8 0A 01 00
 ep_only = true
 
@@ -1013,7 +1013,7 @@ ep_only = true
 signature = 60 BE ?? ?? ?? ?? 8D BE ?? ?? ?? ?? 57 83 CD FF EB 05 A4 01 DB 75 07 8B 1E 83 EE FC 11 DB 72 F2 31 C0 40 01 DB 75 07 8B 1E 83 EE FC 11 DB 11 C0 01 DB 75 07 8B 1E 83 EE FC 11 DB 73 E6 31 C9 83
 ep_only = true
 
-[UPX-SCRAMBLER 3.06 -> ©OnT®oL]
+[UPX-SCRAMBLER 3.06 -> ã¡nTç•‚L]
 signature = E8 00 00 00 00 59 83 C1 07 51 C3 C3 BE ?? ?? ?? ?? 83 EC 04 89 34 24 B9 80 00 00 00 81 36 ?? ?? ?? ?? 50 B8 04 00 00 00 50 03 34 24 58 58 83 E9 03 E2 E9 EB D6
 ep_only = true
 
@@ -9773,7 +9773,7 @@ ep_only = true
 signature = 55 8B EC 83 EC ?? 53 56 57 EB 0C 45 78 50 72 2D 76 2E 31 2E 34 2E 2E B8
 ep_only = true
 
-[EÓÎµØ´ø-> ÔÂºÚ·ç¸ß]
+[Eæ¸¸åœ°å¸¦-> æœˆé»‘é£é«˜]
 signature = 55 8B EC B8 ?? ?? ?? ?? E8 ?? ?? ?? ?? 53 56 57 0F 31 8B D8 0F 31 8B D0 2B D3 C1 EA 10 B8 ?? ?? ?? ?? 0F 6E C0 B8 ?? ?? ?? ?? 0F 6E C8 0F F5 C1 0F 7E C0 0F 77 03 C2 ?? ?? ?? ?? ?? FF E0
 ep_only = true
 
@@ -12269,7 +12269,7 @@ ep_only = true
 signature = 50 43 52 59 50 54 FF 76 33 2E 35 31 00 E9
 ep_only = true
 
-[PcShare ÎÄ¼şÀ¦°óÆ÷ v4.0 -> ÎŞ¿É·ÇÒé]
+[PcShare æ–‡ä»¶æ†ç»‘å™¨ v4.0 -> æ— å¯éè®®]
 signature = 55 8B EC 6A FF 68 90 34 40 00 68 B6 28 40 00 64 A1
 ep_only = true
 
@@ -13573,7 +13573,7 @@ ep_only = true
 signature = 60 D1 CB 0F CA C1 CA E0 D1 CA 0F C8 EB 01 F1
 ep_only = true
 
-[ĞÄÆæEXEºÏ²¢Æ÷ -> yy66]
+[å¿ƒå¥‡EXEåˆå¹¶å™¨ -> yy66]
 signature = 68 78 18 40 00 E8 F0 FF FF FF 00 00 00 00 00 00 30
 ep_only = true
 
