@@ -194,7 +194,7 @@ class File(object):
                 try:
                     import subprocess
                     file_process = subprocess.Popen(['file', '-b', self.path], stdout=subprocess.PIPE)
-                    file_type = file_process.stdout.read().strip()
+                    file_type = file_process.stdout.read().strip().decode("utf-8")
                 except Exception:
                     return ''
         finally:
