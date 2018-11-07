@@ -10,6 +10,7 @@ import tempfile
 import contextlib
 import shutil
 import requests
+import platform
 from operator import itemgetter
 
 # Logging
@@ -490,6 +491,8 @@ class HexView(LoginRequiredMixin, TemplateView):
 
         # create the command string
         hex_cmd = 'hd -s {0} -n {1} {2}'.format(hex_offset, hex_length, hex_path)
+        if platform.system() == 'Darwin':
+            hex_cmd = 'xxd -s {0} -l {1} {2}'.format(hex_offset, hex_length, hex_path)
 
         # get the output
         hex_string = getoutput(hex_cmd)
