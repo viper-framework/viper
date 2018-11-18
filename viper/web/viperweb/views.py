@@ -213,7 +213,7 @@ def parse_text(module_text):
     # Split in to lines.
     for line in module_text.split('\n'):
         # Remove the colour codes
-        line = re.sub('\[(\d)+m', '', line.replace('\x1b', ''))
+        line = re.sub(r'\[(\d)+m', '', line.replace(r'\x1b', ''))
         # Ignore the line that says we opened a session
         if 'Session opened on' in line:
             continue

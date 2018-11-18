@@ -800,7 +800,7 @@ class PE(Module):
             return False
 
         def get_strings(content):
-            regexp = b'[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
+            regexp = rb'[\x30-\x39\x41-\x5f\x61-\x7a\-\.:]{4,}'
             return re.findall(regexp, content)
 
         def find_language(iat, sample, content):
