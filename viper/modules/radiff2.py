@@ -13,8 +13,8 @@ import re
 from subprocess import Popen, PIPE
 
 
-regex_match = '(?P<sym_1>^\S+)\s+(?P<len_1>\S+)\s+(?P<off_1>\S+)\s+\|\s+(?P<state>\S+)\s+\((?P<weight>\S+)\)\s+\|\s+(?P<off_2>\S+)\s+(?P<len_2>\S+)\s+(?P<sym_2>\S+)$'
-regex_new = '(?P<sym_1>^\S+)\s+(?P<len_1>\S+)\s+(?P<off_1>\S+)\s+\|\s+(?P<state>\S+)\s+\((?P<weight>\S+)\)'
+regex_match = r'(?P<sym_1>^\S+)\s+(?P<len_1>\S+)\s+(?P<off_1>\S+)\s+\|\s+(?P<state>\S+)\s+\((?P<weight>\S+)\)\s+\|\s+(?P<off_2>\S+)\s+(?P<len_2>\S+)\s+(?P<sym_2>\S+)$'
+regex_new = r'(?P<sym_1>^\S+)\s+(?P<len_1>\S+)\s+(?P<off_1>\S+)\s+\|\s+(?P<state>\S+)\s+\((?P<weight>\S+)\)'
 
 
 class Radiff2(Module):

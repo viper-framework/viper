@@ -430,7 +430,7 @@ class Office(Module):
         try:
             doctype = ooxml.get_type(__sessions__.current.file.path)
             OOXML_FILE = True
-        except Exception as exc:
+        except Exception:
             OOXML_FILE = False
 
         # set defaults
@@ -505,5 +505,5 @@ class Office(Module):
                 header = ['#', 'DDE']
                 self.log('table', dict(header=header,
                                        rows=dde_fields))
-        except Exception as exc:
+        except Exception:
             self.log('error', "Unable to Process File")
