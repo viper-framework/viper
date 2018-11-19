@@ -48,6 +48,7 @@ from viper.core.plugins import __modules__
 from viper.core.project import __project__
 from viper.core.project import get_project_list
 from viper.common.objects import File
+from viper.common.autorun import autorun_module
 from viper.core.storage import store_sample, get_sample_path
 from viper.core.database import Database, Malware, Tag, Note, Analysis
 from viper.core.archiver import Compressor, Extractor
@@ -371,6 +372,11 @@ class MalwareViewSet(ViperGenericViewSet):
             # we don't want to have the binary lying in the repository with no
             # associated database record.
             malware_stored_path = store_sample(malware)
+
+            # run autoruns on the stored sample
+            if __config__.get('autorun').enabled:
+                autorun_module(malware.sha256)
+
             log.debug("added file \"{0}\" to {1}".format(malware.name, malware_stored_path))
 
             if note_body and note_title:
