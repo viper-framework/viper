@@ -60,7 +60,7 @@ The following dependencies are requried to use specific modules.
 
 Exif::
 
-    $ sudo apt-get intall exiftool
+    $ sudo apt-get install exiftool
 
 ClamAV::
 
