@@ -374,7 +374,7 @@ class MalwareViewSet(ViperGenericViewSet):
             malware_stored_path = store_sample(malware)
 
             # run autoruns on the stored sample
-            if __config__.get('autorun').enabled:
+            if cfg.get('autorun').enabled:
                 autorun_module(malware.sha256)
 
             log.debug("added file \"{0}\" to {1}".format(malware.name, malware_stored_path))
