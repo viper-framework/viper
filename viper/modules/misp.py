@@ -8,7 +8,7 @@ import os
 import logging
 
 try:
-    from pymisp import PyMISP, PyMISPError, MISPEvent
+    from pymisp import ExpandedPyMISP, PyMISPError, MISPEvent
     HAVE_PYMISP = True
 except ImportError:
     HAVE_PYMISP = False
@@ -322,6 +322,8 @@ class MISP(Module):
             return __sessions__.current.misp_event.event.id
 
     def _has_error_message(self, result):
+        if isinstance(result, list):
+            return False
         if result.get('errors'):
             for message in result['errors']:
                 self.log('error', message)
@@ -479,16 +481,14 @@ class MISP(Module):
         if self.offline_mode:
             self.log('error', 'Offline mode, unable to search')
             return
-        result = self.misp.search_all(query)
+        result = self.misp.search(quick_filter=query, pythonify=True)
 
         if self._has_error_message(result):
             return
         self.log('success', '{} matches on the following events:'.format(query))
-        for e in result['response']:
+        for me in result:
             nb_samples = 0
             nb_hashes = 0
-            me = MISPEvent()
-            me.load(e)
             for a in me.attributes + [attribute for obj in me.objects for attribute in obj.attributes]:
                 if a.type == 'malware-sample':
                     nb_samples += 1
@@ -617,7 +617,7 @@ class MISP(Module):
 
         if not self.offline_mode:
             try:
-                self.misp = PyMISP(self.url, self.key, ssl=verify, proxies=cfg.misp.proxies, cert=cfg.misp.cert)
+                self.misp = ExpandedPyMISP(self.url, self.key, ssl=verify, proxies=cfg.misp.proxies, cert=cfg.misp.cert)
             except PyMISPError as e:
                 self.log('error', e.message)
                 return
