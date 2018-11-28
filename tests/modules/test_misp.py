@@ -2,14 +2,26 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import os
 import re
 import sys
 
 import pytest
+from tests.conftest import FIXTURE_DIR
+
+from viper.core.session import __sessions__
+from viper.core.config import __config__
+
 
 from viper.modules import misp
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
+
+try:
+    from .keys import url, apikey, vt_key
+    live_tests = True
+except ImportError:
+    live_tests = False
 
 
 class TestMISP:
@@ -111,3 +123,60 @@ class TestMISP:
         out, err = capsys.readouterr()
 
         assert re.search(r".*leakforums.net.*", out)
+
+    # Live tests - require a MISP instance.
+    @pytest.mark.skipif(not live_tests, reason="No API key provided")
+    def test_create_event(self, capsys):
+        instance = misp.MISP()
+        instance.command_line = ['--url', url, '-k', apikey, '-v', 'create_event', '-i', 'Viper test event']
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*Session opened on MISP event.*", out)
+        event_id = re.findall(r".*Session opened on MISP event (.*)\..*", out)[0]
+
+        instance.command_line = ['--url', url, '-k', apikey, '-v', 'add', 'ip-dst', '8.8.8.8']
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(rf".*Session on MISP event {event_id} refreshed.*", out)
+
+        instance.command_line = ['--url', url, '-k', apikey, '-v', 'show']
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(r".*ip-dst | 8.8.8.8.*", out)
+
+        __sessions__.new(os.path.join(FIXTURE_DIR, 'chromeinstall-8u31.exe'))
+
+        instance.command_line = ['add_hashes']
+        instance.run()
+        instance.command_line = ['--url', url, '-k', apikey, '-v', 'show']
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(rf".*Session on MISP event {event_id} refreshed.*", out)
+
+    # Live tests - require a MISP instance.
+    @pytest.mark.skipif(not live_tests, reason="No API key provided")
+    def test_check_hashes(self, capsys):
+        instance = misp.MISP()
+        instance.command_line = ['--url', url, '-k', apikey, '-v', 'create_event', '-i', 'Viper test event - check hashes']
+
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(r".*Session opened on MISP event.*", out)
+        event_id = re.findall(r".*Session opened on MISP event (.*)\..*", out)[0]
+
+        instance.command_line = ['--url', url, '-k', apikey, '-v', 'add', 'sha1', 'afeee8b4acff87bc469a6f0364a81ae5d60a2add']
+        instance.run()
+        out, err = capsys.readouterr()
+
+        assert re.search(rf".*Session on MISP event {event_id} refreshed.*", out)
+
+        __config__.virustotal.virustotal_key = vt_key
+
+        instance.command_line = ['--url', url, '-k', apikey, 'check_hashes', '-p']
+        instance.run()
+        out, err = capsys.readouterr()
+        # print(out, err)
+        assert re.search(r".*Sample available in VT.*", out)

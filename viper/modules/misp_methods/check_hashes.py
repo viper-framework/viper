@@ -27,7 +27,7 @@ cfg = __config__
 
 
 def _populate(self, event):
-    result = self.misp.update(event)
+    result = self.misp.update_event(event)
 
     if not self._has_error_message(result):
         self.log('success', "All attributes updated successfully")
@@ -83,12 +83,10 @@ def check_hashes(self):
     event_id = self._get_eventid()
     if event_id is None:
         return
-    event = self.misp.get(event_id)
-    if self._has_error_message(event):
+    misp_event = self.misp.get(event_id)
+    if self._has_error_message(misp_event):
         return
 
-    misp_event = MISPEvent()
-    misp_event.load(event)
     hashes_to_expand = {}
     hashes_expanded = []  # Thoses hashes are known and already processed
     local_samples_hashes = []

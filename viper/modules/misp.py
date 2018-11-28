@@ -325,8 +325,11 @@ class MISP(Module):
         if isinstance(result, list):
             return False
         if result.get('errors'):
-            for message in result['errors']:
-                self.log('error', message)
+            if isinstance(result['errors'], str):
+                self.log('error', result['errors'])
+            else:
+                for message in result['errors']:
+                    self.log('error', message)
             return True
         elif result.get('error'):
             self.log('error', result.get('error'))
