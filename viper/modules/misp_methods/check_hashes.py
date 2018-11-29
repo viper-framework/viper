@@ -6,7 +6,7 @@ import time
 import datetime
 
 try:
-    from pymisp import MISPEvent, InvalidMISPObject, MISPObject
+    from pymisp import InvalidMISPObject, MISPObject
     from pymisp.tools import VTReportObject, make_binary_objects
     HAVE_PYMISP = True
 except ImportError:

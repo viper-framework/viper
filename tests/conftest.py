@@ -6,8 +6,13 @@ import pytest
 import tempfile
 import os
 import shutil
+import sys
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'viper-test-files/test_files',)
+
+collect_ignore = []
+if sys.version_info < (3, 6,):
+    collect_ignore.append('modules/test_misp.py')
 
 
 @pytest.fixture()
