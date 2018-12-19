@@ -234,7 +234,8 @@ class PE(Module):
     def dllname(self):
 
         def get_dllname(pe):
-            return "{0}".format(pe.DIRECTORY_ENTRY_EXPORT.name)
+            if hasattr(pe, 'DIRECTORY_ENTRY_EXPORT'):
+                return "{0}".format(pe.DIRECTORY_ENTRY_EXPORT.name)
 
         if self.args.all:
             self.log('info', "Retrieving dll name for all stored samples...")
