@@ -31,7 +31,7 @@ jbxapi==2.3.0
 # SEE: olefile under Office module
 
 # MISP
-pymisp[fileobjects,virustotal] >= 2.4.85.1
+pymisp[fileobjects,virustotal] >= 2.4.96
 jsonschema==2.6.0
 
 # Office module
