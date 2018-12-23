@@ -69,7 +69,7 @@ class PE(Module):
         parser_comp.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common compile time')
         parser_comp.add_argument('-w', '--window', type=int, help='Specify an optional time window in minutes')
 
-        parser_comp = subparsers.add_parser('resourcedirectorytime', help='Show the resource directory timestamp (use for delphi files).')
+        parser_comp = subparsers.add_parser('resourcedirectorytime', help='Show the resource directory timestamp (useful for delphi files).')
         parser_comp.add_argument('-a', '--all', action='store_true', help='Retrieve resource directory timestamp for all stored samples.')
         parser_comp.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common resource directory timestamp.')
         parser_comp.add_argument('-w', '--window', type=int, help='Specify an optional time window in minutes.')
