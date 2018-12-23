@@ -69,6 +69,10 @@ class PE(Module):
         parser_comp.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common compile time')
         parser_comp.add_argument('-w', '--window', type=int, help='Specify an optional time window in minutes')
 
+        parser_dn = subparsers.add_parser('dllname', help='Show the dll name if it exists.')
+        parser_dn.add_argument('-a', '--all', action='store_true', help='Retrieve dll name for all stored samples')
+        parser_dn.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common dll name')
+
         parser_peid = subparsers.add_parser('peid', help='Show the PEiD signatures')
         parser_peid.add_argument('-s', '--scan', action='store_true', help='Scan the repository for PEiD signatures')
 
@@ -226,6 +230,71 @@ class PE(Module):
             self.log('info', "Following are samples with AddressOfEntryPoint {0}".format(bold(ep)))
 
             self.log('table', dict(header=['MD5', 'Name'], rows=rows))
+
+    def dllname(self):
+
+        def get_dllname(pe):
+            if hasattr(pe, 'DIRECTORY_ENTRY_EXPORT'):
+                return "{0}".format(pe.DIRECTORY_ENTRY_EXPORT.name)
+
+        if self.args.all:
+            self.log('info', "Retrieving dll name for all stored samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            results = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_dll_name = get_dllname(cur_pe)
+                except Exception:
+                    continue
+
+                results.append([sample.name, sample.md5, cur_dll_name])
+
+            if len(results) > 0:
+                self.log('table', dict(header=['Name', 'MD5', 'DLL Name'], rows=results))
+
+            return
+
+        if not self.__check_session():
+            return
+
+        self.result_dll_name = get_dllname(self.pe)
+        dll_name = self.result_dll_name
+        self.log('info', "DLL Name: {0}".format(bold(dll_name)))
+
+        if self.args.scan:
+            self.log('info', "Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                if sample.sha256 == __sessions__.current.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_dll_name = get_dllname(cur_pe)
+                except Exception:
+                    continue
+
+                if dll_name == cur_dll_name:
+                    matches.append([sample.name, sample.md5, cur_dll_name])
+
+            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
+
+            if len(matches) > 0:
+                self.log('table', dict(header=['Name', 'MD5', 'DLL Name'], rows=matches))
 
     def compiletime(self):
 
@@ -1020,3 +1089,5 @@ class PE(Module):
             self.pehash()
         elif self.args.subname == 'entrypoint':
             self.entrypoint()
+        elif self.args.subname == 'dllname':
+            self.dllname()
