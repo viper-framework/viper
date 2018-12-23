@@ -2,7 +2,7 @@ bitstring==3.1.5
 pbkdf2==1.3
 python-dateutil==2.6.1
 python-magic==0.4.13
-requests[socks]==2.18.4
+requests[socks]>=2.20.0
 requests-cache==0.4.13
 scandir==1.6
 six==1.11.0
