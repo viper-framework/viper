@@ -69,6 +69,11 @@ class PE(Module):
         parser_comp.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common compile time')
         parser_comp.add_argument('-w', '--window', type=int, help='Specify an optional time window in minutes')
 
+        parser_comp = subparsers.add_parser('resourcedirectorytime', help='Show the resource directory timestamp (use for delphi files).')
+        parser_comp.add_argument('-a', '--all', action='store_true', help='Retrieve resource directory timestamp for all stored samples.')
+        parser_comp.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common resource directory timestamp.')
+        parser_comp.add_argument('-w', '--window', type=int, help='Specify an optional time window in minutes.')
+
         parser_dn = subparsers.add_parser('dllname', help='Show the dll name if it exists.')
         parser_dn.add_argument('-a', '--all', action='store_true', help='Retrieve dll name for all stored samples')
         parser_dn.add_argument('-s', '--scan', action='store_true', help='Scan the repository for common dll name')
@@ -295,6 +300,85 @@ class PE(Module):
 
             if len(matches) > 0:
                 self.log('table', dict(header=['Name', 'MD5', 'DLL Name'], rows=matches))
+
+    def resourcedirectorytime(self):
+
+        def get_resourcedirectorytime_str(pe):
+            if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
+                return "{0} ({1})".format(pe.DIRECTORY_ENTRY_RESOURCE.struct.TimeDateStamp, datetime.datetime.utcfromtimestamp(pe.DIRECTORY_ENTRY_RESOURCE.struct.TimeDateStamp))
+
+        def get_resourcedirectorytime(pe):
+            if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
+                return pe.DIRECTORY_ENTRY_RESOURCE.struct.TimeDateStamp
+
+        if self.args.all:
+            self.log('info', "Retrieving resource directory timestamp for all stored samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            results = []
+            for sample in samples:
+                sample_path = get_sample_path(sample.sha256)
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_resource_directory_time = get_resourcedirectorytime_str(cur_pe)
+                except Exception:
+                    continue
+
+                results.append([sample.name, sample.md5, cur_resource_directory_time])
+
+            if len(results) > 0:
+                self.log('table', dict(header=['Name', 'MD5', 'Resource Directory Time'], rows=results))
+
+            return
+
+        if not self.__check_session():
+            return
+
+        self.result_resource_directory_time = get_resourcedirectorytime_str(self.pe)
+        resource_directory_time = get_resourcedirectorytime(self.pe)
+        self.log('info', "Resource Directory Time: {0}".format(bold(self.result_resource_directory_time)))
+
+        if self.args.scan:
+            self.log('info', "Scanning the repository for matching samples...")
+
+            db = Database()
+            samples = db.find(key='all')
+
+            matches = []
+            for sample in samples:
+                if sample.sha256 == __sessions__.current.file.sha256:
+                    continue
+
+                sample_path = get_sample_path(sample.sha256)
+                if not os.path.exists(sample_path):
+                    continue
+
+                try:
+                    cur_pe = pefile.PE(sample_path)
+                    cur_resource_directory_time = get_resourcedirectorytime(cur_pe)
+                except Exception:
+                    continue
+
+                if resource_directory_time == cur_resource_directory_time:
+                    matches.append([sample.name, sample.md5, cur_resource_directory_time])
+                else:
+                    if self.args.window:
+                        if cur_resource_directory_time > resource_directory_time:
+                            delta = (cur_resource_directory_time - resource_directory_time)
+                        elif cur_resource_directory_time < resource_directory_time:
+                            delta = (resource_directory_time - cur_resource_directory_time)
+
+                        delta_minutes = delta / 60
+                        if delta_minutes <= self.args.window:
+                            matches.append([sample.name, sample.md5, get_resourcedirectorytime_str(cur_pe)])
+
+            self.log('info', "{0} relevant matches found".format(bold(len(matches))))
+
+            if len(matches) > 0:
+                self.log('table', dict(header=['Name', 'MD5', 'Resource Directory Time'], rows=matches))
 
     def compiletime(self):
 
@@ -1091,3 +1175,5 @@ class PE(Module):
             self.entrypoint()
         elif self.args.subname == 'dllname':
             self.dllname()
+        elif self.args.subname == 'resourcedirectorytime':
+            self.resourcedirectorytime()
