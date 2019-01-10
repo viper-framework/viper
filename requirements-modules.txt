@@ -92,4 +92,4 @@ git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
 git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
 
 # EXIF Module
-git+https://github.com/smarnach/pyexiftool.git#egg=PyExifTool
+ocrd-pyexiftool==0.2.0
