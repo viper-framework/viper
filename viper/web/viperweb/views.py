@@ -234,9 +234,11 @@ def module_cmdline(project=None, cmd_line=None, file_hash=None):
         root, args = parse(split_command)
         try:
             if root in cmd.commands:
-                cmd.commands[root]['obj'](*args)
-                html += print_output(cmd.output)
-                del (cmd.output[:])
+                cmd_to_run = cmd.commands[root]['obj']
+                cmd_to_run(*args)
+                cmd_instance = cmd_to_run.__self__
+                html += print_output(cmd_instance.output)
+                del (cmd_instance.output[:])
             elif root in __modules__:
                 # if prev commands did not open a session open one on the current file
                 if file_hash:
