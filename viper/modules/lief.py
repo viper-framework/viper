@@ -84,26 +84,57 @@ ELF_SEGMENT_FLAGS = {
 }
 
 ELF_SEGMENT_TYPES = {
-    lief.ELF.SEGMENT_TYPES.NULL             :    'NULL',
-    lief.ELF.SEGMENT_TYPES.LOAD             :    'LOAD',
-    lief.ELF.SEGMENT_TYPES.DYNAMIC          :    'DYNAMIC',
-    lief.ELF.SEGMENT_TYPES.INTERP           :    'INTERP',
-    lief.ELF.SEGMENT_TYPES.NOTE             :    'NOTE',
-    lief.ELF.SEGMENT_TYPES.SHLIB            :    'SHLIB',
-    lief.ELF.SEGMENT_TYPES.PHDR             :    'PHDR',
-    lief.ELF.SEGMENT_TYPES.TLS              :    'TLS',
-    lief.ELF.SEGMENT_TYPES.LOOS             :    'LOOS',
-    lief.ELF.SEGMENT_TYPES.HIOS             :    'HIOS',
-    lief.ELF.SEGMENT_TYPES.LOPROC           :    'LOPROC',
-    lief.ELF.SEGMENT_TYPES.HIPROC           :    'HIPROC',
-    lief.ELF.SEGMENT_TYPES.GNU_EH_FRAME     :    'GNU_EH_FRAME',
-    lief.ELF.SEGMENT_TYPES.SUNW_UNWIND      :    'SUNW_UNWIND',
-    lief.ELF.SEGMENT_TYPES.GNU_STACK        :    'GNU_STACK',
-    lief.ELF.SEGMENT_TYPES.GNU_RELRO        :    'GNU_RELRO',
-    lief.ELF.SEGMENT_TYPES.ARM_EXIDX        :    'ARM_EXIDX',
-    lief.ELF.SEGMENT_TYPES.MIPS_ABIFLAGS    :    'MIPS_ABIFLAGS',
-    lief.ELF.SEGMENT_TYPES.MIPS_OPTIONS     :    'MIPS_OPTIONS',
+    lief.ELF.SEGMENT_TYPES.NULL             :    "NULL",
+    lief.ELF.SEGMENT_TYPES.LOAD             :    "LOAD",
+    lief.ELF.SEGMENT_TYPES.DYNAMIC          :    "DYNAMIC",
+    lief.ELF.SEGMENT_TYPES.INTERP           :    "INTERP",
+    lief.ELF.SEGMENT_TYPES.NOTE             :    "NOTE",
+    lief.ELF.SEGMENT_TYPES.SHLIB            :    "SHLIB",
+    lief.ELF.SEGMENT_TYPES.PHDR             :    "PHDR",
+    lief.ELF.SEGMENT_TYPES.TLS              :    "TLS",
+    lief.ELF.SEGMENT_TYPES.LOOS             :    "LOOS",
+    lief.ELF.SEGMENT_TYPES.HIOS             :    "HIOS",
+    lief.ELF.SEGMENT_TYPES.LOPROC           :    "LOPROC",
+    lief.ELF.SEGMENT_TYPES.HIPROC           :    "HIPROC",
+    lief.ELF.SEGMENT_TYPES.GNU_EH_FRAME     :    "GNU_EH_FRAME",
+    lief.ELF.SEGMENT_TYPES.SUNW_UNWIND      :    "SUNW_UNWIND",
+    lief.ELF.SEGMENT_TYPES.GNU_STACK        :    "GNU_STACK",
+    lief.ELF.SEGMENT_TYPES.GNU_RELRO        :    "GNU_RELRO",
+    lief.ELF.SEGMENT_TYPES.ARM_EXIDX        :    "ARM_EXIDX",
+    lief.ELF.SEGMENT_TYPES.MIPS_ABIFLAGS    :    "MIPS_ABIFLAGS",
+    lief.ELF.SEGMENT_TYPES.MIPS_OPTIONS     :    "MIPS_OPTIONS",
 }
+
+ELF_ETYPE = {
+    lief.ELF.E_TYPE.CORE        :   "CORE", 
+    lief.ELF.E_TYPE.DYNAMIC     :   "DYNAMIC",
+    lief.ELF.E_TYPE.EXECUTABLE  :   "EXECUTABLE",
+    lief.ELF.E_TYPE.HIPROC      :   "HIPROC",
+    lief.ELF.E_TYPE.LOPROC      :   "LOPROC",
+    lief.ELF.E_TYPE.NONE        :   "NONE",
+    lief.ELF.E_TYPE.RELOCATABLE :   "RELOCATABLE"
+}
+
+ELF_SYMBOL_VISIBILITY = {
+    lief.ELF.SYMBOL_VISIBILITY.DEFAULT      :   "DEFAULT",
+    lief.ELF.SYMBOL_VISIBILITY.HIDDEN       :   "HIDDEN",
+    lief.ELF.SYMBOL_VISIBILITY.INTERNAL     :   "INTERNAL",
+    lief.ELF.SYMBOL_VISIBILITY.PROTECTED    :   "PROTECTED"
+}
+
+ELF_SYMBOL_TYPE = {
+    lief.ELF.SYMBOL_TYPES.COMMON     :   "COMMON",
+    lief.ELF.SYMBOL_TYPES.FILE       :   "FILE",
+    lief.ELF.SYMBOL_TYPES.HIOS       :   "HIOS",
+    lief.ELF.SYMBOL_TYPES.HIPROC     :   "HIPROC",
+    lief.ELF.SYMBOL_TYPES.LOPROC     :   "LOPROC",
+    lief.ELF.SYMBOL_TYPES.NOTYPE     :   "NOTYPE",
+    lief.ELF.SYMBOL_TYPES.OBJECT     :   "OBJECT",
+    lief.ELF.SYMBOL_TYPES.SECTION    :   "SECTION",
+    lief.ELF.SYMBOL_TYPES.TLS        :   "TLS",
+    lief.ELF.SYMBOL_TYPES.FUNC       :   "FUNC"
+}
+
 
 class Lief(Module):
     cmd         = "lief"
@@ -115,6 +146,12 @@ class Lief(Module):
         subparsers  = self.parser.add_subparsers(dest="subname")
         subparsers.add_parser("sections", help="List binary sections")
         subparsers.add_parser("segments", help="List binary segments")
+        subparsers.add_parser("type", help="Show binary type")
+        subparsers.add_parser("architecture", help="Show binary architecture")
+        subparsers.add_parser("entropy", help="Show binary entropy")
+        subparsers.add_parser("entrypoint", help="Show binary entrypoint")
+        subparsers.add_parser("interpreter", help="Show binary interpreter")
+        subparsers.add_parser("symbols", help="Show binary symbols")
         self.lief = None
     
     def __check_session(self):
@@ -190,17 +227,93 @@ class Lief(Module):
                     flags.append(ELF_SEGMENT_FLAGS[lief.ELF.SEGMENT_FLAGS.NONE])
                 rows.append([
                     ELF_SEGMENT_TYPES[segment.type],
-                    hex(segment.physical_size),
                     hex(segment.physical_address),
+                    hex(segment.physical_size),
                     hex(segment.virtual_address),
                     hex(segment.virtual_size),
                     ':'.join(flag for flag in flags),
                     self.getEntropy(bytes(segment.content))
                 ])
             self.log("info", "ELF segments : ")
-            self.log("table", dict(header=["Type", "FileSize", "PhysicalAddress", "VirtuAddr", "MemSize", "Flags", "Entropy"], rows=rows))
+            self.log("table", dict(header=["Type", "PhysicalAddress", "FileSize", "VirtuAddr", "MemSize", "Flags", "Entropy"], rows=rows))
         else:
             self.log("error", "No segment found")
+
+    def type(self):
+        if not self.__check_session():
+            return
+
+        # ELF   
+        if lief.is_elf(self.filePath):
+            self.log("info", "Type : " + ELF_ETYPE[self.lief.header.file_type])
+        else:
+            self.log("error", "No type found")
+
+    
+    def entrypoint(self):
+        if not self.__check_session():
+            return
+
+        # ELF   
+        if lief.is_elf(self.filePath):
+            self.log("info", "Entry point : " + hex(self.lief.header.entrypoint))
+        else:
+            self.log("error", "No entrypoint found")
+    
+    def architecture(self):
+        if not self.__check_session():
+            return
+
+        # ELF   
+        if lief.is_elf(self.filePath):
+            self.log("info", "Architecture : " + str(self.lief.header.machine_type).split('.')[1])
+        else:
+            self.log("error", "No architecture found")
+
+    def entropy(self):
+        if not self.__check_session():
+            return
+        entropy = self.getEntropy(bytes(__sessions__.current.file.data))
+        self.log("info", "Entropy : " + str(entropy))
+        if entropy > 7:
+            self.log("warning", "The binary is probably packed")
+
+
+    def interpreter(self):
+        if not self.__check_session():
+            return
+
+        # ELF   
+        if lief.is_elf(self.filePath):
+            self.log("info", "Interpreter : " + self.lief.interpreter)
+        else:
+            self.log("error", "No interpreter found")
+
+
+    def symbols(self):
+        if not self.__check_session():
+            return
+
+        rows = []
+
+        # ELF   
+        if lief.is_elf(self.filePath):
+            for symbol in self.lief.symbols:
+                rows.append([
+                    symbol.name,
+                    ELF_SYMBOL_TYPE[symbol.type],
+                    hex(symbol.value),
+                    hex(symbol.size),
+                    ELF_SYMBOL_VISIBILITY[symbol.visibility],
+                    'X' if symbol.is_function else '-',
+                    'X' if symbol.is_static else '-',
+                    'X' if symbol.is_variable else '-'
+                ])
+            self.log("info", "ELF symbols : ")
+            self.log("table", dict(header=["Name", "Type", "Val", "Size", "Visibility", "isFunction", "isStatic", "isVariable"], rows=rows))
+        else:
+            self.log("error", "No symbol found")
+
 
     def getEntropy(self, data):
         if not data:
@@ -209,9 +322,9 @@ class Lief(Module):
         for i in range(256):
             p = float(data.count(bytes(i))) / len(data)
             if p > 0:
-                e += - p * math.log(p, 2)
+                e -= p * math.log(p, 2)
         entropy = round(e, 4)
-        return float(entropy)
+        return entropy
 
     def run(self):
         super(Lief, self).run()
@@ -226,6 +339,18 @@ class Lief(Module):
             self.sections()
         elif self.args.subname == "segments":
             self.segments()
+        elif self.args.subname == "type":
+            self.type()
+        elif self.args.subname == "entrypoint":
+            self.entrypoint()
+        elif self.args.subname == "architecture":
+            self.architecture()
+        elif self.args.subname == "entropy":
+            self.entropy()
+        elif self.args.subname == "interpreter":
+            self.interpreter()
+        elif self.args.subname == "symbols":
+            self.symbols()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
