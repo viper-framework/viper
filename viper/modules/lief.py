@@ -152,6 +152,7 @@ class Lief(Module):
         subparsers.add_parser("entrypoint", help="Show binary entrypoint")
         subparsers.add_parser("interpreter", help="Show binary interpreter")
         subparsers.add_parser("symbols", help="Show binary symbols")
+        subparsers.add_parser("dynamic", help="Show binary dynamic libraries")
         self.lief = None
     
     def __check_session(self):
@@ -289,6 +290,16 @@ class Lief(Module):
         else:
             self.log("error", "No interpreter found")
 
+    def dynamic(self):
+        if not self.__check_session():
+            return
+
+        #ELF
+        if lief.is_elf(self.filePath):
+            for lib in self.lief.libraries:
+                self.log("info", "Library : " + lib)
+        else:
+            self.log("error", "No dynamic library found")
 
     def symbols(self):
         if not self.__check_session():
@@ -351,6 +362,8 @@ class Lief(Module):
             self.interpreter()
         elif self.args.subname == "symbols":
             self.symbols()
+        elif self.args.subname == "dynamic":
+            self.dynamic()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
