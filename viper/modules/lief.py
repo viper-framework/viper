@@ -153,6 +153,8 @@ class Lief(Module):
         subparsers.add_parser("interpreter", help="Show binary interpreter")
         subparsers.add_parser("symbols", help="Show binary symbols")
         subparsers.add_parser("dynamic", help="Show binary dynamic libraries")
+        subparsers.add_parser("dlls", help="Show binary imported DLLs")
+        subparsers.add_parser("imports", help="Show binary imported functions")
         self.lief = None
     
     def __check_session(self):
@@ -246,7 +248,7 @@ class Lief(Module):
 
         # ELF   
         if lief.is_elf(self.filePath):
-            self.log("info", "Type : " + ELF_ETYPE[self.lief.header.file_type])
+            self.log("info", "Type : {0}".format(ELF_ETYPE[self.lief.header.file_type]))
         else:
             self.log("error", "No type found")
 
@@ -257,7 +259,9 @@ class Lief(Module):
 
         # ELF   
         if lief.is_elf(self.filePath):
-            self.log("info", "Entry point : " + hex(self.lief.header.entrypoint))
+            self.log("info", "Entry point : {0}".format(hex(self.lief.header.entrypoint)))
+        elif lief.is_pe(self.filePath):
+            self.log("info", "Entry point : {0}".format(hex(self.lief.entrypoint)))
         else:
             self.log("error", "No entrypoint found")
     
@@ -267,7 +271,7 @@ class Lief(Module):
 
         # ELF   
         if lief.is_elf(self.filePath):
-            self.log("info", "Architecture : " + str(self.lief.header.machine_type).split('.')[1])
+            self.log("info", "Architecture : {0}".format(str(self.lief.header.machine_type).split('.')[1]))
         else:
             self.log("error", "No architecture found")
 
@@ -275,7 +279,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         entropy = self.getEntropy(bytes(__sessions__.current.file.data))
-        self.log("info", "Entropy : " + str(entropy))
+        self.log("info", "Entropy : {0}".format(str(entropy)))
         if entropy > 7:
             self.log("warning", "The binary is probably packed")
 
@@ -286,7 +290,7 @@ class Lief(Module):
 
         # ELF   
         if lief.is_elf(self.filePath):
-            self.log("info", "Interpreter : " + self.lief.interpreter)
+            self.log("info", "Interpreter : {0}".format(self.lief.interpreter))
         else:
             self.log("error", "No interpreter found")
 
@@ -297,7 +301,7 @@ class Lief(Module):
         #ELF
         if lief.is_elf(self.filePath):
             for lib in self.lief.libraries:
-                self.log("info", "Library : " + lib)
+                self.log("info", "Library : {0}".format(lib))
         else:
             self.log("error", "No dynamic library found")
 
@@ -325,6 +329,31 @@ class Lief(Module):
         else:
             self.log("error", "No symbol found")
 
+    def dlls(self):
+        if not self.__check_session():
+            return
+
+        rows = []
+        # PE
+        if lief.is_pe(self.filePath):
+            for lib in self.lief.libraries:
+                self.log("info", lib)
+        else:
+            self.log("error", "The binary is not a PE")
+
+    def imports(self):
+        if not self.__check_session():
+            return
+
+        rows = []
+        # PE
+        if lief.is_pe(self.filePath):
+            for imp in self.lief.imports:
+                self.log("info", "{0}".format(imp.name))
+                for function in imp.entries:
+                    self.log("item", "{0} : {1}".format(hex(function.iat_address), function.name))
+        else:
+            self.log("error", "No import found")
 
     def getEntropy(self, data):
         if not data:
@@ -364,6 +393,10 @@ class Lief(Module):
             self.symbols()
         elif self.args.subname == "dynamic":
             self.dynamic()
+        elif self.args.subname == "dlls":
+            self.dlls()
+        elif self.args.subname == "imports":
+            self.imports()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
