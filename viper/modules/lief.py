@@ -150,7 +150,7 @@ class Lief(Module):
 
         # ELF   
         if lief.is_elf(self.filePath):
-            self.log("info", "Architecture : {0}".format(str(self.lief.header.machine_type).split('.')[1]))
+            self.log("info", "Architecture : {0}".format(ELF_MACHINE_TYPE[self.lief.header.machine_type]))
         else:
             self.log("error", "No architecture found")
 
