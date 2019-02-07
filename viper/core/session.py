@@ -20,6 +20,8 @@ class Session(object):
         self.created_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         # MISP event associated to the object
         self.misp_event = None
+        # FireEye responses
+        self.fireeye_response = []
 
 
 class Sessions(object):

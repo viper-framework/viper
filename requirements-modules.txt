@@ -21,6 +21,9 @@ pyelftools==0.24
 dnspython==1.15.0
 # SEE: olefile under Office module
 
+# Fireeye module
+xmltodict
+
 # Fuzzy Module
 # SEE: pydeep in requirements-base.txt
 

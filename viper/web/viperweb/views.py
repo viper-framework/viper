@@ -57,7 +57,6 @@ except NameError:
 log = logging.getLogger("viper-web")
 cfg = __config__
 
-
 ##
 # Helper Functions
 ##
@@ -86,6 +85,12 @@ mod_dict = {'apk': {'help': '-h',
                       'spoof': '-s',
                       'all': '-a'},
             'exif': {'run': ''},
+            'fireeye': {'help': '-h',
+                        'upload': '-ax sample -u',
+                        'fetch': '-ax sample -f',
+                        'create_event': '-ax misp -c',
+                        'update_event': '-ax misp -u'
+                        },
             'fuzzy': {'run': ''},
             'html': {'scripts': '-s',
                      'links': '-l',
@@ -234,11 +239,9 @@ def module_cmdline(project=None, cmd_line=None, file_hash=None):
         root, args = parse(split_command)
         try:
             if root in cmd.commands:
-                cmd_to_run = cmd.commands[root]['obj']
-                cmd_to_run(*args)
-                cmd_instance = cmd_to_run.__self__
-                html += print_output(cmd_instance.output)
-                del (cmd_instance.output[:])
+                cmd.commands[root]['obj'](*args)
+                html += print_output(cmd.output)
+                del (cmd.output[:])
             elif root in __modules__:
                 # if prev commands did not open a session open one on the current file
                 if file_hash:
@@ -294,6 +297,7 @@ def add_file(file_path, name=None, tags=None, parent=None):
 # Main Page
 class MainPageView(LoginRequiredMixin, TemplateView):
     """Main Page"""
+
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/index.html"
 
@@ -312,6 +316,7 @@ class MainPageView(LoginRequiredMixin, TemplateView):
 
 class UrlDownloadView(LoginRequiredMixin, TemplateView):
     """Download a file from URL and add to project"""
+
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
 
@@ -352,6 +357,7 @@ class UrlDownloadView(LoginRequiredMixin, TemplateView):
 
 class VtDownloadView(LoginRequiredMixin, TemplateView):
     """Download a file from Virustotal and add to project"""
+
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
 
@@ -368,9 +374,7 @@ class VtDownloadView(LoginRequiredMixin, TemplateView):
 
         vt_hash = request.POST.get('vt_hash')
         tags = request.POST.get('tag_list')
-        cmd_line = 'virustotal --search {0} -d; store'.format(vt_hash)
-        if len(tags) > 0:
-          cmd_line += '; tags -a {0}'.format(tags)
+        cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
 
         module_results = module_cmdline(project=project, file_hash=False, cmd_line=cmd_line)
 
@@ -384,6 +388,7 @@ class VtDownloadView(LoginRequiredMixin, TemplateView):
 # File View
 class FileView(LoginRequiredMixin, TemplateView):
     """Show details for a file/sample"""
+
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/file.html"
 
@@ -438,6 +443,7 @@ class FileView(LoginRequiredMixin, TemplateView):
 
 class RunModuleView(LoginRequiredMixin, TemplateView):
     """Run a module and return output"""
+
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
 
@@ -463,7 +469,8 @@ class RunModuleView(LoginRequiredMixin, TemplateView):
         if module_history != ' ':
             result = Database().get_analysis(module_history)
             module_results = print_output(json.loads(result.results))
-            html = '<p class="text-success">Result for "{0}" stored on {1}</p>'.format(result.cmd_line, result.stored_at)
+            html = '<p class="text-success">Result for "{0}" stored on {1}</p>'.format(result.cmd_line,
+                                                                                       result.stored_at)
             html += str(parse_text(module_results))
             return HttpResponse('<pre>{0}</pre>'.format(html))
         if cmd_line:
@@ -476,6 +483,7 @@ class RunModuleView(LoginRequiredMixin, TemplateView):
 
 class HexView(LoginRequiredMixin, TemplateView):
     """Read file a return as Hex"""
+
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
 
@@ -529,6 +537,7 @@ class YaraRulesView(LoginRequiredMixin, TemplateView):
         if not os.path.isdir(self.yara_rule_path):
             os.makedirs(self.yara_rule_path)
         return sorted(os.listdir(self.yara_rule_path), key=lambda y: y.lower())
+
     yara_rule_list = property(yara_rule_list)
 
     def get(self, request, *args, **kwargs):
@@ -605,6 +614,7 @@ class YaraRulesView(LoginRequiredMixin, TemplateView):
 
 class AboutView(TemplateView):
     """Show a simple about page"""
+
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/about.html"
 
@@ -615,6 +625,7 @@ class AboutView(TemplateView):
 
 class ChangelogView(TemplateView):
     """Show a simple changelog page"""
+
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/changelog.html"
 
@@ -625,6 +636,7 @@ class ChangelogView(TemplateView):
 
 class CliView(LoginRequiredMixin, TemplateView):
     """Show GUI that implement the command line interface (CLI)"""
+
     def get(self, request, *args, **kwargs):
         project = kwargs.get("project", "default")
         if project not in get_project_list():
@@ -637,6 +649,7 @@ class CliView(LoginRequiredMixin, TemplateView):
 
 class ConfigView(LoginRequiredMixin, TemplateView):
     """Show a simple page listing the settings from the config file"""
+
     def get(self, request, *args, **kwargs):
         template_name = "viperweb/config.html"
 
@@ -650,6 +663,7 @@ class ConfigView(LoginRequiredMixin, TemplateView):
 
 class CreateProjectView(LoginRequiredMixin, TemplateView):
     """Create project (if not existing) and switch (redirect) to it"""
+
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
 
@@ -665,6 +679,7 @@ class CreateProjectView(LoginRequiredMixin, TemplateView):
 
 class CuckooCheckOrSubmitView(LoginRequiredMixin, TemplateView):
     """Check if report for file exists on Cuckoo - if not submit"""
+
     def get(self, request, *args, **kwargs):
         project = kwargs.get("project", "default")
         if project not in get_project_list():
@@ -692,7 +707,9 @@ class CuckooCheckOrSubmitView(LoginRequiredMixin, TemplateView):
                 if task_list_filtered:
                     task_list_filtered_sorted = sorted(task_list_filtered, key=itemgetter("added_on"), reverse=True)
                     task_id = task_list_filtered_sorted[0]["id"]
-                    return HttpResponse('<a href="{0}/analysis/{1}/summary/" target="_blank"> Link to latest existing Cukoo Report</a>'.format(cfg.cuckoo.cuckoo_web, str(task_id)))
+                    return HttpResponse(
+                        '<a href="{0}/analysis/{1}/summary/" target="_blank"> Link to latest existing Cukoo Report</a>'.format(
+                            cfg.cuckoo.cuckoo_web, str(task_id)))
         except Exception as err:
             log.error("Error: {}".format(err))
             return HttpResponse('<span class="alert alert-danger">Error Connecting To Cuckoo</span>'.format())
@@ -710,7 +727,9 @@ class CuckooCheckOrSubmitView(LoginRequiredMixin, TemplateView):
             cuckoo_response = requests.post(uri, files=options)
             if cuckoo_response.status_code == 200:
                 cuckoo_id = dict(cuckoo_response.json())['task_id']
-                return HttpResponse('<a href="{0}/analysis/pending/" target="_blank"> Link To Cuckoo (pending tasks)</a>'.format(cfg.cuckoo.cuckoo_web, str(cuckoo_id)))
+                return HttpResponse(
+                    '<a href="{0}/analysis/pending/" target="_blank"> Link To Cuckoo (pending tasks)</a>'.format(
+                        cfg.cuckoo.cuckoo_web, str(cuckoo_id)))
             else:
                 log.error("Cuckoo Response Code: {}".format(cuckoo_response.status_code))
 
@@ -719,6 +738,7 @@ class CuckooCheckOrSubmitView(LoginRequiredMixin, TemplateView):
 
 class SearchFileView(LoginRequiredMixin, TemplateView):
     """ Search file"""
+
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
 

@@ -262,3 +262,16 @@ ua = Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like G
 
 [yara]
 repositories = https://github.com/Neo23x0/signature-base.git
+
+[fireeye]
+username = <FE_USER>
+password = <FE_PASSWORD>
+
+# client token is needed in request but not used
+client_token = "leave this for now"
+
+# e.g. ax = localhost or 127.0.0.1
+ax = <AX_IPv4_GOES_HERE>
+hx = <HX_IPv4_GOES_HERE>
+nx = <NX_IPv4_GOES_HERE>
+ex = <EX_IPv4_GOES_HERE>

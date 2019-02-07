@@ -51,6 +51,14 @@ function setOptions(chosen) {
         selbox.options[selbox.options.length] = new Option('Extract Meta Data', 'run');
     }
 
+    if (chosen == "fireeye") {
+        selbox.options[selbox.options.length] = new Option('Help', 'help');
+        selbox.options[selbox.options.length] = new Option('Upload Sample', 'upload');
+        selbox.options[selbox.options.length] = new Option('Fetch Sample', 'fetch');
+        selbox.options[selbox.options.length] = new Option('Create MISP Event', 'create_event');
+        selbox.options[selbox.options.length] = new Option('Update MISP Event', 'update_event');
+    }
+
     if (chosen == "fuzzy") {
         selbox.options[selbox.options.length] = new Option('Fuzzy Search', 'run');
     }
