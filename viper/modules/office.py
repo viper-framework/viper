@@ -65,7 +65,7 @@ class Office(Module):
         self.log('item', 'File Header: {}'.format(header['signature'].decode()))
         if header['compression'] is not None:
             self.log('item', 'Compression Type: {}'.format(header['compression']))
-        if header['compression'] is 'lzma':
+        if header['compression'] == 'lzma':
             self.log('item', 'Compressed Data Length: {}'.format(header['compressed_len']))
         self.log('item', 'File Veader: {}'.format(header['version']))
         self.log('item', 'File Size: {}'.format(header['file_length']))

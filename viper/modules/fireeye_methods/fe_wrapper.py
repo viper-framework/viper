@@ -1,4 +1,3 @@
-import ast
 import datetime
 import json
 import os
@@ -35,8 +34,8 @@ def generate_std_ioc(self, res_json: dict, threat_level: int):
     :return: dict
     """
     return {
-        'info': str(self.args.misp_info) + '_' + str(res_json["ns2:explanation"]["ns2:malware-detected"]
-        ["ns2:malware"]["@name"]),
+        'info': (str(self.args.misp_info) + '_' +
+                 str(res_json["ns2:explanation"]["ns2:malware-detected"]["ns2:malware"]["@name"])),
         'date': str(datetime.datetime.now().date()),
         'threat_level': threat_level,
         'distribution': 0,

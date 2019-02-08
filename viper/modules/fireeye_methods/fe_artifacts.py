@@ -85,8 +85,8 @@ def fe_artifacts_data_by_id(self, alert_id: str, alert_type="malwareobject"):
         try:
             self.log('debug', current_method + "Current API Token: " + self.api_tokens.get(str(appliance)) +
                      current_appliance)
-            r = do_fe_artifact_request({"appliance_and_endpoint": str(appliance) + "/artifacts/" + alert_type +
-                                                                  "/" + str(alert_id),
+            r = do_fe_artifact_request({"appliance_and_endpoint": str(appliance) +
+                                        "/artifacts/" + alert_type + "/" + str(alert_id),
                                         "appliance_api_token": self.api_tokens.get(str(appliance)),
                                         "content-type": "application/xml"
                                         })
@@ -130,8 +130,8 @@ def fe_artifacts_metadata_by_id(self, alert_id: str, alert_type="malwareobject")
         current_appliance = " | [" + str(index) + "/" + str(len(self.active_appliances)) + "]"
         try:
             self.log('debug', "Current API Token: " + self.api_tokens.get(str(appliance)))
-            r = do_fe_artifact_request({"appliance_and_endpoint": str(appliance) + "/artifacts/" + alert_type + "/" +
-                                                                  str(alert_id) + "/meta",
+            r = do_fe_artifact_request({"appliance_and_endpoint": str(appliance) + "/artifacts/" +
+                                        alert_type + "/" + str(alert_id) + "/meta",
                                         "appliance_api_token": self.api_tokens.get(str(appliance)),
                                         "content-type": "application/json"
                                         })
@@ -183,8 +183,8 @@ def fe_artifacts_metadata_by_uuid(self, alert_uuid: str):
         current_appliance = " | [" + str(index) + "/" + str(len(self.active_appliances)) + "]"
         try:
             self.log('debug', "Current API Token: " + self.api_tokens.get(str(appliance)))
-            r = do_fe_artifact_request({"appliance_and_endpoint": str(appliance) + "/artifacts/" + str(alert_uuid) +
-                                                                  "/meta",
+            r = do_fe_artifact_request({"appliance_and_endpoint": str(appliance) + "/artifacts/" +
+                                        str(alert_uuid) + "/meta",
                                         "appliance_api_token": self.api_tokens.get(str(appliance)),
                                         "content-type": "application/json"
                                         })

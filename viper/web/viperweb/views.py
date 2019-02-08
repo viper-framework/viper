@@ -239,9 +239,11 @@ def module_cmdline(project=None, cmd_line=None, file_hash=None):
         root, args = parse(split_command)
         try:
             if root in cmd.commands:
-                cmd.commands[root]['obj'](*args)
-                html += print_output(cmd.output)
-                del (cmd.output[:])
+                cmd_to_run = cmd.commands[root]['obj']
+                cmd_to_run(*args)
+                cmd_instance = cmd_to_run.__self__
+                html += print_output(cmd_instance.output)
+                del (cmd_instance.output[:])
             elif root in __modules__:
                 # if prev commands did not open a session open one on the current file
                 if file_hash:
@@ -374,7 +376,9 @@ class VtDownloadView(LoginRequiredMixin, TemplateView):
 
         vt_hash = request.POST.get('vt_hash')
         tags = request.POST.get('tag_list')
-        cmd_line = 'virustotal -d {0}; store; tags -a {1}'.format(vt_hash, tags)
+        cmd_line = 'virustotal --search {0} -d; store'.format(vt_hash)
+        if len(tags) > 0:
+          cmd_line += '; tags -a {0}'.format(tags)
 
         module_results = module_cmdline(project=project, file_hash=False, cmd_line=cmd_line)
 
