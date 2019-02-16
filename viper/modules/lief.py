@@ -23,17 +23,24 @@ class Lief(Module):
     def __init__(self):
         super(Lief, self).__init__()
         subparsers  = self.parser.add_subparsers(dest="subname")
-        subparsers.add_parser("sections", help="List binary sections")
-        subparsers.add_parser("segments", help="List binary segments")
-        subparsers.add_parser("type", help="Show binary type")
-        subparsers.add_parser("architecture", help="Show binary architecture")
-        subparsers.add_parser("entropy", help="Show binary entropy")
-        subparsers.add_parser("entrypoint", help="Show binary entrypoint")
-        subparsers.add_parser("interpreter", help="Show binary interpreter")
-        subparsers.add_parser("symbols", help="Show binary symbols")
-        subparsers.add_parser("dynamic", help="Show binary dynamic libraries")
-        subparsers.add_parser("dlls", help="Show binary imported DLLs")
-        subparsers.add_parser("imports", help="Show binary imported functions")
+        
+        parser_pe = subparsers.add_parser("pe", help="Extract information from PE")
+        parser_pe.add_argument("-s", "--sections", action="store_true", help="List PE sections")
+        parser_pe.add_argument("-e", "--entrypoint", action="store_true", help="Show PE entrypoint")
+        parser_pe.add_argument("-d", "--dlls", action="store_true", help="Show PE imported dlls")
+        parser_pe.add_argument("-i", "--imports", action="store_true", help="Show PE imported functions")
+
+        parser_elf = subparsers.add_parser("elf", help="Extract information from ELF")
+        parser_elf.add_argument("--segments", action="store_true", help="List ELF segments")
+        parser_elf.add_argument("--sections", action="store_true", help="List ELF sections")
+        parser_elf.add_argument("--symbols", action="store_true", help="Show ELF symbols")
+        parser_elf.add_argument("-t", "--type", action="store_true", help="Show ELF type")
+        parser_elf.add_argument("-e", "--entrypoint", action="store_true", help="Show ELF entrypoint")
+        parser_elf.add_argument("-a", "--architecture", action="store_true", help="Show ELF architecture")
+        parser_elf.add_argument("-i", "--interpreter", action="store_true", help="Show ELF interpreter")
+        parser_elf.add_argument("-d", "--dynamic", action="store_true", help="Show ELF dynamic libraries")
+        parser_elf.add_argument("--entropy", action="store_true", help="Show ELF entropy")
+
         self.lief = None
     
     def __check_session(self):
@@ -234,6 +241,48 @@ class Lief(Module):
         else:
             self.log("error", "No import found")
 
+    def pe(self):
+        if not self.__check_session():
+            return
+        if not lief.is_pe(self.filePath):
+            self.log("error", "Wrong binary type")
+            self.log("info", "Expected filetype : PE")
+        else:
+            if self.args.sections:
+                self.sections()
+            elif self.args.entrypoint:
+                self.entrypoint()
+            elif self.args.dlls:
+                self.dlls()
+            elif self.args.imports:
+                self.imports()
+
+    def elf(self):
+        if not self.__check_session():
+            return
+        if not lief.is_elf(self.filePath):
+            self.log("error", "Wrong binary type")
+            self.log("info", "Expected filtype : ELF")
+        else:
+            if self.args.segments:
+                self.segments()
+            elif self.args.sections:
+                self.sections()
+            elif self.args.type:
+                self.type()
+            elif self.args.entrypoint:
+                self.entrypoint()
+            elif self.args.architecture:
+                self.architecture()
+            elif self.args.interpreter:
+                self.interpreter()
+            elif self.args.dynamic:
+                self.dynamic()
+            elif self.args.symbols:
+                self.symbols()
+            elif self.args.entropy:
+                self.entropy()
+
     def getEntropy(self, data):
         if not data:
             return 0
@@ -254,28 +303,10 @@ class Lief(Module):
             self.log("error", "Missing dependency, install lief (pip3 install lief)")
             return
 
-        if self.args.subname == "sections":
-            self.sections()
-        elif self.args.subname == "segments":
-            self.segments()
-        elif self.args.subname == "type":
-            self.type()
-        elif self.args.subname == "entrypoint":
-            self.entrypoint()
-        elif self.args.subname == "architecture":
-            self.architecture()
-        elif self.args.subname == "entropy":
-            self.entropy()
-        elif self.args.subname == "interpreter":
-            self.interpreter()
-        elif self.args.subname == "symbols":
-            self.symbols()
-        elif self.args.subname == "dynamic":
-            self.dynamic()
-        elif self.args.subname == "dlls":
-            self.dlls()
-        elif self.args.subname == "imports":
-            self.imports()
+        if self.args.subname == "pe":
+            self.pe()
+        elif self.args.subname == "elf":
+            self.elf()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
