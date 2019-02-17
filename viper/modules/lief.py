@@ -6,6 +6,7 @@
 import math
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
+from datetime import datetime
 
 try:
     import lief
@@ -14,6 +15,7 @@ except:
     HAVE_LIEF = False
 
 from .lief_imports.elf import *
+from .lief_imports.pe import *
 
 class Lief(Module):
     cmd         = "lief"
@@ -29,6 +31,11 @@ class Lief(Module):
         parser_pe.add_argument("-e", "--entrypoint", action="store_true", help="Show PE entrypoint")
         parser_pe.add_argument("-d", "--dlls", action="store_true", help="Show PE imported dlls")
         parser_pe.add_argument("-i", "--imports", action="store_true", help="Show PE imported functions")
+        parser_pe.add_argument("-a", "--architecture", action="store_true", help="Show PE architecture")
+        parser_pe.add_argument("-f", "--format", action="store_true", help="Show PE format")
+        parser_pe.add_argument("-t", "--type", action="store_true", help="Show PE type")
+        parser_pe.add_argument("-I", "--imphash", action="store_true", help="Show PE imported functions hash")
+        parser_pe.add_argument("-c", "--compiledate", action="store_true", help="Show PE date of compilation")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF")
         parser_elf.add_argument("--segments", action="store_true", help="List ELF segments")
@@ -39,7 +46,7 @@ class Lief(Module):
         parser_elf.add_argument("-a", "--architecture", action="store_true", help="Show ELF architecture")
         parser_elf.add_argument("-i", "--interpreter", action="store_true", help="Show ELF interpreter")
         parser_elf.add_argument("-d", "--dynamic", action="store_true", help="Show ELF dynamic libraries")
-        parser_elf.add_argument("--entropy", action="store_true", help="Show ELF entropy")
+        parser_elf.add_argument("-E", "--entropy", action="store_true", help="Show ELF entropy")
 
         self.lief = None
     
@@ -135,6 +142,8 @@ class Lief(Module):
         # ELF   
         if lief.is_elf(self.filePath):
             self.log("info", "Type : {0}".format(ELF_ETYPE[self.lief.header.file_type]))
+        elif lief.is_pe(self.filePath):
+            self.log("info", "Type : {0}".format(PE_TYPE[lief.PE.get_type(self.filePath)]))
         else:
             self.log("error", "No type found")
 
@@ -158,6 +167,8 @@ class Lief(Module):
         # ELF   
         if lief.is_elf(self.filePath):
             self.log("info", "Architecture : {0}".format(ELF_MACHINE_TYPE[self.lief.header.machine_type]))
+        elif lief.is_pe(self.filePath):
+            self.log("info", "Architecture : {0}".format(PE_MACHINE_TYPE[self.lief.header.machine]))
         else:
             self.log("error", "No architecture found")
 
@@ -241,6 +252,24 @@ class Lief(Module):
         else:
             self.log("error", "No import found")
 
+    def format(self):
+        if not self.__check_session():
+            return
+
+        self.log("info", "Format : {0}".format(PE_EXE_FORMATS[self.lief.format]))
+
+    def imphash(self):
+        if not self.__check_session():
+            return
+        self.log("info", "Imphash : {0}".format(lief.PE.get_imphash(self.lief)))
+
+    def compiledate(self):
+        if not self.__check_session():
+            return
+        timestamp = self.lief.header.time_date_stamps
+        date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
+        self.log("info", "Compilation date : {0}".format(date))
+
     def pe(self):
         if not self.__check_session():
             return
@@ -256,6 +285,16 @@ class Lief(Module):
                 self.dlls()
             elif self.args.imports:
                 self.imports()
+            elif self.args.architecture:
+                self.architecture()
+            elif self.args.format:
+                self.format()
+            elif self.args.type:
+                self.type()
+            elif self.args.imphash:
+                self.imphash()
+            elif self.args.compiledate:
+                self.compiledate()
 
     def elf(self):
         if not self.__check_session():
