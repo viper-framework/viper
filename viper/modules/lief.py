@@ -16,6 +16,7 @@ except:
 
 from .lief_imports.elf import *
 from .lief_imports.pe import *
+from .lief_imports.macho import *
 
 class Lief(Module):
     cmd         = "lief"
@@ -26,7 +27,7 @@ class Lief(Module):
         super(Lief, self).__init__()
         subparsers  = self.parser.add_subparsers(dest="subname")
         
-        parser_pe = subparsers.add_parser("pe", help="Extract information from PE")
+        parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
         parser_pe.add_argument("-s", "--sections", action="store_true", help="List PE sections")
         parser_pe.add_argument("-e", "--entrypoint", action="store_true", help="Show PE entrypoint")
         parser_pe.add_argument("-d", "--dlls", action="store_true", help="Show PE imported dlls")
@@ -37,7 +38,7 @@ class Lief(Module):
         parser_pe.add_argument("-I", "--imphash", action="store_true", help="Show PE imported functions hash")
         parser_pe.add_argument("-c", "--compiledate", action="store_true", help="Show PE date of compilation")
 
-        parser_elf = subparsers.add_parser("elf", help="Extract information from ELF")
+        parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("--segments", action="store_true", help="List ELF segments")
         parser_elf.add_argument("--sections", action="store_true", help="List ELF sections")
         parser_elf.add_argument("--symbols", action="store_true", help="Show ELF symbols")
@@ -47,6 +48,9 @@ class Lief(Module):
         parser_elf.add_argument("-i", "--interpreter", action="store_true", help="Show ELF interpreter")
         parser_elf.add_argument("-d", "--dynamic", action="store_true", help="Show ELF dynamic libraries")
         parser_elf.add_argument("-E", "--entropy", action="store_true", help="Show ELF entropy")
+
+        parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
+        parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
 
         self.lief = None
     
@@ -270,6 +274,19 @@ class Lief(Module):
         date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
         self.log("info", "Compilation date : {0}".format(date))
 
+    def header(self):
+        if not self.__check_session():
+            return
+        rows = []
+        rows.append([
+            MACHO_CPU_TYPES[self.lief.header.cpu_type],
+            MACHO_FILE_TYPES[self.lief.header.file_type],
+            self.lief.header.nb_cmds,
+            str(self.lief.header.sizeof_cmds)+" Bytes",
+            ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)
+        ])
+        self.log("table", dict(header=["CPU Type", "File Type", "Nb Cmds", "Size of Cmds", "Flags"], rows=rows))
+
     def pe(self):
         if not self.__check_session():
             return
@@ -322,6 +339,16 @@ class Lief(Module):
             elif self.args.entropy:
                 self.entropy()
 
+    def macho(self):
+        if not self.__check_session():
+            return
+        if not lief.is_macho(self.filePath):
+            self.log("error", "Wrong binary type")
+            self.log("info", "Expected filtype : MachO")
+        else:
+            if self.args.header:
+                self.header()
+
     def getEntropy(self, data):
         if not data:
             return 0
@@ -346,6 +373,8 @@ class Lief(Module):
             self.pe()
         elif self.args.subname == "elf":
             self.elf()
+        elif self.args.subname == "macho":
+            self.macho()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
