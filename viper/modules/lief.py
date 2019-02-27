@@ -51,6 +51,8 @@ class Lief(Module):
 
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
         parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
+        parser_macho.add_argument("-e", "--entrypoint", action="store_true", help="Show MachO entrypoint")
+        parser_macho.add_argument("-c", "--codesignature", action="store_true", help="Show MachO code signature")
 
         self.lief = None
     
@@ -161,6 +163,11 @@ class Lief(Module):
             self.log("info", "Entry point : {0}".format(hex(self.lief.header.entrypoint)))
         elif lief.is_pe(self.filePath):
             self.log("info", "Entry point : {0}".format(hex(self.lief.entrypoint)))
+        elif lief.is_macho(self.filePath):
+            if self.lief.has_entrypoint:
+                self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
+            else:
+                self.log("warning", "No entrypoint found")
         else:
             self.log("error", "No entrypoint found")
     
@@ -287,6 +294,22 @@ class Lief(Module):
         ])
         self.log("table", dict(header=["CPU Type", "File Type", "Nb Cmds", "Size of Cmds", "Flags"], rows=rows))
 
+    def codeSignature(self):
+        if not self.__check_session():
+            return
+        if self.lief.has_code_signature:
+            rows = []
+            rows.append([
+                MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
+                hex(self.lief.code_signature.command_offset),
+                "{0} Bytes".format(self.lief.code_signature.size),
+                hex(self.lief.code_signature.data_offset),
+                "{0} Bytes".format(self.lief.code_signature.data_size)
+            ])
+            self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
+        else:
+            self.log("warning", "No code signature found")
+
     def pe(self):
         if not self.__check_session():
             return
@@ -348,6 +371,10 @@ class Lief(Module):
         else:
             if self.args.header:
                 self.header()
+            elif self.args.entrypoint:
+                self.entrypoint()
+            elif self.args.codesignature:
+                self.codeSignature()
 
     def getEntropy(self, data):
         if not data:
