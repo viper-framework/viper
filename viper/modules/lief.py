@@ -53,8 +53,10 @@ class Lief(Module):
         parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
         parser_macho.add_argument("-e", "--entrypoint", action="store_true", help="Show MachO entrypoint")
         parser_macho.add_argument("-c", "--codesignature", action="store_true", help="Show MachO code signature")
-        parser_macho.add_argument("-j", "--exportedfunctions", action="store_true", help="Show MachO code exported functions")
-        parser_macho.add_argument("-k", "--exportedsymbols", action="store_true", help="Show MachO code exported symbols")
+        parser_macho.add_argument("-j", "--exportedfunctions", action="store_true", help="Show MachO exported functions")
+        parser_macho.add_argument("-k", "--exportedsymbols", action="store_true", help="Show MachO exported symbols")
+        parser_macho.add_argument("-g", "--importedfunctions", action="store_true", help="Show MachO imported functions")
+        parser_macho.add_argument("-q", "--importedsymbols", action="store_true", help="Show MachO imported symbols")
         parser_macho.add_argument("-t", "--test", action="store_true", help="Show MachO entrypoint")
 
         self.lief = None
@@ -338,6 +340,31 @@ class Lief(Module):
         else:
             self.log("warning", "No exported symbols")
 
+    def importedFunctions(self):
+        if not self.__check_session():
+            return
+        if self.lief.imported_functions:
+            for function in self.lief.imported_functions:
+                self.log("info", function)
+        else:
+            self.log("warning", "No imported functions")
+
+    def importedSymbols(self):
+        if not self.__check_session():
+            return
+        if self.lief.imported_symbols:
+            rows = []
+            for symbol in self.lief.imported_symbols:
+                rows.append([
+                    symbol.name,
+                    symbol.numberof_sections,
+                    hex(symbol.value),
+                    MACHO_SYMBOL_ORIGINS[symbol.origin]
+                ])
+            self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
+        else:
+            self.log("warning", "No imported symbols")
+
     def pe(self):
         if not self.__check_session():
             return
@@ -407,6 +434,10 @@ class Lief(Module):
                 self.exportedFunctions()
             elif self.args.exportedsymbols:
                 self.exportedSymbols()
+            elif self.args.importedfunctions:
+                self.importedFunctions()
+            elif self.args.importedsymbols:
+                self.importedSymbols()
 
     def getEntropy(self, data):
         if not data:
