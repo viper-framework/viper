@@ -53,6 +53,8 @@ class Lief(Module):
         parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
         parser_macho.add_argument("-e", "--entrypoint", action="store_true", help="Show MachO entrypoint")
         parser_macho.add_argument("-c", "--codesignature", action="store_true", help="Show MachO code signature")
+        parser_macho.add_argument("-j", "--exportedfunctions", action="store_true", help="Show MachO code exported functions")
+        parser_macho.add_argument("-t", "--test", action="store_true", help="Show MachO entrypoint")
 
         self.lief = None
     
@@ -310,6 +312,15 @@ class Lief(Module):
         else:
             self.log("warning", "No code signature found")
 
+    def exportedFunctions(self):
+        if not self.__check_session():
+            return
+        if self.lief.exported_functions:
+            for function in self.lief.exported_functions:
+                self.log("info", function)
+        else:
+            self.log("warning", "No exported functions")
+
     def pe(self):
         if not self.__check_session():
             return
@@ -375,6 +386,8 @@ class Lief(Module):
                 self.entrypoint()
             elif self.args.codesignature:
                 self.codeSignature()
+            elif self.args.exportedfunctions:
+                self.exportedFunctions()
 
     def getEntropy(self, data):
         if not data:
