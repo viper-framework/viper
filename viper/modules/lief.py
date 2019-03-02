@@ -57,7 +57,8 @@ class Lief(Module):
         parser_macho.add_argument("-k", "--exportedsymbols", action="store_true", help="Show MachO exported symbols")
         parser_macho.add_argument("-g", "--importedfunctions", action="store_true", help="Show MachO imported functions")
         parser_macho.add_argument("-q", "--importedsymbols", action="store_true", help="Show MachO imported symbols")
-        parser_macho.add_argument("-s", "--sections", action="store_true", help="Show MachO sections")
+        parser_macho.add_argument("--sections", action="store_true", help="Show MachO sections")
+        parser_macho.add_argument("--segments", action="store_true", help="Show MachO segments")
         parser_macho.add_argument("-t", "--test", action="store_true", help="Show MachO entrypoint")
 
         self.lief = None
@@ -118,6 +119,7 @@ class Lief(Module):
                     hex(section.offset),
                     round(section.entropy,4)
                 ])
+            self.log("info", "MachO sections : ")
             self.log("table", dict(header=["Name","Virt Addr", "Type", "Size", "Offset", "Entropy"], rows=rows))
         else:
             self.log("error", "No section found")
@@ -151,6 +153,34 @@ class Lief(Module):
                 ])
             self.log("info", "ELF segments : ")
             self.log("table", dict(header=["Type", "PhysicalAddress", "FileSize", "VirtuAddr", "MemSize", "Flags", "Entropy"], rows=rows))
+        elif lief.is_macho(self.filePath):
+            self.log("info", "MachO segments : ")
+            for segment in self.lief.segments:
+                self.log("info", "Information of segment {0} : ".format(segment.name))
+                self.log("item", "{0:<18} : {1}".format("Name", segment.name)),
+                self.log("item", "{0:<18} : {1} Bytes".format("Size", segment.file_size)),
+                self.log("item", "{0:<18} : {1}".format("Offset", segment.file_offset)),
+                self.log("item", "{0:<18} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[segment.command])),
+                self.log("item", "{0:<18} : {1} Bytes".format("Command size", segment.size)),
+                self.log("item", "{0:<18} : {1}".format("Command offset", hex(segment.command_offset))),
+                self.log("item", "{0:<18} : {1}".format("Number of sections", segment.numberof_sections)),
+                self.log("item", "{0:<18} : {1}".format("Initial protection", segment.init_protection)),
+                self.log("item", "{0:<18} : {1}".format("Maximum protection", segment.max_protection)),
+                self.log("item", "{0:<18} : {1}".format("Virtual address", hex(segment.virtual_address))),
+                self.log("item", "{0:<18} : {1} Bytes".format("Virtual size", segment.virtual_size)),
+                if segment.sections:
+                    for section in segment.sections:
+                        rows.append([
+                            section.name,
+                            hex(section.virtual_address),
+                            MACHO_SECTION_TYPES[section.type],
+                            "{:<6} bytes".format(section.size),
+                            hex(section.offset),
+                            round(section.entropy,4)
+                        ])
+                    self.log("success", "Sections in segment {0} : ".format(segment.name))
+                    self.log("table", dict(header=["Name", "Virtual address", "Type", "Size", "Offset", "Entropy"], rows=rows))
+                    rows = []
         else:
             self.log("error", "No segment found")
 
@@ -290,80 +320,90 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        rows.append([
-            MACHO_CPU_TYPES[self.lief.header.cpu_type],
-            MACHO_FILE_TYPES[self.lief.header.file_type],
-            self.lief.header.nb_cmds,
-            "{:<6} Bytes".format(self.lief.header.sizeof_cmds),
-            ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)
-        ])
-        self.log("table", dict(header=["CPU Type", "File Type", "Nb Cmds", "Size of Cmds", "Flags"], rows=rows))
+        if lief.is_macho(self.filePath):
+            rows.append([
+                MACHO_CPU_TYPES[self.lief.header.cpu_type],
+                MACHO_FILE_TYPES[self.lief.header.file_type],
+                self.lief.header.nb_cmds,
+                "{:<6} Bytes".format(self.lief.header.sizeof_cmds),
+                ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)
+            ])
+            self.log("info", "MachO headers : ")
+            self.log("table", dict(header=["CPU Type", "File Type", "Nb Cmds", "Size of Cmds", "Flags"], rows=rows))
 
     def codeSignature(self):
         if not self.__check_session():
             return
-        if self.lief.has_code_signature:
-            rows = []
-            rows.append([
-                MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
-                hex(self.lief.code_signature.command_offset),
-                "{:<6} Bytes".format(self.lief.code_signature.size),
-                hex(self.lief.code_signature.data_offset),
-                "{:<6} Bytes".format(self.lief.code_signature.data_size)
-            ])
-            self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
-        else:
-            self.log("warning", "No code signature found")
+        if lief.is_macho(self.filePath):
+            if self.lief.has_code_signature:
+                rows = []
+                rows.append([
+                    MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
+                    hex(self.lief.code_signature.command_offset),
+                    "{:<6} Bytes".format(self.lief.code_signature.size),
+                        hex(self.lief.code_signature.data_offset),
+                    "{:<6} Bytes".format(self.lief.code_signature.data_size)
+                ])
+                self.log("info", "MachO code signature : ")
+                self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
+            else:
+                self.log("warning", "No code signature found")
 
     def exportedFunctions(self):
         if not self.__check_session():
             return
-        if self.lief.exported_functions:
-            for function in self.lief.exported_functions:
-                self.log("info", function)
-        else:
-            self.log("warning", "No exported functions")
+        if lief.is_macho(self.filePath):
+            if self.lief.exported_functions:
+                for function in self.lief.exported_functions:
+                    self.log("info", function)
+            else:
+                self.log("warning", "No exported functions")
 
     def exportedSymbols(self):
         if not self.__check_session():
             return
-        if self.lief.exported_symbols:
-            rows = []
-            for symbol in self.lief.exported_symbols:
-                rows.append([
-                    symbol.name,
-                    symbol.numberof_sections,
-                    hex(symbol.value),
-                    MACHO_SYMBOL_ORIGINS[symbol.origin]
-                ])
-            self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
-        else:
-            self.log("warning", "No exported symbols")
+        if lief.is_macho(self.filePath):
+            if self.lief.exported_symbols:
+                rows = []
+                for symbol in self.lief.exported_symbols:
+                    rows.append([
+                        symbol.name,
+                        symbol.numberof_sections,
+                        hex(symbol.value),
+                        MACHO_SYMBOL_ORIGINS[symbol.origin]
+                    ])
+                self.log("info", "MachO exported symbols : ")
+                self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
+            else:
+                self.log("warning", "No exported symbols")
 
     def importedFunctions(self):
         if not self.__check_session():
             return
-        if self.lief.imported_functions:
-            for function in self.lief.imported_functions:
-                self.log("info", function)
-        else:
-            self.log("warning", "No imported functions")
+        if lief.is_macho(self.filePath):
+            if self.lief.imported_functions:
+                for function in self.lief.imported_functions:
+                    self.log("info", function)
+            else:
+                self.log("warning", "No imported functions")
 
     def importedSymbols(self):
         if not self.__check_session():
             return
-        if self.lief.imported_symbols:
-            rows = []
-            for symbol in self.lief.imported_symbols:
-                rows.append([
-                    symbol.name,
-                    symbol.numberof_sections,
-                    hex(symbol.value),
-                    MACHO_SYMBOL_ORIGINS[symbol.origin]
-                ])
-            self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
-        else:
-            self.log("warning", "No imported symbols")
+        if lief.is_macho(self.filePath):
+            if self.lief.imported_symbols:
+                rows = []
+                for symbol in self.lief.imported_symbols:
+                    rows.append([
+                        symbol.name,
+                        symbol.numberof_sections,
+                        hex(symbol.value),
+                        MACHO_SYMBOL_ORIGINS[symbol.origin]
+                    ])
+                self.log("info", "MachO imported symbols : ")
+                self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
+            else:
+                self.log("warning", "No imported symbols")
 
     def pe(self):
         if not self.__check_session():
@@ -440,6 +480,8 @@ class Lief(Module):
                 self.importedSymbols()
             elif self.args.sections:
                 self.sections()
+            elif self.args.segments:
+                self.segments()
 
     def getEntropy(self, data):
         if not data:
