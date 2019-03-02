@@ -57,6 +57,7 @@ class Lief(Module):
         parser_macho.add_argument("-k", "--exportedsymbols", action="store_true", help="Show MachO exported symbols")
         parser_macho.add_argument("-g", "--importedfunctions", action="store_true", help="Show MachO imported functions")
         parser_macho.add_argument("-q", "--importedsymbols", action="store_true", help="Show MachO imported symbols")
+        parser_macho.add_argument("-s", "--sections", action="store_true", help="Show MachO sections")
         parser_macho.add_argument("-t", "--test", action="store_true", help="Show MachO entrypoint")
 
         self.lief = None
@@ -80,7 +81,6 @@ class Lief(Module):
 
         rows = []
 
-        # ELF   
         if lief.is_elf(self.filePath):
             for section in self.lief.sections:
                 rows.append([
@@ -95,7 +95,6 @@ class Lief(Module):
             self.log("info", "ELF sections : ")
             self.log("table", dict(header=["Name", "Address", "RVA", "Size", "Type", "Flags", "Entropy"], rows=rows))
 
-        # PE
         elif lief.is_pe(self.filePath):
             for section in self.lief.sections:
                 rows.append([
@@ -109,7 +108,17 @@ class Lief(Module):
 
             self.log("info", "PE sections : ")
             self.log("table", dict(header=["Name","RVA", "VirtualSize", "PointerToRawData", "RawDataSize", "Entropy"], rows=rows))
-
+        elif lief.is_macho(self.filePath):
+            for section in self.lief.sections:
+                rows.append([
+                    section.name,
+                    hex(section.virtual_address),
+                    MACHO_SECTION_TYPES[section.type],
+                    "{:<6} bytes".format(section.size),
+                    hex(section.offset),
+                    round(section.entropy,4)
+                ])
+            self.log("table", dict(header=["Name","Virt Addr", "Type", "Size", "Offset", "Entropy"], rows=rows))
         else:
             self.log("error", "No section found")
             return
@@ -120,7 +129,6 @@ class Lief(Module):
 
         rows = []
 
-        # ELF   
         if lief.is_elf(self.filePath):
             for segment in self.lief.segments:
                 flags = []
@@ -150,7 +158,6 @@ class Lief(Module):
         if not self.__check_session():
             return
 
-        # ELF   
         if lief.is_elf(self.filePath):
             self.log("info", "Type : {0}".format(ELF_ETYPE[self.lief.header.file_type]))
         elif lief.is_pe(self.filePath):
@@ -163,7 +170,6 @@ class Lief(Module):
         if not self.__check_session():
             return
 
-        # ELF   
         if lief.is_elf(self.filePath):
             self.log("info", "Entry point : {0}".format(hex(self.lief.header.entrypoint)))
         elif lief.is_pe(self.filePath):
@@ -180,7 +186,6 @@ class Lief(Module):
         if not self.__check_session():
             return
 
-        # ELF   
         if lief.is_elf(self.filePath):
             self.log("info", "Architecture : {0}".format(ELF_MACHINE_TYPE[self.lief.header.machine_type]))
         elif lief.is_pe(self.filePath):
@@ -201,7 +206,6 @@ class Lief(Module):
         if not self.__check_session():
             return
 
-        # ELF   
         if lief.is_elf(self.filePath):
             self.log("info", "Interpreter : {0}".format(self.lief.interpreter))
         else:
@@ -211,7 +215,6 @@ class Lief(Module):
         if not self.__check_session():
             return
 
-        #ELF
         if lief.is_elf(self.filePath):
             for lib in self.lief.libraries:
                 self.log("info", "Library : {0}".format(lib))
@@ -224,7 +227,6 @@ class Lief(Module):
 
         rows = []
 
-        # ELF   
         if lief.is_elf(self.filePath):
             for symbol in self.lief.symbols:
                 rows.append([
@@ -247,7 +249,6 @@ class Lief(Module):
             return
 
         rows = []
-        # PE
         if lief.is_pe(self.filePath):
             for lib in self.lief.libraries:
                 self.log("info", lib)
@@ -259,7 +260,6 @@ class Lief(Module):
             return
 
         rows = []
-        # PE
         if lief.is_pe(self.filePath):
             for imp in self.lief.imports:
                 self.log("info", "{0}".format(imp.name))
@@ -294,7 +294,7 @@ class Lief(Module):
             MACHO_CPU_TYPES[self.lief.header.cpu_type],
             MACHO_FILE_TYPES[self.lief.header.file_type],
             self.lief.header.nb_cmds,
-            str(self.lief.header.sizeof_cmds)+" Bytes",
+            "{:<6} Bytes".format(self.lief.header.sizeof_cmds),
             ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)
         ])
         self.log("table", dict(header=["CPU Type", "File Type", "Nb Cmds", "Size of Cmds", "Flags"], rows=rows))
@@ -307,9 +307,9 @@ class Lief(Module):
             rows.append([
                 MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
                 hex(self.lief.code_signature.command_offset),
-                "{0} Bytes".format(self.lief.code_signature.size),
+                "{:<6} Bytes".format(self.lief.code_signature.size),
                 hex(self.lief.code_signature.data_offset),
-                "{0} Bytes".format(self.lief.code_signature.data_size)
+                "{:<6} Bytes".format(self.lief.code_signature.data_size)
             ])
             self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
         else:
@@ -438,6 +438,8 @@ class Lief(Module):
                 self.importedFunctions()
             elif self.args.importedsymbols:
                 self.importedSymbols()
+            elif self.args.sections:
+                self.sections()
 
     def getEntropy(self, data):
         if not data:
