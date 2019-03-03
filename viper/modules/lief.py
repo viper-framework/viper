@@ -37,6 +37,7 @@ class Lief(Module):
         parser_pe.add_argument("-t", "--type", action="store_true", help="Show PE type")
         parser_pe.add_argument("-I", "--imphash", action="store_true", help="Show PE imported functions hash")
         parser_pe.add_argument("-c", "--compiledate", action="store_true", help="Show PE date of compilation")
+        parser_pe.add_argument("-H", "--header", action="store_true", help="Show PE header")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-S", "--segments", action="store_true", help="List ELF segments")
@@ -222,7 +223,7 @@ class Lief(Module):
         if lief.is_elf(self.filePath):
             self.log("info", "Architecture : {0}".format(ELF_MACHINE_TYPE[self.lief.header.machine_type]))
         elif lief.is_pe(self.filePath):
-            self.log("info", "Architecture : {0}".format(PE_MACHINE_TYPE[self.lief.header.machine]))
+            self.log("info", "Architecture : {0}".format(PE_MACHINE_TYPES[self.lief.header.machine]))
         elif lief.is_macho(self.filePath):
             self.log("info", "Architecture : {0}".format(MACHO_CPU_TYPES[self.lief.header.cpu_type]))
         else:
@@ -344,15 +345,56 @@ class Lief(Module):
             return
         rows = []
         if lief.is_macho(self.filePath):
-            rows.append([
-                MACHO_CPU_TYPES[self.lief.header.cpu_type],
-                MACHO_FILE_TYPES[self.lief.header.file_type],
-                self.lief.header.nb_cmds,
-                "{:<6} Bytes".format(self.lief.header.sizeof_cmds),
-                ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)
-            ])
-            self.log("info", "MachO headers : ")
-            self.log("table", dict(header=["CPU Type", "File Type", "Nb Cmds", "Size of Cmds", "Flags"], rows=rows))
+            self.log("info", "MachO header : ")
+            self.log("item", "{0:<15} : {1}".format("CPU type", MACHO_CPU_TYPES[self.lief.header.cpu_type]))
+            self.log("item", "{0:<15} : {1}".format("File type", MACHO_FILE_TYPES[self.lief.header.file_type]))
+            self.log("item", "{0:<15} : {1}".format("Number of cmds", self.lief.header.nb_cmds))
+            self.log("item", "{0:<15} : {1} Bytes".format("Size of cmds", self.lief.header.sizeof_cmds))
+            self.log("item", "{0:<15} : {1}".format("Flags", ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)))
+        elif lief.is_pe(self.filePath):
+            timestamp = self.lief.header.time_date_stamps
+            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
+            self.log("info", "PE header : ")
+            self.log("item", "{0:<28} : {1}".format("Type", PE_MACHINE_TYPES[self.lief.header.machine]))
+            self.log("item", "{0:<28} : {1}".format("Number of sections", self.lief.header.numberof_sections))
+            self.log("item", "{0:<28} : {1}".format("Number of symbols", self.lief.header.numberof_symbols))
+            self.log("item", "{0:<28} : {1}".format("Pointer to symbol table", hex(self.lief.header.pointerto_symbol_table)))
+            self.log("item", "{0:<28} : {1}".format("Signature", "{0} ({1})".format(self.lief.header.signature, ''.join(chr(sig) for sig in self.lief.header.signature))))
+            self.log("item", "{0:<28} : {1}".format("Date of compilation", date))
+            self.log("item", "{0:<28} : {1:<6} Bytes".format("Size of optional header", self.lief.header.sizeof_optional_header))
+            if self.lief.header.sizeof_optional_header > 0:
+                self.log("success", "Optional header : ")
+                self.log("item", "{0:<28} : {1}".format("Entrypoint", hex(self.lief.optional_header.addressof_entrypoint)))
+                self.log("item", "{0:<28} : {1}".format("Base of code", hex(self.lief.optional_header.baseof_code)))
+                self.log("item", "{0:<28} : {1}".format("Checksum", self.lief.optional_header.checksum))
+                self.log("item", "{0:<28} : {1}".format("Base of image", hex(self.lief.optional_header.imagebase)))
+                self.log("item", "{0:<28} : {1}".format("Magic", PE_TYPE[self.lief.optional_header.magic]))
+                self.log("item", "{0:<28} : {1}".format("Subsystem", PE_SUBSYSTEMS[self.lief.optional_header.subsystem]))
+                self.log("item", "{0:<28} : {1}".format("Min OS version", self.lief.optional_header.minor_operating_system_version))
+                self.log("item", "{0:<28} : {1}".format("Max OS version", self.lief.optional_header.major_operating_system_version))
+                self.log("item", "{0:<28} : {1}".format("Min Linker version", self.lief.optional_header.minor_linker_version))
+                self.log("item", "{0:<28} : {1}".format("Max Linker version", self.lief.optional_header.major_linker_version))
+                self.log("item", "{0:<28} : {1}".format("Min Image version", self.lief.optional_header.minor_image_version))
+                self.log("item", "{0:<28} : {1}".format("Max Image version", self.lief.optional_header.major_image_version))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of code", self.lief.optional_header.sizeof_code))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of headers", self.lief.optional_header.sizeof_headers))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of heap commited", self.lief.optional_header.sizeof_heap_commit))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of heap reserved", self.lief.optional_header.sizeof_heap_reserve))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of image", self.lief.optional_header.sizeof_image))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of Initialized data", self.lief.optional_header.sizeof_initialized_data))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of Uninitialized data", self.lief.optional_header.sizeof_uninitialized_data))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of stack commited", self.lief.optional_header.sizeof_stack_commit))
+                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
+        elif lief.is_elf(self.filePath):
+            self.log("info", "ELF header : ")
+            self.log("item", "{0} : {1}".format("", ))
+            self.log("item", "{0} : {1}".format("", ))
+            self.log("item", "{0} : {1}".format("", ))
+            self.log("item", "{0} : {1}".format("", ))
+            self.log("item", "{0} : {1}".format("", ))
+            self.log("item", "{0} : {1}".format("", ))
+            self.log("item", "{0} : {1}".format("", ))
+            self.log("item", "{0} : {1}".format("", ))
         else:
             self.log("warning", "No header found")
 
@@ -592,6 +634,8 @@ class Lief(Module):
                 self.architecture()
             elif self.args.format:
                 self.format()
+            elif self.args.header:
+                self.header()
             elif self.args.type:
                 self.type()
             elif self.args.imphash:

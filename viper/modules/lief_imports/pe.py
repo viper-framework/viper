@@ -9,7 +9,7 @@ if not HAVE_LIEF:
     self.log("error", "Missing dependency, install lief (pip3 install lief)")
     sys.exit(1)
 
-PE_MACHINE_TYPE = {
+PE_MACHINE_TYPES = {
     lief.PE.MACHINE_TYPES.AM33      :   'AM33',
     lief.PE.MACHINE_TYPES.AMD64     :   'AMD64',
     lief.PE.MACHINE_TYPES.ARM       :   'ARM',
@@ -44,4 +44,21 @@ PE_EXE_FORMATS = {
 PE_TYPE = {
     lief.PE.PE_TYPE.PE32        :   'PE32',
     lief.PE.PE_TYPE.PE32_PLUS   :   'PE32_PLUS'
+}
+
+PE_SUBSYSTEMS = {
+    lief.PE.SUBSYSTEM.EFI_APPLICATION           : 'EFI_APPLICATION',
+    lief.PE.SUBSYSTEM.EFI_BOOT_SERVICE_DRIVER   : 'EFI_BOOT_SERVICE_DRIVER',
+    lief.PE.SUBSYSTEM.EFI_ROM                   : 'EFI_ROM',
+    lief.PE.SUBSYSTEM.EFI_RUNTIME_DRIVER        : 'EFI_RUNTIME_DRIVER',
+    lief.PE.SUBSYSTEM.NATIVE                    : 'NATIVE',
+    lief.PE.SUBSYSTEM.NATIVE_WINDOWS            : 'NATIVE_WINDOWS',
+    lief.PE.SUBSYSTEM.OS2_CUI                   : 'OS2_CUI',
+    lief.PE.SUBSYSTEM.POSIX_CUI                 : 'POSIX_CUI',
+    lief.PE.SUBSYSTEM.UNKNOWN                   : 'UNKNOWN',
+    lief.PE.SUBSYSTEM.WINDOWS_BOOT_APPLICATION  : 'WINDOWS_BOOT_APPLICATION',
+    lief.PE.SUBSYSTEM.WINDOWS_CE_GUI            : 'WINDOWS_CE_GUI',
+    lief.PE.SUBSYSTEM.WINDOWS_CUI               : 'WINDOWS_CUI',
+    lief.PE.SUBSYSTEM.WINDOWS_GUI               : 'WINDOWS_GUI',
+    lief.PE.SUBSYSTEM.XBOX                      : 'XOBX'
 }
