@@ -52,11 +52,11 @@ class Lief(Module):
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
         parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
         parser_macho.add_argument("-e", "--entrypoint", action="store_true", help="Show MachO entrypoint")
-        parser_macho.add_argument("-c", "--codesignature", action="store_true", help="Show MachO code signature")
-        parser_macho.add_argument("-j", "--exportedfunctions", action="store_true", help="Show MachO exported functions")
-        parser_macho.add_argument("-k", "--exportedsymbols", action="store_true", help="Show MachO exported symbols")
-        parser_macho.add_argument("-g", "--importedfunctions", action="store_true", help="Show MachO imported functions")
-        parser_macho.add_argument("-q", "--importedsymbols", action="store_true", help="Show MachO imported symbols")
+        parser_macho.add_argument("-C", "--codesignature", action="store_true", help="Show MachO code signature")
+        parser_macho.add_argument("-j", "--expfunctions", action="store_true", help="Show MachO exported functions")
+        parser_macho.add_argument("-k", "--expsymbols", action="store_true", help="Show MachO exported symbols")
+        parser_macho.add_argument("-g", "--impfunctions", action="store_true", help="Show MachO imported functions")
+        parser_macho.add_argument("-q", "--impsymbols", action="store_true", help="Show MachO imported symbols")
         parser_macho.add_argument("-s", "--sections", action="store_true", help="Show MachO sections")
         parser_macho.add_argument("-S", "--segments", action="store_true", help="Show MachO segments")
         parser_macho.add_argument("-v", "--sourceversion", action="store_true", help="Show MachO source version")
@@ -64,6 +64,7 @@ class Lief(Module):
         parser_macho.add_argument("-u", "--uuid", action="store_true", help="Show MachO uuid")
         parser_macho.add_argument("-d", "--dataincode", action="store_true", help="Show MachO data in code")
         parser_macho.add_argument("-m", "--maincommand", action="store_true", help="Show MachO main command")
+        parser_macho.add_argument("-c", "--commands", action="store_true", help="Show MachO commands")
 
         self.lief = None
     
@@ -492,12 +493,28 @@ class Lief(Module):
                 self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.main_command.command]))
                 self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.main_command.command_offset)))
                 self.log("item", "{0:<12} : {1} Bytes".format("Size", self.lief.main_command.size))
-                self.log("item", "{0:<12} : {1}".format("Entrypoint", self.lief.main_command.entrypoint))
+                self.log("item", "{0:<12} : {1}".format("Entrypoint", hex(self.lief.main_command.entrypoint)))
                 self.log("item", "{0:<12} : {1} Bytes".format("Stack size", self.lief.main_command.stack_size))
             else:
                 self.log("warning", "No main command found")
         else:
             self.log("warning", "No main command found")
+
+    def commands(self):
+        if not self.__check_session():
+            return
+        rows = []
+        if lief.is_macho(self.filePath):
+            if self.lief.commands:
+                for command in self.lief.commands:
+                    rows.append([
+                        MACHO_LOAD_COMMAND_TYPES[command.command],
+                        "{0:<6} Bytes".format(command.size),
+                        hex(command.command_offset),
+                    ])
+                self.log("table", dict(header=["Command", "Size", "Offset"], rows=rows))
+            else:
+                self.log("warning", "No command found")
 
     def pe(self):
         if not self.__check_session():
@@ -564,13 +581,13 @@ class Lief(Module):
                 self.entrypoint()
             elif self.args.codesignature:
                 self.codeSignature()
-            elif self.args.exportedfunctions:
+            elif self.args.expfunctions:
                 self.exportedFunctions()
-            elif self.args.exportedsymbols:
+            elif self.args.expsymbols:
                 self.exportedSymbols()
-            elif self.args.importedfunctions:
+            elif self.args.impfunctions:
                 self.importedFunctions()
-            elif self.args.importedsymbols:
+            elif self.args.impsymbols:
                 self.importedSymbols()
             elif self.args.sections:
                 self.sections()
@@ -586,6 +603,8 @@ class Lief(Module):
                 self.dataInCode()
             elif self.args.maincommand:
                 self.mainCommand()
+            elif self.args.commands:
+                self.commands()
 
     def getEntropy(self, data):
         if not data:
