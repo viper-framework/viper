@@ -50,6 +50,7 @@ class Lief(Module):
         parser_elf.add_argument("-i", "--interpreter", action="store_true", help="Show ELF interpreter")
         parser_elf.add_argument("-d", "--dynamic", action="store_true", help="Show ELF dynamic libraries")
         parser_elf.add_argument("-E", "--entropy", action="store_true", help="Show ELF entropy")
+        parser_elf.add_argument("-H", "--header", action="store_true", help="Show ELF header")
 
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
         parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
@@ -70,6 +71,7 @@ class Lief(Module):
         parser_macho.add_argument("-m", "--maincommand", action="store_true", help="Show MachO main command")
         parser_macho.add_argument("-c", "--commands", action="store_true", help="Show MachO commands")
         parser_macho.add_argument("-d", "--dynamic", action="store_true", help="Show MachO dynamic libraries")
+        parser_macho.add_argument("-y", "--symbols", action="store_true", help="Show MachO symbols")
 
         self.lief = None
     
@@ -290,6 +292,19 @@ class Lief(Module):
                 ])
             self.log("info", "ELF symbols : ")
             self.log("table", dict(header=["Name", "Type", "Val", "Size", "Visibility", "isFun", "isStatic", "isVar"], rows=rows))
+        elif lief.is_macho(self.filePath):
+            if self.lief.symbols:
+                self.log("info", "MachO symbols : ")
+                for symbol in self.lief.symbols:
+                    self.log("info", "Information of symbol : ")
+                    self.log("item", "{0:<19} : {1}".format("Name", symbol.name))
+                    self.log("item", "{0:<19} : {1}".format("description", hex(symbol.description)))
+                    self.log("item", "{0:<19} : {1}".format("Number of sections", symbol.numberof_sections))
+                    self.log("item", "{0:<19} : {1}".format("Type", hex(symbol.type)))
+                    self.log("item", "{0:<19} : {1}".format("Value", hex(symbol.value)))
+                    self.log("item", "{0:<19} : {1}".format("Origin", MACHO_SYMBOL_ORIGINS[symbol.origin]))
+            else:
+                self.log("warning", "No symbol found")
         else:
             self.log("warning", "No symbol found")
 
@@ -388,14 +403,7 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
         elif lief.is_elf(self.filePath):
             self.log("info", "ELF header : ")
-            self.log("item", "{0} : {1}".format("", ))
-            self.log("item", "{0} : {1}".format("", ))
-            self.log("item", "{0} : {1}".format("", ))
-            self.log("item", "{0} : {1}".format("", ))
-            self.log("item", "{0} : {1}".format("", ))
-            self.log("item", "{0} : {1}".format("", ))
-            self.log("item", "{0} : {1}".format("", ))
-            self.log("item", "{0} : {1}".format("", ))
+            self.log("success", self.lief.header)
         else:
             self.log("warning", "No header found")
 
@@ -696,6 +704,8 @@ class Lief(Module):
                 self.symbols()
             elif self.args.entropy:
                 self.entropy()
+            elif self.args.header:
+                self.header()
 
     def macho(self):
         if not self.__check_session():
@@ -714,6 +724,8 @@ class Lief(Module):
                 self.type()
             elif self.args.codesignature:
                 self.codeSignature()
+            elif self.args.symbols:
+                self.symbols()
             elif self.args.expfunctions:
                 self.exportedFunctions()
             elif self.args.expsymbols:

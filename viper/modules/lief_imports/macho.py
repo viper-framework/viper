@@ -147,3 +147,9 @@ MACHO_SECTION_TYPES = {
     lief.MachO.SECTION_TYPES.THREAD_LOCAL_ZEROFILL                  :    'THREAD_LOCAL_ZEROFILL',
     lief.MachO.SECTION_TYPES.ZEROFILL                               :    'ZEROFILL'
 }
+
+MACHO_SYMBOL_ORIGINS = {
+    lief.MachO.SYMBOL_ORIGINS.DYLD_EXPORT   :   'DYLD_EXPORT',
+    lief.MachO.SYMBOL_ORIGINS.LC_SYMTAB     :   'LC_SYMTAB',
+    lief.MachO.SYMBOL_ORIGINS.UNKNOWN       :   'UNKNOWN'
+}
