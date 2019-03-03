@@ -52,6 +52,8 @@ class Lief(Module):
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
         parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
         parser_macho.add_argument("-e", "--entrypoint", action="store_true", help="Show MachO entrypoint")
+        parser_macho.add_argument("-a", "--architecture", action="store_true", help="Show MachO architecture")
+        parser_macho.add_argument("-t", "--type", action="store_true", help="Show MachO type")
         parser_macho.add_argument("-C", "--codesignature", action="store_true", help="Show MachO code signature")
         parser_macho.add_argument("-j", "--expfunctions", action="store_true", help="Show MachO exported functions")
         parser_macho.add_argument("-k", "--expsymbols", action="store_true", help="Show MachO exported symbols")
@@ -62,9 +64,10 @@ class Lief(Module):
         parser_macho.add_argument("-v", "--sourceversion", action="store_true", help="Show MachO source version")
         parser_macho.add_argument("-f", "--subframework", action="store_true", help="Show MachO sub-framework")
         parser_macho.add_argument("-u", "--uuid", action="store_true", help="Show MachO uuid")
-        parser_macho.add_argument("-d", "--dataincode", action="store_true", help="Show MachO data in code")
+        parser_macho.add_argument("-D", "--dataincode", action="store_true", help="Show MachO data in code")
         parser_macho.add_argument("-m", "--maincommand", action="store_true", help="Show MachO main command")
         parser_macho.add_argument("-c", "--commands", action="store_true", help="Show MachO commands")
+        parser_macho.add_argument("-d", "--dynamic", action="store_true", help="Show MachO dynamic libraries")
 
         self.lief = None
     
@@ -80,13 +83,13 @@ class Lief(Module):
                 self.log("error", "Unable to parse file : {0}".format(e))
                 return False
         return True
+
+    """Binaries methods"""
     
     def sections(self):
         if not self.__check_session():
             return
-
         rows = []
-
         if lief.is_elf(self.filePath):
             for section in self.lief.sections:
                 rows.append([
@@ -111,7 +114,6 @@ class Lief(Module):
                     section.size,
                     round(section.entropy, 4)
                 ])
-
             self.log("info", "PE sections : ")
             self.log("table", dict(header=["Name","RVA", "VirtualSize", "PointerToRawData", "RawDataSize", "Entropy"], rows=rows))
         elif lief.is_macho(self.filePath):
@@ -133,9 +135,7 @@ class Lief(Module):
     def segments(self):
         if not self.__check_session():
             return
-
         rows = []
-
         if lief.is_elf(self.filePath):
             for segment in self.lief.segments:
                 flags = []
@@ -192,19 +192,18 @@ class Lief(Module):
     def type(self):
         if not self.__check_session():
             return
-
         if lief.is_elf(self.filePath):
             self.log("info", "Type : {0}".format(ELF_ETYPE[self.lief.header.file_type]))
         elif lief.is_pe(self.filePath):
             self.log("info", "Type : {0}".format(PE_TYPE[lief.PE.get_type(self.filePath)]))
+        elif lief.is_macho(self.filePath):
+            self.log("info", "Type : {0}".format(MACHO_FILE_TYPES[self.lief.header.file_type]))
         else:
             self.log("warning", "No type found")
 
-    
     def entrypoint(self):
         if not self.__check_session():
             return
-
         if lief.is_elf(self.filePath):
             self.log("info", "Entry point : {0}".format(hex(self.lief.header.entrypoint)))
         elif lief.is_pe(self.filePath):
@@ -220,11 +219,12 @@ class Lief(Module):
     def architecture(self):
         if not self.__check_session():
             return
-
         if lief.is_elf(self.filePath):
             self.log("info", "Architecture : {0}".format(ELF_MACHINE_TYPE[self.lief.header.machine_type]))
         elif lief.is_pe(self.filePath):
             self.log("info", "Architecture : {0}".format(PE_MACHINE_TYPE[self.lief.header.machine]))
+        elif lief.is_macho(self.filePath):
+            self.log("info", "Architecture : {0}".format(MACHO_CPU_TYPES[self.lief.header.cpu_type]))
         else:
             self.log("warning", "No architecture found")
 
@@ -236,11 +236,9 @@ class Lief(Module):
         if entropy > 7:
             self.log("warning", "The binary is probably packed")
 
-
     def interpreter(self):
         if not self.__check_session():
             return
-
         if lief.is_elf(self.filePath):
             self.log("info", "Interpreter : {0}".format(self.lief.interpreter))
         else:
@@ -249,19 +247,33 @@ class Lief(Module):
     def dynamic(self):
         if not self.__check_session():
             return
-
+        rows = []
         if lief.is_elf(self.filePath):
             for lib in self.lief.libraries:
                 self.log("info", "Library : {0}".format(lib))
+        elif lief.is_macho(self.filePath):
+            if self.lief.libraries:
+                for library in self.lief.libraries:
+                    rows.append([
+                        MACHO_LOAD_COMMAND_TYPES[library.command],
+                        library.name,
+                        hex(library.command_offset),
+                        self.listVersionToDottedVersion(library.compatibility_version),
+                        self.listVersionToDottedVersion(library.current_version),
+                        "{0:<6} Bytes".format(library.size),
+                        library.timestamp
+                    ])
+                self.log("info", "Dynamic libraries : ")
+                self.log("table", dict(header=["Command", "Name", "Offset", "Compatibility version", "Current version", "Size", "Timestamp"],rows=rows))
+            else:
+                self.log("warning", "No dynamic library found")
         else:
             self.log("warning", "No dynamic library found")
 
     def symbols(self):
         if not self.__check_session():
             return
-
         rows = []
-
         if lief.is_elf(self.filePath):
             for symbol in self.lief.symbols:
                 rows.append([
@@ -282,18 +294,16 @@ class Lief(Module):
     def dlls(self):
         if not self.__check_session():
             return
-
         rows = []
         if lief.is_pe(self.filePath):
             for lib in self.lief.libraries:
                 self.log("info", lib)
         else:
-            self.log("error", "The binary is not a PE")
+            self.log("error", "No DLL found")
 
     def imports(self):
         if not self.__check_session():
             return
-
         rows = []
         if lief.is_pe(self.filePath):
             for imp in self.lief.imports:
@@ -306,20 +316,28 @@ class Lief(Module):
     def format(self):
         if not self.__check_session():
             return
-
-        self.log("info", "Format : {0}".format(PE_EXE_FORMATS[self.lief.format]))
+        if lief.is_pe(self.filePath):
+            self.log("info", "Format : {0}".format(PE_EXE_FORMATS[self.lief.format]))
+        else:
+            self.log("warning", "No format found")
 
     def imphash(self):
         if not self.__check_session():
             return
-        self.log("info", "Imphash : {0}".format(lief.PE.get_imphash(self.lief)))
+        if lief.is_pe(self.filePath):
+            self.log("info", "Imphash : {0}".format(lief.PE.get_imphash(self.lief)))
+        else:
+            self.log("warning", "No imphash found")
 
-    def compiledate(self):
+    def compileDate(self):
         if not self.__check_session():
             return
-        timestamp = self.lief.header.time_date_stamps
-        date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
-        self.log("info", "Compilation date : {0}".format(date))
+        if lief.is_pe(self.filePath):
+            timestamp = self.lief.header.time_date_stamps
+            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
+            self.log("info", "Compilation date : {0}".format(date))
+        else:
+            self.log("warning", "No compilation date found")
 
     def header(self):
         if not self.__check_session():
@@ -335,6 +353,8 @@ class Lief(Module):
             ])
             self.log("info", "MachO headers : ")
             self.log("table", dict(header=["CPU Type", "File Type", "Nb Cmds", "Size of Cmds", "Flags"], rows=rows))
+        else:
+            self.log("warning", "No header found")
 
     def codeSignature(self):
         if not self.__check_session():
@@ -353,6 +373,9 @@ class Lief(Module):
                 self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
             else:
                 self.log("warning", "No code signature found")
+        else:
+            self.log("warning", "No code signature found")
+
 
     def exportedFunctions(self):
         if not self.__check_session():
@@ -362,7 +385,9 @@ class Lief(Module):
                 for function in self.lief.exported_functions:
                     self.log("info", function)
             else:
-                self.log("warning", "No exported functions")
+                self.log("warning", "No exported function found")
+        else:
+            self.log("warning", "No exported function found")
 
     def exportedSymbols(self):
         if not self.__check_session():
@@ -380,7 +405,9 @@ class Lief(Module):
                 self.log("info", "MachO exported symbols : ")
                 self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
             else:
-                self.log("warning", "No exported symbols")
+                self.log("warning", "No exported symbol found")
+        else:
+            self.log("warning", "No exported symbol found")
 
     def importedFunctions(self):
         if not self.__check_session():
@@ -390,7 +417,9 @@ class Lief(Module):
                 for function in self.lief.imported_functions:
                     self.log("info", function)
             else:
-                self.log("warning", "No imported functions")
+                self.log("warning", "No imported function found")
+        else:
+            self.log("warning", "No imported function found")
 
     def importedSymbols(self):
         if not self.__check_session():
@@ -408,7 +437,9 @@ class Lief(Module):
                 self.log("info", "MachO imported symbols : ")
                 self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
             else:
-                self.log("warning", "No imported symbols")
+                self.log("warning", "No imported symbol found")
+        else:
+            self.log("warning", "No imported symbol found")
 
     def sourceVersion(self):
         if not self.__check_session():
@@ -419,12 +450,11 @@ class Lief(Module):
                 self.log("item", "{0:<10} : {1}".format("command", MACHO_LOAD_COMMAND_TYPES[self.lief.source_version.command]))
                 self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.source_version.command_offset)))
                 self.log("item", "{0:<10} : {1} Bytes".format("size", self.lief.source_version.size))
-                self.log("item", "{0:<10} : {1}".format("Version", self.lief.source_version.version))
+                self.log("item", "{0:<10} : {1}".format("Version", self.listVersionToDottedVersion(self.lief.source_version.version)))
             else:
                 self.log("warning", "No source version found")
         else:
             self.log("warning", "No source version found")
-
 
     def subFramework(self):
         if not self.__check_session():
@@ -455,19 +485,6 @@ class Lief(Module):
                 self.log("warning", "No uuid found")
         else:
             self.log("warning", "No uuid found")
-
-    def listUuidToUuid(self, list):
-        if not list:
-            return None
-        else:
-            uuid = ""
-            for index, elt in enumerate(list):
-                uuid += str(hex(elt))[2:]
-                if index == 3 or index == 5 or index == 7 or index == 9:
-                    uuid += '-'
-            return uuid
-
-
 
     def dataInCode(self):
         if not self.__check_session():
@@ -515,6 +532,46 @@ class Lief(Module):
                 self.log("table", dict(header=["Command", "Size", "Offset"], rows=rows))
             else:
                 self.log("warning", "No command found")
+        else:
+            self.log("warning", "No command found")
+   
+    """Usefuls methods"""
+
+    def getEntropy(self, data):
+        if not data:
+            return 0
+        e = 0
+        for i in range(256):
+            p = float(data.count(bytes(i))) / len(data)
+            if p > 0:
+                e -= p * math.log(p, 2)
+        entropy = round(e, 4)
+        return entropy
+
+    def listUuidToUuid(self, list):
+        if not list:
+            return None
+        else:
+            uuid = ""
+            for index, elt in enumerate(list):
+                uuid += str(hex(elt))[2:]
+                if index == 3 or index == 5 or index == 7 or index == 9:
+                    uuid += '-'
+            return uuid
+
+    def listVersionToDottedVersion(self, list):
+        if not list:
+            return None
+        else:
+            version = ""
+            for index, elt in enumerate(list):
+                if index == 0:
+                    version += str(elt)
+                else:
+                    version += '.' + str(elt)
+            return version
+
+    """Binary type methods"""
 
     def pe(self):
         if not self.__check_session():
@@ -540,7 +597,7 @@ class Lief(Module):
             elif self.args.imphash:
                 self.imphash()
             elif self.args.compiledate:
-                self.compiledate()
+                self.compileDate()
 
     def elf(self):
         if not self.__check_session():
@@ -579,6 +636,10 @@ class Lief(Module):
                 self.header()
             elif self.args.entrypoint:
                 self.entrypoint()
+            elif self.args.architecture:
+                self.architecture()
+            elif self.args.type:
+                self.type()
             elif self.args.codesignature:
                 self.codeSignature()
             elif self.args.expfunctions:
@@ -605,27 +666,18 @@ class Lief(Module):
                 self.mainCommand()
             elif self.args.commands:
                 self.commands()
+            elif self.args.dynamic:
+                self.dynamic()
 
-    def getEntropy(self, data):
-        if not data:
-            return 0
-        e = 0
-        for i in range(256):
-            p = float(data.count(bytes(i))) / len(data)
-            if p > 0:
-                e -= p * math.log(p, 2)
-        entropy = round(e, 4)
-        return entropy
+    """Main method"""
 
     def run(self):
         super(Lief, self).run()
         if self.args is None:
             return
-
         if not HAVE_LIEF:
             self.log("error", "Missing dependency, install lief (pip3 install lief)")
             return
-
         if self.args.subname == "pe":
             self.pe()
         elif self.args.subname == "elf":
