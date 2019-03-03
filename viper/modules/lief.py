@@ -375,7 +375,7 @@ class Lief(Module):
             self.log("item", "{0:<28} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<28} : {1}".format("Number of symbols", self.lief.header.numberof_symbols))
             self.log("item", "{0:<28} : {1}".format("Pointer to symbol table", hex(self.lief.header.pointerto_symbol_table)))
-            self.log("item", "{0:<28} : {1}".format("Signature", "{0} ({1})".format(self.lief.header.signature, ''.join(chr(sig) for sig in self.lief.header.signature))))
+            self.log("item", "{0:<28} : {1}".format("Signature", "{0} ({1})".format(' '.join(hex(sig) for sig in self.lief.header.signature), ''.join(chr(sig) for sig in self.lief.header.signature))))
             self.log("item", "{0:<28} : {1}".format("Date of compilation", date))
             self.log("item", "{0:<28} : {1:<6} Bytes".format("Size of optional header", self.lief.header.sizeof_optional_header))
             if self.lief.header.sizeof_optional_header > 0:
@@ -403,7 +403,22 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
         elif lief.is_elf(self.filePath):
             self.log("info", "ELF header : ")
-            self.log("success", self.lief.header)
+            self.log("item", "{0:<26} : {1}".format("Type", ELF_ETYPE[self.lief.header.file_type]))
+            self.log("item", "{0:<26} : {1}".format("Entrypoint", hex(self.lief.header.entrypoint)))
+            self.log("item", "{0:<26} : {1} Bytes".format("Header size", self.lief.header.header_size))
+            self.log("item", "{0:<26} : {1}".format("Identity", "{0} ({1})".format(' '.join(hex(iden) for iden in self.lief.header.identity), ''.join(chr(iden) for index, iden in enumerate(self.lief.header.identity) if index < 4))))
+            self.log("item", "{0:<26} : {1}".format("Endianness", ELF_DATA[self.lief.header.identity_data]))
+            self.log("item", "{0:<26} : {1}".format("Class", ELF_CLASS[self.lief.header.identity_class]))
+            self.log("item", "{0:<26} : {1}".format("OS/ABI", ELF_OS_ABI[self.lief.header.identity_os_abi]))
+            self.log("item", "{0:<26} : {1}".format("Version", ELF_VERSION[self.lief.header.identity_version]))
+            self.log("item", "{0:<26} : {1}".format("Architecture", ELF_MACHINE_TYPE[self.lief.header.machine_type]))
+            self.log("item", "{0:<26} : {1}".format("MIPS Flags", ':'.join(ELF_MIPS_EFLAGS[flag] for flag in self.lief.header.mips_flags_list) if self.lief.header.mips_flags_list else "No flags"))
+            self.log("item", "{0:<26} : {1}".format("Number of sections", self.lief.header.numberof_sections))
+            self.log("item", "{0:<26} : {1}".format("Number of segments", self.lief.header.numberof_segments))
+            self.log("item", "{0:<26} : {1}".format("Program header offet", hex(self.lief.header.program_header_offset)))
+            self.log("item", "{0:<26} : {1} Bytes".format("Program header size", self.lief.header.program_header_size))
+            self.log("item", "{0:<26} : {1}".format("Section Header offset", hex(self.lief.header.section_header_offset)))
+            self.log("item", "{0:<26} : {1} Bytes".format("Section header size", self.lief.header.section_header_size))
         else:
             self.log("warning", "No header found")
 

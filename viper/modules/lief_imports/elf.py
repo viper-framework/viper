@@ -304,3 +304,87 @@ ELF_MACHINE_TYPE = {
     lief.ELF.ARCH.i386          :   "i386",
     lief.ELF.ARCH.x86_64        :   "x86_64"
 }
+
+ELF_DATA = {
+    lief.ELF.ELF_DATA.LSB   :   'LSB',
+    lief.ELF.ELF_DATA.MSB   :   'MSB',
+    lief.ELF.ELF_DATA.NONE  :   'NONE'
+}
+
+ELF_CLASS = {
+    lief.ELF.ELF_CLASS.CLASS32  :   'CLASS32',
+    lief.ELF.ELF_CLASS.CLASS64  :   'CLASS64',
+    lief.ELF.ELF_CLASS.NONE     :   'NONE'
+}
+
+ELF_OS_ABI = {
+    lief.ELF.OS_ABI.AIX         :   'AIX',
+    lief.ELF.OS_ABI.ARM         :   'ARM',
+    lief.ELF.OS_ABI.AROS        :   'AROS',
+    lief.ELF.OS_ABI.C6000_LINUX :   'C6000_LINUX',
+    lief.ELF.OS_ABI.CLOUDABI    :   'CLOUDABI',
+    lief.ELF.OS_ABI.FENIXOS     :   'FENIXOS',
+    lief.ELF.OS_ABI.FREEBSD     :   'FREEBSD',
+    lief.ELF.OS_ABI.HPUX        :   'HPUX',
+    lief.ELF.OS_ABI.HURD        :   'HURD',
+    lief.ELF.OS_ABI.IRIX        :   'IRIX',
+    lief.ELF.OS_ABI.MODESTO     :   'MODESTO',
+    lief.ELF.OS_ABI.NETBSD      :   'NETBSD',
+    lief.ELF.OS_ABI.NSK         :   'NSK',
+    lief.ELF.OS_ABI.OPENBSD     :   'OPENBSD',
+    lief.ELF.OS_ABI.OPENVMS     :   'OPENVMS',
+    lief.ELF.OS_ABI.SOLARIS     :   'SOLARIS',
+    lief.ELF.OS_ABI.STANDALONE  :   'STANDALONE',
+    lief.ELF.OS_ABI.SYSTEMV     :   'SYSTEMV',
+    lief.ELF.OS_ABI.TRU64       :   'TRU64'
+}
+
+ELF_VERSION = {
+    lief.ELF.VERSION.CURRENT    :   'CURRENT',
+    lief.ELF.VERSION.NONE       :   'NONE'
+}
+
+ELF_MIPS_EFLAGS = {
+    lief.ELF.MIPS_EFLAGS.ABI2           :   'ABI2',
+    lief.ELF.MIPS_EFLAGS.ABI_EABI32     :   'ABI_EABI32',
+    lief.ELF.MIPS_EFLAGS.ABI_EABI64     :   'ABI_EABI64',
+    lief.ELF.MIPS_EFLAGS.ABI_O32        :   'ABI_O32',
+    lief.ELF.MIPS_EFLAGS.ABI_O64        :   'ABI_O64',
+    lief.ELF.MIPS_EFLAGS.ARCH_1         :   'ARCH_1',
+    lief.ELF.MIPS_EFLAGS.ARCH_2         :   'ARCH_2',
+    lief.ELF.MIPS_EFLAGS.ARCH_3         :   'ARCH_3',
+    lief.ELF.MIPS_EFLAGS.ARCH_32        :   'ARCH_32',
+    lief.ELF.MIPS_EFLAGS.ARCH_32R2      :   'ARCH_32R2',
+    lief.ELF.MIPS_EFLAGS.ARCH_32R6      :   'ARCH_32R6',
+    lief.ELF.MIPS_EFLAGS.ARCH_4         :   'ARCH_4',
+    lief.ELF.MIPS_EFLAGS.ARCH_5         :   'ARCH_5',
+    lief.ELF.MIPS_EFLAGS.ARCH_64        :   'ARCH_64',
+    lief.ELF.MIPS_EFLAGS.ARCH_64R2      :   'ARCH_64R2',
+    lief.ELF.MIPS_EFLAGS.ARCH_64R6      :   'ARCH_64R6',
+    lief.ELF.MIPS_EFLAGS.ARCH_ASE_M16   :   'ARCH_ASE_M16',
+    lief.ELF.MIPS_EFLAGS.ARCH_ASE_MDMX  :   'ARCH_ASE_MDMX',
+    lief.ELF.MIPS_EFLAGS.CPIC           :   'CPIC',
+    lief.ELF.MIPS_EFLAGS.FP64           :   'FP64',
+    lief.ELF.MIPS_EFLAGS.MACH_3900      :   'MACH_3900',
+    lief.ELF.MIPS_EFLAGS.MACH_4010      :   'MACH_4010',
+    lief.ELF.MIPS_EFLAGS.MACH_4100      :   'MACH_4100',
+    lief.ELF.MIPS_EFLAGS.MACH_4111      :   'MACH_4111',
+    lief.ELF.MIPS_EFLAGS.MACH_4120      :   'MACH_4120',
+    lief.ELF.MIPS_EFLAGS.MACH_4650      :   'MACH_4650',
+    lief.ELF.MIPS_EFLAGS.MACH_5400      :   'MACH_5400',
+    lief.ELF.MIPS_EFLAGS.MACH_5500      :   'MACH_5500',
+    lief.ELF.MIPS_EFLAGS.MACH_5900      :   'MACH_5900',
+    lief.ELF.MIPS_EFLAGS.MACH_9000      :   'MACH_9000',
+    lief.ELF.MIPS_EFLAGS.MACH_LS2E      :   'MACH_LS2E',
+    lief.ELF.MIPS_EFLAGS.MACH_LS2F      :   'MACH_LS2F',
+    lief.ELF.MIPS_EFLAGS.MACH_LS3A      :   'MACH_LS3A',
+    lief.ELF.MIPS_EFLAGS.MACH_OCTEON    :    'MACH_OCTEON',
+    lief.ELF.MIPS_EFLAGS.MACH_OCTEON2   :    'MACH_OCTEON2',
+    lief.ELF.MIPS_EFLAGS.MACH_OCTEON3   :    'MACH_OCTEON3',
+    lief.ELF.MIPS_EFLAGS.MACH_SB1       :    'MACH_SB1',
+    lief.ELF.MIPS_EFLAGS.MACH_XLR       :    'MACH_XLR',
+    lief.ELF.MIPS_EFLAGS.MICROMIPS      :    'MICROMIPS',
+    lief.ELF.MIPS_EFLAGS.NAN2008        :    'NAN2008',
+    lief.ELF.MIPS_EFLAGS.NOREORDER      :    'NOREORDER',
+    lief.ELF.MIPS_EFLAGS.PIC            :    'PIC',
+}
