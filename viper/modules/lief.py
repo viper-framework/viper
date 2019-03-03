@@ -38,6 +38,7 @@ class Lief(Module):
         parser_pe.add_argument("-I", "--imphash", action="store_true", help="Show PE imported functions hash")
         parser_pe.add_argument("-c", "--compiledate", action="store_true", help="Show PE date of compilation")
         parser_pe.add_argument("-H", "--header", action="store_true", help="Show PE header")
+        parser_pe.add_argument("-D", "--dosheader", action="store_true", help="Show PE DOS header")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-S", "--segments", action="store_true", help="List ELF segments")
@@ -366,7 +367,7 @@ class Lief(Module):
                 self.log("success", "Optional header : ")
                 self.log("item", "{0:<28} : {1}".format("Entrypoint", hex(self.lief.optional_header.addressof_entrypoint)))
                 self.log("item", "{0:<28} : {1}".format("Base of code", hex(self.lief.optional_header.baseof_code)))
-                self.log("item", "{0:<28} : {1}".format("Checksum", self.lief.optional_header.checksum))
+                self.log("item", "{0:<28} : {1}".format("Checksum", hex(self.lief.optional_header.checksum)))
                 self.log("item", "{0:<28} : {1}".format("Base of image", hex(self.lief.optional_header.imagebase)))
                 self.log("item", "{0:<28} : {1}".format("Magic", PE_TYPE[self.lief.optional_header.magic]))
                 self.log("item", "{0:<28} : {1}".format("Subsystem", PE_SUBSYSTEMS[self.lief.optional_header.subsystem]))
@@ -576,6 +577,31 @@ class Lief(Module):
                 self.log("warning", "No command found")
         else:
             self.log("warning", "No command found")
+
+    def dosHeader(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath):
+            self.log("info", "DOS header : ")
+            self.log("item", "{0:<28} : {1}".format("Magic", hex(self.lief.dos_header.magic)))
+            self.log("item", "{0:<28} : {1}".format("Address of new EXE header", hex(self.lief.dos_header.addressof_new_exeheader)))
+            self.log("item", "{0:<28} : {1}".format("Address of relocation table", hex(self.lief.dos_header.addressof_relocation_table)))
+            self.log("item", "{0:<28} : {1}".format("Checksum", hex(self.lief.dos_header.checksum)))
+            self.log("item", "{0:<28} : {1}".format("File size in pages", self.lief.dos_header.file_size_in_pages))
+            self.log("item", "{0:<28} : {1}".format("Header size in paragraphs", self.lief.dos_header.header_size_in_paragraphs))
+            self.log("item", "{0:<28} : {1}".format("Initial IP", self.lief.dos_header.initial_ip))
+            self.log("item", "{0:<28} : {1}".format("Initial relative CS", self.lief.dos_header.initial_relative_cs))
+            self.log("item", "{0:<28} : {1}".format("Initial relative SS", self.lief.dos_header.initial_relative_ss))
+            self.log("item", "{0:<28} : {1}".format("Initial SP", self.lief.dos_header.initial_sp))
+            self.log("item", "{0:<28} : {1}".format("Maximum extra paragraphs", self.lief.dos_header.maximum_extra_paragraphs))
+            self.log("item", "{0:<28} : {1}".format("Minimum extra paragraphs", self.lief.dos_header.minimum_extra_paragraphs))
+            self.log("item", "{0:<28} : {1}".format("Number of relocation", self.lief.dos_header.numberof_relocation))
+            self.log("item", "{0:<28} : {1}".format("OEM ID", self.lief.dos_header.oem_id))
+            self.log("item", "{0:<28} : {1}".format("OEM Info", self.lief.dos_header.oem_info))
+            self.log("item", "{0:<28} : {1}".format("Overlay number", self.lief.dos_header.overlay_number))
+            self.log("item", "{0:<28} : {1}".format("Used bytes in last page", self.lief.dos_header.used_bytes_in_the_last_page))
+        else:
+            self.log("warning", "No DOS header found")
    
     """Usefuls methods"""
 
@@ -642,6 +668,8 @@ class Lief(Module):
                 self.imphash()
             elif self.args.compiledate:
                 self.compileDate()
+            elif self.args.dosheader:
+                self.dosHeader()
 
     def elf(self):
         if not self.__check_session():
