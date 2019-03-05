@@ -279,16 +279,10 @@
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
-
-                    console.log("jqXHR:" + jqXHR);
-                    console.log("textStatus:" + textStatus);
-                    console.log("errorThrown:" + errorThrown);
-
+                    console.log("jqXHR:" + jqXHR + "; textStatus:" + textStatus + "; errorThrown:" + errorThrown);
                     var obj = jQuery.parseJSON(jqXHR["responseText"]);
-                    var error = obj.error;
-                    console.log(error);
-                    console.log(error.message);
-                    alert("Upload failed: " + error.message);
+                    console.log(obj);
+                    alert("Upload failed: " + JSON.stringify(obj));
                 }
             });
             return false;
@@ -314,11 +308,10 @@
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
+                    console.log("jqXHR:" + jqXHR + "; textStatus:" + textStatus + "; errorThrown:" + errorThrown);
                     var obj = jQuery.parseJSON(jqXHR["responseText"]);
-                    var error = obj.error;
-                    console.log(error);
-                    console.log(error.message);
-                    alert("Upload failed: " + error.message);
+                    console.log(obj);
+                    alert("Upload failed: " + JSON.stringify(obj));
                 }
             });
             return false;
