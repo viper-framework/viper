@@ -286,7 +286,7 @@ class MalwareUploadSerializer(ObjectSerializer):
     model = Malware
 
     extractor = serializers.CharField(max_length=255, required=False, label="Extractor", help_text="which Extractor implementation to use (auto: Auto-detect; none: No Extractor)")
-    tag_list = serializers.CharField(max_length=1000, required=False, label="Tags", help_text="space separated, all lowercase")
+    tag_list = serializers.CharField(max_length=1000, required=False, label="Tags", help_text="comma separated, all lowercase, no spaces")
     archive_pass = serializers.CharField(max_length=255, required=False, label="Password", help_text="archive extract password")
     store_archive = serializers.CharField(max_length=100, required=False, label="Store Archive", help_text="store or discard archive after extract")
     note_title = serializers.CharField(max_length=100, required=False, label="Note Title", help_text="title of note to be added")
@@ -335,7 +335,12 @@ class MalwareUploadSerializer(ObjectSerializer):
 
     # tag_list expects a comma separated list of tags (tags are always all lowercase)
     def validate_tag_list(self, value):
-        return [x.lower() for x in value.strip().split(",")]
+        if not value == value.lower():
+            raise serializers.ValidationError("has to be all lower case")
+        if " " in value:
+            raise serializers.ValidationError("spaces are not allowed")
+        tag_list = value.strip().split(",")
+        return tag_list
 
     def create(self, validated_data):
         pass
