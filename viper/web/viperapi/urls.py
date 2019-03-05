@@ -13,23 +13,23 @@ app_name = 'viperapi_v3'
 
 router = routers.DefaultRouter()
 # project router
-router.register(r'project', views.ProjectViewSet, base_name="project")
+router.register(r'project', views.ProjectViewSet, basename="project")
 
 # 1. level nested router: project/<pk>
 project_router = routers.NestedSimpleRouter(router, r'project', lookup='project')
 
-project_router.register(r'malware', views.MalwareViewSet, base_name="malware")
-project_router.register(r'tag', views.TagViewSet, base_name="tag")
-project_router.register(r'note', views.NoteViewSet, base_name="note")
-project_router.register(r'analysis', views.AnalysisViewSet, base_name="analysis")
+project_router.register(r'malware', views.MalwareViewSet, basename="malware")
+project_router.register(r'tag', views.TagViewSet, basename="tag")
+project_router.register(r'note', views.NoteViewSet, basename="note")
+project_router.register(r'analysis', views.AnalysisViewSet, basename="analysis")
 
 # 2. level nested router: project/<pk>/malware/<pk>
 malware_router = routers.NestedSimpleRouter(project_router, r'malware', lookup='malware')
 
 # 3. level nested for malware tags
-malware_router.register(r'analysis', views.MalwareAnalysisViewSet, base_name='malware-analysis')
-malware_router.register(r'note', views.MalwareNoteViewSet, base_name='malware-note')
-malware_router.register(r'tag', views.MalwareTagViewSet, base_name='malware-tag')
+malware_router.register(r'analysis', views.MalwareAnalysisViewSet, basename='malware-analysis')
+malware_router.register(r'note', views.MalwareNoteViewSet, basename='malware-note')
+malware_router.register(r'tag', views.MalwareTagViewSet, basename='malware-tag')
 
 schema_view = get_swagger_view(title='Viper API v3')
 

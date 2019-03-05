@@ -7,7 +7,7 @@ django-filter
 django-rest-swagger==2.1.2
 django-sslserver
 django-url-filter
-djangorestframework
+djangorestframework>=3.9.0
 djangorestframework-queryfields
 drf-nested-routers
 whitenoise
