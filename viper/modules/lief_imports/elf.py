@@ -388,3 +388,21 @@ ELF_MIPS_EFLAGS = {
     lief.ELF.MIPS_EFLAGS.NOREORDER      :    'NOREORDER',
     lief.ELF.MIPS_EFLAGS.PIC            :    'PIC',
 }
+
+ELF_NOTE_TYPES = {
+    lief.ELF.NOTE_TYPES.ABI_TAG         :   'ABI_TAG',
+    lief.ELF.NOTE_TYPES.BUILD_ID        :   'BUILD_ID',
+    lief.ELF.NOTE_TYPES.GOLD_VERSION    :   'GOLD_VERSION',
+    lief.ELF.NOTE_TYPES.HWCAP           :   'HWCAP',
+    lief.ELF.NOTE_TYPES.UNKNOWN         :   'UNKNOWN'
+}
+
+ELF_NOTE_ABIS = {
+    lief.ELF.NOTE_ABIS.FREEBSD     :   'FREEBSD',
+    lief.ELF.NOTE_ABIS.GNU         :   'GNU',
+    lief.ELF.NOTE_ABIS.LINUX       :   'LINUX',
+    lief.ELF.NOTE_ABIS.NETBSD      :   'NETBSD',
+    lief.ELF.NOTE_ABIS.SOLARIS2    :   'SOLARIS2',
+    lief.ELF.NOTE_ABIS.SYLLABLE    :   'SYLLABLE',
+    lief.ELF.NOTE_ABIS.UNKNOWN     :   'UNKNOWN'
+}

@@ -51,6 +51,10 @@ class Lief(Module):
         parser_elf.add_argument("-d", "--dynamic", action="store_true", help="Show ELF dynamic libraries")
         parser_elf.add_argument("-E", "--entropy", action="store_true", help="Show ELF entropy")
         parser_elf.add_argument("-H", "--header", action="store_true", help="Show ELF header")
+        parser_elf.add_argument("-j", "--expfunctions", action="store_true", help="Show ELF exported functions")
+        parser_elf.add_argument("-g", "--gnu_hash", action="store_true", help="Show ELF GNU hash")
+        parser_elf.add_argument("-I", "--impfunctions", action="store_true", help="Show ELF imported functions")
+        parser_elf.add_argument("-n", "--notes", action="store_true", help="Show ELF notes")
 
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
         parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
@@ -60,7 +64,7 @@ class Lief(Module):
         parser_macho.add_argument("-C", "--codesignature", action="store_true", help="Show MachO code signature")
         parser_macho.add_argument("-j", "--expfunctions", action="store_true", help="Show MachO exported functions")
         parser_macho.add_argument("-k", "--expsymbols", action="store_true", help="Show MachO exported symbols")
-        parser_macho.add_argument("-g", "--impfunctions", action="store_true", help="Show MachO imported functions")
+        parser_macho.add_argument("-I", "--impfunctions", action="store_true", help="Show MachO imported functions")
         parser_macho.add_argument("-q", "--impsymbols", action="store_true", help="Show MachO imported symbols")
         parser_macho.add_argument("-s", "--sections", action="store_true", help="Show MachO sections")
         parser_macho.add_argument("-S", "--segments", action="store_true", help="Show MachO segments")
@@ -346,6 +350,22 @@ class Lief(Module):
         else:
             self.log("warning", "No imphash found")
 
+    def gnu_hash(self):
+        if not self.__check_session():
+            return
+        if lief.is_elf(self.filePath):
+            if self.lief.gnu_hash:
+                self.log("info", "GNU hash : ")
+                self.log("item", "{0} : {1}".format("Number of buckets", self.lief.gnu_hash.nb_buckets))
+                self.log("item", "{0} : {1}".format("First symbol index", hex(self.lief.gnu_hash.symbol_index)))
+                self.log("item", "{0} : {1}".format("Bloom filters", ', '.join(str(hex(fil)) for fil in self.lief.gnu_hash.bloom_filters)))
+                self.log("item", "{0} : {1}".format("Hash buckets", ', '.join(str(hex(bucket)) for bucket in self.lief.gnu_hash.buckets)))
+                self.log("item", "{0} : {1}".format("Hash values", ', '.join(str(hex(h)) for h in self.lief.gnu_hash.hash_values)))
+            else:
+                self.log("warning", "No GNU hash found")
+        else:
+            self.log("warning", "No GNU hash found")
+
     def compileDate(self):
         if not self.__check_session():
             return
@@ -355,6 +375,24 @@ class Lief(Module):
             self.log("info", "Compilation date : {0}".format(date))
         else:
             self.log("warning", "No compilation date found")
+
+    def notes(self):
+        if not self.__check_session():
+            return
+        if lief.is_elf(self.filePath):
+            if self.lief.has_notes:
+                self.log("info", "Notes : ")
+                for note in self.lief.notes:
+                    self.log("success", "Information of {0} note : ".format(note.name))
+                    self.log("item", "{0} : {1}".format("Name", note.name))
+                    self.log("item", "{0} : {1}".format("ABI", ELF_NOTE_ABIS[note.abi]))
+                    self.log("item", "{0} : {1}".format("Description", ''.join(str(hex(desc))[2:] for desc in note.description)))
+                    self.log("item", "{0} : {1}".format("Type", ELF_NOTE_TYPES[note.type]))
+                    self.log("item", "{0} : {1}".format("Version", self.listVersionToDottedVersion(note.version)))
+            else:
+                self.log("warning", "No note found")
+        else:
+            self.log("warning", "No note found")
 
     def header(self):
         if not self.__check_session():
@@ -446,7 +484,8 @@ class Lief(Module):
     def exportedFunctions(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
+        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath):
+            self.log("info", "Exported functions : ")
             if self.lief.exported_functions:
                 for function in self.lief.exported_functions:
                     self.log("info", function)
@@ -478,8 +517,9 @@ class Lief(Module):
     def importedFunctions(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
+        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath):
             if self.lief.imported_functions:
+                self.log("info", "Imported functions : ")
                 for function in self.lief.imported_functions:
                     self.log("info", function)
             else:
@@ -705,8 +745,12 @@ class Lief(Module):
                 self.segments()
             elif self.args.sections:
                 self.sections()
+            elif self.args.impfunctions:
+                self.importedFunctions()
             elif self.args.type:
                 self.type()
+            elif self.args.gnu_hash:
+                self.gnu_hash()
             elif self.args.entrypoint:
                 self.entrypoint()
             elif self.args.architecture:
@@ -715,10 +759,14 @@ class Lief(Module):
                 self.interpreter()
             elif self.args.dynamic:
                 self.dynamic()
+            elif self.args.notes:
+                self.notes()
             elif self.args.symbols:
                 self.symbols()
             elif self.args.entropy:
                 self.entropy()
+            elif self.args.expfunctions:
+                self.exportedFunctions()
             elif self.args.header:
                 self.header()
 
