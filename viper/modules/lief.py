@@ -3,7 +3,8 @@
 # See the file 'LICENSE' for copying permission.
 
 
-import math
+import math, re, os.path
+from os import access
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 from datetime import datetime
@@ -28,54 +29,56 @@ class Lief(Module):
         subparsers  = self.parser.add_subparsers(dest="subname")
         
         parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
-        parser_pe.add_argument("-s", "--sections", action="store_true", help="List PE sections")
-        parser_pe.add_argument("-e", "--entrypoint", action="store_true", help="Show PE entrypoint")
-        parser_pe.add_argument("-d", "--dlls", action="store_true", help="Show PE imported dlls")
-        parser_pe.add_argument("-i", "--imports", action="store_true", help="Show PE imported functions")
-        parser_pe.add_argument("-a", "--architecture", action="store_true", help="Show PE architecture")
-        parser_pe.add_argument("-f", "--format", action="store_true", help="Show PE format")
-        parser_pe.add_argument("-t", "--type", action="store_true", help="Show PE type")
-        parser_pe.add_argument("-I", "--imphash", action="store_true", help="Show PE imported functions hash")
-        parser_pe.add_argument("-c", "--compiledate", action="store_true", help="Show PE date of compilation")
-        parser_pe.add_argument("-H", "--header", action="store_true", help="Show PE header")
-        parser_pe.add_argument("-D", "--dosheader", action="store_true", help="Show PE DOS header")
+        parser_pe.add_argument("-s", "--sections",      action="store_true", help="Show PE sections")
+        parser_pe.add_argument("-e", "--entrypoint",    action="store_true", help="Show PE entrypoint")
+        parser_pe.add_argument("-d", "--dlls",          action="store_true", help="Show PE imported dlls")
+        parser_pe.add_argument("-i", "--imports",       action="store_true", help="Show PE imported functions")
+        parser_pe.add_argument("-a", "--architecture",  action="store_true", help="Show PE architecture")
+        parser_pe.add_argument("-f", "--format",        action="store_true", help="Show PE format")
+        parser_pe.add_argument("-t", "--type",          action="store_true", help="Show PE type")
+        parser_pe.add_argument("-I", "--imphash",       action="store_true", help="Show PE imported functions hash")
+        parser_pe.add_argument("-c", "--compiledate",   action="store_true", help="Show PE date of compilation")
+        parser_pe.add_argument("-H", "--header",        action="store_true", help="Show PE header")
+        parser_pe.add_argument("-D", "--dosheader",     action="store_true", help="Show PE DOS header")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
-        parser_elf.add_argument("-S", "--segments", action="store_true", help="List ELF segments")
-        parser_elf.add_argument("-s", "--sections", action="store_true", help="List ELF sections")
-        parser_elf.add_argument("-y", "--symbols", action="store_true", help="Show ELF symbols")
-        parser_elf.add_argument("-t", "--type", action="store_true", help="Show ELF type")
-        parser_elf.add_argument("-e", "--entrypoint", action="store_true", help="Show ELF entrypoint")
+        parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
+        parser_elf.add_argument("-s", "--sections",     action="store_true", help="Show ELF sections")
+        parser_elf.add_argument("-y", "--symbols",      action="store_true", help="Show ELF symbols")
+        parser_elf.add_argument("-t", "--type",         action="store_true", help="Show ELF type")
+        parser_elf.add_argument("-e", "--entrypoint",   action="store_true", help="Show ELF entrypoint")
         parser_elf.add_argument("-a", "--architecture", action="store_true", help="Show ELF architecture")
-        parser_elf.add_argument("-i", "--interpreter", action="store_true", help="Show ELF interpreter")
-        parser_elf.add_argument("-d", "--dynamic", action="store_true", help="Show ELF dynamic libraries")
-        parser_elf.add_argument("-E", "--entropy", action="store_true", help="Show ELF entropy")
-        parser_elf.add_argument("-H", "--header", action="store_true", help="Show ELF header")
+        parser_elf.add_argument("-i", "--interpreter",  action="store_true", help="Show ELF interpreter")
+        parser_elf.add_argument("-d", "--dynamic",      action="store_true", help="Show ELF dynamic libraries")
+        parser_elf.add_argument("-E", "--entropy",      action="store_true", help="Show ELF entropy")
+        parser_elf.add_argument("-H", "--header",       action="store_true", help="Show ELF header")
         parser_elf.add_argument("-j", "--expfunctions", action="store_true", help="Show ELF exported functions")
-        parser_elf.add_argument("-g", "--gnu_hash", action="store_true", help="Show ELF GNU hash")
+        parser_elf.add_argument("-g", "--gnu_hash",     action="store_true", help="Show ELF GNU hash")
         parser_elf.add_argument("-I", "--impfunctions", action="store_true", help="Show ELF imported functions")
-        parser_elf.add_argument("-n", "--notes", action="store_true", help="Show ELF notes")
+        parser_elf.add_argument("-n", "--notes",        action="store_true", help="Show ELF notes")
+        parser_elf.add_argument("-z", "--strip",        action="store_true", help="Strip ELF binary")
+        parser_elf.add_argument("-w", "--write",        nargs=1, help="Write binary into file")
 
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
-        parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
-        parser_macho.add_argument("-e", "--entrypoint", action="store_true", help="Show MachO entrypoint")
-        parser_macho.add_argument("-a", "--architecture", action="store_true", help="Show MachO architecture")
-        parser_macho.add_argument("-t", "--type", action="store_true", help="Show MachO type")
-        parser_macho.add_argument("-C", "--codesignature", action="store_true", help="Show MachO code signature")
-        parser_macho.add_argument("-j", "--expfunctions", action="store_true", help="Show MachO exported functions")
-        parser_macho.add_argument("-k", "--expsymbols", action="store_true", help="Show MachO exported symbols")
-        parser_macho.add_argument("-I", "--impfunctions", action="store_true", help="Show MachO imported functions")
-        parser_macho.add_argument("-q", "--impsymbols", action="store_true", help="Show MachO imported symbols")
-        parser_macho.add_argument("-s", "--sections", action="store_true", help="Show MachO sections")
-        parser_macho.add_argument("-S", "--segments", action="store_true", help="Show MachO segments")
-        parser_macho.add_argument("-v", "--sourceversion", action="store_true", help="Show MachO source version")
-        parser_macho.add_argument("-f", "--subframework", action="store_true", help="Show MachO sub-framework")
-        parser_macho.add_argument("-u", "--uuid", action="store_true", help="Show MachO uuid")
-        parser_macho.add_argument("-D", "--dataincode", action="store_true", help="Show MachO data in code")
-        parser_macho.add_argument("-m", "--maincommand", action="store_true", help="Show MachO main command")
-        parser_macho.add_argument("-c", "--commands", action="store_true", help="Show MachO commands")
-        parser_macho.add_argument("-d", "--dynamic", action="store_true", help="Show MachO dynamic libraries")
-        parser_macho.add_argument("-y", "--symbols", action="store_true", help="Show MachO symbols")
+        parser_macho.add_argument("-H", "--header",         action="store_true", help="Show MachO header")
+        parser_macho.add_argument("-e", "--entrypoint",     action="store_true", help="Show MachO entrypoint")
+        parser_macho.add_argument("-a", "--architecture",   action="store_true", help="Show MachO architecture")
+        parser_macho.add_argument("-t", "--type",           action="store_true", help="Show MachO type")
+        parser_macho.add_argument("-C", "--codesignature",  action="store_true", help="Show MachO code signature")
+        parser_macho.add_argument("-j", "--expfunctions",   action="store_true", help="Show MachO exported functions")
+        parser_macho.add_argument("-k", "--expsymbols",     action="store_true", help="Show MachO exported symbols")
+        parser_macho.add_argument("-I", "--impfunctions",   action="store_true", help="Show MachO imported functions")
+        parser_macho.add_argument("-q", "--impsymbols",     action="store_true", help="Show MachO imported symbols")
+        parser_macho.add_argument("-s", "--sections",       action="store_true", help="Show MachO sections")
+        parser_macho.add_argument("-S", "--segments",       action="store_true", help="Show MachO segments")
+        parser_macho.add_argument("-v", "--sourceversion",  action="store_true", help="Show MachO source version")
+        parser_macho.add_argument("-f", "--subframework",   action="store_true", help="Show MachO sub-framework")
+        parser_macho.add_argument("-u", "--uuid",           action="store_true", help="Show MachO uuid")
+        parser_macho.add_argument("-D", "--dataincode",     action="store_true", help="Show MachO data in code")
+        parser_macho.add_argument("-m", "--maincommand",    action="store_true", help="Show MachO main command")
+        parser_macho.add_argument("-c", "--commands",       action="store_true", help="Show MachO commands")
+        parser_macho.add_argument("-d", "--dynamic",        action="store_true", help="Show MachO dynamic libraries")
+        parser_macho.add_argument("-y", "--symbols",        action="store_true", help="Show MachO symbols")
 
         self.lief = None
     
@@ -375,6 +378,29 @@ class Lief(Module):
             self.log("info", "Compilation date : {0}".format(date))
         else:
             self.log("warning", "No compilation date found")
+
+    def strip(self):
+        if not self.__check_session():
+            return
+        if lief.is_elf(self.filePath):
+            self.lief.strip()
+            self.log("success", "The binary has been stripped")
+            self.log("warning", "Do not forget --write (-w) option if you want your stripped binary to be saved")
+        else:
+            self.log("warning", "Binary must be of type ELF")
+
+    def write(self):
+        if not self.__check_session():
+            return
+        fileName = self.args.write[0]
+        destFolder = './' if '/' not in fileName else fileName[:fileName.rfind('/')+1]
+        if os.path.isfile(fileName):
+            self.log("error", "File already exists")
+        elif not os.access(destFolder, os.X_OK | os.W_OK):
+            self.log("error", "Cannot write into folder : {0}".format(destFolder))
+        else:
+            self.lief.write(fileName)
+            self.log("success", "File succesfully saved")
 
     def notes(self):
         if not self.__check_session():
@@ -747,8 +773,12 @@ class Lief(Module):
                 self.sections()
             elif self.args.impfunctions:
                 self.importedFunctions()
+            elif self.args.write:
+                self.write()
             elif self.args.type:
                 self.type()
+            elif self.args.strip:
+                self.strip()
             elif self.args.gnu_hash:
                 self.gnu_hash()
             elif self.args.entrypoint:
