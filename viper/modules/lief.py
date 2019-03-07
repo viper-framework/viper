@@ -29,17 +29,19 @@ class Lief(Module):
         subparsers  = self.parser.add_subparsers(dest="subname")
         
         parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
-        parser_pe.add_argument("-s", "--sections",      action="store_true", help="Show PE sections")
-        parser_pe.add_argument("-e", "--entrypoint",    action="store_true", help="Show PE entrypoint")
-        parser_pe.add_argument("-d", "--dlls",          action="store_true", help="Show PE imported dlls")
-        parser_pe.add_argument("-i", "--imports",       action="store_true", help="Show PE imported functions")
-        parser_pe.add_argument("-a", "--architecture",  action="store_true", help="Show PE architecture")
-        parser_pe.add_argument("-f", "--format",        action="store_true", help="Show PE format")
-        parser_pe.add_argument("-t", "--type",          action="store_true", help="Show PE type")
-        parser_pe.add_argument("-I", "--imphash",       action="store_true", help="Show PE imported functions hash")
-        parser_pe.add_argument("-c", "--compiledate",   action="store_true", help="Show PE date of compilation")
-        parser_pe.add_argument("-H", "--header",        action="store_true", help="Show PE header")
-        parser_pe.add_argument("-D", "--dosheader",     action="store_true", help="Show PE DOS header")
+        parser_pe.add_argument("-s", "--sections",          action="store_true", help="Show PE sections")
+        parser_pe.add_argument("-e", "--entrypoint",        action="store_true", help="Show PE entrypoint")
+        parser_pe.add_argument("-d", "--dlls",              action="store_true", help="Show PE imported dlls")
+        parser_pe.add_argument("-i", "--imports",           action="store_true", help="Show PE imported functions")
+        parser_pe.add_argument("-a", "--architecture",      action="store_true", help="Show PE architecture")
+        parser_pe.add_argument("-f", "--format",            action="store_true", help="Show PE format")
+        parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
+        parser_pe.add_argument("-I", "--imphash",           action="store_true", help="Show PE imported functions hash")
+        parser_pe.add_argument("-c", "--compiledate",       action="store_true", help="Show PE date of compilation")
+        parser_pe.add_argument("-H", "--header",            action="store_true", help="Show PE header")
+        parser_pe.add_argument("-o", "--dosheader",         action="store_true", help="Show PE DOS header")
+        parser_pe.add_argument("-D", "--datadirectories",   action="store_true", help="Show PE data directories")
+        parser_pe.add_argument("-b", "--debug",             action="store_true", help="Show PE debug information")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
@@ -107,7 +109,7 @@ class Lief(Module):
                     section.name,
                     hex(section.offset),
                     hex(section.virtual_address),
-                    hex(section.size),
+                    "{0:<6} bytes".format(section.size),
                     ELF_SECTION_TYPES[section.type],
                     ':'.join(ELF_SECTION_FLAGS[flag] for flag in section.flags_list),
                     round(section.entropy, 4)
@@ -120,9 +122,9 @@ class Lief(Module):
                 rows.append([
                     section.name,
                     hex(section.virtual_address),
-                    hex(section.virtual_size),
+                    "{0:<6} bytes".format(section.virtual_size),
                     hex(section.offset),
-                    section.size,
+                    "{0:<6} bytes".format(section.size),
                     round(section.entropy, 4)
                 ])
             self.log("info", "PE sections : ")
@@ -174,16 +176,16 @@ class Lief(Module):
             for segment in self.lief.segments:
                 self.log("info", "Information of segment {0} : ".format(segment.name))
                 self.log("item", "{0:<18} : {1}".format("Name", segment.name)),
-                self.log("item", "{0:<18} : {1} Bytes".format("Size", segment.file_size)),
+                self.log("item", "{0:<18} : {1} bytes".format("Size", segment.file_size)),
                 self.log("item", "{0:<18} : {1}".format("Offset", segment.file_offset)),
                 self.log("item", "{0:<18} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[segment.command])),
-                self.log("item", "{0:<18} : {1} Bytes".format("Command size", segment.size)),
+                self.log("item", "{0:<18} : {1} bytes".format("Command size", segment.size)),
                 self.log("item", "{0:<18} : {1}".format("Command offset", hex(segment.command_offset))),
                 self.log("item", "{0:<18} : {1}".format("Number of sections", segment.numberof_sections)),
                 self.log("item", "{0:<18} : {1}".format("Initial protection", segment.init_protection)),
                 self.log("item", "{0:<18} : {1}".format("Maximum protection", segment.max_protection)),
                 self.log("item", "{0:<18} : {1}".format("Virtual address", hex(segment.virtual_address))),
-                self.log("item", "{0:<18} : {1} Bytes".format("Virtual size", segment.virtual_size)),
+                self.log("item", "{0:<18} : {1} bytes".format("Virtual size", segment.virtual_size)),
                 if segment.sections:
                     for section in segment.sections:
                         rows.append([
@@ -271,7 +273,7 @@ class Lief(Module):
                         hex(library.command_offset),
                         self.listVersionToDottedVersion(library.compatibility_version),
                         self.listVersionToDottedVersion(library.current_version),
-                        "{0:<6} Bytes".format(library.size),
+                        "{0:<6} bytes".format(library.size),
                         library.timestamp
                     ])
                 self.log("info", "Dynamic libraries : ")
@@ -429,7 +431,7 @@ class Lief(Module):
             self.log("item", "{0:<15} : {1}".format("CPU type", MACHO_CPU_TYPES[self.lief.header.cpu_type]))
             self.log("item", "{0:<15} : {1}".format("File type", MACHO_FILE_TYPES[self.lief.header.file_type]))
             self.log("item", "{0:<15} : {1}".format("Number of cmds", self.lief.header.nb_cmds))
-            self.log("item", "{0:<15} : {1} Bytes".format("Size of cmds", self.lief.header.sizeof_cmds))
+            self.log("item", "{0:<15} : {1} bytes".format("Size of cmds", self.lief.header.sizeof_cmds))
             self.log("item", "{0:<15} : {1}".format("Flags", ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)))
         elif lief.is_pe(self.filePath):
             timestamp = self.lief.header.time_date_stamps
@@ -441,7 +443,7 @@ class Lief(Module):
             self.log("item", "{0:<28} : {1}".format("Pointer to symbol table", hex(self.lief.header.pointerto_symbol_table)))
             self.log("item", "{0:<28} : {1}".format("Signature", "{0} ({1})".format(' '.join(hex(sig) for sig in self.lief.header.signature), ''.join(chr(sig) for sig in self.lief.header.signature))))
             self.log("item", "{0:<28} : {1}".format("Date of compilation", date))
-            self.log("item", "{0:<28} : {1:<6} Bytes".format("Size of optional header", self.lief.header.sizeof_optional_header))
+            self.log("item", "{0:<28} : {1:<6} bytes".format("Size of optional header", self.lief.header.sizeof_optional_header))
             if self.lief.header.sizeof_optional_header > 0:
                 self.log("success", "Optional header : ")
                 self.log("item", "{0:<28} : {1}".format("Entrypoint", hex(self.lief.optional_header.addressof_entrypoint)))
@@ -456,20 +458,20 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1}".format("Max Linker version", self.lief.optional_header.major_linker_version))
                 self.log("item", "{0:<28} : {1}".format("Min Image version", self.lief.optional_header.minor_image_version))
                 self.log("item", "{0:<28} : {1}".format("Max Image version", self.lief.optional_header.major_image_version))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of code", self.lief.optional_header.sizeof_code))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of headers", self.lief.optional_header.sizeof_headers))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of heap commited", self.lief.optional_header.sizeof_heap_commit))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of heap reserved", self.lief.optional_header.sizeof_heap_reserve))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of image", self.lief.optional_header.sizeof_image))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of Initialized data", self.lief.optional_header.sizeof_initialized_data))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of Uninitialized data", self.lief.optional_header.sizeof_uninitialized_data))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of stack commited", self.lief.optional_header.sizeof_stack_commit))
-                self.log("item", "{0:<28} : {1:<8} Bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of code", self.lief.optional_header.sizeof_code))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of headers", self.lief.optional_header.sizeof_headers))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of heap commited", self.lief.optional_header.sizeof_heap_commit))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of heap reserved", self.lief.optional_header.sizeof_heap_reserve))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of image", self.lief.optional_header.sizeof_image))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of Initialized data", self.lief.optional_header.sizeof_initialized_data))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of Uninitialized data", self.lief.optional_header.sizeof_uninitialized_data))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack commited", self.lief.optional_header.sizeof_stack_commit))
+                self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
         elif lief.is_elf(self.filePath):
             self.log("info", "ELF header : ")
             self.log("item", "{0:<26} : {1}".format("Type", ELF_ETYPE[self.lief.header.file_type]))
             self.log("item", "{0:<26} : {1}".format("Entrypoint", hex(self.lief.header.entrypoint)))
-            self.log("item", "{0:<26} : {1} Bytes".format("Header size", self.lief.header.header_size))
+            self.log("item", "{0:<26} : {1} bytes".format("Header size", self.lief.header.header_size))
             self.log("item", "{0:<26} : {1}".format("Identity", "{0} ({1})".format(' '.join(hex(iden) for iden in self.lief.header.identity), ''.join(chr(iden) for index, iden in enumerate(self.lief.header.identity) if index < 4))))
             self.log("item", "{0:<26} : {1}".format("Endianness", ELF_DATA[self.lief.header.identity_data]))
             self.log("item", "{0:<26} : {1}".format("Class", ELF_CLASS[self.lief.header.identity_class]))
@@ -480,9 +482,9 @@ class Lief(Module):
             self.log("item", "{0:<26} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<26} : {1}".format("Number of segments", self.lief.header.numberof_segments))
             self.log("item", "{0:<26} : {1}".format("Program header offet", hex(self.lief.header.program_header_offset)))
-            self.log("item", "{0:<26} : {1} Bytes".format("Program header size", self.lief.header.program_header_size))
+            self.log("item", "{0:<26} : {1} bytes".format("Program header size", self.lief.header.program_header_size))
             self.log("item", "{0:<26} : {1}".format("Section Header offset", hex(self.lief.header.section_header_offset)))
-            self.log("item", "{0:<26} : {1} Bytes".format("Section header size", self.lief.header.section_header_size))
+            self.log("item", "{0:<26} : {1} bytes".format("Section header size", self.lief.header.section_header_size))
         else:
             self.log("warning", "No header found")
 
@@ -495,9 +497,9 @@ class Lief(Module):
                 rows.append([
                     MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
                     hex(self.lief.code_signature.command_offset),
-                    "{:<6} Bytes".format(self.lief.code_signature.size),
+                    "{:<6} bytes".format(self.lief.code_signature.size),
                         hex(self.lief.code_signature.data_offset),
-                    "{:<6} Bytes".format(self.lief.code_signature.data_size)
+                    "{:<6} bytes".format(self.lief.code_signature.data_size)
                 ])
                 self.log("info", "MachO code signature : ")
                 self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
@@ -581,7 +583,7 @@ class Lief(Module):
                 self.log("info", "Source version : ")
                 self.log("item", "{0:<10} : {1}".format("command", MACHO_LOAD_COMMAND_TYPES[self.lief.source_version.command]))
                 self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.source_version.command_offset)))
-                self.log("item", "{0:<10} : {1} Bytes".format("size", self.lief.source_version.size))
+                self.log("item", "{0:<10} : {1} bytes".format("size", self.lief.source_version.size))
                 self.log("item", "{0:<10} : {1}".format("Version", self.listVersionToDottedVersion(self.lief.source_version.version)))
             else:
                 self.log("warning", "No source version found")
@@ -596,7 +598,7 @@ class Lief(Module):
                 self.log("info", "Sub-framework : ")
                 self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.sub_framework.command]))
                 self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.sub_framework.command_offset)))
-                self.log("item", "{0:<10} : {1} Bytes".format("Size", self.lief.sub_framework.size))
+                self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.sub_framework.size))
                 self.log("item", "{0:<10} : {1}".format("Umbrella", self.lief.sub_framework.umbrella))
             else:
                 self.log("warning", "No sub-framework found")
@@ -611,7 +613,7 @@ class Lief(Module):
                 self.log("info", "Uuid : ")
                 self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.uuid.command]))
                 self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.uuid.command_offset)))
-                self.log("item", "{0:<10} : {1} Bytes".format("Size", self.lief.uuid.size))
+                self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.uuid.size))
                 self.log("item", "{0:<10} : {1}".format("Uuid", self.listUuidToUuid(self.lief.uuid.uuid)))
             else:
                 self.log("warning", "No uuid found")
@@ -626,7 +628,7 @@ class Lief(Module):
                 self.log("info", "Data in code : ")
                 self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.data_in_code.command]))
                 self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.data_in_code.command_offset)))
-                self.log("item", "{0:<12} : {1} Bytes".format("Size", self.lief.data_in_code.size))
+                self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.data_in_code.size))
                 self.log("item", "{0:<12} : {1}".format("Data Offset", hex(self.lief.data_in_code.data_offset)))
             else:
                 self.log("warning", "No data in code found")
@@ -641,9 +643,9 @@ class Lief(Module):
                 self.log("info", "Main command : ")
                 self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.main_command.command]))
                 self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.main_command.command_offset)))
-                self.log("item", "{0:<12} : {1} Bytes".format("Size", self.lief.main_command.size))
+                self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.main_command.size))
                 self.log("item", "{0:<12} : {1}".format("Entrypoint", hex(self.lief.main_command.entrypoint)))
-                self.log("item", "{0:<12} : {1} Bytes".format("Stack size", self.lief.main_command.stack_size))
+                self.log("item", "{0:<12} : {1} bytes".format("Stack size", self.lief.main_command.stack_size))
             else:
                 self.log("warning", "No main command found")
         else:
@@ -658,7 +660,7 @@ class Lief(Module):
                 for command in self.lief.commands:
                     rows.append([
                         MACHO_LOAD_COMMAND_TYPES[command.command],
-                        "{0:<6} Bytes".format(command.size),
+                        "{0:<6} bytes".format(command.size),
                         hex(command.command_offset),
                     ])
                 self.log("table", dict(header=["Command", "Size", "Offset"], rows=rows))
@@ -691,6 +693,49 @@ class Lief(Module):
             self.log("item", "{0:<28} : {1}".format("Used bytes in last page", self.lief.dos_header.used_bytes_in_the_last_page))
         else:
             self.log("warning", "No DOS header found")
+
+    def datadirectories(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath):
+            if self.lief.data_directories:
+                for datadirectory in self.lief.data_directories:
+                    self.log("info", "Data directory : ")
+                    self.log("item", "{0:<24} : {1}".format("Relative virtual address", hex(datadirectory.rva)))
+                    self.log("item", "{0:<24} : {1} bytes".format("Size", datadirectory.size))
+                    self.log("item", "{0:<24} : {1}".format("Type", PE_DATA_DIRECTORY[datadirectory.type]))
+                    if datadirectory.has_section:
+                        self.log("item", "{0:<24} : {1}".format("Section", datadirectory.section.name))
+            else:
+                self.log("warning", "No data directory found")
+        else:
+            self.log("warning", "No data directory found")
+    
+    def debug(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath):
+            if self.lief.has_debug:
+                timestamp = self.lief.debug.timestamp
+                date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
+                self.log("info", "Debug information : ")
+                self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(self.lief.debug.addressof_rawdata)))
+                self.log("item", "{0:<28} : {1}".format("Minor version of debug data", self.lief.debug.minor_version))
+                self.log("item", "{0:<28} : {1}".format("Major version of debug data", self.lief.debug.major_version))
+                self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(self.lief.debug.pointerto_rawdata)))
+                self.log("item", "{0:<28} : {1} bytes".format("Size of data", self.lief.debug.sizeof_data))
+                self.log("item", "{0:<28} : {1}".format("Data of data creation", date))
+                self.log("item", "{0:<28} : {1}".format("Type of debug information", PE_DEBUG_TYPES[self.lief.debug.type]))
+                if self.lief.debug.has_code_view:
+                    self.log("item", "{0:<28} : {1}".format("Code view", PE_CODE_VIEW_SIGNATURES[self.lief.debug.code_view.cv_signature]))
+                    if isinstance(self.lief.debug.code_view, lief.PE.CodeViewPDB):
+                        self.log("item", "{0:<28} : {1}".format("Age", self.lief.debug.code_view.age))
+                        self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.debug.code_view.signature)))
+                        self.log("item", "{0:<28} : {1}".format("Path", self.lief.debug.code_view.filename))
+            else:
+                self.log("warning", "No debug information found")
+        else:
+            self.log("warning", "No debug information found")
    
     """Usefuls methods"""
 
@@ -759,6 +804,10 @@ class Lief(Module):
                 self.compileDate()
             elif self.args.dosheader:
                 self.dosHeader()
+            elif self.args.datadirectories:
+                self.datadirectories()
+            elif self.args.debug:
+                self.debug()
 
     def elf(self):
         if not self.__check_session():
