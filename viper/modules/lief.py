@@ -3,7 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 
-import math, re, os.path
+import math, os.path, string
 from os import access
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -36,12 +36,16 @@ class Lief(Module):
         parser_pe.add_argument("-a", "--architecture",      action="store_true", help="Show PE architecture")
         parser_pe.add_argument("-f", "--format",            action="store_true", help="Show PE format")
         parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
-        parser_pe.add_argument("-I", "--imphash",           action="store_true", help="Show PE imported functions hash")
+        parser_pe.add_argument("-m", "--imphash",           action="store_true", help="Show PE imported functions hash")
         parser_pe.add_argument("-c", "--compiledate",       action="store_true", help="Show PE date of compilation")
         parser_pe.add_argument("-H", "--header",            action="store_true", help="Show PE header")
         parser_pe.add_argument("-o", "--dosheader",         action="store_true", help="Show PE DOS header")
         parser_pe.add_argument("-D", "--datadirectories",   action="store_true", help="Show PE data directories")
         parser_pe.add_argument("-b", "--debug",             action="store_true", help="Show PE debug information")
+        parser_pe.add_argument("-u", "--dosstub",           action="store_true", help="Show PE DOS stub")
+        parser_pe.add_argument("-j", "--expfunctions",      action="store_true", help="Show PE exported functions")
+        parser_pe.add_argument("-I", "--impfunctions",      action="store_true", help="Show PE imported functions")
+        parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
@@ -261,9 +265,9 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_elf(self.filePath):
+        if lief.is_elf(self.filePath) or lief.is_pe(self.filePath):
             for lib in self.lief.libraries:
-                self.log("info", "Library : {0}".format(lib))
+                self.log("info", lib)
         elif lief.is_macho(self.filePath):
             if self.lief.libraries:
                 for library in self.lief.libraries:
@@ -512,9 +516,9 @@ class Lief(Module):
     def exportedFunctions(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath):
-            self.log("info", "Exported functions : ")
+        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath) or lief.is_pe(self.filePath):
             if self.lief.exported_functions:
+                self.log("info", "Exported functions : ")
                 for function in self.lief.exported_functions:
                     self.log("info", function)
             else:
@@ -545,7 +549,7 @@ class Lief(Module):
     def importedFunctions(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath):
+        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath) or lief.is_pe(self.filePath):
             if self.lief.imported_functions:
                 self.log("info", "Imported functions : ")
                 for function in self.lief.imported_functions:
@@ -711,6 +715,16 @@ class Lief(Module):
         else:
             self.log("warning", "No data directory found")
     
+    def dosStub(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath):
+            rawDosStub = ''.join(chr(stub) if chr(stub) in string.printable.replace(string.whitespace, '') else '.' for stub in self.lief.dos_stub)
+            printableDosStub = [rawDosStub[i:i+16] for i in range(0, len(rawDosStub), 16)]
+            self.log("info", "{0}{1}".format('Dos stub : \n','\n'.join(printableDosStub)))
+        else:
+            self.log("warning", "No DOS stub found")
+    
     def debug(self):
         if not self.__check_session():
             return
@@ -786,6 +800,8 @@ class Lief(Module):
                 self.sections()
             elif self.args.entrypoint:
                 self.entrypoint()
+            elif self.args.dosstub:
+                self.dosStub()
             elif self.args.dlls:
                 self.dlls()
             elif self.args.imports:
@@ -808,6 +824,12 @@ class Lief(Module):
                 self.datadirectories()
             elif self.args.debug:
                 self.debug()
+            elif self.args.expfunctions:
+                self.exportedFunctions()
+            elif self.args.impfunctions:
+                self.importedFunctions()
+            elif self.args.dynamic:
+                self.dynamic()
 
     def elf(self):
         if not self.__check_session():
