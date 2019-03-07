@@ -50,6 +50,8 @@ class Lief(Module):
         parser_pe.add_argument("-r", "--relocations",       action="store_true", help="Show PE relocations")
         parser_pe.add_argument("-R", "--resources",         action="store_true", help="Show PE resources")
         parser_pe.add_argument("-T", "--tls",               action="store_true", help="Show PE tls")
+        parser_pe.add_argument("-C", "--richheader",        action="store_true", help="Show PE rich header")
+        parser_pe.add_argument("-g", "--signature",         action="store_true", help="Show PE signature")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
@@ -371,9 +373,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_pe(self.filePath):
-            timestamp = self.lief.header.time_date_stamps
-            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
-            self.log("info", "Compilation date : {0}".format(date))
+            self.log("info", "Compilation date : {0}".format(self.fromTimestampToDate(self.lief.header.time_date_stamps)))
         else:
             self.log("warning", "No compilation date found")
 
@@ -427,15 +427,13 @@ class Lief(Module):
             self.log("item", "{0:<15} : {1} bytes".format("Size of cmds", self.lief.header.sizeof_cmds))
             self.log("item", "{0:<15} : {1}".format("Flags", ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)))
         elif lief.is_pe(self.filePath):
-            timestamp = self.lief.header.time_date_stamps
-            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
             self.log("info", "PE header : ")
             self.log("item", "{0:<28} : {1}".format("Type", PE_MACHINE_TYPES[self.lief.header.machine]))
             self.log("item", "{0:<28} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<28} : {1}".format("Number of symbols", self.lief.header.numberof_symbols))
             self.log("item", "{0:<28} : {1}".format("Pointer to symbol table", hex(self.lief.header.pointerto_symbol_table)))
             self.log("item", "{0:<28} : {1}".format("Signature", "{0} ({1})".format(' '.join(hex(sig) for sig in self.lief.header.signature), ''.join(chr(sig) for sig in self.lief.header.signature))))
-            self.log("item", "{0:<28} : {1}".format("Date of compilation", date))
+            self.log("item", "{0:<28} : {1}".format("Date of compilation", self.fromTimestampToDate(self.lief.header.time_date_stamps)))
             self.log("item", "{0:<28} : {1:<6} bytes".format("Size of optional header", self.lief.header.sizeof_optional_header))
             if self.lief.header.sizeof_optional_header > 0:
                 self.log("success", "Optional header : ")
@@ -693,15 +691,13 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_pe(self.filePath) and self.lief.has_debug:
-            timestamp = self.lief.debug.timestamp
-            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
             self.log("info", "Debug information : ")
             self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(self.lief.debug.addressof_rawdata)))
             self.log("item", "{0:<28} : {1}".format("Minor version of debug data", self.lief.debug.minor_version))
             self.log("item", "{0:<28} : {1}".format("Major version of debug data", self.lief.debug.major_version))
             self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(self.lief.debug.pointerto_rawdata)))
             self.log("item", "{0:<28} : {1} bytes".format("Size of data", self.lief.debug.sizeof_data))
-            self.log("item", "{0:<28} : {1}".format("Data of data creation", date))
+            self.log("item", "{0:<28} : {1}".format("Data of data creation", self.fromTimestampToDate(self.lief.debug.timestamp)))
             self.log("item", "{0:<28} : {1}".format("Type of debug information", PE_DEBUG_TYPES[self.lief.debug.type]))
             if self.lief.debug.has_code_view:
                 self.log("item", "{0:<28} : {1}".format("Code view", PE_CODE_VIEW_SIGNATURES[self.lief.debug.code_view.cv_signature]))
@@ -716,12 +712,10 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_pe(self.filePath) and self.lief.has_configuration:
-            timestamp = self.lief.load_configuration.timedatestamp
-            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
             self.log("info", "Load configuration : ")
             self.log("item", "{0:<33} : {1}".format("Version", PE_WIN_VERSIONS[self.lief.load_configuration.version]))
             self.log("item", "{0:<33} : {1}".format("Characteristics", hex(self.lief.load_configuration.characteristics)))
-            self.log("item", "{0:<33} : {1}".format("Timedatestamp", date))
+            self.log("item", "{0:<33} : {1}".format("Timedatestamp", self.fromTimestampToDate(self.lief.load_configuration.timedatestamp)))
             self.log("item", "{0:<33} : {1}".format("Major version", self.lief.load_configuration.major_version))
             self.log("item", "{0:<33} : {1}".format("Minor version", self.lief.load_configuration.minor_version))
             self.log("item", "{0:<33} : {1}".format("Global flags clear", self.lief.load_configuration.global_flags_clear))
@@ -788,8 +782,58 @@ class Lief(Module):
             self.log("item", "{0:<21} : {1}".format("Size of zero fill", self.lief.tls.sizeof_zero_fill))
         else:
             self.log("warning", "No tls found")
+    
+    def richHeader(self):
+        if not self.__check_session():
+            return
+        rows = []
+        if lief.is_pe(self.filePath) and self.lief.has_rich_header:
+            self.log("info", "Rich header key : {0}".format(hex(self.lief.rich_header.key)))
+            self.log("info", "Rich header entries : ")
+            for entry in self.lief.rich_header.entries:
+                rows.append([
+                    hex(entry.id),
+                    entry.count,
+                    hex(entry.build_id)
+                ])
+            self.log("table", dict(header=["ID", "Count", "Build ID"], rows=rows))
+        else:
+            self.log("warning", "No rich header found")
+    
+    def signature(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.has_signature:
+            self.log("info", "PE signature")
+            self.log("item", "{0:<20} : {1}".format("Version", self.lief.signature.version))
+            self.log("item", "{0:<20} : {1}".format("Digestion algorithm", lief.PE.oid_to_string(self.lief.signature.digest_algorithm)))
+            self.log("success", "Content information")
+            self.log("item", "{0:<20} : {1}".format("Content type", lief.PE.oid_to_string(self.lief.signature.content_info.content_type)))
+            self.log("item", "{0:<20} : {1}".format("Digest", self.lief.signature.content_info.digest if self.lief.signature.content_info.digest else '-'))
+            self.log("item", "{0:<20} : {1}".format("Digest algorithm", self.lief.signature.content_info.digest_algorithm if self.lief.signature.content_info.digest_algorithm else '-' ))
+            self.log("success", "Certificates")
+            for index, certificate in enumerate(self.lief.signature.certificates):
+                self.log("info", "Certificate N°{0}".format(index+1))
+                self.log("item", "{0:<20} : {1}".format("Version", certificate.version))
+                self.log("item", "{0:<20} : {1}".format("Serial number", '.'.join(str(num) for num in certificate.serial_number)))
+                self.log("item", "{0:<20} : {1}".format("Signature algorithm", lief.PE.oid_to_string(certificate.signature_algorithm)))
+                self.log("item", "{0:<20} : {1}".format("Valid from", self.fromListOfDatetoDate(certificate.valid_from)))
+                self.log("item", "{0:<20} : {1}".format("Valid to", self.fromListOfDatetoDate(certificate.valid_to)))
+                self.log("item", "{0:<20} : {1}".format("Issuer", certificate.issuer))
+                self.log("item", "{0:<20} : {1}".format("Subject", certificate.subject))
+        else:
+            self.log("warning", "No signature found")
 
     """Usefuls methods"""
+
+    def fromTimestampToDate(self, timestamp):
+        return datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
+
+    def fromListOfDatetoDate(self, dateList):
+        """Format of list : [Y, m, d, H, M, s]"""
+        dateString = '-'.join(str(value) for value in dateList)
+        timestamp = datetime.strptime(dateString, "%Y-%m-%d-%H-%M-%S").timestamp()
+        return self.fromTimestampToDate(timestamp)
 
     def getEntropy(self, data):
         if not data:
@@ -840,6 +884,8 @@ class Lief(Module):
                 self.entrypoint()
             elif self.args.loadconfiguration:
                 self.loadConfiguration()
+            elif self.args.richheader:
+                self.richHeader()
             elif self.args.dosstub:
                 self.dosStub()
             elif self.args.dlls:
@@ -876,6 +922,8 @@ class Lief(Module):
                 self.resources()
             elif self.args.tls:
                 self.tls()
+            elif self.args.signature:
+                self.signature()
 
     def elf(self):
         if not self.__check_session():
