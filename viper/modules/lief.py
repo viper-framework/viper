@@ -47,6 +47,9 @@ class Lief(Module):
         parser_pe.add_argument("-I", "--impfunctions",      action="store_true", help="Show PE imported functions")
         parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
         parser_pe.add_argument("-l", "--loadconfiguration", action="store_true", help="Show PE load configuration")
+        parser_pe.add_argument("-r", "--relocations",       action="store_true", help="Show PE relocations")
+        parser_pe.add_argument("-R", "--resources",         action="store_true", help="Show PE resources")
+        parser_pe.add_argument("-T", "--tls",               action="store_true", help="Show PE tls")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
@@ -671,6 +674,7 @@ class Lief(Module):
                     PE_DATA_DIRECTORY[datadirectory.type],
                     datadirectory.section.name if datadirectory.has_section else '-'
                 ])
+            self.log("info", "Data directories")
             self.log("table", dict(header=["RVA", "Size", "Type", "Section"], rows=rows))
         else:
             self.log("warning", "No data directory found")
@@ -711,11 +715,80 @@ class Lief(Module):
     def loadConfiguration(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
-            pass
+        if lief.is_pe(self.filePath) and self.lief.has_configuration:
+            timestamp = self.lief.load_configuration.timedatestamp
+            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
+            self.log("info", "Load configuration : ")
+            self.log("item", "{0:<33} : {1}".format("Version", PE_WIN_VERSIONS[self.lief.load_configuration.version]))
+            self.log("item", "{0:<33} : {1}".format("Characteristics", hex(self.lief.load_configuration.characteristics)))
+            self.log("item", "{0:<33} : {1}".format("Timedatestamp", date))
+            self.log("item", "{0:<33} : {1}".format("Major version", self.lief.load_configuration.major_version))
+            self.log("item", "{0:<33} : {1}".format("Minor version", self.lief.load_configuration.minor_version))
+            self.log("item", "{0:<33} : {1}".format("Global flags clear", self.lief.load_configuration.global_flags_clear))
+            self.log("item", "{0:<33} : {1}".format("Global flags set", self.lief.load_configuration.global_flags_set))
+            self.log("item", "{0:<33} : {1}".format("Critical section default timeout", self.lief.load_configuration.critical_section_default_timeout))
+            self.log("item", "{0:<33} : {1}".format("Decommit free block threshold", self.lief.load_configuration.decommit_free_block_threshold))
+            self.log("item", "{0:<33} : {1}".format("Decommit total free threshold", self.lief.load_configuration.decommit_total_free_threshold))
+            self.log("item", "{0:<33} : {1}".format("Lock prefix table", self.lief.load_configuration.lock_prefix_table))
+            self.log("item", "{0:<33} : {1} bytes".format("Maximum allocation size", self.lief.load_configuration.maximum_allocation_size))
+            self.log("item", "{0:<33} : {1}".format("Virtual memory threshold", self.lief.load_configuration.virtual_memory_threshold))
+            self.log("item", "{0:<33} : {1}".format("Process affinity mask", self.lief.load_configuration.process_affinity_mask))
+            self.log("item", "{0:<33} : {1}".format("Process heap flags", self.lief.load_configuration.process_heap_flags))
+            self.log("item", "{0:<33} : {1}".format("CSD Version", self.lief.load_configuration.csd_version))
+            self.log("item", "{0:<33} : {1}".format("Edit list", self.lief.load_configuration.editlist))
+            self.log("item", "{0:<33} : {1}".format("Security cookie", hex(self.lief.load_configuration.security_cookie)))
         else:
             self.log("warning", "No load configuration found")
+
+    def relocations(self):
+        if not self.__check_session():
+            return
+        rows = []
+        if lief.is_pe(self.filePath) and self.lief.has_relocations:
+            for relocation in self.lief.relocations:
+                for entry in relocation.entries:
+                    rows.append([
+                        hex(relocation.virtual_address),
+                        PE_RELOCATION_BASE_TYPES[entry.type],
+                        "{0:<6} bytes".format(entry.size),
+                        hex(entry.position),
+                        hex(entry.address),
+                        hex(entry.data)
+                    ])
+            self.log("table", dict(header=["Relocation Addr", "Entry type", "Entry size", "Entry position", "Entry address", "Entry data"], rows=rows))
+        else:
+            self.log("warning", "No relocation found")
    
+    def resources(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.has_resources:
+            self.log("info", "PE resources : ")
+            self.log("item", "{0:<17} : {1}".format("Name", self.lief.resources.name if self.lief.resources.has_name else "No name"))
+            self.log("item", "{0:<17} : {1}".format("Number of childs", len(self.lief.resources.childs)))
+            self.log("item", "{0:<17} : {1}".format("Depth", self.lief.resources.depth))
+            self.log("item", "{0:<17} : {1}".format("Type", "Directory" if self.lief.resources.is_directory else "Data" if self.lief.resources.is_data else "Unknown"))
+            self.log("item", "{0:<17} : {1}".format("Id", hex(self.lief.resources.id)))
+        else:
+            self.log("warning", "No resource found")
+
+    def tls(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.has_tls:
+            self.log("info", "PE tls : ")
+            self.log("item", "{0:<21} : {1}".format("Address of callbacks", hex(self.lief.tls.addressof_callbacks)))
+            self.log("item", "{0:<21} : {1}".format("Address of index", hex(self.lief.tls.addressof_index)))
+            self.log("item", "{0:<21} : {1}".format("Address of raw data", " - ".join(hex(addr) for addr in self.lief.tls.addressof_raw_data)))
+            self.log("item", "{0:<21} : {1}".format("Callbacks", " - ".join(hex(callback) for callback in self.lief.tls.callbacks)))
+            self.log("item", "{0:<21} : {1}".format("Characteristics", hex(self.lief.tls.characteristics)))
+            self.log("item", "{0:<21} : {1}".format("Data template", self.lief.tls.data_template))
+            self.log("item", "{0:<21} : {1}".format("Directory", PE_DATA_DIRECTORY[self.lief.tls.directory.type] if self.lief.tls.has_data_directory else '-'))
+            self.log("item", "{0:<21} : {1}".format("Section", self.lief.tls.section.name if self.lief.tls.has_section else '-'))
+            self.log("item", "{0:<21} : {1}".format("Size of zero fill", self.lief.tls.sizeof_zero_fill))
+        else:
+            self.log("warning", "No tls found")
+
     """Usefuls methods"""
 
     def getEntropy(self, data):
@@ -797,6 +870,12 @@ class Lief(Module):
                 self.importedFunctions()
             elif self.args.dynamic:
                 self.dynamic()
+            elif self.args.relocations:
+                self.relocations()
+            elif self.args.resources:
+                self.resources()
+            elif self.args.tls:
+                self.tls()
 
     def elf(self):
         if not self.__check_session():
