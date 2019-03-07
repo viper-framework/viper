@@ -32,7 +32,7 @@ class Lief(Module):
         parser_pe.add_argument("-s", "--sections",          action="store_true", help="Show PE sections")
         parser_pe.add_argument("-e", "--entrypoint",        action="store_true", help="Show PE entrypoint")
         parser_pe.add_argument("-d", "--dlls",              action="store_true", help="Show PE imported dlls")
-        parser_pe.add_argument("-i", "--imports",           action="store_true", help="Show PE imported functions")
+        parser_pe.add_argument("-i", "--imports",           action="store_true", help="Show PE imported functions and DLLs")
         parser_pe.add_argument("-a", "--architecture",      action="store_true", help="Show PE architecture")
         parser_pe.add_argument("-f", "--format",            action="store_true", help="Show PE format")
         parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
@@ -46,6 +46,7 @@ class Lief(Module):
         parser_pe.add_argument("-j", "--expfunctions",      action="store_true", help="Show PE exported functions")
         parser_pe.add_argument("-I", "--impfunctions",      action="store_true", help="Show PE imported functions")
         parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
+        parser_pe.add_argument("-l", "--loadconfiguration", action="store_true", help="Show PE load configuration")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
@@ -225,11 +226,8 @@ class Lief(Module):
             self.log("info", "Entry point : {0}".format(hex(self.lief.header.entrypoint)))
         elif lief.is_pe(self.filePath):
             self.log("info", "Entry point : {0}".format(hex(self.lief.entrypoint)))
-        elif lief.is_macho(self.filePath):
-            if self.lief.has_entrypoint:
-                self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
-            else:
-                self.log("warning", "No entrypoint found")
+        elif lief.is_macho(self.filePath) and self.lief.has_entrypoint:
+            self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
         else:
             self.log("warning", "No entrypoint found")
     
@@ -268,22 +266,19 @@ class Lief(Module):
         if lief.is_elf(self.filePath) or lief.is_pe(self.filePath):
             for lib in self.lief.libraries:
                 self.log("info", lib)
-        elif lief.is_macho(self.filePath):
-            if self.lief.libraries:
-                for library in self.lief.libraries:
-                    rows.append([
-                        MACHO_LOAD_COMMAND_TYPES[library.command],
-                        library.name,
-                        hex(library.command_offset),
-                        self.listVersionToDottedVersion(library.compatibility_version),
-                        self.listVersionToDottedVersion(library.current_version),
-                        "{0:<6} bytes".format(library.size),
-                        library.timestamp
-                    ])
-                self.log("info", "Dynamic libraries : ")
-                self.log("table", dict(header=["Command", "Name", "Offset", "Compatibility version", "Current version", "Size", "Timestamp"],rows=rows))
-            else:
-                self.log("warning", "No dynamic library found")
+        elif lief.is_macho(self.filePath) and self.lief.libraries:
+            for library in self.lief.libraries:
+                rows.append([
+                    MACHO_LOAD_COMMAND_TYPES[library.command],
+                    library.name,
+                    hex(library.command_offset),
+                    self.listVersionToDottedVersion(library.compatibility_version),
+                    self.listVersionToDottedVersion(library.current_version),
+                    "{0:<6} bytes".format(library.size),
+                    library.timestamp
+                ])
+            self.log("info", "Dynamic libraries : ")
+            self.log("table", dict(header=["Command", "Name", "Offset", "Compatibility version", "Current version", "Size", "Timestamp"],rows=rows))
         else:
             self.log("warning", "No dynamic library found")
 
@@ -305,19 +300,16 @@ class Lief(Module):
                 ])
             self.log("info", "ELF symbols : ")
             self.log("table", dict(header=["Name", "Type", "Val", "Size", "Visibility", "isFun", "isStatic", "isVar"], rows=rows))
-        elif lief.is_macho(self.filePath):
-            if self.lief.symbols:
-                self.log("info", "MachO symbols : ")
-                for symbol in self.lief.symbols:
-                    self.log("info", "Information of symbol : ")
-                    self.log("item", "{0:<19} : {1}".format("Name", symbol.name))
-                    self.log("item", "{0:<19} : {1}".format("description", hex(symbol.description)))
-                    self.log("item", "{0:<19} : {1}".format("Number of sections", symbol.numberof_sections))
-                    self.log("item", "{0:<19} : {1}".format("Type", hex(symbol.type)))
-                    self.log("item", "{0:<19} : {1}".format("Value", hex(symbol.value)))
-                    self.log("item", "{0:<19} : {1}".format("Origin", MACHO_SYMBOL_ORIGINS[symbol.origin]))
-            else:
-                self.log("warning", "No symbol found")
+        elif lief.is_macho(self.filePath) and self.lief.symbols:
+            self.log("info", "MachO symbols : ")
+            for symbol in self.lief.symbols:
+                self.log("info", "Information of symbol : ")
+                self.log("item", "{0:<19} : {1}".format("Name", symbol.name))
+                self.log("item", "{0:<19} : {1}".format("description", hex(symbol.description)))
+                self.log("item", "{0:<19} : {1}".format("Number of sections", symbol.numberof_sections))
+                self.log("item", "{0:<19} : {1}".format("Type", hex(symbol.type)))
+                self.log("item", "{0:<19} : {1}".format("Value", hex(symbol.value)))
+                self.log("item", "{0:<19} : {1}".format("Origin", MACHO_SYMBOL_ORIGINS[symbol.origin]))
         else:
             self.log("warning", "No symbol found")
 
@@ -362,16 +354,13 @@ class Lief(Module):
     def gnu_hash(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath):
-            if self.lief.gnu_hash:
-                self.log("info", "GNU hash : ")
-                self.log("item", "{0} : {1}".format("Number of buckets", self.lief.gnu_hash.nb_buckets))
-                self.log("item", "{0} : {1}".format("First symbol index", hex(self.lief.gnu_hash.symbol_index)))
-                self.log("item", "{0} : {1}".format("Bloom filters", ', '.join(str(hex(fil)) for fil in self.lief.gnu_hash.bloom_filters)))
-                self.log("item", "{0} : {1}".format("Hash buckets", ', '.join(str(hex(bucket)) for bucket in self.lief.gnu_hash.buckets)))
-                self.log("item", "{0} : {1}".format("Hash values", ', '.join(str(hex(h)) for h in self.lief.gnu_hash.hash_values)))
-            else:
-                self.log("warning", "No GNU hash found")
+        if lief.is_elf(self.filePath) and self.lief.gnu_hash:
+            self.log("info", "GNU hash : ")
+            self.log("item", "{0} : {1}".format("Number of buckets", self.lief.gnu_hash.nb_buckets))
+            self.log("item", "{0} : {1}".format("First symbol index", hex(self.lief.gnu_hash.symbol_index)))
+            self.log("item", "{0} : {1}".format("Bloom filters", ', '.join(str(hex(fil)) for fil in self.lief.gnu_hash.bloom_filters)))
+            self.log("item", "{0} : {1}".format("Hash buckets", ', '.join(str(hex(bucket)) for bucket in self.lief.gnu_hash.buckets)))
+            self.log("item", "{0} : {1}".format("Hash values", ', '.join(str(hex(h)) for h in self.lief.gnu_hash.hash_values)))
         else:
             self.log("warning", "No GNU hash found")
 
@@ -411,18 +400,15 @@ class Lief(Module):
     def notes(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath):
-            if self.lief.has_notes:
-                self.log("info", "Notes : ")
-                for note in self.lief.notes:
-                    self.log("success", "Information of {0} note : ".format(note.name))
-                    self.log("item", "{0} : {1}".format("Name", note.name))
-                    self.log("item", "{0} : {1}".format("ABI", ELF_NOTE_ABIS[note.abi]))
-                    self.log("item", "{0} : {1}".format("Description", ''.join(str(hex(desc))[2:] for desc in note.description)))
-                    self.log("item", "{0} : {1}".format("Type", ELF_NOTE_TYPES[note.type]))
-                    self.log("item", "{0} : {1}".format("Version", self.listVersionToDottedVersion(note.version)))
-            else:
-                self.log("warning", "No note found")
+        if lief.is_elf(self.filePath) and self.lief.has_notes:
+            self.log("info", "Notes : ")
+            for note in self.lief.notes:
+                self.log("success", "Information of {0} note : ".format(note.name))
+                self.log("item", "{0} : {1}".format("Name", note.name))
+                self.log("item", "{0} : {1}".format("ABI", ELF_NOTE_ABIS[note.abi]))
+                self.log("item", "{0} : {1}".format("Description", ''.join(str(hex(desc))[2:] for desc in note.description)))
+                self.log("item", "{0} : {1}".format("Type", ELF_NOTE_TYPES[note.type]))
+                self.log("item", "{0} : {1}".format("Version", self.listVersionToDottedVersion(note.version)))
         else:
             self.log("warning", "No note found")
 
@@ -495,20 +481,17 @@ class Lief(Module):
     def codeSignature(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.has_code_signature:
-                rows = []
-                rows.append([
-                    MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
-                    hex(self.lief.code_signature.command_offset),
-                    "{:<6} bytes".format(self.lief.code_signature.size),
-                        hex(self.lief.code_signature.data_offset),
-                    "{:<6} bytes".format(self.lief.code_signature.data_size)
-                ])
-                self.log("info", "MachO code signature : ")
-                self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
-            else:
-                self.log("warning", "No code signature found")
+        if lief.is_macho(self.filePath) and self.lief.has_code_signature:
+            rows = []
+            rows.append([
+                MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
+                hex(self.lief.code_signature.command_offset),
+                "{:<6} bytes".format(self.lief.code_signature.size),
+                hex(self.lief.code_signature.data_offset),
+                "{:<6} bytes".format(self.lief.code_signature.data_size)
+            ])
+            self.log("info", "MachO code signature : ")
+            self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
         else:
             self.log("warning", "No code signature found")
 
@@ -516,142 +499,123 @@ class Lief(Module):
     def exportedFunctions(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath) or lief.is_pe(self.filePath):
-            if self.lief.exported_functions:
-                self.log("info", "Exported functions : ")
-                for function in self.lief.exported_functions:
-                    self.log("info", function)
-            else:
-                self.log("warning", "No exported function found")
+        if (
+                (lief.is_macho(self.filePath) and self.lief.exported_functions) or 
+                (lief.is_elf(self.filePath) and self.lief.exported_functions) or 
+                (lief.is_pe(self.filePath) and self.lief.exported_functions)
+        ):
+            self.log("info", "Exported functions : ")
+            for function in self.lief.exported_functions:
+                self.log("info", function)
         else:
             self.log("warning", "No exported function found")
 
     def exportedSymbols(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.exported_symbols:
-                rows = []
-                for symbol in self.lief.exported_symbols:
-                    rows.append([
-                        symbol.name,
-                        symbol.numberof_sections,
-                        hex(symbol.value),
-                        MACHO_SYMBOL_ORIGINS[symbol.origin]
-                    ])
-                self.log("info", "MachO exported symbols : ")
-                self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
-            else:
-                self.log("warning", "No exported symbol found")
+        if lief.is_macho(self.filePath) and self.lief.exported_symbols:
+            rows = []
+            for symbol in self.lief.exported_symbols:
+                rows.append([
+                    symbol.name,
+                    symbol.numberof_sections,
+                    hex(symbol.value),
+                    MACHO_SYMBOL_ORIGINS[symbol.origin]
+                ])
+            self.log("info", "MachO exported symbols : ")
+            self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
         else:
             self.log("warning", "No exported symbol found")
 
     def importedFunctions(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) or lief.is_elf(self.filePath) or lief.is_pe(self.filePath):
-            if self.lief.imported_functions:
-                self.log("info", "Imported functions : ")
-                for function in self.lief.imported_functions:
-                    self.log("info", function)
-            else:
-                self.log("warning", "No imported function found")
+        if (
+                (lief.is_macho(self.filePath) and self.lief.imported_functions) or 
+                (lief.is_elf(self.filePath) and self.lief.imported_functions) or 
+                (lief.is_pe(self.filePath) and self.lief.imported_functions)
+        ):
+            self.log("info", "Imported functions : ")
+            for function in self.lief.imported_functions:
+                self.log("info", function)
         else:
             self.log("warning", "No imported function found")
 
     def importedSymbols(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.imported_symbols:
-                rows = []
-                for symbol in self.lief.imported_symbols:
-                    rows.append([
-                        symbol.name,
-                        symbol.numberof_sections,
-                        hex(symbol.value),
-                        MACHO_SYMBOL_ORIGINS[symbol.origin]
-                    ])
-                self.log("info", "MachO imported symbols : ")
-                self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
-            else:
-                self.log("warning", "No imported symbol found")
+        if lief.is_macho(self.filePath) and self.lief.imported_symbols:
+            rows = []
+            for symbol in self.lief.imported_symbols:
+                rows.append([
+                    symbol.name,
+                    symbol.numberof_sections,
+                    hex(symbol.value),
+                    MACHO_SYMBOL_ORIGINS[symbol.origin]
+                ])
+            self.log("info", "MachO imported symbols : ")
+            self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
         else:
             self.log("warning", "No imported symbol found")
 
     def sourceVersion(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.has_source_version:
-                self.log("info", "Source version : ")
-                self.log("item", "{0:<10} : {1}".format("command", MACHO_LOAD_COMMAND_TYPES[self.lief.source_version.command]))
-                self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.source_version.command_offset)))
-                self.log("item", "{0:<10} : {1} bytes".format("size", self.lief.source_version.size))
-                self.log("item", "{0:<10} : {1}".format("Version", self.listVersionToDottedVersion(self.lief.source_version.version)))
-            else:
-                self.log("warning", "No source version found")
+        if lief.is_macho(self.filePath) and self.lief.has_source_version:
+            self.log("info", "Source version : ")
+            self.log("item", "{0:<10} : {1}".format("command", MACHO_LOAD_COMMAND_TYPES[self.lief.source_version.command]))
+            self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.source_version.command_offset)))
+            self.log("item", "{0:<10} : {1} bytes".format("size", self.lief.source_version.size))
+            self.log("item", "{0:<10} : {1}".format("Version", self.listVersionToDottedVersion(self.lief.source_version.version)))
         else:
             self.log("warning", "No source version found")
 
     def subFramework(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.has_sub_framework:
-                self.log("info", "Sub-framework : ")
-                self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.sub_framework.command]))
-                self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.sub_framework.command_offset)))
-                self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.sub_framework.size))
-                self.log("item", "{0:<10} : {1}".format("Umbrella", self.lief.sub_framework.umbrella))
-            else:
-                self.log("warning", "No sub-framework found")
+        if lief.is_macho(self.filePath) and self.lief.has_sub_framework:
+            self.log("info", "Sub-framework : ")
+            self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.sub_framework.command]))
+            self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.sub_framework.command_offset)))
+            self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.sub_framework.size))
+            self.log("item", "{0:<10} : {1}".format("Umbrella", self.lief.sub_framework.umbrella))
         else:
             self.log("warning", "No sub-framework found")
 
     def uuid(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.has_uuid:
-                self.log("info", "Uuid : ")
-                self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.uuid.command]))
-                self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.uuid.command_offset)))
-                self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.uuid.size))
-                self.log("item", "{0:<10} : {1}".format("Uuid", self.listUuidToUuid(self.lief.uuid.uuid)))
-            else:
-                self.log("warning", "No uuid found")
+        if lief.is_macho(self.filePath) and self.lief.has_uuid:
+            self.log("info", "Uuid : ")
+            self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.uuid.command]))
+            self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.uuid.command_offset)))
+            self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.uuid.size))
+            self.log("item", "{0:<10} : {1}".format("Uuid", self.listUuidToUuid(self.lief.uuid.uuid)))
         else:
             self.log("warning", "No uuid found")
 
     def dataInCode(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.has_data_in_code:
-                self.log("info", "Data in code : ")
-                self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.data_in_code.command]))
-                self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.data_in_code.command_offset)))
-                self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.data_in_code.size))
-                self.log("item", "{0:<12} : {1}".format("Data Offset", hex(self.lief.data_in_code.data_offset)))
-            else:
-                self.log("warning", "No data in code found")
+        if lief.is_macho(self.filePath) and self.lief.has_data_in_code:
+            self.log("info", "Data in code : ")
+            self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.data_in_code.command]))
+            self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.data_in_code.command_offset)))
+            self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.data_in_code.size))
+            self.log("item", "{0:<12} : {1}".format("Data Offset", hex(self.lief.data_in_code.data_offset)))
         else:
             self.log("warning", "No data in code found")
 
     def mainCommand(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath):
-            if self.lief.has_main_command:
-                self.log("info", "Main command : ")
-                self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.main_command.command]))
-                self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.main_command.command_offset)))
-                self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.main_command.size))
-                self.log("item", "{0:<12} : {1}".format("Entrypoint", hex(self.lief.main_command.entrypoint)))
-                self.log("item", "{0:<12} : {1} bytes".format("Stack size", self.lief.main_command.stack_size))
-            else:
-                self.log("warning", "No main command found")
+        if lief.is_macho(self.filePath) and self.lief.has_main_command:
+            self.log("info", "Main command : ")
+            self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.main_command.command]))
+            self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.main_command.command_offset)))
+            self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.main_command.size))
+            self.log("item", "{0:<12} : {1}".format("Entrypoint", hex(self.lief.main_command.entrypoint)))
+            self.log("item", "{0:<12} : {1} bytes".format("Stack size", self.lief.main_command.stack_size))
         else:
             self.log("warning", "No main command found")
 
@@ -659,17 +623,14 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_macho(self.filePath):
-            if self.lief.commands:
-                for command in self.lief.commands:
-                    rows.append([
-                        MACHO_LOAD_COMMAND_TYPES[command.command],
-                        "{0:<6} bytes".format(command.size),
-                        hex(command.command_offset),
-                    ])
-                self.log("table", dict(header=["Command", "Size", "Offset"], rows=rows))
-            else:
-                self.log("warning", "No command found")
+        if lief.is_macho(self.filePath) and self.lief.commands:
+            for command in self.lief.commands:
+                rows.append([
+                    MACHO_LOAD_COMMAND_TYPES[command.command],
+                    "{0:<6} bytes".format(command.size),
+                    hex(command.command_offset),
+                ])
+            self.log("table", dict(header=["Command", "Size", "Offset"], rows=rows))
         else:
             self.log("warning", "No command found")
 
@@ -701,17 +662,16 @@ class Lief(Module):
     def datadirectories(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
-            if self.lief.data_directories:
-                for datadirectory in self.lief.data_directories:
-                    self.log("info", "Data directory : ")
-                    self.log("item", "{0:<24} : {1}".format("Relative virtual address", hex(datadirectory.rva)))
-                    self.log("item", "{0:<24} : {1} bytes".format("Size", datadirectory.size))
-                    self.log("item", "{0:<24} : {1}".format("Type", PE_DATA_DIRECTORY[datadirectory.type]))
-                    if datadirectory.has_section:
-                        self.log("item", "{0:<24} : {1}".format("Section", datadirectory.section.name))
-            else:
-                self.log("warning", "No data directory found")
+        rows = []
+        if lief.is_pe(self.filePath) and self.lief.data_directories:
+            for datadirectory in self.lief.data_directories:
+                rows.append([
+                    hex(datadirectory.rva),
+                    "{0:<7} bytes".format(datadirectory.size),
+                    PE_DATA_DIRECTORY[datadirectory.type],
+                    datadirectory.section.name if datadirectory.has_section else '-'
+                ])
+            self.log("table", dict(header=["RVA", "Size", "Type", "Section"], rows=rows))
         else:
             self.log("warning", "No data directory found")
     
@@ -728,28 +688,33 @@ class Lief(Module):
     def debug(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
-            if self.lief.has_debug:
-                timestamp = self.lief.debug.timestamp
-                date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
-                self.log("info", "Debug information : ")
-                self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(self.lief.debug.addressof_rawdata)))
-                self.log("item", "{0:<28} : {1}".format("Minor version of debug data", self.lief.debug.minor_version))
-                self.log("item", "{0:<28} : {1}".format("Major version of debug data", self.lief.debug.major_version))
-                self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(self.lief.debug.pointerto_rawdata)))
-                self.log("item", "{0:<28} : {1} bytes".format("Size of data", self.lief.debug.sizeof_data))
-                self.log("item", "{0:<28} : {1}".format("Data of data creation", date))
-                self.log("item", "{0:<28} : {1}".format("Type of debug information", PE_DEBUG_TYPES[self.lief.debug.type]))
-                if self.lief.debug.has_code_view:
-                    self.log("item", "{0:<28} : {1}".format("Code view", PE_CODE_VIEW_SIGNATURES[self.lief.debug.code_view.cv_signature]))
-                    if isinstance(self.lief.debug.code_view, lief.PE.CodeViewPDB):
-                        self.log("item", "{0:<28} : {1}".format("Age", self.lief.debug.code_view.age))
-                        self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.debug.code_view.signature)))
-                        self.log("item", "{0:<28} : {1}".format("Path", self.lief.debug.code_view.filename))
-            else:
-                self.log("warning", "No debug information found")
+        if lief.is_pe(self.filePath) and self.lief.has_debug:
+            timestamp = self.lief.debug.timestamp
+            date = datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
+            self.log("info", "Debug information : ")
+            self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(self.lief.debug.addressof_rawdata)))
+            self.log("item", "{0:<28} : {1}".format("Minor version of debug data", self.lief.debug.minor_version))
+            self.log("item", "{0:<28} : {1}".format("Major version of debug data", self.lief.debug.major_version))
+            self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(self.lief.debug.pointerto_rawdata)))
+            self.log("item", "{0:<28} : {1} bytes".format("Size of data", self.lief.debug.sizeof_data))
+            self.log("item", "{0:<28} : {1}".format("Data of data creation", date))
+            self.log("item", "{0:<28} : {1}".format("Type of debug information", PE_DEBUG_TYPES[self.lief.debug.type]))
+            if self.lief.debug.has_code_view:
+                self.log("item", "{0:<28} : {1}".format("Code view", PE_CODE_VIEW_SIGNATURES[self.lief.debug.code_view.cv_signature]))
+                if isinstance(self.lief.debug.code_view, lief.PE.CodeViewPDB):
+                    self.log("item", "{0:<28} : {1}".format("Age", self.lief.debug.code_view.age))
+                    self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.debug.code_view.signature)))
+                    self.log("item", "{0:<28} : {1}".format("Path", self.lief.debug.code_view.filename))
         else:
             self.log("warning", "No debug information found")
+
+    def loadConfiguration(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath):
+            pass
+        else:
+            self.log("warning", "No load configuration found")
    
     """Usefuls methods"""
 
@@ -800,6 +765,8 @@ class Lief(Module):
                 self.sections()
             elif self.args.entrypoint:
                 self.entrypoint()
+            elif self.args.loadconfiguration:
+                self.loadConfiguration()
             elif self.args.dosstub:
                 self.dosStub()
             elif self.args.dlls:
