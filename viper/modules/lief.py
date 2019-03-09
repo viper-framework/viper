@@ -55,8 +55,10 @@ class Lief(Module):
         parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
         parser_pe.add_argument("-T", "--tls",               action="store_true", help="Show PE tls")
         parser_pe.add_argument("-u", "--dosstub",           action="store_true", help="Show PE DOS stub")
+        parser_pe.add_argument("-x", "--extracticons",      nargs='?',           help="Extract icons from PE to the given path", const="./", metavar="path")
         parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
         parser_pe.add_argument("-Y", "--resourcestypes",    action="store_true", help="Show PE types of resources")
+        parser_pe.add_argument("--id",                      nargs=1, type=int,   help="Define an id for following commands : -x", metavar="id")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-A", "--architecture", action="store_true", help="Show ELF architecture")
@@ -72,7 +74,7 @@ class Lief(Module):
         parser_elf.add_argument("-s", "--sections",     action="store_true", help="Show ELF sections")
         parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
         parser_elf.add_argument("-t", "--type",         action="store_true", help="Show ELF type")
-        parser_elf.add_argument("-w", "--write",        nargs=1,             help="Write binary into file")
+        parser_elf.add_argument("-w", "--write",        nargs=1,             help="Write binary into file", metavar="fileName")
         parser_elf.add_argument("-y", "--symbols",      action="store_true", help="Show ELF symbols")
         parser_elf.add_argument("-z", "--strip",        action="store_true", help="Strip ELF binary")
 
@@ -857,8 +859,44 @@ class Lief(Module):
     def icons(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_icons:
-            pass
+        rows = []
+        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_icons:
+            for icon in self.lief.resources_manager.icons:
+                rows.append([
+                    icon.id,
+                    "{0} x {1}".format(icon.width, icon.height),
+                    icon.bit_count,
+                    icon.color_count,
+                    PE_RESOURCE_LANGS[icon.lang],
+                    PE_RESOURCE_SUBLANGS[icon.sublang]
+                    ])
+            self.log("info", "PE icons : ")
+            self.log("table", dict(header=["ID", "Size", "Bits/pixel", "Nb colors/icon", "Lang", "Sublang"], rows=rows))
+        else:
+            self.log("warning", "No icon found")
+
+    def extractIcons(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_icons:
+            def iconProcessing(icon, destFolder):
+                fileName = "{0}{1}_{2}.ico".format(destFolder, self.lief.name.replace('.', '_'), icon.id)
+                if os.path.isfile(fileName):
+                    self.log("error", "{0:<25} : {1}".format("File already exists", fileName))
+                else:
+                    icon.save(fileName)
+                    self.log("success", "{0:<25} : {1}".format("File successfully saved", fileName))
+            destFolder = self.args.extracticons
+            if destFolder[len(destFolder)-1] != '/' : destFolder += '/'
+            if not os.access(destFolder, os.X_OK | os.W_OK):
+                self.log("error", "Cannot write into folder : {0}".format(destFolder))
+            else:
+                for icon in self.lief.resources_manager.icons:
+                    if self.args.id:
+                        if self.args.id[0] == icon.id:
+                            iconProcessing(icon, destFolder)
+                    else:
+                        iconProcessing(icon, destFolder)
         else:
             self.log("warning", "No icon found")
 
@@ -982,6 +1020,8 @@ class Lief(Module):
                 self.icons()
             elif self.args.dialogs:
                 self.dialogs()
+            elif self.args.extracticons:
+                self.extractIcons()
 
     def elf(self):
         if not self.__check_session():
