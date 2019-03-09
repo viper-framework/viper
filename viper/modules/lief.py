@@ -29,67 +29,72 @@ class Lief(Module):
         subparsers  = self.parser.add_subparsers(dest="subname")
         
         parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
-        parser_pe.add_argument("-s", "--sections",          action="store_true", help="Show PE sections")
-        parser_pe.add_argument("-e", "--entrypoint",        action="store_true", help="Show PE entrypoint")
-        parser_pe.add_argument("-d", "--dlls",              action="store_true", help="Show PE imported dlls")
-        parser_pe.add_argument("-i", "--imports",           action="store_true", help="Show PE imported functions and DLLs")
-        parser_pe.add_argument("-a", "--architecture",      action="store_true", help="Show PE architecture")
-        parser_pe.add_argument("-f", "--format",            action="store_true", help="Show PE format")
-        parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
-        parser_pe.add_argument("-m", "--imphash",           action="store_true", help="Show PE imported functions hash")
-        parser_pe.add_argument("-c", "--compiledate",       action="store_true", help="Show PE date of compilation")
-        parser_pe.add_argument("-H", "--header",            action="store_true", help="Show PE header")
-        parser_pe.add_argument("-o", "--dosheader",         action="store_true", help="Show PE DOS header")
-        parser_pe.add_argument("-D", "--datadirectories",   action="store_true", help="Show PE data directories")
+        parser_pe.add_argument("-A", "--architecture",      action="store_true", help="Show PE architecture")
         parser_pe.add_argument("-b", "--debug",             action="store_true", help="Show PE debug information")
-        parser_pe.add_argument("-u", "--dosstub",           action="store_true", help="Show PE DOS stub")
-        parser_pe.add_argument("-j", "--expfunctions",      action="store_true", help="Show PE exported functions")
+        parser_pe.add_argument("-c", "--compiledate",       action="store_true", help="Show PE date of compilation")
+        parser_pe.add_argument("-C", "--richheader",        action="store_true", help="Show PE rich header")
+        parser_pe.add_argument("-d", "--dlls",              action="store_true", help="Show PE imported dlls")
+        parser_pe.add_argument("-D", "--datadirectories",   action="store_true", help="Show PE data directories")
+        parser_pe.add_argument("-e", "--entrypoint",        action="store_true", help="Show PE entrypoint")
+        parser_pe.add_argument("-f", "--format",            action="store_true", help="Show PE format")
+        parser_pe.add_argument("-g", "--signature",         action="store_true", help="Show PE signature")
+        parser_pe.add_argument("-G", "--dialogs",           action="store_true", help="Show PE dialogs box information")
+        parser_pe.add_argument("-H", "--header",            action="store_true", help="Show PE header")
+        parser_pe.add_argument("-i", "--imports",           action="store_true", help="Show PE imported functions and DLLs")
         parser_pe.add_argument("-I", "--impfunctions",      action="store_true", help="Show PE imported functions")
-        parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
+        parser_pe.add_argument("-j", "--expfunctions",      action="store_true", help="Show PE exported functions")
         parser_pe.add_argument("-l", "--loadconfiguration", action="store_true", help="Show PE load configuration")
+        parser_pe.add_argument("-L", "--langs",             action="store_true", help="Show PE langs and sublangs used")
+        parser_pe.add_argument("-m", "--imphash",           action="store_true", help="Show PE imported functions hash")
+        parser_pe.add_argument("-M", "--manifest",          action="store_true", help="Show PE Manifest")
+        parser_pe.add_argument("-o", "--dosheader",         action="store_true", help="Show PE DOS header")
+        parser_pe.add_argument("-O", "--icons",             action="store_true", help="Show PE icons information")
         parser_pe.add_argument("-r", "--relocations",       action="store_true", help="Show PE relocations")
         parser_pe.add_argument("-R", "--resources",         action="store_true", help="Show PE resources")
+        parser_pe.add_argument("-s", "--sections",          action="store_true", help="Show PE sections")
+        parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
         parser_pe.add_argument("-T", "--tls",               action="store_true", help="Show PE tls")
-        parser_pe.add_argument("-C", "--richheader",        action="store_true", help="Show PE rich header")
-        parser_pe.add_argument("-g", "--signature",         action="store_true", help="Show PE signature")
+        parser_pe.add_argument("-u", "--dosstub",           action="store_true", help="Show PE DOS stub")
+        parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
+        parser_pe.add_argument("-Y", "--resourcestypes",    action="store_true", help="Show PE types of resources")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
-        parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
-        parser_elf.add_argument("-s", "--sections",     action="store_true", help="Show ELF sections")
-        parser_elf.add_argument("-y", "--symbols",      action="store_true", help="Show ELF symbols")
-        parser_elf.add_argument("-t", "--type",         action="store_true", help="Show ELF type")
-        parser_elf.add_argument("-e", "--entrypoint",   action="store_true", help="Show ELF entrypoint")
-        parser_elf.add_argument("-a", "--architecture", action="store_true", help="Show ELF architecture")
-        parser_elf.add_argument("-i", "--interpreter",  action="store_true", help="Show ELF interpreter")
+        parser_elf.add_argument("-A", "--architecture", action="store_true", help="Show ELF architecture")
         parser_elf.add_argument("-d", "--dynamic",      action="store_true", help="Show ELF dynamic libraries")
+        parser_elf.add_argument("-e", "--entrypoint",   action="store_true", help="Show ELF entrypoint")
         parser_elf.add_argument("-E", "--entropy",      action="store_true", help="Show ELF entropy")
-        parser_elf.add_argument("-H", "--header",       action="store_true", help="Show ELF header")
-        parser_elf.add_argument("-j", "--expfunctions", action="store_true", help="Show ELF exported functions")
         parser_elf.add_argument("-g", "--gnu_hash",     action="store_true", help="Show ELF GNU hash")
+        parser_elf.add_argument("-H", "--header",       action="store_true", help="Show ELF header")
+        parser_elf.add_argument("-i", "--interpreter",  action="store_true", help="Show ELF interpreter")
         parser_elf.add_argument("-I", "--impfunctions", action="store_true", help="Show ELF imported functions")
+        parser_elf.add_argument("-j", "--expfunctions", action="store_true", help="Show ELF exported functions")
         parser_elf.add_argument("-n", "--notes",        action="store_true", help="Show ELF notes")
+        parser_elf.add_argument("-s", "--sections",     action="store_true", help="Show ELF sections")
+        parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
+        parser_elf.add_argument("-t", "--type",         action="store_true", help="Show ELF type")
+        parser_elf.add_argument("-w", "--write",        nargs=1,             help="Write binary into file")
+        parser_elf.add_argument("-y", "--symbols",      action="store_true", help="Show ELF symbols")
         parser_elf.add_argument("-z", "--strip",        action="store_true", help="Strip ELF binary")
-        parser_elf.add_argument("-w", "--write",        nargs=1, help="Write binary into file")
 
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
-        parser_macho.add_argument("-H", "--header",         action="store_true", help="Show MachO header")
-        parser_macho.add_argument("-e", "--entrypoint",     action="store_true", help="Show MachO entrypoint")
-        parser_macho.add_argument("-a", "--architecture",   action="store_true", help="Show MachO architecture")
-        parser_macho.add_argument("-t", "--type",           action="store_true", help="Show MachO type")
+        parser_macho.add_argument("-A", "--architecture",   action="store_true", help="Show MachO architecture")
+        parser_macho.add_argument("-c", "--commands",       action="store_true", help="Show MachO commands")
         parser_macho.add_argument("-C", "--codesignature",  action="store_true", help="Show MachO code signature")
+        parser_macho.add_argument("-d", "--dynamic",        action="store_true", help="Show MachO dynamic libraries")
+        parser_macho.add_argument("-D", "--dataincode",     action="store_true", help="Show MachO data in code")
+        parser_macho.add_argument("-e", "--entrypoint",     action="store_true", help="Show MachO entrypoint")
+        parser_macho.add_argument("-f", "--subframework",   action="store_true", help="Show MachO sub-framework")
+        parser_macho.add_argument("-H", "--header",         action="store_true", help="Show MachO header")
+        parser_macho.add_argument("-I", "--impfunctions",   action="store_true", help="Show MachO imported functions")
         parser_macho.add_argument("-j", "--expfunctions",   action="store_true", help="Show MachO exported functions")
         parser_macho.add_argument("-k", "--expsymbols",     action="store_true", help="Show MachO exported symbols")
-        parser_macho.add_argument("-I", "--impfunctions",   action="store_true", help="Show MachO imported functions")
+        parser_macho.add_argument("-m", "--maincommand",    action="store_true", help="Show MachO main command")
         parser_macho.add_argument("-q", "--impsymbols",     action="store_true", help="Show MachO imported symbols")
         parser_macho.add_argument("-s", "--sections",       action="store_true", help="Show MachO sections")
         parser_macho.add_argument("-S", "--segments",       action="store_true", help="Show MachO segments")
-        parser_macho.add_argument("-v", "--sourceversion",  action="store_true", help="Show MachO source version")
-        parser_macho.add_argument("-f", "--subframework",   action="store_true", help="Show MachO sub-framework")
+        parser_macho.add_argument("-t", "--type",           action="store_true", help="Show MachO type")
         parser_macho.add_argument("-u", "--uuid",           action="store_true", help="Show MachO uuid")
-        parser_macho.add_argument("-D", "--dataincode",     action="store_true", help="Show MachO data in code")
-        parser_macho.add_argument("-m", "--maincommand",    action="store_true", help="Show MachO main command")
-        parser_macho.add_argument("-c", "--commands",       action="store_true", help="Show MachO commands")
-        parser_macho.add_argument("-d", "--dynamic",        action="store_true", help="Show MachO dynamic libraries")
+        parser_macho.add_argument("-v", "--sourceversion",  action="store_true", help="Show MachO source version")
         parser_macho.add_argument("-y", "--symbols",        action="store_true", help="Show MachO symbols")
 
         self.lief = None
@@ -823,6 +828,47 @@ class Lief(Module):
                 self.log("item", "{0:<20} : {1}".format("Subject", certificate.subject))
         else:
             self.log("warning", "No signature found")
+    
+    def manifest(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_manifest:
+            self.log("info", "PE manifest : \n{0}".format(self.lief.resources_manager.manifest))
+        else:
+            self.log("warning", "No manifest found")
+
+    def resourcesTypes(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_type:
+            self.log("info", "Resources types availables : {0}".format(", ".join(PE_RESOURCE_TYPES[rType] for rType in self.lief.resources_manager.types_available)))
+        else:
+            self.log("warning", "No resources type found")
+
+    def langs(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.resources_manager.langs_available:
+            self.log("info", "Langs availables      : {0}".format(", ".join(PE_RESOURCE_LANGS[lang] for lang in self.lief.resources_manager.langs_available)))
+            self.log("info", "Sublangs availables   : {0}".format(", ".join(PE_RESOURCE_SUBLANGS[sublang] for sublang in self.lief.resources_manager.sublangs_available)))
+        else:
+            self.log("warning", "No lang found")
+
+    def icons(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_icons:
+            pass
+        else:
+            self.log("warning", "No icon found")
+
+    def dialogs(self):
+        if not self.__check_session():
+            return
+        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_dialogs:
+            pass
+        else:
+            self.log("warning", "No dialog found")
 
     """Usefuls methods"""
 
@@ -830,6 +876,8 @@ class Lief(Module):
         return datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
 
     def fromListOfDatetoDate(self, dateList):
+        if not dateList:
+            return None
         """Format of list : [Y, m, d, H, M, s]"""
         dateString = '-'.join(str(value) for value in dateList)
         timestamp = datetime.strptime(dateString, "%Y-%m-%d-%H-%M-%S").timestamp()
@@ -846,23 +894,23 @@ class Lief(Module):
         entropy = round(e, 4)
         return entropy
 
-    def listUuidToUuid(self, list):
-        if not list:
+    def listUuidToUuid(self, listUuid):
+        if not listUuid:
             return None
         else:
             uuid = ""
-            for index, elt in enumerate(list):
+            for index, elt in enumerate(listUuid):
                 uuid += str(hex(elt))[2:]
                 if index == 3 or index == 5 or index == 7 or index == 9:
                     uuid += '-'
             return uuid
 
-    def listVersionToDottedVersion(self, list):
-        if not list:
+    def listVersionToDottedVersion(self, listVersion):
+        if not listVersion:
             return None
         else:
             version = ""
-            for index, elt in enumerate(list):
+            for index, elt in enumerate(listVersion):
                 if index == 0:
                     version += str(elt)
                 else:
@@ -924,6 +972,16 @@ class Lief(Module):
                 self.tls()
             elif self.args.signature:
                 self.signature()
+            elif self.args.manifest:
+                self.manifest()
+            elif self.args.resourcestypes:
+                self.resourcesTypes()
+            elif self.args.langs:
+                self.langs()
+            elif self.args.icons:
+                self.icons()
+            elif self.args.dialogs:
+                self.dialogs()
 
     def elf(self):
         if not self.__check_session():
