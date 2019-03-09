@@ -138,7 +138,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_elf(self.filePath):
+        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
             for section in self.lief.sections:
                 rows.append([
                     section.name,
@@ -184,7 +184,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_elf(self.filePath):
+        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
             for segment in self.lief.segments:
                 flags = []
                 if lief.ELF.SEGMENT_FLAGS.R in segment:
@@ -240,7 +240,9 @@ class Lief(Module):
     def type(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath):
+        if lief.is_oat(self.filePath):
+            self.log("info", "Type : {0}".format(OAT_BINARY_TYPES[self.lief.type]))
+        elif lief.is_elf(self.filePath):
             self.log("info", "Type : {0}".format(ELF_ETYPE[self.lief.header.file_type]))
         elif lief.is_pe(self.filePath):
             self.log("info", "Type : {0}".format(PE_TYPE[lief.PE.get_type(self.filePath)]))
@@ -286,7 +288,7 @@ class Lief(Module):
     def interpreter(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath):
+        if (lief.is_oat(self.filePath) and self.lief.has_interpreter) or (lief.is_elf(self.filePath) and self.lief.has_interpreter):
             self.log("info", "Interpreter : {0}".format(self.lief.interpreter))
         else:
             self.log("warning", "No interpreter found")
@@ -295,7 +297,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_elf(self.filePath) or lief.is_pe(self.filePath):
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath) or lief.is_pe(self.filePath)) and self.lief.libraries:
             for lib in self.lief.libraries:
                 self.log("info", lib)
         elif lief.is_macho(self.filePath) and self.lief.libraries:
@@ -318,7 +320,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_elf(self.filePath):
+        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
             for symbol in self.lief.symbols:
                 rows.append([
                     symbol.name,
@@ -407,12 +409,12 @@ class Lief(Module):
     def strip(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath):
+        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
             self.lief.strip()
             self.log("success", "The binary has been stripped")
             self.log("warning", "Do not forget --write (-w) option if you want your stripped binary to be saved")
         else:
-            self.log("warning", "Binary must be of type ELF")
+            self.log("warning", "Binary must be of type ELF or OAT")
 
     def write(self):
         if not self.__check_session():
@@ -430,7 +432,7 @@ class Lief(Module):
     def notes(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath) and self.lief.has_notes:
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.has_notes:
             self.log("info", "Notes : ")
             for note in self.lief.notes:
                 self.log("success", "Information of {0} note : ".format(note.name))
@@ -582,6 +584,7 @@ class Lief(Module):
             return
         if (
                 (lief.is_macho(self.filePath) and self.lief.imported_functions) or 
+                (lief.is_oat(self.filePath) and self.lief.imported_functions) or
                 (lief.is_elf(self.filePath) and self.lief.imported_functions) or 
                 (lief.is_pe(self.filePath) and self.lief.imported_functions)
         ):
