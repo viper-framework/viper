@@ -18,6 +18,7 @@ except:
 from .lief_imports.elf import *
 from .lief_imports.pe import *
 from .lief_imports.macho import *
+from .lief_imports.oat import *
 
 class Lief(Module):
     cmd         = "lief"
@@ -98,6 +99,23 @@ class Lief(Module):
         parser_macho.add_argument("-u", "--uuid",           action="store_true", help="Show MachO uuid")
         parser_macho.add_argument("-v", "--sourceversion",  action="store_true", help="Show MachO source version")
         parser_macho.add_argument("-y", "--symbols",        action="store_true", help="Show MachO symbols")
+
+        parser_oat = subparsers.add_parser("oat", help="Extract information from OAT files")
+        parser_oat.add_argument("-d", "--dynamic",      action="store_true", help="Show OAT dynamic libraries")
+        parser_oat.add_argument("-e", "--entrypoint",   action="store_true", help="Show OAT entrypoint")
+        parser_oat.add_argument("-E", "--entropy",      action="store_true", help="Show OAT entropy")
+        parser_oat.add_argument("-g", "--gnu_hash",     action="store_true", help="Show OAT GNU hash")
+        parser_oat.add_argument("-H", "--header",       action="store_true", help="Show OAT header")
+        parser_oat.add_argument("-i", "--interpreter",  action="store_true", help="Show OAT interpreter")
+        parser_oat.add_argument("-I", "--impfunctions", action="store_true", help="Show OAT imported functions")
+        parser_oat.add_argument("-j", "--expfunctions", action="store_true", help="Show OAT exported functions")
+        parser_oat.add_argument("-n", "--notes",        action="store_true", help="Show OAT notes")
+        parser_oat.add_argument("-s", "--sections",     action="store_true", help="Show OAT sections")
+        parser_oat.add_argument("-S", "--segments",     action="store_true", help="Show OAT segments")
+        parser_oat.add_argument("-t", "--type",         action="store_true", help="Show OAT type")
+        parser_oat.add_argument("-w", "--write",        nargs=1,             help="Write binary into file", metavar="fileName")
+        parser_oat.add_argument("-y", "--symbols",      action="store_true", help="Show OAT symbols")
+        parser_oat.add_argument("-z", "--strip",        action="store_true", help="Strip OAT binary")
 
         self.lief = None
     
@@ -234,10 +252,12 @@ class Lief(Module):
     def entrypoint(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath):
-            self.log("info", "Entry point : {0}".format(hex(self.lief.header.entrypoint)))
+        if lief.is_oat(self.filePath):
+            self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
+        elif lief.is_elf(self.filePath):
+            self.log("info", "Entrypoint : {0}".format(hex(self.lief.header.entrypoint)))
         elif lief.is_pe(self.filePath):
-            self.log("info", "Entry point : {0}".format(hex(self.lief.entrypoint)))
+            self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
         elif lief.is_macho(self.filePath) and self.lief.has_entrypoint:
             self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
         else:
@@ -366,7 +386,7 @@ class Lief(Module):
     def gnu_hash(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath) and self.lief.gnu_hash:
+        if (lief.is_oat(self.filePath) and self.lief.use_gnu_hash) or (lief.is_elf(self.filePath) and not lief.is_oat(self.filePath) and self.lief.gnu_hash):
             self.log("info", "GNU hash : ")
             self.log("item", "{0} : {1}".format("Number of buckets", self.lief.gnu_hash.nb_buckets))
             self.log("item", "{0} : {1}".format("First symbol index", hex(self.lief.gnu_hash.symbol_index)))
@@ -426,7 +446,28 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_macho(self.filePath):
+        if lief.is_oat(self.filePath):
+            self.log("info", "OAT header : ")
+            self.log("item", "{0:<37} : {1}".format("Checksum", hex(self.lief.header.checksum)))
+            self.log("item", "{0:<37} : {1}".format("Executable offset", hex(self.lief.header.executable_offset)))
+            self.log("item", "{0:<37} : {1}".format("I2c code bridge offset", hex(self.lief.header.i2c_code_bridge_offset)))
+            self.log("item", "{0:<37} : {1}".format("I2c bridge offset", hex(self.lief.header.i2i_bridge_offset)))
+            self.log("item", "{0:<37} : {1}".format("Image file location oat checksum", hex(self.lief.header.image_file_location_oat_checksum)))
+            self.log("item", "{0:<37} : {1}".format("Image file location of data", hex(self.lief.header.image_file_location_oat_data_begin)))
+            self.log("item", "{0:<37} : {1}".format("Image patch delta", self.lief.header.image_patch_delta))
+            self.log("item", "{0:<37} : {1}".format("Insctruction set", OAT_INSTRUCTION_SETS[self.lief.header.instruction_set]))
+            self.log("item", "{0:<37} : {1}".format("JNI DLSYM lookup offset", hex(self.lief.header.jni_dlsym_lookup_offset)))
+            self.log("item", "{0:<37} : {1} bytes".format("Key value size", self.lief.header.key_value_size))
+            self.log("item", "{0:<37} : {1}".format("Keys", ", ".join(OAT_HEADER_KEYS[key] for key in self.lief.header.keys)))
+            self.log("item", "{0:<37} : {1}".format("Magic", "{0} ({1})".format(' '.join(hex(m) for m in self.lief.header.magic), ''.join(chr(m) for index, m in enumerate(self.lief.header.magic) if index < 3))))
+            self.log("item", "{0:<37} : {1}".format("Number of dex files", self.lief.header.nb_dex_files))
+            self.log("item", "{0:<37} : {1}".format("Oat dex files offset", hex(self.lief.header.oat_dex_files_offset)))
+            self.log("item", "{0:<37} : {1}".format("Quick generic JNI trampoline offset", hex(self.lief.header.quick_generic_jni_trampoline_offset)))
+            self.log("item", "{0:<37} : {1}".format("Quick IMT conflict trampoline offset", hex(self.lief.header.quick_imt_conflict_trampoline_offset)))
+            self.log("item", "{0:<37} : {1}".format("Quick resolution trampoline offset", hex(self.lief.header.quick_resolution_trampoline_offset)))
+            self.log("item", "{0:<37} : {1}".format("Quick to interpreter bridge offset", hex(self.lief.header.quick_to_interpreter_bridge_offset)))
+            self.log("item", "{0:<37} : {1}".format("Version", self.lief.header.version))
+        elif lief.is_macho(self.filePath):
             self.log("info", "MachO header : ")
             self.log("item", "{0:<15} : {1}".format("CPU type", MACHO_CPU_TYPES[self.lief.header.cpu_type]))
             self.log("item", "{0:<15} : {1}".format("File type", MACHO_FILE_TYPES[self.lief.header.file_type]))
@@ -509,6 +550,7 @@ class Lief(Module):
             return
         if (
                 (lief.is_macho(self.filePath) and self.lief.exported_functions) or 
+                (lief.is_oat(self.filePath) and self.lief.exported_functions) or
                 (lief.is_elf(self.filePath) and self.lief.exported_functions) or 
                 (lief.is_pe(self.filePath) and self.lief.exported_functions)
         ):
@@ -931,11 +973,6 @@ class Lief(Module):
                     self.log("item", "{0:<31} : {1}".format("Help id", item.help_id))
                     self.log("item", "{0:<31} : {1}".format("Upper-left corner x coordinate", item.x))
                     self.log("item", "{0:<31} : {1}".format("Upper-left corner y coordinate", item.y))
-
-             #   rows.append([
-              #      ])
-            #self.log("info", "PE icons : ")
-            #self.log("table", dict(header=["ID", "Size", "Bits/pixel", "Nb colors/icon", "Lang", "Sublang"], rows=rows))
         else:
             self.log("warning", "No dialog found")
 
@@ -945,9 +982,9 @@ class Lief(Module):
         return datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
 
     def fromListOfDatetoDate(self, dateList):
+        """Format of list : [Y, m, d, H, M, s]"""
         if not dateList:
             return None
-        """Format of list : [Y, m, d, H, M, s]"""
         dateString = '-'.join(str(value) for value in dateList)
         timestamp = datetime.strptime(dateString, "%Y-%m-%d-%H-%M-%S").timestamp()
         return self.fromTimestampToDate(timestamp)
@@ -1057,7 +1094,7 @@ class Lief(Module):
     def elf(self):
         if not self.__check_session():
             return
-        if not lief.is_elf(self.filePath):
+        if not lief.is_elf(self.filePath) or lief.is_oat(self.filePath):
             self.log("error", "Wrong binary type")
             self.log("info", "Expected filtype : ELF")
         else:
@@ -1079,6 +1116,44 @@ class Lief(Module):
                 self.entrypoint()
             elif self.args.architecture:
                 self.architecture()
+            elif self.args.interpreter:
+                self.interpreter()
+            elif self.args.dynamic:
+                self.dynamic()
+            elif self.args.notes:
+                self.notes()
+            elif self.args.symbols:
+                self.symbols()
+            elif self.args.entropy:
+                self.entropy()
+            elif self.args.expfunctions:
+                self.exportedFunctions()
+            elif self.args.header:
+                self.header()
+
+    def oat(self):
+        if not self.__check_session():
+            return
+        if not lief.is_oat(self.filePath):
+            self.log("error", "Wrong binary type")
+            self.log("info", "Expected filtype : OAT")
+        else:
+            if self.args.segments:
+                self.segments()
+            elif self.args.sections:
+                self.sections()
+            elif self.args.impfunctions:
+                self.importedFunctions()
+            elif self.args.write:
+                self.write()
+            elif self.args.type:
+                self.type()
+            elif self.args.strip:
+                self.strip()
+            elif self.args.gnu_hash:
+                self.gnu_hash()
+            elif self.args.entrypoint:
+                self.entrypoint()
             elif self.args.interpreter:
                 self.interpreter()
             elif self.args.dynamic:
@@ -1155,6 +1230,8 @@ class Lief(Module):
             self.elf()
         elif self.args.subname == "macho":
             self.macho()
+        elif self.args.subname == "oat":
+            self.oat()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
