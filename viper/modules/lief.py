@@ -55,7 +55,7 @@ class Lief(Module):
         parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
         parser_pe.add_argument("-T", "--tls",               action="store_true", help="Show PE tls")
         parser_pe.add_argument("-u", "--dosstub",           action="store_true", help="Show PE DOS stub")
-        parser_pe.add_argument("-x", "--extracticons",      nargs='?',           help="Extract icons from PE to the given path", const="./", metavar="path")
+        parser_pe.add_argument("-x", "--extracticons",      nargs='?',           help="Extract icons to the given path (default : ./)", const="./", metavar="path")
         parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
         parser_pe.add_argument("-Y", "--resourcestypes",    action="store_true", help="Show PE types of resources")
         parser_pe.add_argument("--id",                      nargs=1, type=int,   help="Define an id for following commands : -x", metavar="id")
@@ -834,7 +834,7 @@ class Lief(Module):
     def manifest(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_manifest:
+        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_manifest:
             self.log("info", "PE manifest : \n{0}".format(self.lief.resources_manager.manifest))
         else:
             self.log("warning", "No manifest found")
@@ -842,7 +842,7 @@ class Lief(Module):
     def resourcesTypes(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_type:
+        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_type:
             self.log("info", "Resources types availables : {0}".format(", ".join(PE_RESOURCE_TYPES[rType] for rType in self.lief.resources_manager.types_available)))
         else:
             self.log("warning", "No resources type found")
@@ -850,7 +850,7 @@ class Lief(Module):
     def langs(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.resources_manager.langs_available:
+        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.langs_available:
             self.log("info", "Langs availables      : {0}".format(", ".join(PE_RESOURCE_LANGS[lang] for lang in self.lief.resources_manager.langs_available)))
             self.log("info", "Sublangs availables   : {0}".format(", ".join(PE_RESOURCE_SUBLANGS[sublang] for sublang in self.lief.resources_manager.sublangs_available)))
         else:
@@ -903,8 +903,39 @@ class Lief(Module):
     def dialogs(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.resources_manager.has_dialogs:
-            pass
+        rows = []
+        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_dialogs:
+            for index, dialog in enumerate(self.lief.resources_manager.dialogs):
+                self.log("info", "Dialog N°{0}".format(index+1))
+                self.log("item", "{0:<31} : {1}".format("Title", dialog.title if dialog.title else '-'))
+                self.log("item", "{0:<31} : {1}".format("Version", dialog.version))
+                self.log("item", "{0:<31} : {1:<5} px".format("Width of dialog", dialog.cx))
+                self.log("item", "{0:<31} : {1:<5} px".format("Height of dialog", dialog.cy))
+                self.log("item", "{0:<31} : {1}".format("Dialog box styles", ", ".join(PE_DIALOG_BOX_STYLES[style] for style in dialog.dialogbox_style_list) if dialog.has_dialogbox_style else '-'))
+                self.log("item", "{0:<31} : {1}".format("Window styles", ", ".join(PE_WINDOW_STYLES[style] for style in dialog.style_list) if dialog.has_style else '-'))
+                self.log("item", "{0:<31} : {1}".format("Help id", dialog.help_id))
+                self.log("item", "{0:<31} : {1}".format("Lang", PE_RESOURCE_LANGS[dialog.lang]))
+                self.log("item", "{0:<31} : {1}".format("Sublang", PE_RESOURCE_SUBLANGS[dialog.sub_lang]))
+                self.log("item", "{0:<31} : {1}".format("Signature", hex(dialog.signature)))
+                self.log("item", "{0:<31} : {1}".format("Charset", dialog.charset))
+                self.log("item", "{0:<31} : {1}".format("Typeface of font", dialog.typeface))
+                self.log("item", "{0:<31} : {1}".format("Weight of font", dialog.weight))
+                self.log("item", "{0:<31} : {1}".format("Point size of font", dialog.point_size))
+                self.log("item", "{0:<31} : {1}".format("Upper-left corner x coordinate", dialog.x))
+                self.log("item", "{0:<31} : {1}".format("Upper-left corner y coordinate", dialog.y))
+                for item in dialog.items:
+                    self.log("success", "Item in dialog N°{0} of id {1}".format(index+1, item.id))
+                    self.log("item", "{0:<31} : {1}".format("Title", item.title))
+                    self.log("item", "{0:<31} : {1:<5} px".format("Width of item", item.cx))
+                    self.log("item", "{0:<31} : {1:<5} px".format("Height of item", item.cy))
+                    self.log("item", "{0:<31} : {1}".format("Help id", item.help_id))
+                    self.log("item", "{0:<31} : {1}".format("Upper-left corner x coordinate", item.x))
+                    self.log("item", "{0:<31} : {1}".format("Upper-left corner y coordinate", item.y))
+
+             #   rows.append([
+              #      ])
+            #self.log("info", "PE icons : ")
+            #self.log("table", dict(header=["ID", "Size", "Bits/pixel", "Nb colors/icon", "Lang", "Sublang"], rows=rows))
         else:
             self.log("warning", "No dialog found")
 
