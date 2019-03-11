@@ -3,7 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 
-import math, os.path, string
+import math, os.path, string, json
 from os import access
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -101,21 +101,23 @@ class Lief(Module):
         parser_macho.add_argument("-y", "--symbols",        action="store_true", help="Show MachO symbols")
 
         parser_oat = subparsers.add_parser("oat", help="Extract information from OAT files")
-        parser_oat.add_argument("-d", "--dynamic",      action="store_true", help="Show OAT dynamic libraries")
-        parser_oat.add_argument("-e", "--entrypoint",   action="store_true", help="Show OAT entrypoint")
-        parser_oat.add_argument("-E", "--entropy",      action="store_true", help="Show OAT entropy")
-        parser_oat.add_argument("-g", "--gnu_hash",     action="store_true", help="Show OAT GNU hash")
-        parser_oat.add_argument("-H", "--header",       action="store_true", help="Show OAT header")
-        parser_oat.add_argument("-i", "--interpreter",  action="store_true", help="Show OAT interpreter")
-        parser_oat.add_argument("-I", "--impfunctions", action="store_true", help="Show OAT imported functions")
-        parser_oat.add_argument("-j", "--expfunctions", action="store_true", help="Show OAT exported functions")
-        parser_oat.add_argument("-n", "--notes",        action="store_true", help="Show OAT notes")
-        parser_oat.add_argument("-s", "--sections",     action="store_true", help="Show OAT sections")
-        parser_oat.add_argument("-S", "--segments",     action="store_true", help="Show OAT segments")
-        parser_oat.add_argument("-t", "--type",         action="store_true", help="Show OAT type")
-        parser_oat.add_argument("-w", "--write",        nargs=1,             help="Write binary into file", metavar="fileName")
-        parser_oat.add_argument("-y", "--symbols",      action="store_true", help="Show OAT symbols")
-        parser_oat.add_argument("-z", "--strip",        action="store_true", help="Strip OAT binary")
+        parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
+        parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Strip OAT dynamic relocations")
+        parser_oat.add_argument("-e", "--entrypoint",           action="store_true", help="Show OAT entrypoint")
+        parser_oat.add_argument("-E", "--entropy",              action="store_true", help="Show OAT entropy")
+        parser_oat.add_argument("-g", "--gnu_hash",             action="store_true", help="Show OAT GNU hash")
+        parser_oat.add_argument("-H", "--header",               action="store_true", help="Show OAT header")
+        parser_oat.add_argument("-i", "--interpreter",          action="store_true", help="Show OAT interpreter")
+        parser_oat.add_argument("-I", "--impfunctions",         action="store_true", help="Show OAT imported functions")
+        parser_oat.add_argument("-j", "--expfunctions",         action="store_true", help="Show OAT exported functions")
+        parser_oat.add_argument("-J", "--dex2dexjsoninfos",     action="store_true", help="Show OAT dex2dex json information")
+        parser_oat.add_argument("-n", "--notes",                action="store_true", help="Show OAT notes")
+        parser_oat.add_argument("-s", "--sections",             action="store_true", help="Show OAT sections")
+        parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
+        parser_oat.add_argument("-t", "--type",                 action="store_true", help="Show OAT type")
+        parser_oat.add_argument("-w", "--write",                nargs=1,             help="Write binary into file", metavar="fileName")
+        parser_oat.add_argument("-y", "--symbols",              action="store_true", help="Show OAT symbols")
+        parser_oat.add_argument("-z", "--strip",                action="store_true", help="Strip OAT binary")
 
         self.lief = None
     
@@ -786,6 +788,36 @@ class Lief(Module):
         else:
             self.log("warning", "No load configuration found")
 
+    def dex2dexJson(self):
+        if not self.__check_session():
+            return
+        if lief.is_oat(self.filePath) and self.lief.dex2dex_json_info:
+            dex2dexInfo = json.loads(self.lief.dex2dex_json_info)
+            for fileName, descriptions in dex2dexInfo.items():
+                self.log("info", "Dex file : {0}".format(fileName))
+                for pkg, _ in descriptions.items():
+                    self.log("item", "{0} : {1}".format("Path", pkg))
+        else:
+            self.log("warning", "No dex2dex json found")
+
+    def dynamicRelocations(self):
+        if not self.__check_session():
+            return
+        rows = []
+        if lief.is_oat(self.filePath) and self.lief.dynamic_relocations:
+            for dynamicRelocation in self.lief.dynamic_relocations:
+                rows.append([
+                    hex(dynamicRelocation.address),
+                    PE_RELOCATION_PURPOSES[dynamicRelocation.purpose],
+                    dynamicRelocation.section.name if dynamicRelocation.has_section else '-',
+                    dynamicRelocation.symbol.name if dynamicRelocation.has_symbol else '-',
+                    "{0:<5} bits".format(dynamicRelocation.size)
+                ])
+            self.log("info", "OAT dynamic relocations : ")
+            self.log("table", dict(header=["Address", "Purpose", "Section", "Symbol", "Size"], rows=rows))
+        else:
+            self.log("warning", "No dynamic relocation found")
+
     def relocations(self):
         if not self.__check_session():
             return
@@ -801,6 +833,7 @@ class Lief(Module):
                         hex(entry.address),
                         hex(entry.data)
                     ])
+            self.log("info", "PE relocations : ")
             self.log("table", dict(header=["Relocation Addr", "Entry type", "Entry size", "Entry position", "Entry address", "Entry data"], rows=rows))
         else:
             self.log("warning", "No relocation found")
@@ -1151,6 +1184,8 @@ class Lief(Module):
                 self.write()
             elif self.args.type:
                 self.type()
+            elif self.args.dex2dexjsoninfos:
+                self.dex2dexJson()
             elif self.args.strip:
                 self.strip()
             elif self.args.gnu_hash:
@@ -1171,6 +1206,8 @@ class Lief(Module):
                 self.exportedFunctions()
             elif self.args.header:
                 self.header()
+            elif self.args.dynamicrelocations:
+                self.dynamicRelocations()
 
     def macho(self):
         if not self.__check_session():
