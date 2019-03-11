@@ -15,11 +15,6 @@ try:
 except:
     HAVE_LIEF = False
 
-from .lief_imports.elf import *
-from .lief_imports.pe import *
-from .lief_imports.macho import *
-from .lief_imports.oat import *
-
 class Lief(Module):
     cmd         = "lief"
     description = "Parse and extract information from ELF, PE, MachO, DEX, OAT, ART and VDEX formats"
@@ -147,8 +142,8 @@ class Lief(Module):
                     hex(section.offset),
                     hex(section.virtual_address),
                     "{0:<6} bytes".format(section.size),
-                    ELF_SECTION_TYPES[section.type],
-                    ':'.join(ELF_SECTION_FLAGS[flag] for flag in section.flags_list),
+                    self.liefConstToString(section.type),
+                    ':'.join(self.liefConstToString(flag) for flag in section.flags_list),
                     round(section.entropy, 4)
                 ])
             self.log("info", "ELF sections : ")
@@ -171,7 +166,7 @@ class Lief(Module):
                 rows.append([
                     section.name,
                     hex(section.virtual_address),
-                    MACHO_SECTION_TYPES[section.type],
+                    self.liefConstToString(section.type),
                     "{:<6} bytes".format(section.size),
                     hex(section.offset),
                     round(section.entropy,4)
@@ -190,15 +185,15 @@ class Lief(Module):
             for segment in self.lief.segments:
                 flags = []
                 if lief.ELF.SEGMENT_FLAGS.R in segment:
-                    flags.append(ELF_SEGMENT_FLAGS[lief.ELF.SEGMENT_FLAGS.R])
+                    flags.append(self.liefConstToString(lief.ELF.SEGMENT_FLAGS.R))
                 if lief.ELF.SEGMENT_FLAGS.W in segment:
-                    flags.append(ELF_SEGMENT_FLAGS[lief.ELF.SEGMENT_FLAGS.W])
+                    flags.append(self.liefConstToString(lief.ELF.SEGMENT_FLAGS.W))
                 if lief.ELF.SEGMENT_FLAGS.X in segment:
-                    flags.append(ELF_SEGMENT_FLAGS[lief.ELF.SEGMENT_FLAGS.X])
+                    flags.append(self.liefConstToString(lief.ELF.SEGMENT_FLAGS.X))
                 if lief.ELF.SEGMENT_FLAGS.NONE in segment:
-                    flags.append(ELF_SEGMENT_FLAGS[lief.ELF.SEGMENT_FLAGS.NONE])
+                    flags.append(self.liefConstToString(lief.ELF.SEGMENT_FLAGS.NONE))
                 rows.append([
-                    ELF_SEGMENT_TYPES[segment.type],
+                    self.liefConstToString(segment.type),
                     hex(segment.physical_address),
                     hex(segment.physical_size),
                     hex(segment.virtual_address),
@@ -215,7 +210,7 @@ class Lief(Module):
                 self.log("item", "{0:<18} : {1}".format("Name", segment.name)),
                 self.log("item", "{0:<18} : {1} bytes".format("Size", segment.file_size)),
                 self.log("item", "{0:<18} : {1}".format("Offset", segment.file_offset)),
-                self.log("item", "{0:<18} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[segment.command])),
+                self.log("item", "{0:<18} : {1}".format("Command", self.liefConstToString(segment.command))),
                 self.log("item", "{0:<18} : {1} bytes".format("Command size", segment.size)),
                 self.log("item", "{0:<18} : {1}".format("Command offset", hex(segment.command_offset))),
                 self.log("item", "{0:<18} : {1}".format("Number of sections", segment.numberof_sections)),
@@ -228,7 +223,7 @@ class Lief(Module):
                         rows.append([
                             section.name,
                             hex(section.virtual_address),
-                            MACHO_SECTION_TYPES[section.type],
+                            self.liefConstToString(section.type),
                             "{:<6} bytes".format(section.size),
                             hex(section.offset),
                             round(section.entropy,4)
@@ -243,13 +238,13 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_oat(self.filePath):
-            self.log("info", "Type : {0}".format(OAT_BINARY_TYPES[self.lief.type]))
+            self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.type)))
         elif lief.is_elf(self.filePath):
-            self.log("info", "Type : {0}".format(ELF_ETYPE[self.lief.header.file_type]))
+            self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.header.file_type)))
         elif lief.is_pe(self.filePath):
-            self.log("info", "Type : {0}".format(PE_TYPE[lief.PE.get_type(self.filePath)]))
+            self.log("info", "Type : {0}".format(self.liefConstToString(lief.PE.get_type(self.filePath))))
         elif lief.is_macho(self.filePath):
-            self.log("info", "Type : {0}".format(MACHO_FILE_TYPES[self.lief.header.file_type]))
+            self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.header.file_type)))
         else:
             self.log("warning", "No type found")
 
@@ -271,11 +266,11 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_elf(self.filePath):
-            self.log("info", "Architecture : {0}".format(ELF_MACHINE_TYPE[self.lief.header.machine_type]))
+            self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.machine_type)))
         elif lief.is_pe(self.filePath):
-            self.log("info", "Architecture : {0}".format(PE_MACHINE_TYPES[self.lief.header.machine]))
+            self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.machine)))
         elif lief.is_macho(self.filePath):
-            self.log("info", "Architecture : {0}".format(MACHO_CPU_TYPES[self.lief.header.cpu_type]))
+            self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.cpu_type)))
         else:
             self.log("warning", "No architecture found")
 
@@ -305,7 +300,7 @@ class Lief(Module):
         elif lief.is_macho(self.filePath) and self.lief.libraries:
             for library in self.lief.libraries:
                 rows.append([
-                    MACHO_LOAD_COMMAND_TYPES[library.command],
+                    self.liefConstToString(library.command),
                     library.name,
                     hex(library.command_offset),
                     self.listVersionToDottedVersion(library.compatibility_version),
@@ -326,10 +321,10 @@ class Lief(Module):
             for symbol in self.lief.symbols:
                 rows.append([
                     symbol.name,
-                    ELF_SYMBOL_TYPE[symbol.type],
+                    self.liefConstToString(symbol.type),
                     hex(symbol.value),
                     hex(symbol.size),
-                    ELF_SYMBOL_VISIBILITY[symbol.visibility],
+                    self.liefConstToString(symbol.visibility),
                     'X' if symbol.is_function else '-',
                     'X' if symbol.is_static else '-',
                     'X' if symbol.is_variable else '-'
@@ -345,7 +340,7 @@ class Lief(Module):
                 self.log("item", "{0:<19} : {1}".format("Number of sections", symbol.numberof_sections))
                 self.log("item", "{0:<19} : {1}".format("Type", hex(symbol.type)))
                 self.log("item", "{0:<19} : {1}".format("Value", hex(symbol.value)))
-                self.log("item", "{0:<19} : {1}".format("Origin", MACHO_SYMBOL_ORIGINS[symbol.origin]))
+                self.log("item", "{0:<19} : {1}".format("Origin", self.liefConstToString(symbol.origin)))
         else:
             self.log("warning", "No symbol found")
 
@@ -375,7 +370,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_pe(self.filePath):
-            self.log("info", "Format : {0}".format(PE_EXE_FORMATS[self.lief.format]))
+            self.log("info", "Format : {0}".format(self.liefConstToString(self.lief.format)))
         else:
             self.log("warning", "No format found")
 
@@ -427,6 +422,8 @@ class Lief(Module):
             self.log("error", "File already exists")
         elif not os.access(destFolder, os.X_OK | os.W_OK):
             self.log("error", "Cannot write into folder : {0}".format(destFolder))
+        elif fileName[len(fileName)-1] == '/':
+            self.log("error", "Please enter a file name")
         else:
             self.lief.write(fileName)
             self.log("success", "File succesfully saved")
@@ -439,9 +436,9 @@ class Lief(Module):
             for note in self.lief.notes:
                 self.log("success", "Information of {0} note : ".format(note.name))
                 self.log("item", "{0} : {1}".format("Name", note.name))
-                self.log("item", "{0} : {1}".format("ABI", ELF_NOTE_ABIS[note.abi]))
+                self.log("item", "{0} : {1}".format("ABI", self.liefConstToString(note.abi)))
                 self.log("item", "{0} : {1}".format("Description", ''.join(str(hex(desc))[2:] for desc in note.description)))
-                self.log("item", "{0} : {1}".format("Type", ELF_NOTE_TYPES[note.type]))
+                self.log("item", "{0} : {1}".format("Type", self.liefConstToString(note.type)))
                 self.log("item", "{0} : {1}".format("Version", self.listVersionToDottedVersion(note.version)))
         else:
             self.log("warning", "No note found")
@@ -459,10 +456,10 @@ class Lief(Module):
             self.log("item", "{0:<37} : {1}".format("Image file location oat checksum", hex(self.lief.header.image_file_location_oat_checksum)))
             self.log("item", "{0:<37} : {1}".format("Image file location of data", hex(self.lief.header.image_file_location_oat_data_begin)))
             self.log("item", "{0:<37} : {1}".format("Image patch delta", self.lief.header.image_patch_delta))
-            self.log("item", "{0:<37} : {1}".format("Insctruction set", OAT_INSTRUCTION_SETS[self.lief.header.instruction_set]))
+            self.log("item", "{0:<37} : {1}".format("Insctruction set", self.liefConstToString(self.lief.header.instruction_set)))
             self.log("item", "{0:<37} : {1}".format("JNI DLSYM lookup offset", hex(self.lief.header.jni_dlsym_lookup_offset)))
             self.log("item", "{0:<37} : {1} bytes".format("Key value size", self.lief.header.key_value_size))
-            self.log("item", "{0:<37} : {1}".format("Keys", ", ".join(OAT_HEADER_KEYS[key] for key in self.lief.header.keys)))
+            self.log("item", "{0:<37} : {1}".format("Keys", ", ".join(self.liefConstToString(key) for key in self.lief.header.keys)))
             self.log("item", "{0:<37} : {1}".format("Magic", "{0} ({1})".format(' '.join(hex(m) for m in self.lief.header.magic), ''.join(chr(m) for index, m in enumerate(self.lief.header.magic) if index < 3))))
             self.log("item", "{0:<37} : {1}".format("Number of dex files", self.lief.header.nb_dex_files))
             self.log("item", "{0:<37} : {1}".format("Oat dex files offset", hex(self.lief.header.oat_dex_files_offset)))
@@ -473,14 +470,14 @@ class Lief(Module):
             self.log("item", "{0:<37} : {1}".format("Version", self.lief.header.version))
         elif lief.is_macho(self.filePath):
             self.log("info", "MachO header : ")
-            self.log("item", "{0:<15} : {1}".format("CPU type", MACHO_CPU_TYPES[self.lief.header.cpu_type]))
-            self.log("item", "{0:<15} : {1}".format("File type", MACHO_FILE_TYPES[self.lief.header.file_type]))
+            self.log("item", "{0:<15} : {1}".format("CPU type", self.liefConstToString(self.lief.header.cpu_type)))
+            self.log("item", "{0:<15} : {1}".format("File type", self.liefConstToString(self.lief.header.file_type)))
             self.log("item", "{0:<15} : {1}".format("Number of cmds", self.lief.header.nb_cmds))
             self.log("item", "{0:<15} : {1} bytes".format("Size of cmds", self.lief.header.sizeof_cmds))
-            self.log("item", "{0:<15} : {1}".format("Flags", ':'.join(MACHO_HEADER_FLAGS[flag] for flag in self.lief.header.flags_list)))
+            self.log("item", "{0:<15} : {1}".format("Flags", ':'.join(self.liefConstToString(flag) for flag in self.lief.header.flags_list)))
         elif lief.is_pe(self.filePath):
             self.log("info", "PE header : ")
-            self.log("item", "{0:<28} : {1}".format("Type", PE_MACHINE_TYPES[self.lief.header.machine]))
+            self.log("item", "{0:<28} : {1}".format("Type", self.liefConstToString(self.lief.header.machine)))
             self.log("item", "{0:<28} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<28} : {1}".format("Number of symbols", self.lief.header.numberof_symbols))
             self.log("item", "{0:<28} : {1}".format("Pointer to symbol table", hex(self.lief.header.pointerto_symbol_table)))
@@ -493,8 +490,8 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1}".format("Base of code", hex(self.lief.optional_header.baseof_code)))
                 self.log("item", "{0:<28} : {1}".format("Checksum", hex(self.lief.optional_header.checksum)))
                 self.log("item", "{0:<28} : {1}".format("Base of image", hex(self.lief.optional_header.imagebase)))
-                self.log("item", "{0:<28} : {1}".format("Magic", PE_TYPE[self.lief.optional_header.magic]))
-                self.log("item", "{0:<28} : {1}".format("Subsystem", PE_SUBSYSTEMS[self.lief.optional_header.subsystem]))
+                self.log("item", "{0:<28} : {1}".format("Magic", self.liefConstToString(self.lief.optional_header.magic)))
+                self.log("item", "{0:<28} : {1}".format("Subsystem", self.liefConstToString(self.lief.optional_header.subsystem)))
                 self.log("item", "{0:<28} : {1}".format("Min OS version", self.lief.optional_header.minor_operating_system_version))
                 self.log("item", "{0:<28} : {1}".format("Max OS version", self.lief.optional_header.major_operating_system_version))
                 self.log("item", "{0:<28} : {1}".format("Min Linker version", self.lief.optional_header.minor_linker_version))
@@ -512,16 +509,16 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
         elif lief.is_elf(self.filePath):
             self.log("info", "ELF header : ")
-            self.log("item", "{0:<26} : {1}".format("Type", ELF_ETYPE[self.lief.header.file_type]))
+            self.log("item", "{0:<26} : {1}".format("Type", self.liefConstToString(self.lief.header.file_type)))
             self.log("item", "{0:<26} : {1}".format("Entrypoint", hex(self.lief.header.entrypoint)))
             self.log("item", "{0:<26} : {1} bytes".format("Header size", self.lief.header.header_size))
             self.log("item", "{0:<26} : {1}".format("Identity", "{0} ({1})".format(' '.join(hex(iden) for iden in self.lief.header.identity), ''.join(chr(iden) for index, iden in enumerate(self.lief.header.identity) if index < 4))))
-            self.log("item", "{0:<26} : {1}".format("Endianness", ELF_DATA[self.lief.header.identity_data]))
-            self.log("item", "{0:<26} : {1}".format("Class", ELF_CLASS[self.lief.header.identity_class]))
-            self.log("item", "{0:<26} : {1}".format("OS/ABI", ELF_OS_ABI[self.lief.header.identity_os_abi]))
-            self.log("item", "{0:<26} : {1}".format("Version", ELF_VERSION[self.lief.header.identity_version]))
-            self.log("item", "{0:<26} : {1}".format("Architecture", ELF_MACHINE_TYPE[self.lief.header.machine_type]))
-            self.log("item", "{0:<26} : {1}".format("MIPS Flags", ':'.join(ELF_MIPS_EFLAGS[flag] for flag in self.lief.header.mips_flags_list) if self.lief.header.mips_flags_list else "No flags"))
+            self.log("item", "{0:<26} : {1}".format("Endianness", self.liefConstToString(self.lief.header.identity_data)))
+            self.log("item", "{0:<26} : {1}".format("Class", self.liefConstToString(self.lief.header.identity_class)))
+            self.log("item", "{0:<26} : {1}".format("OS/ABI", self.liefConstToString(self.lief.header.identity_os_abi)))
+            self.log("item", "{0:<26} : {1}".format("Version", self.liefConstToString(self.lief.header.identity_version)))
+            self.log("item", "{0:<26} : {1}".format("Architecture", self.liefConstToString(self.lief.header.machine_type)))
+            self.log("item", "{0:<26} : {1}".format("MIPS Flags", ':'.join(self.liefConstToString(flag) for flag in self.lief.header.mips_flags_list) if self.lief.header.mips_flags_list else "No flags"))
             self.log("item", "{0:<26} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<26} : {1}".format("Number of segments", self.lief.header.numberof_segments))
             self.log("item", "{0:<26} : {1}".format("Program header offet", hex(self.lief.header.program_header_offset)))
@@ -537,7 +534,7 @@ class Lief(Module):
         if lief.is_macho(self.filePath) and self.lief.has_code_signature:
             rows = []
             rows.append([
-                MACHO_LOAD_COMMAND_TYPES[self.lief.code_signature.command],
+                self.liefConstToString(self.lief.code_signature.command),
                 hex(self.lief.code_signature.command_offset),
                 "{:<6} bytes".format(self.lief.code_signature.size),
                 hex(self.lief.code_signature.data_offset),
@@ -574,7 +571,7 @@ class Lief(Module):
                     symbol.name,
                     symbol.numberof_sections,
                     hex(symbol.value),
-                    MACHO_SYMBOL_ORIGINS[symbol.origin]
+                    self.liefConstToString(symbol.origin)
                 ])
             self.log("info", "MachO exported symbols : ")
             self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
@@ -606,7 +603,7 @@ class Lief(Module):
                     symbol.name,
                     symbol.numberof_sections,
                     hex(symbol.value),
-                    MACHO_SYMBOL_ORIGINS[symbol.origin]
+                    self.liefConstToString(symbol.origin)
                 ])
             self.log("info", "MachO imported symbols : ")
             self.log("table", dict(header=["Name", "Nb section(s)", "Value", "Origin"], rows=rows))
@@ -618,7 +615,7 @@ class Lief(Module):
             return
         if lief.is_macho(self.filePath) and self.lief.has_source_version:
             self.log("info", "Source version : ")
-            self.log("item", "{0:<10} : {1}".format("command", MACHO_LOAD_COMMAND_TYPES[self.lief.source_version.command]))
+            self.log("item", "{0:<10} : {1}".format("command", self.liefConstToString(self.lief.source_version.command)))
             self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.source_version.command_offset)))
             self.log("item", "{0:<10} : {1} bytes".format("size", self.lief.source_version.size))
             self.log("item", "{0:<10} : {1}".format("Version", self.listVersionToDottedVersion(self.lief.source_version.version)))
@@ -630,7 +627,7 @@ class Lief(Module):
             return
         if lief.is_macho(self.filePath) and self.lief.has_sub_framework:
             self.log("info", "Sub-framework : ")
-            self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.sub_framework.command]))
+            self.log("item", "{0:<10} : {1}".format("Command", self.liefConstToString(self.lief.sub_framework.command)))
             self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.sub_framework.command_offset)))
             self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.sub_framework.size))
             self.log("item", "{0:<10} : {1}".format("Umbrella", self.lief.sub_framework.umbrella))
@@ -642,7 +639,7 @@ class Lief(Module):
             return
         if lief.is_macho(self.filePath) and self.lief.has_uuid:
             self.log("info", "Uuid : ")
-            self.log("item", "{0:<10} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.uuid.command]))
+            self.log("item", "{0:<10} : {1}".format("Command", self.liefConstToString(self.lief.uuid.command)))
             self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.uuid.command_offset)))
             self.log("item", "{0:<10} : {1} bytes".format("Size", self.lief.uuid.size))
             self.log("item", "{0:<10} : {1}".format("Uuid", self.listUuidToUuid(self.lief.uuid.uuid)))
@@ -654,7 +651,7 @@ class Lief(Module):
             return
         if lief.is_macho(self.filePath) and self.lief.has_data_in_code:
             self.log("info", "Data in code : ")
-            self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.data_in_code.command]))
+            self.log("item", "{0:<12} : {1}".format("Command", self.liefConstToString(self.lief.data_in_code.command)))
             self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.data_in_code.command_offset)))
             self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.data_in_code.size))
             self.log("item", "{0:<12} : {1}".format("Data Offset", hex(self.lief.data_in_code.data_offset)))
@@ -666,7 +663,7 @@ class Lief(Module):
             return
         if lief.is_macho(self.filePath) and self.lief.has_main_command:
             self.log("info", "Main command : ")
-            self.log("item", "{0:<12} : {1}".format("Command", MACHO_LOAD_COMMAND_TYPES[self.lief.main_command.command]))
+            self.log("item", "{0:<12} : {1}".format("Command", self.liefConstToString(self.lief.main_command.command)))
             self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.main_command.command_offset)))
             self.log("item", "{0:<12} : {1} bytes".format("Size", self.lief.main_command.size))
             self.log("item", "{0:<12} : {1}".format("Entrypoint", hex(self.lief.main_command.entrypoint)))
@@ -681,7 +678,7 @@ class Lief(Module):
         if lief.is_macho(self.filePath) and self.lief.commands:
             for command in self.lief.commands:
                 rows.append([
-                    MACHO_LOAD_COMMAND_TYPES[command.command],
+                    self.liefConstToString(command.command),
                     "{0:<6} bytes".format(command.size),
                     hex(command.command_offset),
                 ])
@@ -723,7 +720,7 @@ class Lief(Module):
                 rows.append([
                     hex(datadirectory.rva),
                     "{0:<7} bytes".format(datadirectory.size),
-                    PE_DATA_DIRECTORY[datadirectory.type],
+                    self.liefConstToString(datadirectory.type),
                     datadirectory.section.name if datadirectory.has_section else '-'
                 ])
             self.log("info", "Data directories")
@@ -752,9 +749,9 @@ class Lief(Module):
             self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(self.lief.debug.pointerto_rawdata)))
             self.log("item", "{0:<28} : {1} bytes".format("Size of data", self.lief.debug.sizeof_data))
             self.log("item", "{0:<28} : {1}".format("Data of data creation", self.fromTimestampToDate(self.lief.debug.timestamp)))
-            self.log("item", "{0:<28} : {1}".format("Type of debug information", PE_DEBUG_TYPES[self.lief.debug.type]))
+            self.log("item", "{0:<28} : {1}".format("Type of debug information", self.liefConstToString(self.lief.debug.type)))
             if self.lief.debug.has_code_view:
-                self.log("item", "{0:<28} : {1}".format("Code view", PE_CODE_VIEW_SIGNATURES[self.lief.debug.code_view.cv_signature]))
+                self.log("item", "{0:<28} : {1}".format("Code view", self.liefConstToString(self.lief.debug.code_view.cv_signature)))
                 if isinstance(self.lief.debug.code_view, lief.PE.CodeViewPDB):
                     self.log("item", "{0:<28} : {1}".format("Age", self.lief.debug.code_view.age))
                     self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.debug.code_view.signature)))
@@ -767,7 +764,7 @@ class Lief(Module):
             return
         if lief.is_pe(self.filePath) and self.lief.has_configuration:
             self.log("info", "Load configuration : ")
-            self.log("item", "{0:<33} : {1}".format("Version", PE_WIN_VERSIONS[self.lief.load_configuration.version]))
+            self.log("item", "{0:<33} : {1}".format("Version", self.liefConstToString(self.lief.load_configuration.version)))
             self.log("item", "{0:<33} : {1}".format("Characteristics", hex(self.lief.load_configuration.characteristics)))
             self.log("item", "{0:<33} : {1}".format("Timedatestamp", self.fromTimestampToDate(self.lief.load_configuration.timedatestamp)))
             self.log("item", "{0:<33} : {1}".format("Major version", self.lief.load_configuration.major_version))
@@ -808,7 +805,7 @@ class Lief(Module):
             for dynamicRelocation in self.lief.dynamic_relocations:
                 rows.append([
                     hex(dynamicRelocation.address),
-                    PE_RELOCATION_PURPOSES[dynamicRelocation.purpose],
+                    self.liefConstToString(dynamicRelocation.purpose),
                     dynamicRelocation.section.name if dynamicRelocation.has_section else '-',
                     dynamicRelocation.symbol.name if dynamicRelocation.has_symbol else '-',
                     "{0:<5} bits".format(dynamicRelocation.size)
@@ -827,7 +824,7 @@ class Lief(Module):
                 for entry in relocation.entries:
                     rows.append([
                         hex(relocation.virtual_address),
-                        PE_RELOCATION_BASE_TYPES[entry.type],
+                        self.liefConstToString(entry.type),
                         "{0:<6} bytes".format(entry.size),
                         hex(entry.position),
                         hex(entry.address),
@@ -862,7 +859,7 @@ class Lief(Module):
             self.log("item", "{0:<21} : {1}".format("Callbacks", " - ".join(hex(callback) for callback in self.lief.tls.callbacks)))
             self.log("item", "{0:<21} : {1}".format("Characteristics", hex(self.lief.tls.characteristics)))
             self.log("item", "{0:<21} : {1}".format("Data template", self.lief.tls.data_template))
-            self.log("item", "{0:<21} : {1}".format("Directory", PE_DATA_DIRECTORY[self.lief.tls.directory.type] if self.lief.tls.has_data_directory else '-'))
+            self.log("item", "{0:<21} : {1}".format("Directory", self.liefConstToString(self.lief.tls.directory.type) if self.lief.tls.has_data_directory else '-'))
             self.log("item", "{0:<21} : {1}".format("Section", self.lief.tls.section.name if self.lief.tls.has_section else '-'))
             self.log("item", "{0:<21} : {1}".format("Size of zero fill", self.lief.tls.sizeof_zero_fill))
         else:
@@ -921,7 +918,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_type:
-            self.log("info", "Resources types availables : {0}".format(", ".join(PE_RESOURCE_TYPES[rType] for rType in self.lief.resources_manager.types_available)))
+            self.log("info", "Resources types availables : {0}".format(", ".join(self.liefConstToString(rType) for rType in self.lief.resources_manager.types_available)))
         else:
             self.log("warning", "No resources type found")
 
@@ -929,8 +926,8 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.langs_available:
-            self.log("info", "Langs availables      : {0}".format(", ".join(PE_RESOURCE_LANGS[lang] for lang in self.lief.resources_manager.langs_available)))
-            self.log("info", "Sublangs availables   : {0}".format(", ".join(PE_RESOURCE_SUBLANGS[sublang] for sublang in self.lief.resources_manager.sublangs_available)))
+            self.log("info", "Langs availables      : {0}".format(", ".join(self.liefConstToString(lang) for lang in self.lief.resources_manager.langs_available)))
+            self.log("info", "Sublangs availables   : {0}".format(", ".join(self.liefConstToString(sublang) for sublang in self.lief.resources_manager.sublangs_available)))
         else:
             self.log("warning", "No lang found")
 
@@ -945,8 +942,8 @@ class Lief(Module):
                     "{0} x {1}".format(icon.width, icon.height),
                     icon.bit_count,
                     icon.color_count,
-                    PE_RESOURCE_LANGS[icon.lang],
-                    PE_RESOURCE_SUBLANGS[icon.sublang]
+                    self.liefConstToString(icon.lang),
+                    self.liefConstToString(icon.sublang)
                     ])
             self.log("info", "PE icons : ")
             self.log("table", dict(header=["ID", "Size", "Bits/pixel", "Nb colors/icon", "Lang", "Sublang"], rows=rows))
@@ -989,11 +986,11 @@ class Lief(Module):
                 self.log("item", "{0:<31} : {1}".format("Version", dialog.version))
                 self.log("item", "{0:<31} : {1:<5} px".format("Width of dialog", dialog.cx))
                 self.log("item", "{0:<31} : {1:<5} px".format("Height of dialog", dialog.cy))
-                self.log("item", "{0:<31} : {1}".format("Dialog box styles", ", ".join(PE_DIALOG_BOX_STYLES[style] for style in dialog.dialogbox_style_list) if dialog.has_dialogbox_style else '-'))
-                self.log("item", "{0:<31} : {1}".format("Window styles", ", ".join(PE_WINDOW_STYLES[style] for style in dialog.style_list) if dialog.has_style else '-'))
+                self.log("item", "{0:<31} : {1}".format("Dialog box styles", ", ".join(self.liefConstToString(style) for style in dialog.dialogbox_style_list) if dialog.has_dialogbox_style else '-'))
+                self.log("item", "{0:<31} : {1}".format("Window styles", ", ".join(self.liefConstToString(style) for style in dialog.style_list) if dialog.has_style else '-'))
                 self.log("item", "{0:<31} : {1}".format("Help id", dialog.help_id))
-                self.log("item", "{0:<31} : {1}".format("Lang", PE_RESOURCE_LANGS[dialog.lang]))
-                self.log("item", "{0:<31} : {1}".format("Sublang", PE_RESOURCE_SUBLANGS[dialog.sub_lang]))
+                self.log("item", "{0:<31} : {1}".format("Lang", self.liefConstToString(dialog.lang)))
+                self.log("item", "{0:<31} : {1}".format("Sublang", self.liefConstToString(dialog.sub_lang)))
                 self.log("item", "{0:<31} : {1}".format("Signature", hex(dialog.signature)))
                 self.log("item", "{0:<31} : {1}".format("Charset", dialog.charset))
                 self.log("item", "{0:<31} : {1}".format("Typeface of font", dialog.typeface))
@@ -1013,6 +1010,9 @@ class Lief(Module):
             self.log("warning", "No dialog found")
 
     """Usefuls methods"""
+
+    def liefConstToString(self, const):
+        return str(const).split('.')[1]
 
     def fromTimestampToDate(self, timestamp):
         return datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
