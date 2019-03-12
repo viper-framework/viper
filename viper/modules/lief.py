@@ -96,6 +96,8 @@ class Lief(Module):
         parser_macho.add_argument("-y", "--symbols",        action="store_true", help="Show MachO symbols")
 
         parser_oat = subparsers.add_parser("oat", help="Extract information from OAT files")
+        parser_oat.add_argument("-c", "--classname",            nargs=1,             help="Full name of class (Lcom/android/...;). Used with --methods", metavar="fullname", type=str)
+        parser_oat.add_argument("-C", "--classes",              action="store_true", help="Show OAT classes")
         parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
         parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Strip OAT dynamic relocations")
         parser_oat.add_argument("-e", "--entrypoint",           action="store_true", help="Show OAT entrypoint")
@@ -106,7 +108,9 @@ class Lief(Module):
         parser_oat.add_argument("-I", "--impfunctions",         action="store_true", help="Show OAT imported functions")
         parser_oat.add_argument("-j", "--expfunctions",         action="store_true", help="Show OAT exported functions")
         parser_oat.add_argument("-J", "--dex2dexjsoninfos",     action="store_true", help="Show OAT dex2dex json information")
-        parser_oat.add_argument("-n", "--notes",                action="store_true", help="Show OAT notes")
+        parser_oat.add_argument("-m", "--methods",              action="store_true", help="Show OAT methods by class")
+        parser_oat.add_argument("-n", "--name",                 nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
+        parser_oat.add_argument("-N", "--notes",                action="store_true", help="Show OAT notes")
         parser_oat.add_argument("-s", "--sections",             action="store_true", help="Show OAT sections")
         parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
         parser_oat.add_argument("-t", "--type",                 action="store_true", help="Show OAT type")
@@ -792,8 +796,8 @@ class Lief(Module):
             dex2dexInfo = json.loads(self.lief.dex2dex_json_info)
             for fileName, descriptions in dex2dexInfo.items():
                 self.log("info", "Dex file : {0}".format(fileName))
-                for pkg, _ in descriptions.items():
-                    self.log("item", "{0} : {1}".format("Path", pkg))
+                for cl, _ in descriptions.items():
+                    self.log("item", "{0} : {1}".format("Class", cl))
         else:
             self.log("warning", "No dex2dex json found")
 
@@ -1009,6 +1013,68 @@ class Lief(Module):
         else:
             self.log("warning", "No dialog found")
 
+    def classes(self):
+        if not self.__check_session():
+            return
+        rows = []
+        if lief.is_oat(self.filePath) and self.lief.classes:
+            for cl in self.lief.classes:
+                rows.append([
+                    cl.fullname,
+                    cl.index,
+                    len(cl.methods),
+                    self.liefConstToString(cl.status),
+                    self.liefConstToString(cl.type),
+                ])
+            self.log("info", "OAT classes : ")
+            self.log("table", dict(header=["Name", "index", "Nb of methods", "Status", "Type"], rows=rows))
+        else:
+            self.log("warning", "No class found")
+
+    def methods(self):
+        if not self.__check_session():
+            return
+        def methodProcessing(method):
+            self.log("info", "Information of method {0} : ".format(method.name))
+            self.log("item", "{0:<17} : {1}".format("Name", method.name))
+            self.log("item", "{0:<17} : {1}".format("Compiled", "Yes" if method.is_compiled else "No"))
+            self.log("item", "{0:<17} : {1}".format("Dex optimization", "Yes" if method.is_dex2dex_optimized else "No"))
+            self.log("item", "{0:<17} : {1}".format("Dex method", "Yes" if method.has_dex_method else "No"))
+            self.log("item", "{0:<17} : {1}".format("Access flags", ' '.join(self.liefConstToString(flag) for flag in method.dex_method.access_flags) if method.has_dex_method else '-'))
+            self.log("item", "{0:<17} : {1}".format("Offset", hex(method.dex_method.code_offset) if method.has_dex_method else '-'))
+            self.log("item", "{0:<17} : {1}".format("Virtual method", '-' if not method.has_dex_method else "Yes" if method.dex_method.is_virtual else "No"))
+            self.log("item", "{0:<17} : {1}".format("Parameters type", '-' if not method.has_dex_method else ", ".join(str(paramType) if not "PRIMITIVES" in str(paramType) else self.liefConstToString(paramType) for paramType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
+            self.log("item", "{0:<17} : {1}".format("Return type", '-' if not method.has_dex_method else ", ".join(str(returnType) if not "PRIMITIVES" in str(returnType) else self.liefConstToString(returnType) for returnType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
+        if lief.is_oat(self.filePath) and self.lief.methods:
+            if self.args.classname:
+                className = self.args.classname[0] + ';' if self.args.classname[0][len(self.args.classname[0])-1] != ';' else self.args.classname[0]
+                classExists = False
+                methodExists = False
+                if self.lief.classes:
+                    for index, cl in enumerate(self.lief.classes):
+                        if cl.fullname == className:
+                            classExists = True
+                            if cl.methods:
+                                for method in cl.methods:
+                                    if self.args.name:
+                                        if self.args.name[0] == method.name:
+                                            methodExists = True
+                                            methodProcessing(method)
+                                    else:
+                                        methodProcessing(method)
+                                if self.args.name and not methodExists:
+                                    self.log("error", "Method does not exist in this class")
+                            else:
+                                self.log("warning", "No method found")
+                    if not classExists:
+                        self.log("error", "This class does not exist (lief oat -C to see all classes)")
+                else:
+                    self.log("warning", "No class found")
+            else:
+                self.log("error", "A class name must be set (-c)")
+        else:
+            self.log("warning", "No method found")
+
     """Usefuls methods"""
 
     def liefConstToString(self, const):
@@ -1182,6 +1248,10 @@ class Lief(Module):
                 self.importedFunctions()
             elif self.args.write:
                 self.write()
+            elif self.args.classes:
+                self.classes()
+            elif self.args.methods:
+                self.methods()
             elif self.args.type:
                 self.type()
             elif self.args.dex2dexjsoninfos:
