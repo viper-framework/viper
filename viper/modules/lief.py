@@ -58,6 +58,7 @@ class Lief(Module):
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-A", "--architecture", action="store_true", help="Show ELF architecture")
+        parser_elf.add_argument("-b", "--impsymbols",   action="store_true", help="Show ELF imported symbols")
         parser_elf.add_argument("-d", "--dynamic",      action="store_true", help="Show ELF dynamic libraries")
         parser_elf.add_argument("-e", "--entrypoint",   action="store_true", help="Show ELF entrypoint")
         parser_elf.add_argument("-E", "--entropy",      action="store_true", help="Show ELF entropy")
@@ -67,6 +68,7 @@ class Lief(Module):
         parser_elf.add_argument("-I", "--impfunctions", action="store_true", help="Show ELF imported functions")
         parser_elf.add_argument("-j", "--expfunctions", action="store_true", help="Show ELF exported functions")
         parser_elf.add_argument("-n", "--notes",        action="store_true", help="Show ELF notes")
+        parser_elf.add_argument("-r", "--relocations",  action="store_true", help="Show ELF relocations")
         parser_elf.add_argument("-s", "--sections",     action="store_true", help="Show ELF sections")
         parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
         parser_elf.add_argument("-t", "--type",         action="store_true", help="Show ELF type")
@@ -99,9 +101,11 @@ class Lief(Module):
         parser_oat.add_argument("-c", "--classname",            nargs=1,             help="Full name of class (Lcom/android/...;). Used with --methods", metavar="fullname", type=str)
         parser_oat.add_argument("-C", "--classes",              action="store_true", help="Show OAT classes")
         parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
+        parser_oat.add_argument("-b", "--impsymbols",           action="store_true", help="Show OAT imported symbols")
         parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Strip OAT dynamic relocations")
         parser_oat.add_argument("-e", "--entrypoint",           action="store_true", help="Show OAT entrypoint")
         parser_oat.add_argument("-E", "--entropy",              action="store_true", help="Show OAT entropy")
+        parser_oat.add_argument("-f", "--dexfiles",             action="store_true", help="Show OAT dex files")
         parser_oat.add_argument("-g", "--gnu_hash",             action="store_true", help="Show OAT GNU hash")
         parser_oat.add_argument("-H", "--header",               action="store_true", help="Show OAT header")
         parser_oat.add_argument("-i", "--interpreter",          action="store_true", help="Show OAT interpreter")
@@ -111,6 +115,7 @@ class Lief(Module):
         parser_oat.add_argument("-m", "--methods",              action="store_true", help="Show OAT methods by class")
         parser_oat.add_argument("-n", "--name",                 nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
         parser_oat.add_argument("-N", "--notes",                action="store_true", help="Show OAT notes")
+        parser_oat.add_argument("-r", "--relocations",          action="store_true", help="Show OAT relocations")
         parser_oat.add_argument("-s", "--sections",             action="store_true", help="Show OAT sections")
         parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
         parser_oat.add_argument("-t", "--type",                 action="store_true", help="Show OAT type")
@@ -329,9 +334,9 @@ class Lief(Module):
                     hex(symbol.value),
                     hex(symbol.size),
                     self.liefConstToString(symbol.visibility),
-                    'X' if symbol.is_function else '-',
-                    'X' if symbol.is_static else '-',
-                    'X' if symbol.is_variable else '-'
+                    "Yes" if symbol.is_function else "No",
+                    "Yes" if symbol.is_static else "No",
+                    "Yes" if symbol.is_variable else "No"
                 ])
             self.log("info", "ELF symbols : ")
             self.log("table", dict(header=["Name", "Type", "Val", "Size", "Visibility", "isFun", "isStatic", "isVar"], rows=rows))
@@ -600,8 +605,23 @@ class Lief(Module):
     def importedSymbols(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.imported_symbols:
-            rows = []
+        rows = []
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.imported_symbols:
+            for symbol in self.lief.imported_symbols:
+                rows.append([
+                    symbol.name,
+                    self.liefConstToString(symbol.binding),
+                    "Yes" if symbol.is_function else "No",
+                    "Yes" if symbol.is_static else "No",
+                    "Yes" if symbol.is_variable else "No",
+                    "{0} bytes".format(symbol.size),
+                    symbol.symbol_version if symbol.has_version else '-',
+                    self.liefConstToString(symbol.type),
+                    self.liefConstToString(symbol.visibility)
+                ])
+            self.log("info", "Imported symbols : ")
+            self.log("table", dict(header=["Name", "Binding", "Is function", "Is static", "Is var", "Size", "Version", "Type", "Visibility"], rows=rows))
+        elif lief.is_macho(self.filePath) and self.lief.imported_symbols:
             for symbol in self.lief.imported_symbols:
                 rows.append([
                     symbol.name,
@@ -823,7 +843,17 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_pe(self.filePath) and self.lief.has_relocations:
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.relocations:
+            for relocation in self.lief.relocations:
+                rows.append([
+                    hex(relocation.address),
+                    self.liefConstToString(relocation.purpose),
+                    relocation.section.name if relocation.has_section else '-',
+                    relocation.symbol.name if relocation.has_symbol else '-',
+                ])
+            self.log("info", "Relocations : ")
+            self.log("table", dict(header=["Address", "Purpose", "Section", "Symbol"], rows=rows))
+        elif lief.is_pe(self.filePath) and self.lief.has_relocations:
             for relocation in self.lief.relocations:
                 for entry in relocation.entries:
                     rows.append([
@@ -1075,6 +1105,23 @@ class Lief(Module):
         else:
             self.log("warning", "No method found")
 
+    def dexFiles(self):
+        if not self.__check_session():
+            return
+        rows = []
+        if lief.is_oat(self.filePath) and self.lief.oat_dex_files:
+            for dexFile in self.lief.oat_dex_files:
+                rows.append([
+                    hex(dexFile.checksum),
+                    hex(dexFile.dex_offset),
+                    dexFile.dex_file.name if dexFile.has_dex_file else '-',
+                    dexFile.location
+                ])
+            self.log("info", "Oat dex files : ")
+            self.log("table", dict(header=["Checksum", "Offset", "Original dex file name", "Original location"], rows=rows))
+        else:
+            self.log("warning", "No dex file found")
+
     """Usefuls methods"""
 
     def liefConstToString(self, const):
@@ -1204,6 +1251,8 @@ class Lief(Module):
                 self.segments()
             elif self.args.sections:
                 self.sections()
+            elif self.args.relocations:
+                self.relocations()
             elif self.args.impfunctions:
                 self.importedFunctions()
             elif self.args.write:
@@ -1222,6 +1271,8 @@ class Lief(Module):
                 self.interpreter()
             elif self.args.dynamic:
                 self.dynamic()
+            elif self.args.impsymbols:
+                self.importedSymbols()
             elif self.args.notes:
                 self.notes()
             elif self.args.symbols:
@@ -1244,6 +1295,10 @@ class Lief(Module):
                 self.segments()
             elif self.args.sections:
                 self.sections()
+            elif self.args.dexfiles:
+                self.dexFiles()
+            elif self.args.relocations:
+                self.relocations()
             elif self.args.impfunctions:
                 self.importedFunctions()
             elif self.args.write:
@@ -1254,6 +1309,8 @@ class Lief(Module):
                 self.methods()
             elif self.args.type:
                 self.type()
+            elif self.args.impsymbols:
+                self.importedSymbols()
             elif self.args.dex2dexjsoninfos:
                 self.dex2dexJson()
             elif self.args.strip:
