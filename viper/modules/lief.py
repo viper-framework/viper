@@ -57,24 +57,26 @@ class Lief(Module):
         parser_pe.add_argument("--id",                      nargs=1, type=int,   help="Define an id for following commands : -x", metavar="id")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
-        parser_elf.add_argument("-A", "--architecture", action="store_true", help="Show ELF architecture")
-        parser_elf.add_argument("-b", "--impsymbols",   action="store_true", help="Show ELF imported symbols")
-        parser_elf.add_argument("-d", "--dynamic",      action="store_true", help="Show ELF dynamic libraries")
-        parser_elf.add_argument("-e", "--entrypoint",   action="store_true", help="Show ELF entrypoint")
-        parser_elf.add_argument("-E", "--entropy",      action="store_true", help="Show ELF entropy")
-        parser_elf.add_argument("-g", "--gnu_hash",     action="store_true", help="Show ELF GNU hash")
-        parser_elf.add_argument("-H", "--header",       action="store_true", help="Show ELF header")
-        parser_elf.add_argument("-i", "--interpreter",  action="store_true", help="Show ELF interpreter")
-        parser_elf.add_argument("-I", "--impfunctions", action="store_true", help="Show ELF imported functions")
-        parser_elf.add_argument("-j", "--expfunctions", action="store_true", help="Show ELF exported functions")
-        parser_elf.add_argument("-n", "--notes",        action="store_true", help="Show ELF notes")
-        parser_elf.add_argument("-r", "--relocations",  action="store_true", help="Show ELF relocations")
-        parser_elf.add_argument("-s", "--sections",     action="store_true", help="Show ELF sections")
-        parser_elf.add_argument("-S", "--segments",     action="store_true", help="Show ELF segments")
-        parser_elf.add_argument("-t", "--type",         action="store_true", help="Show ELF type")
-        parser_elf.add_argument("-w", "--write",        nargs=1,             help="Write binary into file", metavar="fileName")
-        parser_elf.add_argument("-y", "--symbols",      action="store_true", help="Show ELF symbols")
-        parser_elf.add_argument("-z", "--strip",        action="store_true", help="Strip ELF binary")
+        parser_elf.add_argument("-A", "--architecture",     action="store_true", help="Show ELF architecture")
+        parser_elf.add_argument("-b", "--impsymbols",       action="store_true", help="Show ELF imported symbols")
+        parser_elf.add_argument("-d", "--dynamic",          action="store_true", help="Show ELF dynamic libraries")
+        parser_elf.add_argument("-e", "--entrypoint",       action="store_true", help="Show ELF entrypoint")
+        parser_elf.add_argument("-E", "--entropy",          action="store_true", help="Show ELF entropy")
+        parser_elf.add_argument("-g", "--gnu_hash",         action="store_true", help="Show ELF GNU hash")
+        parser_elf.add_argument("-H", "--header",           action="store_true", help="Show ELF header")
+        parser_elf.add_argument("-i", "--interpreter",      action="store_true", help="Show ELF interpreter")
+        parser_elf.add_argument("-I", "--impfunctions",     action="store_true", help="Show ELF imported functions")
+        parser_elf.add_argument("-j", "--expfunctions",     action="store_true", help="Show ELF exported functions")
+        parser_elf.add_argument("-n", "--notes",            action="store_true", help="Show ELF notes")
+        parser_elf.add_argument("-r", "--relocations",      action="store_true", help="Show ELF relocations")
+        parser_elf.add_argument("-s", "--sections",         action="store_true", help="Show ELF sections")
+        parser_elf.add_argument("-S", "--segments",         action="store_true", help="Show ELF segments")
+        parser_elf.add_argument("-t", "--type",             action="store_true", help="Show ELF type")
+        parser_elf.add_argument("-T", "--dynamicentries",   action="store_true", help="Strip ELF dynamic entries")
+        parser_elf.add_argument("-w", "--write",            nargs=1,             help="Write binary into file", metavar="fileName")
+        parser_elf.add_argument("-y", "--symbols",          action="store_true", help="Show ELF symbols")
+        parser_elf.add_argument("-Y", "--dynamicsymbols",   action="store_true", help="Show ELF dynamic symbols")
+        parser_elf.add_argument("-z", "--strip",            action="store_true", help="Strip ELF binary")
 
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
         parser_macho.add_argument("-A", "--architecture",   action="store_true", help="Show MachO architecture")
@@ -100,8 +102,8 @@ class Lief(Module):
         parser_oat = subparsers.add_parser("oat", help="Extract information from OAT files")
         parser_oat.add_argument("-c", "--classname",            nargs=1,             help="Full name of class (Lcom/android/...;). Used with --methods", metavar="fullname", type=str)
         parser_oat.add_argument("-C", "--classes",              action="store_true", help="Show OAT classes")
-        parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
         parser_oat.add_argument("-b", "--impsymbols",           action="store_true", help="Show OAT imported symbols")
+        parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
         parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Strip OAT dynamic relocations")
         parser_oat.add_argument("-e", "--entrypoint",           action="store_true", help="Show OAT entrypoint")
         parser_oat.add_argument("-E", "--entropy",              action="store_true", help="Show OAT entropy")
@@ -119,8 +121,10 @@ class Lief(Module):
         parser_oat.add_argument("-s", "--sections",             action="store_true", help="Show OAT sections")
         parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
         parser_oat.add_argument("-t", "--type",                 action="store_true", help="Show OAT type")
+        parser_oat.add_argument("-T", "--dynamicentries",       action="store_true", help="Strip OAT dynamic entries")
         parser_oat.add_argument("-w", "--write",                nargs=1,             help="Write binary into file", metavar="fileName")
-        parser_oat.add_argument("-y", "--symbols",              action="store_true", help="Show OAT symbols")
+        parser_oat.add_argument("-y", "--symbols",              action="store_true", help="Show OAT static and dynamic symbols")
+        parser_oat.add_argument("-Y", "--dynamicsymbols",       action="store_true", help="Show OAT dynamic symbols")
         parser_oat.add_argument("-z", "--strip",                action="store_true", help="Strip OAT binary")
 
         self.lief = None
@@ -321,25 +325,12 @@ class Lief(Module):
             self.log("table", dict(header=["Command", "Name", "Offset", "Compatibility version", "Current version", "Size", "Timestamp"],rows=rows))
         else:
             self.log("warning", "No dynamic library found")
-
+    
     def symbols(self):
         if not self.__check_session():
             return
-        rows = []
-        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
-            for symbol in self.lief.symbols:
-                rows.append([
-                    symbol.name,
-                    self.liefConstToString(symbol.type),
-                    hex(symbol.value),
-                    hex(symbol.size),
-                    self.liefConstToString(symbol.visibility),
-                    "Yes" if symbol.is_function else "No",
-                    "Yes" if symbol.is_static else "No",
-                    "Yes" if symbol.is_variable else "No"
-                ])
-            self.log("info", "ELF symbols : ")
-            self.log("table", dict(header=["Name", "Type", "Val", "Size", "Visibility", "isFun", "isStatic", "isVar"], rows=rows))
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.symbols:
+            self.printElfAndOatSymbols(self.lief.symbols, "Static and dynamic symbols")
         elif lief.is_macho(self.filePath) and self.lief.symbols:
             self.log("info", "MachO symbols : ")
             for symbol in self.lief.symbols:
@@ -459,6 +450,7 @@ class Lief(Module):
         if lief.is_oat(self.filePath):
             self.log("info", "OAT header : ")
             self.log("item", "{0:<37} : {1}".format("Checksum", hex(self.lief.header.checksum)))
+            self.log("item", "{0:<37} : {1}".format("ImageBase", hex(self.lief.imagebase) if self.lief.imagebase else '-'))
             self.log("item", "{0:<37} : {1}".format("Executable offset", hex(self.lief.header.executable_offset)))
             self.log("item", "{0:<37} : {1}".format("I2c code bridge offset", hex(self.lief.header.i2c_code_bridge_offset)))
             self.log("item", "{0:<37} : {1}".format("I2c bridge offset", hex(self.lief.header.i2i_bridge_offset)))
@@ -520,6 +512,7 @@ class Lief(Module):
             self.log("info", "ELF header : ")
             self.log("item", "{0:<26} : {1}".format("Type", self.liefConstToString(self.lief.header.file_type)))
             self.log("item", "{0:<26} : {1}".format("Entrypoint", hex(self.lief.header.entrypoint)))
+            self.log("item", "{0:<26} : {1}".format("ImageBase", hex(self.lief.imagebase) if self.lief.imagebase else '-'))
             self.log("item", "{0:<26} : {1} bytes".format("Header size", self.lief.header.header_size))
             self.log("item", "{0:<26} : {1}".format("Identity", "{0} ({1})".format(' '.join(hex(iden) for iden in self.lief.header.identity), ''.join(chr(iden) for index, iden in enumerate(self.lief.header.identity) if index < 4))))
             self.log("item", "{0:<26} : {1}".format("Endianness", self.liefConstToString(self.lief.header.identity_data)))
@@ -1121,6 +1114,29 @@ class Lief(Module):
             self.log("table", dict(header=["Checksum", "Offset", "Original dex file name", "Original location"], rows=rows))
         else:
             self.log("warning", "No dex file found")
+    
+    def dynamicEntries(self):
+        if not self.__check_session():
+            return
+        rows = []
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.dynamic_entries:
+            for dynamicEntry in self.lief.dynamic_entries:
+                rows.append([
+                    self.liefConstToString(dynamicEntry.tag),
+                    hex(dynamicEntry.value)
+                ])
+            self.log("info", "Dynamic entries: ")
+            self.log("table", dict(header=["Tag", "Value"], rows=rows))
+        else:
+            self.log("warning", "No dynamic entry found")
+    
+    def dynamicSymbols(self):
+        if not self.__check_session():
+            return
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.dynamic_symbols:
+            self.printElfAndOatSymbols(self.lief.dynamic_symbols, "Dynamic symbols")
+        else:
+            self.log("warning", "No dynamic entry found")
 
     """Usefuls methods"""
 
@@ -1171,6 +1187,25 @@ class Lief(Module):
                 else:
                     version += '.' + str(elt)
             return version
+
+    def printElfAndOatSymbols(self, symbols, title):
+        rows = []
+        if symbols:
+            for symbol in symbols:
+                rows.append([
+                    symbol.name,
+                    self.liefConstToString(symbol.type),
+                    hex(symbol.value),
+                    hex(symbol.size),
+                    self.liefConstToString(symbol.visibility),
+                    "Yes" if symbol.is_function else "No",
+                    "Yes" if symbol.is_static else "No",
+                    "Yes" if symbol.is_variable else "No"
+                ])
+            self.log("info", "{0} : ".format(title))
+            self.log("table", dict(header=["Name", "Type", "Val", "Size", "Visibility", "isFun", "isStatic", "isVar"], rows=rows))
+        else:
+            self.log("warning", "No symbol found")
 
     """Binary type methods"""
 
@@ -1283,6 +1318,10 @@ class Lief(Module):
                 self.exportedFunctions()
             elif self.args.header:
                 self.header()
+            elif self.args.dynamicsymbols:
+                self.dynamicSymbols()
+            elif self.args.dynamicentries:
+                self.dynamicEntries()
 
     def oat(self):
         if not self.__check_session():
@@ -1305,6 +1344,10 @@ class Lief(Module):
                 self.write()
             elif self.args.classes:
                 self.classes()
+            elif self.args.dynamicentries:
+                self.dynamicEntries()
+            elif self.args.dynamicsymbols:
+                self.dynamicSymbols()
             elif self.args.methods:
                 self.methods()
             elif self.args.type:
