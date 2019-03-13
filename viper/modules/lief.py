@@ -59,6 +59,7 @@ class Lief(Module):
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
         parser_elf.add_argument("-A", "--architecture",     action="store_true", help="Show ELF architecture")
         parser_elf.add_argument("-b", "--impsymbols",       action="store_true", help="Show ELF imported symbols")
+        parser_elf.add_argument("-B", "--staticsymbols",    action="store_true", help="Show ELF static symbols")
         parser_elf.add_argument("-d", "--dynamic",          action="store_true", help="Show ELF dynamic libraries")
         parser_elf.add_argument("-e", "--entrypoint",       action="store_true", help="Show ELF entrypoint")
         parser_elf.add_argument("-E", "--entropy",          action="store_true", help="Show ELF entropy")
@@ -105,6 +106,7 @@ class Lief(Module):
         parser_oat.add_argument("-c", "--classname",            nargs=1,             help="Full name of class (Lcom/android/...;). Used with --methods", metavar="fullname", type=str)
         parser_oat.add_argument("-C", "--classes",              action="store_true", help="Show OAT classes")
         parser_oat.add_argument("-b", "--impsymbols",           action="store_true", help="Show OAT imported symbols")
+        parser_oat.add_argument("-B", "--staticsymbols",        action="store_true", help="Show OAT static symbols")
         parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
         parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Strip OAT dynamic relocations")
         parser_oat.add_argument("-e", "--entrypoint",           action="store_true", help="Show OAT entrypoint")
@@ -126,6 +128,7 @@ class Lief(Module):
         parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
         parser_oat.add_argument("-t", "--type",                 action="store_true", help="Show OAT type")
         parser_oat.add_argument("-T", "--dynamicentries",       action="store_true", help="Strip OAT dynamic entries")
+        parser_oat.add_argument("-v", "--androidversion",       action="store_true", help="Strip OAT android version")
         parser_oat.add_argument("-w", "--write",                nargs=1,             help="Write binary into file", metavar="fileName")
         parser_oat.add_argument("-y", "--symbols",              action="store_true", help="Show OAT static and dynamic symbols")
         parser_oat.add_argument("-Y", "--dynamicsymbols",       action="store_true", help="Show OAT dynamic symbols")
@@ -1090,6 +1093,17 @@ class Lief(Module):
                 self.log("error", "A class name must be set (-c)")
         else:
             self.log("warning", "No method found")
+    
+    def androidVersion(self):
+        if not self.__check_session():
+            return
+        if lief.is_oat(self.filePath):
+            try:
+                self.log("info", "Android version : {0}".format(self.liefConstToString(lief.OAT.android_version(lief.OAT.version(self.lief)))))
+            except:
+                self.log("warning", "No android version found")
+        else:
+            self.log("warning", "No android version found")
 
     def dexFiles(self):
         if not self.__check_session():
@@ -1129,7 +1143,15 @@ class Lief(Module):
         if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.dynamic_symbols:
             self.printElfAndOatSymbols(self.lief.dynamic_symbols, "Dynamic symbols")
         else:
-            self.log("warning", "No dynamic entry found")
+            self.log("warning", "No dynamic symbol found")
+
+    def staticSymbols(self):
+        if not self.__check_session():
+            return
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.static_symbols:
+            self.printElfAndOatSymbols(self.lief.static_symbols, "Static symbols")
+        else:
+            self.log("warning", "No static symbol found")
 
     """Usefuls methods"""
 
@@ -1214,6 +1236,12 @@ class Lief(Module):
             self.log("table", dict(header=["Address", "Purpose", "Section", "Symbol"], rows=rows))
         else:
             self.log("warning", "No relocation found")
+
+    def wrongBinaryType(self, expected):
+        self.log("error", "Wrong binary type")
+        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "UNKNOWN"
+        self.log("info", "Expected filtype : {0}".format(expected))
+        self.log("info", "Current filetype : {0}".format(fileType))
     
     """Binary type methods"""
 
@@ -1221,8 +1249,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if not lief.is_pe(self.filePath):
-            self.log("error", "Wrong binary type")
-            self.log("info", "Expected filetype : PE")
+            self.wrongBinaryType("PE")
         else:
             if self.args.sections:
                 self.sections()
@@ -1287,8 +1314,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if not lief.is_elf(self.filePath) or lief.is_oat(self.filePath):
-            self.log("error", "Wrong binary type")
-            self.log("info", "Expected filtype : ELF")
+            self.wrongBinaryType("ELF")
         else:
             if self.args.segments:
                 self.segments()
@@ -1334,22 +1360,27 @@ class Lief(Module):
                 self.exportedSymbols()
             elif self.args.objectrelocations:
                 self.objectRelocations()
+            elif self.args.staticsymbols:
+                self.staticSymbols()
 
     def oat(self):
         if not self.__check_session():
             return
         if not lief.is_oat(self.filePath):
-            self.log("error", "Wrong binary type")
-            self.log("info", "Expected filtype : OAT")
+            self.wrongBinaryType("OAT")
         else:
             if self.args.segments:
                 self.segments()
             elif self.args.sections:
                 self.sections()
+            elif self.args.staticsymbols:
+                self.staticSymbols()
             elif self.args.dexfiles:
                 self.dexFiles()
             elif self.args.relocations:
                 self.relocations()
+            elif self.args.androidversion:
+                self.androidVersion()
             elif self.args.impfunctions:
                 self.importedFunctions()
             elif self.args.write:
@@ -1399,8 +1430,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if not lief.is_macho(self.filePath):
-            self.log("error", "Wrong binary type")
-            self.log("info", "Expected filtype : MachO")
+            self.wrongBinaryType("MACH-O")
         else:
             if self.args.header:
                 self.header()
