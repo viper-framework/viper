@@ -67,7 +67,9 @@ class Lief(Module):
         parser_elf.add_argument("-i", "--interpreter",      action="store_true", help="Show ELF interpreter")
         parser_elf.add_argument("-I", "--impfunctions",     action="store_true", help="Show ELF imported functions")
         parser_elf.add_argument("-j", "--expfunctions",     action="store_true", help="Show ELF exported functions")
+        parser_elf.add_argument("-k", "--expsymbols",       action="store_true", help="Show ELF exported symbols")
         parser_elf.add_argument("-n", "--notes",            action="store_true", help="Show ELF notes")
+        parser_elf.add_argument("-o", "--objectrelocations",action="store_true", help="Show ELF object relocations")
         parser_elf.add_argument("-r", "--relocations",      action="store_true", help="Show ELF relocations")
         parser_elf.add_argument("-s", "--sections",         action="store_true", help="Show ELF sections")
         parser_elf.add_argument("-S", "--segments",         action="store_true", help="Show ELF segments")
@@ -114,9 +116,11 @@ class Lief(Module):
         parser_oat.add_argument("-I", "--impfunctions",         action="store_true", help="Show OAT imported functions")
         parser_oat.add_argument("-j", "--expfunctions",         action="store_true", help="Show OAT exported functions")
         parser_oat.add_argument("-J", "--dex2dexjsoninfos",     action="store_true", help="Show OAT dex2dex json information")
+        parser_oat.add_argument("-k", "--expsymbols",           action="store_true", help="Show OAT exported symbols")
         parser_oat.add_argument("-m", "--methods",              action="store_true", help="Show OAT methods by class")
         parser_oat.add_argument("-n", "--name",                 nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
         parser_oat.add_argument("-N", "--notes",                action="store_true", help="Show OAT notes")
+        parser_oat.add_argument("-o", "--objectrelocations",    action="store_true", help="Show OAT object relocations")
         parser_oat.add_argument("-r", "--relocations",          action="store_true", help="Show OAT relocations")
         parser_oat.add_argument("-s", "--sections",             action="store_true", help="Show OAT sections")
         parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
@@ -566,7 +570,9 @@ class Lief(Module):
     def exportedSymbols(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.exported_symbols:
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.exported_symbols:
+            self.printElfAndOatSymbols(self.lief.exported_symbols, "Exported symbols")
+        elif lief.is_macho(self.filePath) and self.lief.exported_symbols:
             rows = []
             for symbol in self.lief.exported_symbols:
                 rows.append([
@@ -600,20 +606,7 @@ class Lief(Module):
             return
         rows = []
         if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.imported_symbols:
-            for symbol in self.lief.imported_symbols:
-                rows.append([
-                    symbol.name,
-                    self.liefConstToString(symbol.binding),
-                    "Yes" if symbol.is_function else "No",
-                    "Yes" if symbol.is_static else "No",
-                    "Yes" if symbol.is_variable else "No",
-                    "{0} bytes".format(symbol.size),
-                    symbol.symbol_version if symbol.has_version else '-',
-                    self.liefConstToString(symbol.type),
-                    self.liefConstToString(symbol.visibility)
-                ])
-            self.log("info", "Imported symbols : ")
-            self.log("table", dict(header=["Name", "Binding", "Is function", "Is static", "Is var", "Size", "Version", "Type", "Visibility"], rows=rows))
+            self.printElfAndOatSymbols(self.lief.imported_symbols, "Imported symbols")
         elif lief.is_macho(self.filePath) and self.lief.imported_symbols:
             for symbol in self.lief.imported_symbols:
                 rows.append([
@@ -832,20 +825,20 @@ class Lief(Module):
         else:
             self.log("warning", "No dynamic relocation found")
 
+    def objectRelocations(self):
+        if not self.__check_session():
+            return
+        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.object_relocations:
+            self.printElfAndOatRelocations(self.lief.object_relocations, "Object relocations")
+        else:
+            self.log("warning", "No object relocation found")
+
     def relocations(self):
         if not self.__check_session():
             return
         rows = []
         if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.relocations:
-            for relocation in self.lief.relocations:
-                rows.append([
-                    hex(relocation.address),
-                    self.liefConstToString(relocation.purpose),
-                    relocation.section.name if relocation.has_section else '-',
-                    relocation.symbol.name if relocation.has_symbol else '-',
-                ])
-            self.log("info", "Relocations : ")
-            self.log("table", dict(header=["Address", "Purpose", "Section", "Symbol"], rows=rows))
+            self.printElfAndOatRelocations(self.lief.relocations, "Relocations")
         elif lief.is_pe(self.filePath) and self.lief.has_relocations:
             for relocation in self.lief.relocations:
                 for entry in relocation.entries:
@@ -1207,6 +1200,21 @@ class Lief(Module):
         else:
             self.log("warning", "No symbol found")
 
+    def printElfAndOatRelocations(self, relocations, title):
+        rows = []
+        if relocations:
+            for relocation in relocations:
+                rows.append([
+                    hex(relocation.address),
+                    self.liefConstToString(relocation.purpose),
+                    relocation.section.name if relocation.has_section else '-',
+                    relocation.symbol.name if relocation.has_symbol else '-',
+                ])
+            self.log("info", "{0} : ".format(title))
+            self.log("table", dict(header=["Address", "Purpose", "Section", "Symbol"], rows=rows))
+        else:
+            self.log("warning", "No relocation found")
+    
     """Binary type methods"""
 
     def pe(self):
@@ -1322,6 +1330,10 @@ class Lief(Module):
                 self.dynamicSymbols()
             elif self.args.dynamicentries:
                 self.dynamicEntries()
+            elif self.args.expsymbols:
+                self.exportedSymbols()
+            elif self.args.objectrelocations:
+                self.objectRelocations()
 
     def oat(self):
         if not self.__check_session():
@@ -1354,6 +1366,8 @@ class Lief(Module):
                 self.type()
             elif self.args.impsymbols:
                 self.importedSymbols()
+            elif self.args.objectrelocations:
+                self.objectRelocations()
             elif self.args.dex2dexjsoninfos:
                 self.dex2dexJson()
             elif self.args.strip:
@@ -1378,6 +1392,8 @@ class Lief(Module):
                 self.header()
             elif self.args.dynamicrelocations:
                 self.dynamicRelocations()
+            elif self.args.expsymbols:
+                self.exportedSymbols()
 
     def macho(self):
         if not self.__check_session():
