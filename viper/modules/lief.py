@@ -130,9 +130,13 @@ class Lief(Module):
         parser_oat.add_argument("-T", "--dynamicentries",       action="store_true", help="Strip OAT dynamic entries")
         parser_oat.add_argument("-v", "--androidversion",       action="store_true", help="Strip OAT android version")
         parser_oat.add_argument("-w", "--write",                nargs=1,             help="Write binary into file", metavar="fileName")
+        parser_oat.add_argument("-x", "--extractdexfiles",      nargs='?',           help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
         parser_oat.add_argument("-y", "--symbols",              action="store_true", help="Show OAT static and dynamic symbols")
         parser_oat.add_argument("-Y", "--dynamicsymbols",       action="store_true", help="Show OAT dynamic symbols")
         parser_oat.add_argument("-z", "--strip",                action="store_true", help="Strip OAT binary")
+        
+        parser_dex = subparsers.add_parser("dex", help="Extract information from DEX files")
+        parser_dex.add_argument("-c", "--classes",  action="store_true", help="Show DEX classes")
 
         self.lief = None
     
@@ -142,12 +146,24 @@ class Lief(Module):
             return False
         if not self.lief:
             try:
-                self.lief       = lief.parse(__sessions__.current.file.path)
+                self.lief       = self.parseBinary(__sessions__.current.file.path)
                 self.filePath   = __sessions__.current.file.path
             except lief.parser_error as e:
                 self.log("error", "Unable to parse file : {0}".format(e))
                 return False
         return True
+
+    def parseBinary(self, binary):
+        """
+            :param str binary : The path of the binary file
+        """
+        try:
+            if lief.is_oat(binary) or lief.is_elf(binary) or lief.is_macho(binary) or lief.is_pe(binary):
+                return lief.parse(binary)
+            elif lief.is_dex(binary):
+                return lief.DEX.parse(binary)
+        except Exception as e:
+            raise e
 
     """Binaries methods"""
     
@@ -977,6 +993,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_icons:
+            iconExists = False
             def iconProcessing(icon, destFolder):
                 fileName = "{0}{1}_{2}.ico".format(destFolder, self.lief.name.replace('.', '_'), icon.id)
                 if os.path.isfile(fileName):
@@ -992,9 +1009,12 @@ class Lief(Module):
                 for icon in self.lief.resources_manager.icons:
                     if self.args.id:
                         if self.args.id[0] == icon.id:
+                            iconExists = True
                             iconProcessing(icon, destFolder)
                     else:
                         iconProcessing(icon, destFolder)
+                if self.args.id and not iconExists:
+                    self.log("warning", "Icon does not exist")
         else:
             self.log("warning", "No icon found")
 
@@ -1039,14 +1059,26 @@ class Lief(Module):
         if lief.is_oat(self.filePath) and self.lief.classes:
             for cl in self.lief.classes:
                 rows.append([
-                    cl.fullname,
+                    self.prettyJavaClassFullName(cl.fullname),
                     cl.index,
                     len(cl.methods),
                     self.liefConstToString(cl.status),
                     self.liefConstToString(cl.type),
                 ])
             self.log("info", "OAT classes : ")
-            self.log("table", dict(header=["Name", "index", "Nb of methods", "Status", "Type"], rows=rows))
+            self.log("table", dict(header=["Name", "index", "Methods", "Status", "Type"], rows=rows))
+        elif lief.is_dex(self.filePath) and self.lief.classes:
+            for cl in self.lief.classes:
+                rows.append([
+                    cl.pretty_name,
+                    ' '.join(self.liefConstToString(flag) for flag in cl.access_flags) if cl.access_flags else '-',
+                    hex(cl.index) if cl.index else '-',
+                    len(cl.methods),
+                    cl.parent.name if cl.has_parent else '-',
+                    cl.source_filename if cl.source_filename else '-'
+                ])
+            self.log("info", "DEX classes : ")
+            self.log("table", dict(header=["Name", "Flags", "index", "Methods", "Parent class", "Source filename"], rows=rows))
         else:
             self.log("warning", "No class found")
 
@@ -1062,16 +1094,16 @@ class Lief(Module):
             self.log("item", "{0:<17} : {1}".format("Access flags", ' '.join(self.liefConstToString(flag) for flag in method.dex_method.access_flags) if method.has_dex_method else '-'))
             self.log("item", "{0:<17} : {1}".format("Offset", hex(method.dex_method.code_offset) if method.has_dex_method else '-'))
             self.log("item", "{0:<17} : {1}".format("Virtual method", '-' if not method.has_dex_method else "Yes" if method.dex_method.is_virtual else "No"))
-            self.log("item", "{0:<17} : {1}".format("Parameters type", '-' if not method.has_dex_method else ", ".join(str(paramType) if not "PRIMITIVES" in str(paramType) else self.liefConstToString(paramType) for paramType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
-            self.log("item", "{0:<17} : {1}".format("Return type", '-' if not method.has_dex_method else ", ".join(str(returnType) if not "PRIMITIVES" in str(returnType) else self.liefConstToString(returnType) for returnType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
+            self.log("item", "{0:<17} : {1}".format("Parameters type", '-' if not method.has_dex_method else ", ".join(self.prettyJavaClassFullName(str(paramType)) if not "PRIMITIVES." in str(paramType) else self.liefConstToString(paramType) for paramType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
+            self.log("item", "{0:<17} : {1}".format("Return type", '-' if not method.has_dex_method else ", ".join(self.prettyJavaClassFullName(str(returnType)) if not "PRIMITIVES." in str(returnType) else self.liefConstToString(returnType) for returnType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
         if lief.is_oat(self.filePath) and self.lief.methods:
             if self.args.classname:
-                className = self.args.classname[0] + ';' if self.args.classname[0][len(self.args.classname[0])-1] != ';' else self.args.classname[0]
+                className = self.args.classname[0]
                 classExists = False
                 methodExists = False
                 if self.lief.classes:
-                    for index, cl in enumerate(self.lief.classes):
-                        if cl.fullname == className:
+                    for cl in self.lief.classes:
+                        if self.prettyJavaClassFullName(cl.fullname) == className:
                             classExists = True
                             if cl.methods:
                                 for method in cl.methods:
@@ -1099,7 +1131,7 @@ class Lief(Module):
             return
         if lief.is_oat(self.filePath):
             try:
-                self.log("info", "Android version : {0}".format(self.liefConstToString(lief.OAT.android_version(lief.OAT.version(self.lief)))))
+                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief))), lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief)))))
             except:
                 self.log("warning", "No android version found")
         else:
@@ -1153,10 +1185,42 @@ class Lief(Module):
         else:
             self.log("warning", "No static symbol found")
 
+    def extractDexFiles(self):
+        if not self.__check_session():
+            return
+        if lief.is_oat(self.filePath) and self.lief.dex_files:
+            dexFileExists = False
+            def dexFileProcessing(dexFile, destFolder):
+                fileName = "{0}{1}_{2}".format(destFolder, hex(dexFile.header.checksum), dexFile.name)
+                if os.path.isfile(fileName):
+                    self.log("error", "{0:<25} : {1}".format("File already exists", fileName))
+                else:
+                    dexFile.save(fileName)
+                    self.log("success", "{0:<25} : {1}".format("File successfully saved", fileName))
+            destFolder = self.args.extractdexfiles
+            if destFolder[len(destFolder)-1] != '/' : destFolder += '/'
+            if not os.access(destFolder, os.X_OK | os.W_OK):
+                self.log("error", "Cannot write into folder : {0}".format(destFolder))
+            else:
+                for dexFile in self.lief.dex_files:
+                    if self.args.name:
+                        if self.args.name[0] == dexFile.name:
+                            dexFileExists = True
+                            dexFileProcessing(dexFile, destFolder)
+                    else:
+                        dexFileProcessing(dexFile, destFolder)
+                if self.args.name and not dexFileExists:
+                    self.log("warning", "Dex file does not exist")
+        else:
+            self.log("warning", "No dexFile found")
+
     """Usefuls methods"""
 
     def liefConstToString(self, const):
         return str(const).split('.')[1]
+
+    def prettyJavaClassFullName(self, className):
+        return className[1:-1].replace('/', '.')
 
     def fromTimestampToDate(self, timestamp):
         return datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
@@ -1239,7 +1303,7 @@ class Lief(Module):
 
     def wrongBinaryType(self, expected):
         self.log("error", "Wrong binary type")
-        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "UNKNOWN"
+        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "DEX" if lief.is_dex(self.filePath) else "UNKNOWN"
         self.log("info", "Expected filtype : {0}".format(expected))
         self.log("info", "Current filetype : {0}".format(fileType))
     
@@ -1373,6 +1437,8 @@ class Lief(Module):
                 self.segments()
             elif self.args.sections:
                 self.sections()
+            elif self.args.extractdexfiles:
+                self.extractDexFiles()
             elif self.args.staticsymbols:
                 self.staticSymbols()
             elif self.args.dexfiles:
@@ -1470,6 +1536,15 @@ class Lief(Module):
                 self.commands()
             elif self.args.dynamic:
                 self.dynamic()
+    
+    def dex(self):
+        if not self.__check_session():
+            return
+        if not lief.is_dex(self.filePath):
+            self.wrongBinaryType("DEX")
+        else:
+            if self.args.classes:
+                self.classes()
 
     """Main method"""
 
@@ -1488,6 +1563,8 @@ class Lief(Module):
             self.macho()
         elif self.args.subname == "oat":
             self.oat()
+        elif self.args.subname == "dex":
+            self.dex()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
