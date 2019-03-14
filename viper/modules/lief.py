@@ -3,7 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 
-import math, os.path, string, json
+import math, os.path, string
 from os import access
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -117,7 +117,6 @@ class Lief(Module):
         parser_oat.add_argument("-i", "--interpreter",          action="store_true", help="Show OAT interpreter")
         parser_oat.add_argument("-I", "--impfunctions",         action="store_true", help="Show OAT imported functions")
         parser_oat.add_argument("-j", "--expfunctions",         action="store_true", help="Show OAT exported functions")
-        parser_oat.add_argument("-J", "--dex2dexjsoninfos",     action="store_true", help="Show OAT dex2dex json information")
         parser_oat.add_argument("-k", "--expsymbols",           action="store_true", help="Show OAT exported symbols")
         parser_oat.add_argument("-m", "--methods",              action="store_true", help="Show OAT methods by class")
         parser_oat.add_argument("-n", "--name",                 nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
@@ -137,6 +136,8 @@ class Lief(Module):
         
         parser_dex = subparsers.add_parser("dex", help="Extract information from DEX files")
         parser_dex.add_argument("-c", "--classes",  action="store_true", help="Show DEX classes")
+        parser_dex.add_argument("-H", "--header",   action="store_true", help="Show DEX header")
+        parser_dex.add_argument("-m", "--map",      action="store_true", help="Show DEX map items")
 
         self.lief = None
     
@@ -466,11 +467,43 @@ class Lief(Module):
         else:
             self.log("warning", "No note found")
 
-    def header(self):
+    def map(self):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_oat(self.filePath):
+        if lief.is_dex(self.filePath) and self.lief.map:
+            for item in self.lief.map.items:
+                rows.append([
+                    self.liefConstToString(item.type),
+                    hex(item.offset),
+                    "{0:<5} bytes".format(item.size)
+                ])
+            self.log("info", "DEX map items : ")
+            self.log("table", dict(header=["Type", "Offset", "Size"], rows=rows))
+        else:
+            self.log("warning", "No map found")
+
+    def header(self):
+        if not self.__check_session():
+            return
+        if lief.is_dex(self.filePath):
+            self.log("info", "DEX header : ")
+            self.log("item", "{0:<17} : {1}".format("Checksum", hex(self.lief.header.checksum)))
+            self.log("item", "{0:<17} : {1}".format("Endianness", hex(self.lief.header.endian_tag)))
+            self.log("item", "{0:<17} : {1} bytes".format("Size", self.lief.header.file_size))
+            self.log("item", "{0:<17} : {1} bytes".format("Header size", self.lief.header.header_size))
+            self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
+            self.log("item", "{0:<17} : {1}".format("Map offset", hex(self.lief.header.map_offset)))
+            self.log("item", "{0:<17} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.header.signature)))
+            self.log("item", "{0:<17} : {1}".format("Nb of Prototypes", "{0:<6} => id : {1}".format(self.lief.header.prototypes[1], hex(self.lief.header.prototypes[0]))))
+            self.log("item", "{0:<17} : {1}".format("Nb of Strings", "{0:<6} => id : {1}".format(self.lief.header.strings[1], hex(self.lief.header.strings[0]))))
+            self.log("item", "{0:<17} : {1}".format("Nb of Classes", "{0:<6} => id : {1}".format(self.lief.header.classes[1], hex(self.lief.header.classes[0]))))
+            self.log("item", "{0:<17} : {1}".format("Nb of Fields", "{0:<6} => id : {1}".format(self.lief.header.fields[1], hex(self.lief.header.fields[0]))))
+            self.log("item", "{0:<17} : {1}".format("Nb of Methods", "{0:<6} => id : {1}".format(self.lief.header.methods[1], hex(self.lief.header.methods[0]))))
+            self.log("item", "{0:<17} : {1}".format("Nb of Types", "{0:<6} => id : {1}".format(self.lief.header.types[1], hex(self.lief.header.types[0]))))
+            self.log("item", "{0:<17} : {1}".format("Nb of Data", "{0:<6} => id : {1}".format(self.lief.header.data[1], hex(self.lief.header.data[0]))))
+            self.log("item", "{0:<17} : {1}".format("Nb of Link", "{0:<6} => id : {1}".format(self.lief.header.link[1], hex(self.lief.header.link[0]))))
+        elif lief.is_oat(self.filePath):
             self.log("info", "OAT header : ")
             self.log("item", "{0:<37} : {1}".format("Checksum", hex(self.lief.header.checksum)))
             self.log("item", "{0:<37} : {1}".format("ImageBase", hex(self.lief.imagebase) if self.lief.imagebase else '-'))
@@ -484,7 +517,7 @@ class Lief(Module):
             self.log("item", "{0:<37} : {1}".format("JNI DLSYM lookup offset", hex(self.lief.header.jni_dlsym_lookup_offset)))
             self.log("item", "{0:<37} : {1} bytes".format("Key value size", self.lief.header.key_value_size))
             self.log("item", "{0:<37} : {1}".format("Keys", ", ".join(self.liefConstToString(key) for key in self.lief.header.keys)))
-            self.log("item", "{0:<37} : {1}".format("Magic", "{0} ({1})".format(' '.join(hex(m) for m in self.lief.header.magic), ''.join(chr(m) for index, m in enumerate(self.lief.header.magic) if index < 3))))
+            self.log("item", "{0:<37} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<37} : {1}".format("Number of dex files", self.lief.header.nb_dex_files))
             self.log("item", "{0:<37} : {1}".format("Oat dex files offset", hex(self.lief.header.oat_dex_files_offset)))
             self.log("item", "{0:<37} : {1}".format("Quick generic JNI trampoline offset", hex(self.lief.header.quick_generic_jni_trampoline_offset)))
@@ -505,7 +538,7 @@ class Lief(Module):
             self.log("item", "{0:<28} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<28} : {1}".format("Number of symbols", self.lief.header.numberof_symbols))
             self.log("item", "{0:<28} : {1}".format("Pointer to symbol table", hex(self.lief.header.pointerto_symbol_table)))
-            self.log("item", "{0:<28} : {1}".format("Signature", "{0} ({1})".format(' '.join(hex(sig) for sig in self.lief.header.signature), ''.join(chr(sig) for sig in self.lief.header.signature))))
+            self.log("item", "{0:<28} : {1}".format("Magic", self.formatMagicList(self.lief.header.signature)))
             self.log("item", "{0:<28} : {1}".format("Date of compilation", self.fromTimestampToDate(self.lief.header.time_date_stamps)))
             self.log("item", "{0:<28} : {1:<6} bytes".format("Size of optional header", self.lief.header.sizeof_optional_header))
             if self.lief.header.sizeof_optional_header > 0:
@@ -537,7 +570,7 @@ class Lief(Module):
             self.log("item", "{0:<26} : {1}".format("Entrypoint", hex(self.lief.header.entrypoint)))
             self.log("item", "{0:<26} : {1}".format("ImageBase", hex(self.lief.imagebase) if self.lief.imagebase else '-'))
             self.log("item", "{0:<26} : {1} bytes".format("Header size", self.lief.header.header_size))
-            self.log("item", "{0:<26} : {1}".format("Identity", "{0} ({1})".format(' '.join(hex(iden) for iden in self.lief.header.identity), ''.join(chr(iden) for index, iden in enumerate(self.lief.header.identity) if index < 4))))
+            self.log("item", "{0:<26} : {1}".format("Identity", self.formatMagicList(self.lief.header.identity)))
             self.log("item", "{0:<26} : {1}".format("Endianness", self.liefConstToString(self.lief.header.identity_data)))
             self.log("item", "{0:<26} : {1}".format("Class", self.liefConstToString(self.lief.header.identity_class)))
             self.log("item", "{0:<26} : {1}".format("OS/ABI", self.liefConstToString(self.lief.header.identity_os_abi)))
@@ -813,18 +846,6 @@ class Lief(Module):
             self.log("item", "{0:<33} : {1}".format("Security cookie", hex(self.lief.load_configuration.security_cookie)))
         else:
             self.log("warning", "No load configuration found")
-
-    def dex2dexJson(self):
-        if not self.__check_session():
-            return
-        if lief.is_oat(self.filePath) and self.lief.dex2dex_json_info:
-            dex2dexInfo = json.loads(self.lief.dex2dex_json_info)
-            for fileName, descriptions in dex2dexInfo.items():
-                self.log("info", "Dex file : {0}".format(fileName))
-                for cl, _ in descriptions.items():
-                    self.log("item", "{0} : {1}".format("Class", cl))
-        else:
-            self.log("warning", "No dex2dex json found")
 
     def dynamicRelocations(self):
         if not self.__check_session():
@@ -1215,6 +1236,11 @@ class Lief(Module):
             self.log("warning", "No dexFile found")
 
     """Usefuls methods"""
+    
+    def formatMagicList(self, magicList):
+        if not magicList:
+            return None
+        return "{0} ({1})".format(''.join(chr(m) if chr(m) in string.printable.replace(string.whitespace, '') else "'\{0}'".format(m) for m in magicList), ' '.join(str(hex(m))[2:] for m in magicList))
 
     def liefConstToString(self, const):
         return str(const).split('.')[1]
@@ -1465,8 +1491,6 @@ class Lief(Module):
                 self.importedSymbols()
             elif self.args.objectrelocations:
                 self.objectRelocations()
-            elif self.args.dex2dexjsoninfos:
-                self.dex2dexJson()
             elif self.args.strip:
                 self.strip()
             elif self.args.gnu_hash:
@@ -1545,6 +1569,10 @@ class Lief(Module):
         else:
             if self.args.classes:
                 self.classes()
+            if self.args.header:
+                self.header()
+            if self.args.map:
+                self.map()
 
     """Main method"""
 
