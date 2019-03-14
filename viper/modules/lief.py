@@ -20,6 +20,17 @@ class Lief(Module):
     description = "Parse and extract information from ELF, PE, MachO, DEX, OAT, ART and VDEX formats"
     authors     = ["Jordan Samhi"]
 
+    """ Constants """
+
+    IS_PE       = False
+    IS_ELF      = False
+    IS_MACHO    = False
+    IS_OAT      = False
+    IS_DEX      = False
+    IS_VDEX     = False
+    IS_ART      = False
+    FILE_PATH   = None
+
     def __init__(self):
         super(Lief, self).__init__()
         subparsers  = self.parser.add_subparsers(dest="subname")
@@ -150,6 +161,9 @@ class Lief(Module):
         parser_vdex.add_argument("-v", "--androidversion",  action="store_true", help="Show VDEX android version")
         parser_vdex.add_argument("-x", "--extractdexfiles", nargs='?',           help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
 
+        parser_art = subparsers.add_parser("art", help="Extract information from ART files")
+        parser_art.add_argument("-H", "--header",          action="store_true", help="Show ART header")
+        parser_art.add_argument("-v", "--androidversion",  action="store_true", help="Show ART android version")
 
         self.lief = None
     
@@ -486,7 +500,28 @@ class Lief(Module):
     def header(self):
         if not self.__check_session():
             return
-        if lief.is_vdex(self.filePath):
+        if lief.is_art(self.filePath):
+            print(self.lief.header)
+            self.log("info", "ART header : ")
+            self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
+            self.log("item", "{0:<17} : {1}".format("Version", self.lief.header.version))
+            self.log("item", "{0:<17} : {1}".format("Image begin", hex(self.lief.header.image_begin)))
+            self.log("item", "{0:<17} : {1} bytes".format("Image size", self.lief.header.image_size))
+            self.log("item", "{0:<17} : {1}".format("Checksum", hex(self.lief.header.oat_checksum)))
+            self.log("item", "{0:<17} : {1}".format("OAT file begin", hex(self.lief.header.oat_file_begin)))
+            self.log("item", "{0:<17} : {1}".format("OAT file end", hex(self.lief.header.oat_file_end)))
+            self.log("item", "{0:<17} : {1}".format("Patch delta", self.lief.header.patch_delta))
+            self.log("item", "{0:<17} : {1} bytes".format("Pointer size", self.lief.header.pointer_size))
+            self.log("item", "{0:<17} : {1}".format("Compile pic", "Yes" if self.lief.header.compile_pic else "No"))
+            self.log("item", "{0:<17} : {1}".format("Nb of sections", self.lief.header.nb_sections))
+            self.log("item", "{0:<17} : {1}".format("Nb of methods", self.lief.header.nb_methods))
+            self.log("item", "{0:<17} : {1}".format("Boot image begin", hex(self.lief.header.boot_image_begin)))
+            self.log("item", "{0:<17} : {1} bytes".format("Boot image size", self.lief.header.boot_image_size))
+            self.log("item", "{0:<17} : {1}".format("Boot OAT begin", hex(self.lief.header.boot_oat_begin)))
+            self.log("item", "{0:<17} : {1} bytes".format("Boot OAT size", self.lief.header.boot_oat_size))
+            self.log("item", "{0:<17} : {1}".format("Storage mode", self.liefConstToString(self.lief.header.storage_mode)))
+            self.log("item", "{0:<17} : {1} bytes".format("Data size", self.lief.header.data_size))
+        elif lief.is_vdex(self.filePath):
             self.log("info", "VDEX header : ")
             self.log("item", "{0:<22} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<22} : {1}".format("Nb of DEX files", self.lief.header.nb_dex_files))
@@ -1177,6 +1212,8 @@ class Lief(Module):
                 self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief))), lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief)))))
             elif lief.is_vdex(self.filePath):
                 self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.filePath))), lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.filePath)))))
+            elif lief.is_art(self.filePath):
+                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.ART.android_version(lief.ART.version(self.filePath))), lief.Android.code_name(lief.ART.android_version(lief.ART.version(self.filePath)))))
             else:
                 self.log("warning", "No android version found")
         except Exception as e:
@@ -1365,6 +1402,13 @@ class Lief(Module):
         """
             :param str binary : The path of the binary file
         """
+        IS_PE       = lief.is_pe(binary)
+        IS_ELF      = lief.is_elf(binary) and not lief.is_oat(binary)
+        IS_MACHO    = lief.is_macho(binary)
+        IS_OAT      = lief.is_oat(binary)
+        IS_DEX      = lief.is_dex(binary)
+        IS_VDEX     = lief.is_vdex(binary)
+        IS_ART      = lief.is_art(binary)
         try:
             if lief.is_oat(binary) or lief.is_elf(binary) or lief.is_macho(binary) or lief.is_pe(binary):
                 return lief.parse(binary)
@@ -1372,12 +1416,14 @@ class Lief(Module):
                 return lief.DEX.parse(binary)
             elif lief.is_vdex(binary):
                 return lief.VDEX.parse(binary)
+            elif lief.is_art(binary):
+                return lief.ART.parse(binary)
         except Exception as e:
             raise e
 
     def wrongBinaryType(self, expected):
         self.log("error", "Wrong binary type")
-        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "DEX" if lief.is_dex(self.filePath) else "VDEX" if lief.is_vdex(self.filePath) else "UNKNOWN"
+        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "DEX" if lief.is_dex(self.filePath) else "VDEX" if lief.is_vdex(self.filePath) else "ART" if lief.is_art(self.filePath) else "UNKNOWN"
         self.log("info", "Expected filtype : {0}".format(expected))
         self.log("info", "Current filetype : {0}".format(fileType))
     
@@ -1641,6 +1687,17 @@ class Lief(Module):
             elif self.args.extractdexfiles:
                 self.extractDexFiles()
 
+    def art(self):
+        if not self.__check_session():
+            return
+        if not lief.is_art(self.filePath):
+            self.wrongBinaryType("ART")
+        else:
+            if self.args.header:
+                self.header()
+            elif self.args.androidversion:
+                self.androidVersion()
+
     """Main method"""
 
     def run(self):
@@ -1662,6 +1719,8 @@ class Lief(Module):
             self.dex()
         elif self.args.subname == "vdex":
             self.vdex()
+        elif self.args.subname == "art":
+            self.art()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
