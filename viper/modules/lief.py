@@ -197,7 +197,7 @@ class Lief(Module):
                     ':'.join(self.liefConstToString(flag) for flag in section.flags_list),
                     round(section.entropy, 4)
                 ])
-            self.log("info", "ELF sections : ")
+            self.log("info", "Sections : ")
             self.log("table", dict(header=["Name", "Address", "RVA", "Size", "Type", "Flags", "Entropy"], rows=rows))
 
         elif self.IS_PE:
