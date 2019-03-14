@@ -20,21 +20,21 @@ class Lief(Module):
     description = "Parse and extract information from ELF, PE, MachO, DEX, OAT, ART and VDEX formats"
     authors     = ["Jordan Samhi"]
 
-    """ Constants """
-
-    IS_PE       = False
-    IS_ELF      = False
-    IS_MACHO    = False
-    IS_OAT      = False
-    IS_DEX      = False
-    IS_VDEX     = False
-    IS_ART      = False
-    FILE_PATH   = None
-
     def __init__(self):
         super(Lief, self).__init__()
         subparsers  = self.parser.add_subparsers(dest="subname")
         
+        """ Constants """
+
+        self.IS_PE       = False
+        self.IS_ELF      = False
+        self.IS_MACHO    = False
+        self.IS_OAT      = False
+        self.IS_DEX      = False
+        self.IS_VDEX     = False
+        self.IS_ART      = False
+        self.FILE_PATH   = None
+
         parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
         parser_pe.add_argument("-A", "--architecture",      action="store_true", help="Show PE architecture")
         parser_pe.add_argument("-b", "--debug",             action="store_true", help="Show PE debug information")
@@ -174,7 +174,7 @@ class Lief(Module):
         if not self.lief:
             try:
                 self.lief       = self.parseBinary(__sessions__.current.file.path)
-                self.filePath   = __sessions__.current.file.path
+                self.FILE_PATH   = __sessions__.current.file.path
             except lief.parser_error as e:
                 self.log("error", "Unable to parse file : {0}".format(e))
                 return False
@@ -186,7 +186,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
+        if self.IS_OAT or self.IS_ELF:
             for section in self.lief.sections:
                 rows.append([
                     section.name,
@@ -200,7 +200,7 @@ class Lief(Module):
             self.log("info", "ELF sections : ")
             self.log("table", dict(header=["Name", "Address", "RVA", "Size", "Type", "Flags", "Entropy"], rows=rows))
 
-        elif lief.is_pe(self.filePath):
+        elif self.IS_PE:
             for section in self.lief.sections:
                 rows.append([
                     section.name,
@@ -212,7 +212,7 @@ class Lief(Module):
                 ])
             self.log("info", "PE sections : ")
             self.log("table", dict(header=["Name","RVA", "VirtualSize", "PointerToRawData", "RawDataSize", "Entropy"], rows=rows))
-        elif lief.is_macho(self.filePath):
+        elif self.IS_MACHO:
             for section in self.lief.sections:
                 rows.append([
                     section.name,
@@ -232,7 +232,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
+        if self.IS_OAT or self.IS_ELF:
             for segment in self.lief.segments:
                 flags = []
                 if lief.ELF.SEGMENT_FLAGS.R in segment:
@@ -254,7 +254,7 @@ class Lief(Module):
                 ])
             self.log("info", "ELF segments : ")
             self.log("table", dict(header=["Type", "PhysicalAddress", "FileSize", "VirtuAddr", "MemSize", "Flags", "Entropy"], rows=rows))
-        elif lief.is_macho(self.filePath):
+        elif self.IS_MACHO:
             self.log("info", "MachO segments : ")
             for segment in self.lief.segments:
                 self.log("info", "Information of segment {0} : ".format(segment.name))
@@ -288,13 +288,13 @@ class Lief(Module):
     def type(self):
         if not self.__check_session():
             return
-        if lief.is_oat(self.filePath):
+        if self.IS_OAT:
             self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.type)))
-        elif lief.is_elf(self.filePath):
+        elif self.IS_ELF:
             self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.header.file_type)))
-        elif lief.is_pe(self.filePath):
-            self.log("info", "Type : {0}".format(self.liefConstToString(lief.PE.get_type(self.filePath))))
-        elif lief.is_macho(self.filePath):
+        elif self.IS_PE:
+            self.log("info", "Type : {0}".format(self.liefConstToString(lief.PE.get_type(self.FILE_PATH))))
+        elif self.IS_MACHO:
             self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.header.file_type)))
         else:
             self.log("warning", "No type found")
@@ -302,13 +302,13 @@ class Lief(Module):
     def entrypoint(self):
         if not self.__check_session():
             return
-        if lief.is_oat(self.filePath):
+        if self.IS_OAT:
             self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
-        elif lief.is_elf(self.filePath):
+        elif self.IS_ELF:
             self.log("info", "Entrypoint : {0}".format(hex(self.lief.header.entrypoint)))
-        elif lief.is_pe(self.filePath):
+        elif self.IS_PE:
             self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
-        elif lief.is_macho(self.filePath) and self.lief.has_entrypoint:
+        elif self.IS_MACHO and self.lief.has_entrypoint:
             self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
         else:
             self.log("warning", "No entrypoint found")
@@ -316,11 +316,11 @@ class Lief(Module):
     def architecture(self):
         if not self.__check_session():
             return
-        if lief.is_elf(self.filePath):
+        if self.IS_ELF:
             self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.machine_type)))
-        elif lief.is_pe(self.filePath):
+        elif self.IS_PE:
             self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.machine)))
-        elif lief.is_macho(self.filePath):
+        elif self.IS_MACHO:
             self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.cpu_type)))
         else:
             self.log("warning", "No architecture found")
@@ -336,7 +336,7 @@ class Lief(Module):
     def interpreter(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) and self.lief.has_interpreter) or (lief.is_elf(self.filePath) and self.lief.has_interpreter):
+        if (self.IS_OAT and self.lief.has_interpreter) or (self.IS_ELF and self.lief.has_interpreter):
             self.log("info", "Interpreter : {0}".format(self.lief.interpreter))
         else:
             self.log("warning", "No interpreter found")
@@ -345,10 +345,10 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath) or lief.is_pe(self.filePath)) and self.lief.libraries:
+        if (self.IS_OAT or self.IS_ELF or self.IS_PE) and self.lief.libraries:
             for lib in self.lief.libraries:
                 self.log("info", lib)
-        elif lief.is_macho(self.filePath) and self.lief.libraries:
+        elif self.IS_MACHO and self.lief.libraries:
             for library in self.lief.libraries:
                 rows.append([
                     self.liefConstToString(library.command),
@@ -367,18 +367,22 @@ class Lief(Module):
     def symbols(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.symbols:
+        rows = []
+        if (self.IS_OAT or self.IS_ELF) and self.lief.symbols:
             self.printElfAndOatSymbols(self.lief.symbols, "Static and dynamic symbols")
-        elif lief.is_macho(self.filePath) and self.lief.symbols:
+        elif self.IS_MACHO and self.lief.symbols:
             self.log("info", "MachO symbols : ")
             for symbol in self.lief.symbols:
-                self.log("info", "Information of symbol : ")
-                self.log("item", "{0:<19} : {1}".format("Name", symbol.name))
-                self.log("item", "{0:<19} : {1}".format("description", hex(symbol.description)))
-                self.log("item", "{0:<19} : {1}".format("Number of sections", symbol.numberof_sections))
-                self.log("item", "{0:<19} : {1}".format("Type", hex(symbol.type)))
-                self.log("item", "{0:<19} : {1}".format("Value", hex(symbol.value)))
-                self.log("item", "{0:<19} : {1}".format("Origin", self.liefConstToString(symbol.origin)))
+                rows.append([
+                    symbol.name,
+                    hex(symbol.description),
+                    symbol.numberof_sections,
+                    hex(symbol.type),
+                    hex(symbol.value),
+                    self.liefConstToString(symbol.origin)
+                ])
+            self.log("info", "Mach-O symbols : ")
+            self.log("table", dict(header=["Name", "Description", "Nb of sections", "Type", "Value", "Origin"],rows=rows))
         else:
             self.log("warning", "No symbol found")
 
@@ -386,7 +390,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_pe(self.filePath):
+        if self.IS_PE:
             for lib in self.lief.libraries:
                 self.log("info", lib)
         else:
@@ -396,7 +400,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_pe(self.filePath):
+        if self.IS_PE:
             for imp in self.lief.imports:
                 self.log("info", "{0}".format(imp.name))
                 for function in imp.entries:
@@ -407,7 +411,7 @@ class Lief(Module):
     def format(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
+        if self.IS_PE:
             self.log("info", "Format : {0}".format(self.liefConstToString(self.lief.format)))
         else:
             self.log("warning", "No format found")
@@ -415,7 +419,7 @@ class Lief(Module):
     def imphash(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
+        if self.IS_PE:
             self.log("info", "Imphash : {0}".format(lief.PE.get_imphash(self.lief)))
         else:
             self.log("warning", "No imphash found")
@@ -423,7 +427,7 @@ class Lief(Module):
     def gnu_hash(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) and self.lief.use_gnu_hash) or (lief.is_elf(self.filePath) and not lief.is_oat(self.filePath) and self.lief.gnu_hash):
+        if (self.IS_OAT and self.lief.use_gnu_hash) or (self.IS_ELF and not self.IS_OAT and self.lief.gnu_hash):
             self.log("info", "GNU hash : ")
             self.log("item", "{0} : {1}".format("Number of buckets", self.lief.gnu_hash.nb_buckets))
             self.log("item", "{0} : {1}".format("First symbol index", hex(self.lief.gnu_hash.symbol_index)))
@@ -436,7 +440,7 @@ class Lief(Module):
     def compileDate(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
+        if self.IS_PE:
             self.log("info", "Compilation date : {0}".format(self.fromTimestampToDate(self.lief.header.time_date_stamps)))
         else:
             self.log("warning", "No compilation date found")
@@ -444,7 +448,7 @@ class Lief(Module):
     def strip(self):
         if not self.__check_session():
             return
-        if lief.is_oat(self.filePath) or lief.is_elf(self.filePath):
+        if self.IS_OAT or self.IS_ELF:
             self.lief.strip()
             self.log("success", "The binary has been stripped")
             self.log("warning", "Do not forget --write (-w) option if you want your stripped binary to be saved")
@@ -469,7 +473,7 @@ class Lief(Module):
     def notes(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.has_notes:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.has_notes:
             self.log("info", "Notes : ")
             for note in self.lief.notes:
                 self.log("success", "Information of {0} note : ".format(note.name))
@@ -485,7 +489,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_dex(self.filePath) and self.lief.map:
+        if self.IS_DEX and self.lief.map:
             for item in self.lief.map.items:
                 rows.append([
                     self.liefConstToString(item.type),
@@ -500,8 +504,7 @@ class Lief(Module):
     def header(self):
         if not self.__check_session():
             return
-        if lief.is_art(self.filePath):
-            print(self.lief.header)
+        if self.IS_ART:
             self.log("info", "ART header : ")
             self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<17} : {1}".format("Version", self.lief.header.version))
@@ -521,7 +524,7 @@ class Lief(Module):
             self.log("item", "{0:<17} : {1} bytes".format("Boot OAT size", self.lief.header.boot_oat_size))
             self.log("item", "{0:<17} : {1}".format("Storage mode", self.liefConstToString(self.lief.header.storage_mode)))
             self.log("item", "{0:<17} : {1} bytes".format("Data size", self.lief.header.data_size))
-        elif lief.is_vdex(self.filePath):
+        elif self.IS_VDEX:
             self.log("info", "VDEX header : ")
             self.log("item", "{0:<22} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<22} : {1}".format("Nb of DEX files", self.lief.header.nb_dex_files))
@@ -529,7 +532,7 @@ class Lief(Module):
             self.log("item", "{0:<22} : {1} bytes".format("Size of deps section", self.lief.header.verifier_deps_size))
             self.log("item", "{0:<22} : {1} bytes".format("Size of all DEX files", self.lief.header.dex_size))
             self.log("item", "{0:<22} : {1}".format("Version", self.lief.header.version))
-        elif lief.is_dex(self.filePath):
+        elif self.IS_DEX:
             self.log("info", "DEX header : ")
             self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<17} : {1}".format("Checksum", hex(self.lief.header.checksum)))
@@ -548,7 +551,7 @@ class Lief(Module):
             self.log("item", "{0:<17} : {1}".format("Nb of Types", "{0:<6} => id : {1}".format(self.lief.header.types[1], hex(self.lief.header.types[0]))))
             self.log("item", "{0:<17} : {1}".format("Nb of Data", "{0:<6} => id : {1}".format(self.lief.header.data[1], hex(self.lief.header.data[0]))))
             self.log("item", "{0:<17} : {1}".format("Nb of Link", "{0:<6} => id : {1}".format(self.lief.header.link[1], hex(self.lief.header.link[0]))))
-        elif lief.is_oat(self.filePath):
+        elif self.IS_OAT:
             self.log("info", "OAT header : ")
             self.log("item", "{0:<37} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<37} : {1}".format("Checksum", hex(self.lief.header.checksum)))
@@ -570,14 +573,14 @@ class Lief(Module):
             self.log("item", "{0:<37} : {1}".format("Quick resolution trampoline offset", hex(self.lief.header.quick_resolution_trampoline_offset)))
             self.log("item", "{0:<37} : {1}".format("Quick to interpreter bridge offset", hex(self.lief.header.quick_to_interpreter_bridge_offset)))
             self.log("item", "{0:<37} : {1}".format("Version", self.lief.header.version))
-        elif lief.is_macho(self.filePath):
+        elif self.IS_MACHO:
             self.log("info", "MachO header : ")
             self.log("item", "{0:<15} : {1}".format("CPU type", self.liefConstToString(self.lief.header.cpu_type)))
             self.log("item", "{0:<15} : {1}".format("File type", self.liefConstToString(self.lief.header.file_type)))
             self.log("item", "{0:<15} : {1}".format("Number of cmds", self.lief.header.nb_cmds))
             self.log("item", "{0:<15} : {1} bytes".format("Size of cmds", self.lief.header.sizeof_cmds))
             self.log("item", "{0:<15} : {1}".format("Flags", ':'.join(self.liefConstToString(flag) for flag in self.lief.header.flags_list)))
-        elif lief.is_pe(self.filePath):
+        elif self.IS_PE:
             self.log("info", "PE header : ")
             self.log("item", "{0:<28} : {1}".format("Magic", self.formatMagicList(self.lief.header.signature)))
             self.log("item", "{0:<28} : {1}".format("Type", self.liefConstToString(self.lief.header.machine)))
@@ -609,7 +612,7 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1:<8} bytes".format("Size of Uninitialized data", self.lief.optional_header.sizeof_uninitialized_data))
                 self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack commited", self.lief.optional_header.sizeof_stack_commit))
                 self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
-        elif lief.is_elf(self.filePath):
+        elif self.IS_ELF:
             self.log("info", "ELF header : ")
             self.log("item", "{0:<26} : {1}".format("Magic", self.formatMagicList(self.lief.header.identity)))
             self.log("item", "{0:<26} : {1}".format("Type", self.liefConstToString(self.lief.header.file_type)))
@@ -634,7 +637,7 @@ class Lief(Module):
     def codeSignature(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.has_code_signature:
+        if self.IS_MACHO and self.lief.has_code_signature:
             rows = []
             rows.append([
                 self.liefConstToString(self.lief.code_signature.command),
@@ -653,10 +656,10 @@ class Lief(Module):
         if not self.__check_session():
             return
         if (
-                (lief.is_macho(self.filePath) and self.lief.exported_functions) or 
-                (lief.is_oat(self.filePath) and self.lief.exported_functions) or
-                (lief.is_elf(self.filePath) and self.lief.exported_functions) or 
-                (lief.is_pe(self.filePath) and self.lief.exported_functions)
+                (self.IS_MACHO and self.lief.exported_functions) or
+                (self.IS_OAT and self.lief.exported_functions) or
+                (self.IS_ELF and self.lief.exported_functions) or
+                (self.IS_PE and self.lief.exported_functions)
         ):
             self.log("info", "Exported functions : ")
             for function in self.lief.exported_functions:
@@ -667,9 +670,9 @@ class Lief(Module):
     def exportedSymbols(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.exported_symbols:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.exported_symbols:
             self.printElfAndOatSymbols(self.lief.exported_symbols, "Exported symbols")
-        elif lief.is_macho(self.filePath) and self.lief.exported_symbols:
+        elif self.IS_MACHO and self.lief.exported_symbols:
             rows = []
             for symbol in self.lief.exported_symbols:
                 rows.append([
@@ -687,10 +690,10 @@ class Lief(Module):
         if not self.__check_session():
             return
         if (
-                (lief.is_macho(self.filePath) and self.lief.imported_functions) or 
-                (lief.is_oat(self.filePath) and self.lief.imported_functions) or
-                (lief.is_elf(self.filePath) and self.lief.imported_functions) or 
-                (lief.is_pe(self.filePath) and self.lief.imported_functions)
+                (self.IS_MACHO and self.lief.imported_functions) or
+                (self.IS_OAT and self.lief.imported_functions) or
+                (self.IS_ELF and self.lief.imported_functions) or
+                (self.IS_PE and self.lief.imported_functions)
         ):
             self.log("info", "Imported functions : ")
             for function in self.lief.imported_functions:
@@ -702,9 +705,9 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.imported_symbols:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.imported_symbols:
             self.printElfAndOatSymbols(self.lief.imported_symbols, "Imported symbols")
-        elif lief.is_macho(self.filePath) and self.lief.imported_symbols:
+        elif self.IS_MACHO and self.lief.imported_symbols:
             for symbol in self.lief.imported_symbols:
                 rows.append([
                     symbol.name,
@@ -720,7 +723,7 @@ class Lief(Module):
     def sourceVersion(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.has_source_version:
+        if self.IS_MACHO and self.lief.has_source_version:
             self.log("info", "Source version : ")
             self.log("item", "{0:<10} : {1}".format("command", self.liefConstToString(self.lief.source_version.command)))
             self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.source_version.command_offset)))
@@ -732,7 +735,7 @@ class Lief(Module):
     def subFramework(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.has_sub_framework:
+        if self.IS_MACHO and self.lief.has_sub_framework:
             self.log("info", "Sub-framework : ")
             self.log("item", "{0:<10} : {1}".format("Command", self.liefConstToString(self.lief.sub_framework.command)))
             self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.sub_framework.command_offset)))
@@ -744,7 +747,7 @@ class Lief(Module):
     def uuid(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.has_uuid:
+        if self.IS_MACHO and self.lief.has_uuid:
             self.log("info", "Uuid : ")
             self.log("item", "{0:<10} : {1}".format("Command", self.liefConstToString(self.lief.uuid.command)))
             self.log("item", "{0:<10} : {1}".format("Offset", hex(self.lief.uuid.command_offset)))
@@ -756,7 +759,7 @@ class Lief(Module):
     def dataInCode(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.has_data_in_code:
+        if self.IS_MACHO and self.lief.has_data_in_code:
             self.log("info", "Data in code : ")
             self.log("item", "{0:<12} : {1}".format("Command", self.liefConstToString(self.lief.data_in_code.command)))
             self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.data_in_code.command_offset)))
@@ -768,7 +771,7 @@ class Lief(Module):
     def mainCommand(self):
         if not self.__check_session():
             return
-        if lief.is_macho(self.filePath) and self.lief.has_main_command:
+        if self.IS_MACHO and self.lief.has_main_command:
             self.log("info", "Main command : ")
             self.log("item", "{0:<12} : {1}".format("Command", self.liefConstToString(self.lief.main_command.command)))
             self.log("item", "{0:<12} : {1}".format("Offset", hex(self.lief.main_command.command_offset)))
@@ -782,7 +785,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_macho(self.filePath) and self.lief.commands:
+        if self.IS_MACHO and self.lief.commands:
             for command in self.lief.commands:
                 rows.append([
                     self.liefConstToString(command.command),
@@ -796,7 +799,7 @@ class Lief(Module):
     def dosHeader(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
+        if self.IS_PE:
             self.log("info", "DOS header : ")
             self.log("item", "{0:<28} : {1}".format("Magic", hex(self.lief.dos_header.magic)))
             self.log("item", "{0:<28} : {1}".format("Address of new EXE header", hex(self.lief.dos_header.addressof_new_exeheader)))
@@ -822,7 +825,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_pe(self.filePath) and self.lief.data_directories:
+        if self.IS_PE and self.lief.data_directories:
             for datadirectory in self.lief.data_directories:
                 rows.append([
                     hex(datadirectory.rva),
@@ -838,7 +841,7 @@ class Lief(Module):
     def dosStub(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath):
+        if self.IS_PE:
             rawDosStub = ''.join(chr(stub) if chr(stub) in string.printable.replace(string.whitespace, '') else '.' for stub in self.lief.dos_stub)
             printableDosStub = [rawDosStub[i:i+16] for i in range(0, len(rawDosStub), 16)]
             self.log("info", "{0}{1}".format('Dos stub : \n','\n'.join(printableDosStub)))
@@ -848,7 +851,7 @@ class Lief(Module):
     def debug(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_debug:
+        if self.IS_PE and self.lief.has_debug:
             self.log("info", "Debug information : ")
             self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(self.lief.debug.addressof_rawdata)))
             self.log("item", "{0:<28} : {1}".format("Minor version of debug data", self.lief.debug.minor_version))
@@ -869,7 +872,7 @@ class Lief(Module):
     def loadConfiguration(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_configuration:
+        if self.IS_PE and self.lief.has_configuration:
             self.log("info", "Load configuration : ")
             self.log("item", "{0:<33} : {1}".format("Version", self.liefConstToString(self.lief.load_configuration.version)))
             self.log("item", "{0:<33} : {1}".format("Characteristics", hex(self.lief.load_configuration.characteristics)))
@@ -896,7 +899,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_oat(self.filePath) and self.lief.dynamic_relocations:
+        if self.IS_OAT and self.lief.dynamic_relocations:
             for dynamicRelocation in self.lief.dynamic_relocations:
                 rows.append([
                     hex(dynamicRelocation.address),
@@ -913,7 +916,7 @@ class Lief(Module):
     def objectRelocations(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.object_relocations:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.object_relocations:
             self.printElfAndOatRelocations(self.lief.object_relocations, "Object relocations")
         else:
             self.log("warning", "No object relocation found")
@@ -922,9 +925,9 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.relocations:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.relocations:
             self.printElfAndOatRelocations(self.lief.relocations, "Relocations")
-        elif lief.is_pe(self.filePath) and self.lief.has_relocations:
+        elif self.IS_PE and self.lief.has_relocations:
             for relocation in self.lief.relocations:
                 for entry in relocation.entries:
                     rows.append([
@@ -943,7 +946,7 @@ class Lief(Module):
     def resources(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_resources:
+        if self.IS_PE and self.lief.has_resources:
             self.log("info", "PE resources : ")
             self.log("item", "{0:<17} : {1}".format("Name", self.lief.resources.name if self.lief.resources.has_name else "No name"))
             self.log("item", "{0:<17} : {1}".format("Number of childs", len(self.lief.resources.childs)))
@@ -956,7 +959,7 @@ class Lief(Module):
     def tls(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_tls:
+        if self.IS_PE and self.lief.has_tls:
             self.log("info", "PE tls : ")
             self.log("item", "{0:<21} : {1}".format("Address of callbacks", hex(self.lief.tls.addressof_callbacks)))
             self.log("item", "{0:<21} : {1}".format("Address of index", hex(self.lief.tls.addressof_index)))
@@ -974,7 +977,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_pe(self.filePath) and self.lief.has_rich_header:
+        if self.IS_PE and self.lief.has_rich_header:
             self.log("info", "Rich header key : {0}".format(hex(self.lief.rich_header.key)))
             self.log("info", "Rich header entries : ")
             for entry in self.lief.rich_header.entries:
@@ -990,7 +993,7 @@ class Lief(Module):
     def signature(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_signature:
+        if self.IS_PE and self.lief.has_signature:
             self.log("info", "PE signature")
             self.log("item", "{0:<20} : {1}".format("Version", self.lief.signature.version))
             self.log("item", "{0:<20} : {1}".format("Digestion algorithm", lief.PE.oid_to_string(self.lief.signature.digest_algorithm)))
@@ -1014,7 +1017,7 @@ class Lief(Module):
     def manifest(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_manifest:
+        if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_manifest:
             self.log("info", "PE manifest : \n{0}".format(self.lief.resources_manager.manifest))
         else:
             self.log("warning", "No manifest found")
@@ -1022,7 +1025,7 @@ class Lief(Module):
     def resourcesTypes(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_type:
+        if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_type:
             self.log("info", "Resources types availables : {0}".format(", ".join(self.liefConstToString(rType) for rType in self.lief.resources_manager.types_available)))
         else:
             self.log("warning", "No resources type found")
@@ -1030,7 +1033,7 @@ class Lief(Module):
     def langs(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.langs_available:
+        if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.langs_available:
             self.log("info", "Langs availables      : {0}".format(", ".join(self.liefConstToString(lang) for lang in self.lief.resources_manager.langs_available)))
             self.log("info", "Sublangs availables   : {0}".format(", ".join(self.liefConstToString(sublang) for sublang in self.lief.resources_manager.sublangs_available)))
         else:
@@ -1040,7 +1043,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_icons:
+        if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_icons:
             for icon in self.lief.resources_manager.icons:
                 rows.append([
                     icon.id,
@@ -1058,7 +1061,7 @@ class Lief(Module):
     def extractIcons(self):
         if not self.__check_session():
             return
-        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_icons:
+        if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_icons:
             iconExists = False
             def iconProcessing(icon, destFolder):
                 fileName = "{0}{1}_{2}.ico".format(destFolder, self.lief.name.replace('.', '_'), icon.id)
@@ -1088,7 +1091,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_pe(self.filePath) and self.lief.has_resources and self.lief.resources_manager.has_dialogs:
+        if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_dialogs:
             for index, dialog in enumerate(self.lief.resources_manager.dialogs):
                 self.log("info", "Dialog N°{0}".format(index+1))
                 self.log("item", "{0:<31} : {1}".format("Title", dialog.title if dialog.title else '-'))
@@ -1122,7 +1125,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_oat(self.filePath) and self.lief.classes:
+        if self.IS_OAT and self.lief.classes:
             for cl in self.lief.classes:
                 rows.append([
                     self.prettyJavaClassFullName(cl.fullname),
@@ -1133,7 +1136,7 @@ class Lief(Module):
                 ])
             self.log("info", "OAT classes : ")
             self.log("table", dict(header=["Name", "index", "Methods", "Status", "Type"], rows=rows))
-        elif lief.is_dex(self.filePath) and self.lief.classes:
+        elif self.IS_DEX and self.lief.classes:
             for cl in self.lief.classes:
                 rows.append([
                     cl.pretty_name,
@@ -1168,7 +1171,7 @@ class Lief(Module):
             self.log("item", "{0:<17} : {1}".format("Virtual method", '-' if not method else "Yes" if method.is_virtual else "No"))
             self.log("item", "{0:<17} : {1}".format("Parameters type", '-' if not method else ", ".join(self.liefConstToString(paramType.value) if paramType.type == lief.DEX.Type.TYPES.PRIMITIVE else paramType.value.pretty_name if paramType.type == lief.DEX.Type.TYPES.CLASS else '-' for paramType in method.prototype.parameters_type) if method.prototype.parameters_type else '-'))
             self.log("item", "{0:<17} : {1}".format("Return type", '-' if not method else self.liefConstToString(method.prototype.return_type.value) if method.prototype.return_type.type == lief.DEX.Type.TYPES.PRIMITIVE else method.prototype.return_type.value.pretty_name if method.prototype.return_type.type == lief.DEX.Type.TYPES.CLASS else '-'))
-        if (lief.is_oat(self.filePath) or lief.is_dex(self.filePath)) and self.lief.methods:
+        if (self.IS_OAT or self.IS_DEX) and self.lief.methods:
             if self.args.classname:
                 className = self.args.classname[0]
                 classExists = False
@@ -1182,14 +1185,14 @@ class Lief(Module):
                                     if self.args.name:
                                         if self.args.name[0] == method.name:
                                             methodExists = True
-                                            if lief.is_oat(self.filePath):
+                                            if self.IS_OAT:
                                                 oatMethodProcessing(method)
-                                            elif lief.is_dex(self.filePath):
+                                            elif self.IS_DEX:
                                                 dexMethodProcessing(method)
                                     else:
-                                        if lief.is_oat(self.filePath):
+                                        if self.IS_OAT:
                                             oatMethodProcessing(method)
-                                        elif lief.is_dex(self.filePath):
+                                        elif self.IS_DEX:
                                             dexMethodProcessing(method)
                                 if self.args.name and not methodExists:
                                     self.log("error", "Method does not exist in this class")
@@ -1208,12 +1211,12 @@ class Lief(Module):
         if not self.__check_session():
             return
         try:
-            if lief.is_oat(self.filePath):
+            if self.IS_OAT:
                 self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief))), lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief)))))
-            elif lief.is_vdex(self.filePath):
-                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.filePath))), lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.filePath)))))
-            elif lief.is_art(self.filePath):
-                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.ART.android_version(lief.ART.version(self.filePath))), lief.Android.code_name(lief.ART.android_version(lief.ART.version(self.filePath)))))
+            elif self.IS_VDEX:
+                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH))), lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH)))))
+            elif self.IS_ART:
+                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.ART.android_version(lief.ART.version(self.FILE_PATH))), lief.Android.code_name(lief.ART.android_version(lief.ART.version(self.FILE_PATH)))))
             else:
                 self.log("warning", "No android version found")
         except Exception as e:
@@ -1223,7 +1226,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if (lief.is_oat(self.filePath) or lief.is_vdex(self.filePath)) and self.lief.dex_files:
+        if (self.IS_OAT or self.IS_VDEX) and self.lief.dex_files:
             for dexFile in self.lief.dex_files:
                 rows.append([
                     dexFile.name,
@@ -1240,7 +1243,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         rows = []
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.dynamic_entries:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.dynamic_entries:
             for dynamicEntry in self.lief.dynamic_entries:
                 rows.append([
                     self.liefConstToString(dynamicEntry.tag),
@@ -1254,7 +1257,7 @@ class Lief(Module):
     def dynamicSymbols(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.dynamic_symbols:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.dynamic_symbols:
             self.printElfAndOatSymbols(self.lief.dynamic_symbols, "Dynamic symbols")
         else:
             self.log("warning", "No dynamic symbol found")
@@ -1262,7 +1265,7 @@ class Lief(Module):
     def staticSymbols(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) or lief.is_elf(self.filePath)) and self.lief.static_symbols:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.static_symbols:
             self.printElfAndOatSymbols(self.lief.static_symbols, "Static symbols")
         else:
             self.log("warning", "No static symbol found")
@@ -1270,7 +1273,7 @@ class Lief(Module):
     def extractDexFiles(self):
         if not self.__check_session():
             return
-        if (lief.is_oat(self.filePath) or lief.is_vdex(self.filePath)) and self.lief.dex_files:
+        if (self.IS_OAT or self.IS_VDEX) and self.lief.dex_files:
             dexFileExists = False
             def dexFileProcessing(dexFile, destFolder):
                 fileName = "{0}{1}_{2}".format(destFolder, hex(dexFile.header.checksum), dexFile.name)
@@ -1299,7 +1302,7 @@ class Lief(Module):
     def strings(self):
         if not self.__check_session():
             return
-        if lief.is_dex(self.filePath) and self.lief.strings:
+        if self.IS_DEX and self.lief.strings:
             self.log("info", "DEX strings : ")
             for string in self.lief.strings:
                 if string:
@@ -1402,28 +1405,28 @@ class Lief(Module):
         """
             :param str binary : The path of the binary file
         """
-        IS_PE       = lief.is_pe(binary)
-        IS_ELF      = lief.is_elf(binary) and not lief.is_oat(binary)
-        IS_MACHO    = lief.is_macho(binary)
-        IS_OAT      = lief.is_oat(binary)
-        IS_DEX      = lief.is_dex(binary)
-        IS_VDEX     = lief.is_vdex(binary)
-        IS_ART      = lief.is_art(binary)
+        self.IS_PE       = lief.is_pe(binary)
+        self.IS_ELF      = lief.is_elf(binary) and not lief.is_oat(binary)
+        self.IS_MACHO    = lief.is_macho(binary)
+        self.IS_OAT      = lief.is_oat(binary)
+        self.IS_DEX      = lief.is_dex(binary)
+        self.IS_VDEX     = lief.is_vdex(binary)
+        self.IS_ART      = lief.is_art(binary)
         try:
-            if lief.is_oat(binary) or lief.is_elf(binary) or lief.is_macho(binary) or lief.is_pe(binary):
+            if self.IS_OAT or self.IS_ELF or self.IS_MACHO or self.IS_PE:
                 return lief.parse(binary)
-            elif lief.is_dex(binary):
+            elif self.IS_DEX:
                 return lief.DEX.parse(binary)
-            elif lief.is_vdex(binary):
+            elif self.IS_VDEX:
                 return lief.VDEX.parse(binary)
-            elif lief.is_art(binary):
+            elif self.IS_ART:
                 return lief.ART.parse(binary)
         except Exception as e:
             raise e
 
     def wrongBinaryType(self, expected):
         self.log("error", "Wrong binary type")
-        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "DEX" if lief.is_dex(self.filePath) else "VDEX" if lief.is_vdex(self.filePath) else "ART" if lief.is_art(self.filePath) else "UNKNOWN"
+        fileType =  "MACH-O" if self.IS_MACHO else "OAT" if self.IS_OAT else "PE" if self.IS_PE else "ELF" if self.IS_ELF else "DEX" if self.IS_DEX else "VDEX" if self.IS_VDEX else "ART" if self.IS_ART else "UNKNOWN"
         self.log("info", "Expected filtype : {0}".format(expected))
         self.log("info", "Current filetype : {0}".format(fileType))
     
@@ -1432,7 +1435,7 @@ class Lief(Module):
     def pe(self):
         if not self.__check_session():
             return
-        if not lief.is_pe(self.filePath):
+        if not self.IS_PE:
             self.wrongBinaryType("PE")
         else:
             if self.args.sections:
@@ -1497,7 +1500,7 @@ class Lief(Module):
     def elf(self):
         if not self.__check_session():
             return
-        if not lief.is_elf(self.filePath) or lief.is_oat(self.filePath):
+        if not self.IS_ELF or self.IS_OAT:
             self.wrongBinaryType("ELF")
         else:
             if self.args.segments:
@@ -1550,7 +1553,7 @@ class Lief(Module):
     def oat(self):
         if not self.__check_session():
             return
-        if not lief.is_oat(self.filePath):
+        if not self.IS_OAT:
             self.wrongBinaryType("OAT")
         else:
             if self.args.segments:
@@ -1613,7 +1616,7 @@ class Lief(Module):
     def macho(self):
         if not self.__check_session():
             return
-        if not lief.is_macho(self.filePath):
+        if not self.IS_MACHO:
             self.wrongBinaryType("MACH-O")
         else:
             if self.args.header:
@@ -1658,7 +1661,7 @@ class Lief(Module):
     def dex(self):
         if not self.__check_session():
             return
-        if not lief.is_dex(self.filePath):
+        if not self.IS_DEX:
             self.wrongBinaryType("DEX")
         else:
             if self.args.classes:
@@ -1675,7 +1678,7 @@ class Lief(Module):
     def vdex(self):
         if not self.__check_session():
             return
-        if not lief.is_vdex(self.filePath):
+        if not self.IS_VDEX:
             self.wrongBinaryType("VDEX")
         else:
             if self.args.header:
@@ -1690,7 +1693,7 @@ class Lief(Module):
     def art(self):
         if not self.__check_session():
             return
-        if not lief.is_art(self.filePath):
+        if not self.IS_ART:
             self.wrongBinaryType("ART")
         else:
             if self.args.header:
