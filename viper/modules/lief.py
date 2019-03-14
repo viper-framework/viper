@@ -135,9 +135,13 @@ class Lief(Module):
         parser_oat.add_argument("-z", "--strip",                action="store_true", help="Strip OAT binary")
         
         parser_dex = subparsers.add_parser("dex", help="Extract information from DEX files")
-        parser_dex.add_argument("-c", "--classes",  action="store_true", help="Show DEX classes")
+        parser_dex.add_argument("-c", "--classname",nargs=1,             help="Full name of class (Lcom/android/...;). Used with --methods", metavar="fullname", type=str)
+        parser_dex.add_argument("-C", "--classes",  action="store_true", help="Show DEX classes")
         parser_dex.add_argument("-H", "--header",   action="store_true", help="Show DEX header")
-        parser_dex.add_argument("-m", "--map",      action="store_true", help="Show DEX map items")
+        parser_dex.add_argument("-m", "--methods",  action="store_true", help="Show DEX methods by class")
+        parser_dex.add_argument("-M", "--map",      action="store_true", help="Show DEX map items")
+        parser_dex.add_argument("-n", "--name",     nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
+        parser_dex.add_argument("-s", "--strings",  action="store_true", help="Show DEX strings")
 
         self.lief = None
     
@@ -495,6 +499,7 @@ class Lief(Module):
             self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<17} : {1}".format("Map offset", hex(self.lief.header.map_offset)))
             self.log("item", "{0:<17} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.header.signature)))
+            self.log("item", "{0:<17} : {1}".format("DEX version", self.lief.version))
             self.log("item", "{0:<17} : {1}".format("Nb of Prototypes", "{0:<6} => id : {1}".format(self.lief.header.prototypes[1], hex(self.lief.header.prototypes[0]))))
             self.log("item", "{0:<17} : {1}".format("Nb of Strings", "{0:<6} => id : {1}".format(self.lief.header.strings[1], hex(self.lief.header.strings[0]))))
             self.log("item", "{0:<17} : {1}".format("Nb of Classes", "{0:<6} => id : {1}".format(self.lief.header.classes[1], hex(self.lief.header.classes[0]))))
@@ -1106,18 +1111,24 @@ class Lief(Module):
     def methods(self):
         if not self.__check_session():
             return
-        def methodProcessing(method):
+        def oatMethodProcessing(method):
             self.log("info", "Information of method {0} : ".format(method.name))
             self.log("item", "{0:<17} : {1}".format("Name", method.name))
             self.log("item", "{0:<17} : {1}".format("Compiled", "Yes" if method.is_compiled else "No"))
             self.log("item", "{0:<17} : {1}".format("Dex optimization", "Yes" if method.is_dex2dex_optimized else "No"))
             self.log("item", "{0:<17} : {1}".format("Dex method", "Yes" if method.has_dex_method else "No"))
-            self.log("item", "{0:<17} : {1}".format("Access flags", ' '.join(self.liefConstToString(flag) for flag in method.dex_method.access_flags) if method.has_dex_method else '-'))
-            self.log("item", "{0:<17} : {1}".format("Offset", hex(method.dex_method.code_offset) if method.has_dex_method else '-'))
-            self.log("item", "{0:<17} : {1}".format("Virtual method", '-' if not method.has_dex_method else "Yes" if method.dex_method.is_virtual else "No"))
-            self.log("item", "{0:<17} : {1}".format("Parameters type", '-' if not method.has_dex_method else ", ".join(self.prettyJavaClassFullName(str(paramType)) if not "PRIMITIVES." in str(paramType) else self.liefConstToString(paramType) for paramType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
-            self.log("item", "{0:<17} : {1}".format("Return type", '-' if not method.has_dex_method else ", ".join(self.prettyJavaClassFullName(str(returnType)) if not "PRIMITIVES." in str(returnType) else self.liefConstToString(returnType) for returnType in method.dex_method.prototype.parameters_type) if method.dex_method.prototype.parameters_type else '-'))
-        if lief.is_oat(self.filePath) and self.lief.methods:
+            methodProcessing(method.dex_method)
+        def dexMethodProcessing(method):
+            self.log("info", "Information of method {0} : ".format(method.name))
+            self.log("item", "{0:<17} : {1}".format("Name", method.name))
+            methodProcessing(method)
+        def methodProcessing(method):
+            self.log("item", "{0:<17} : {1}".format("Access flags", ' '.join(self.liefConstToString(flag) for flag in method.access_flags) if method else '-'))
+            self.log("item", "{0:<17} : {1}".format("Offset", hex(method.code_offset) if method else '-'))
+            self.log("item", "{0:<17} : {1}".format("Virtual method", '-' if not method else "Yes" if method.is_virtual else "No"))
+            self.log("item", "{0:<17} : {1}".format("Parameters type", '-' if not method else ", ".join(self.liefConstToString(paramType.value) if paramType.type == lief.DEX.Type.TYPES.PRIMITIVE else paramType.value.pretty_name if paramType.type == lief.DEX.Type.TYPES.CLASS else '-' for paramType in method.prototype.parameters_type) if method.prototype.parameters_type else '-'))
+            self.log("item", "{0:<17} : {1}".format("Return type", '-' if not method else self.liefConstToString(method.prototype.return_type.value) if method.prototype.return_type.type == lief.DEX.Type.TYPES.PRIMITIVE else method.prototype.return_type.value.pretty_name if method.prototype.return_type.type == lief.DEX.Type.TYPES.CLASS else '-'))
+        if (lief.is_oat(self.filePath) or lief.is_dex(self.filePath)) and self.lief.methods:
             if self.args.classname:
                 className = self.args.classname[0]
                 classExists = False
@@ -1131,9 +1142,15 @@ class Lief(Module):
                                     if self.args.name:
                                         if self.args.name[0] == method.name:
                                             methodExists = True
-                                            methodProcessing(method)
+                                            if lief.is_oat(self.filePath):
+                                                oatMethodProcessing(method)
+                                            elif lief.is_dex(self.filePath):
+                                                dexMethodProcessing(method)
                                     else:
-                                        methodProcessing(method)
+                                        if lief.is_oat(self.filePath):
+                                            oatMethodProcessing(method)
+                                        elif lief.is_dex(self.filePath):
+                                            dexMethodProcessing(method)
                                 if self.args.name and not methodExists:
                                     self.log("error", "Method does not exist in this class")
                             else:
@@ -1235,6 +1252,16 @@ class Lief(Module):
         else:
             self.log("warning", "No dexFile found")
 
+    def strings(self):
+        if not self.__check_session():
+            return
+        if lief.is_dex(self.filePath) and self.lief.strings:
+            self.log("info", "DEX strings : ")
+            for string in self.lief.strings:
+                if string:
+                    self.log("item", "{0}".format(string))
+        else:
+            self.log("warning", "No string found")
     """Usefuls methods"""
     
     def formatMagicList(self, magicList):
@@ -1573,6 +1600,10 @@ class Lief(Module):
                 self.header()
             if self.args.map:
                 self.map()
+            if self.args.methods:
+                self.methods()
+            if self.args.strings:
+                self.strings()
 
     """Main method"""
 
