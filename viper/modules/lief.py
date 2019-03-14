@@ -143,6 +143,12 @@ class Lief(Module):
         parser_dex.add_argument("-n", "--name",     nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
         parser_dex.add_argument("-s", "--strings",  action="store_true", help="Show DEX strings")
 
+        parser_vdex = subparsers.add_parser("vdex", help="Extract information from VDEX files")
+        parser_vdex.add_argument("-f", "--dexfiles",        action="store_true", help="Show VDEX dex files")
+        parser_vdex.add_argument("-H", "--header",          action="store_true", help="Show VDEX header")
+        parser_vdex.add_argument("-v", "--androidversion",  action="store_true", help="Show VDEX android version")
+
+
         self.lief = None
     
     def __check_session(self):
@@ -157,18 +163,6 @@ class Lief(Module):
                 self.log("error", "Unable to parse file : {0}".format(e))
                 return False
         return True
-
-    def parseBinary(self, binary):
-        """
-            :param str binary : The path of the binary file
-        """
-        try:
-            if lief.is_oat(binary) or lief.is_elf(binary) or lief.is_macho(binary) or lief.is_pe(binary):
-                return lief.parse(binary)
-            elif lief.is_dex(binary):
-                return lief.DEX.parse(binary)
-        except Exception as e:
-            raise e
 
     """Binaries methods"""
     
@@ -494,6 +488,7 @@ class Lief(Module):
             self.log("info", "DEX header : ")
             self.log("item", "{0:<17} : {1}".format("Checksum", hex(self.lief.header.checksum)))
             self.log("item", "{0:<17} : {1}".format("Endianness", hex(self.lief.header.endian_tag)))
+            self.log("item", "{0:<17} : {1}".format("Location", self.lief.location if self.lief.location else '-'))
             self.log("item", "{0:<17} : {1} bytes".format("Size", self.lief.header.file_size))
             self.log("item", "{0:<17} : {1} bytes".format("Header size", self.lief.header.header_size))
             self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
@@ -1167,31 +1162,33 @@ class Lief(Module):
     def androidVersion(self):
         if not self.__check_session():
             return
-        if lief.is_oat(self.filePath):
-            try:
+        try:
+            if lief.is_oat(self.filePath):
                 self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief))), lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief)))))
-            except:
+            elif lief.is_vdex(self.filePath):
+                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.filePath))), lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.filePath)))))
+            else:
                 self.log("warning", "No android version found")
-        else:
-            self.log("warning", "No android version found")
+        except Exception as e:
+            self.log("error", "Problem with android version : {0}".format(e))
 
     def dexFiles(self):
         if not self.__check_session():
             return
         rows = []
-        if lief.is_oat(self.filePath) and self.lief.oat_dex_files:
-            for dexFile in self.lief.oat_dex_files:
+        if (lief.is_oat(self.filePath) or lief.is_vdex(self.filePath)) and self.lief.dex_files:
+            for dexFile in self.lief.dex_files:
                 rows.append([
-                    hex(dexFile.checksum),
-                    hex(dexFile.dex_offset),
-                    dexFile.dex_file.name if dexFile.has_dex_file else '-',
-                    dexFile.location
+                    dexFile.name,
+                    hex(dexFile.header.endian_tag),
+                    "{0} bytes".format(dexFile.header.file_size),
+                    dexFile.location if dexFile.location else '-',
                 ])
-            self.log("info", "Oat dex files : ")
-            self.log("table", dict(header=["Checksum", "Offset", "Original dex file name", "Original location"], rows=rows))
+            self.log("info", "Dex files : ")
+            self.log("table", dict(header=["Name", "Endianness", "Size", "Location"], rows=rows))
         else:
             self.log("warning", "No dex file found")
-    
+
     def dynamicEntries(self):
         if not self.__check_session():
             return
@@ -1354,9 +1351,23 @@ class Lief(Module):
         else:
             self.log("warning", "No relocation found")
 
+    def parseBinary(self, binary):
+        """
+            :param str binary : The path of the binary file
+        """
+        try:
+            if lief.is_oat(binary) or lief.is_elf(binary) or lief.is_macho(binary) or lief.is_pe(binary):
+                return lief.parse(binary)
+            elif lief.is_dex(binary):
+                return lief.DEX.parse(binary)
+            elif lief.is_vdex(binary):
+                return lief.VDEX.parse(binary)
+        except Exception as e:
+            raise e
+
     def wrongBinaryType(self, expected):
         self.log("error", "Wrong binary type")
-        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "DEX" if lief.is_dex(self.filePath) else "UNKNOWN"
+        fileType =  "MACH-O" if lief.is_macho(self.filePath) else "OAT" if lief.is_oat(self.filePath) else "PE" if lief.is_pe(self.filePath) else "ELF" if lief.is_elf(self.filePath) else "DEX" if lief.is_dex(self.filePath) else "VDEX" if lief.is_vdex(self.filePath) else "UNKNOWN"
         self.log("info", "Expected filtype : {0}".format(expected))
         self.log("info", "Current filetype : {0}".format(fileType))
     
@@ -1605,6 +1616,19 @@ class Lief(Module):
             if self.args.strings:
                 self.strings()
 
+    def vdex(self):
+        if not self.__check_session():
+            return
+        if not lief.is_vdex(self.filePath):
+            self.wrongBinaryType("VDEX")
+        else:
+            if self.args.header:
+                self.header()
+            elif self.args.androidversion:
+                self.androidVersion()
+            elif self.args.dexfiles:
+                self.dexFiles()
+
     """Main method"""
 
     def run(self):
@@ -1624,6 +1648,8 @@ class Lief(Module):
             self.oat()
         elif self.args.subname == "dex":
             self.dex()
+        elif self.args.subname == "vdex":
+            self.vdex()
         else:
             self.log("error", "At least one of the parameters is required")
             self.usage()
