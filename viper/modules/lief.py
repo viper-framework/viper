@@ -119,7 +119,7 @@ class Lief(Module):
         parser_oat.add_argument("-j", "--expfunctions",         action="store_true", help="Show OAT exported functions")
         parser_oat.add_argument("-k", "--expsymbols",           action="store_true", help="Show OAT exported symbols")
         parser_oat.add_argument("-m", "--methods",              action="store_true", help="Show OAT methods by class")
-        parser_oat.add_argument("-n", "--name",                 nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
+        parser_oat.add_argument("-n", "--name",                 nargs=1, type=str,   help="Define a name for the following commands : -m, -x", metavar="name")
         parser_oat.add_argument("-N", "--notes",                action="store_true", help="Show OAT notes")
         parser_oat.add_argument("-o", "--objectrelocations",    action="store_true", help="Show OAT object relocations")
         parser_oat.add_argument("-r", "--relocations",          action="store_true", help="Show OAT relocations")
@@ -146,7 +146,9 @@ class Lief(Module):
         parser_vdex = subparsers.add_parser("vdex", help="Extract information from VDEX files")
         parser_vdex.add_argument("-f", "--dexfiles",        action="store_true", help="Show VDEX dex files")
         parser_vdex.add_argument("-H", "--header",          action="store_true", help="Show VDEX header")
+        parser_vdex.add_argument("-n", "--name",            nargs=1, type=str,   help="Define a name for the following commands : -x", metavar="name")
         parser_vdex.add_argument("-v", "--androidversion",  action="store_true", help="Show VDEX android version")
+        parser_vdex.add_argument("-x", "--extractdexfiles", nargs='?',           help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
 
 
         self.lief = None
@@ -484,14 +486,22 @@ class Lief(Module):
     def header(self):
         if not self.__check_session():
             return
-        if lief.is_dex(self.filePath):
+        if lief.is_vdex(self.filePath):
+            self.log("info", "VDEX header : ")
+            self.log("item", "{0:<22} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
+            self.log("item", "{0:<22} : {1}".format("Nb of DEX files", self.lief.header.nb_dex_files))
+            self.log("item", "{0:<22} : {1} bytes".format("Size of info section", self.lief.header.quickening_info_size))
+            self.log("item", "{0:<22} : {1} bytes".format("Size of deps section", self.lief.header.verifier_deps_size))
+            self.log("item", "{0:<22} : {1} bytes".format("Size of all DEX files", self.lief.header.dex_size))
+            self.log("item", "{0:<22} : {1}".format("Version", self.lief.header.version))
+        elif lief.is_dex(self.filePath):
             self.log("info", "DEX header : ")
+            self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<17} : {1}".format("Checksum", hex(self.lief.header.checksum)))
             self.log("item", "{0:<17} : {1}".format("Endianness", hex(self.lief.header.endian_tag)))
             self.log("item", "{0:<17} : {1}".format("Location", self.lief.location if self.lief.location else '-'))
             self.log("item", "{0:<17} : {1} bytes".format("Size", self.lief.header.file_size))
             self.log("item", "{0:<17} : {1} bytes".format("Header size", self.lief.header.header_size))
-            self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<17} : {1}".format("Map offset", hex(self.lief.header.map_offset)))
             self.log("item", "{0:<17} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.header.signature)))
             self.log("item", "{0:<17} : {1}".format("DEX version", self.lief.version))
@@ -505,6 +515,7 @@ class Lief(Module):
             self.log("item", "{0:<17} : {1}".format("Nb of Link", "{0:<6} => id : {1}".format(self.lief.header.link[1], hex(self.lief.header.link[0]))))
         elif lief.is_oat(self.filePath):
             self.log("info", "OAT header : ")
+            self.log("item", "{0:<37} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<37} : {1}".format("Checksum", hex(self.lief.header.checksum)))
             self.log("item", "{0:<37} : {1}".format("ImageBase", hex(self.lief.imagebase) if self.lief.imagebase else '-'))
             self.log("item", "{0:<37} : {1}".format("Executable offset", hex(self.lief.header.executable_offset)))
@@ -517,7 +528,6 @@ class Lief(Module):
             self.log("item", "{0:<37} : {1}".format("JNI DLSYM lookup offset", hex(self.lief.header.jni_dlsym_lookup_offset)))
             self.log("item", "{0:<37} : {1} bytes".format("Key value size", self.lief.header.key_value_size))
             self.log("item", "{0:<37} : {1}".format("Keys", ", ".join(self.liefConstToString(key) for key in self.lief.header.keys)))
-            self.log("item", "{0:<37} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<37} : {1}".format("Number of dex files", self.lief.header.nb_dex_files))
             self.log("item", "{0:<37} : {1}".format("Oat dex files offset", hex(self.lief.header.oat_dex_files_offset)))
             self.log("item", "{0:<37} : {1}".format("Quick generic JNI trampoline offset", hex(self.lief.header.quick_generic_jni_trampoline_offset)))
@@ -534,11 +544,11 @@ class Lief(Module):
             self.log("item", "{0:<15} : {1}".format("Flags", ':'.join(self.liefConstToString(flag) for flag in self.lief.header.flags_list)))
         elif lief.is_pe(self.filePath):
             self.log("info", "PE header : ")
+            self.log("item", "{0:<28} : {1}".format("Magic", self.formatMagicList(self.lief.header.signature)))
             self.log("item", "{0:<28} : {1}".format("Type", self.liefConstToString(self.lief.header.machine)))
             self.log("item", "{0:<28} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<28} : {1}".format("Number of symbols", self.lief.header.numberof_symbols))
             self.log("item", "{0:<28} : {1}".format("Pointer to symbol table", hex(self.lief.header.pointerto_symbol_table)))
-            self.log("item", "{0:<28} : {1}".format("Magic", self.formatMagicList(self.lief.header.signature)))
             self.log("item", "{0:<28} : {1}".format("Date of compilation", self.fromTimestampToDate(self.lief.header.time_date_stamps)))
             self.log("item", "{0:<28} : {1:<6} bytes".format("Size of optional header", self.lief.header.sizeof_optional_header))
             if self.lief.header.sizeof_optional_header > 0:
@@ -566,11 +576,11 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
         elif lief.is_elf(self.filePath):
             self.log("info", "ELF header : ")
+            self.log("item", "{0:<26} : {1}".format("Magic", self.formatMagicList(self.lief.header.identity)))
             self.log("item", "{0:<26} : {1}".format("Type", self.liefConstToString(self.lief.header.file_type)))
             self.log("item", "{0:<26} : {1}".format("Entrypoint", hex(self.lief.header.entrypoint)))
             self.log("item", "{0:<26} : {1}".format("ImageBase", hex(self.lief.imagebase) if self.lief.imagebase else '-'))
             self.log("item", "{0:<26} : {1} bytes".format("Header size", self.lief.header.header_size))
-            self.log("item", "{0:<26} : {1}".format("Identity", self.formatMagicList(self.lief.header.identity)))
             self.log("item", "{0:<26} : {1}".format("Endianness", self.liefConstToString(self.lief.header.identity_data)))
             self.log("item", "{0:<26} : {1}".format("Class", self.liefConstToString(self.lief.header.identity_class)))
             self.log("item", "{0:<26} : {1}".format("OS/ABI", self.liefConstToString(self.lief.header.identity_os_abi)))
@@ -1223,7 +1233,7 @@ class Lief(Module):
     def extractDexFiles(self):
         if not self.__check_session():
             return
-        if lief.is_oat(self.filePath) and self.lief.dex_files:
+        if (lief.is_oat(self.filePath) or lief.is_vdex(self.filePath)) and self.lief.dex_files:
             dexFileExists = False
             def dexFileProcessing(dexFile, destFolder):
                 fileName = "{0}{1}_{2}".format(destFolder, hex(dexFile.header.checksum), dexFile.name)
@@ -1628,6 +1638,8 @@ class Lief(Module):
                 self.androidVersion()
             elif self.args.dexfiles:
                 self.dexFiles()
+            elif self.args.extractdexfiles:
+                self.extractDexFiles()
 
     """Main method"""
 
