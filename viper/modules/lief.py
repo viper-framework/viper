@@ -288,42 +288,52 @@ class Lief(Module):
     def type(self):
         if not self.__check_session():
             return
+        binaryType = None
         if self.IS_OAT:
-            self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.type)))
+            binaryType = self.lief.type
         elif self.IS_ELF:
-            self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.header.file_type)))
+            binaryType = self.lief.header.file_type
         elif self.IS_PE:
-            self.log("info", "Type : {0}".format(self.liefConstToString(lief.PE.get_type(self.FILE_PATH))))
+            binaryType = lief.PE.get_type(self.FILE_PATH)
         elif self.IS_MACHO:
-            self.log("info", "Type : {0}".format(self.liefConstToString(self.lief.header.file_type)))
+            binaryType = self.lief.header.file_type
         else:
             self.log("warning", "No type found")
+        if binaryType:
+            self.log("info", "Type : {0}".format(self.liefConstToString(binaryType)))
 
     def entrypoint(self):
         if not self.__check_session():
             return
+        entrypoint = None
         if self.IS_OAT:
-            self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
+            entrypoint = self.lief.entrypoint
         elif self.IS_ELF:
-            self.log("info", "Entrypoint : {0}".format(hex(self.lief.header.entrypoint)))
+            entrypoint = self.lief.header.entrypoint 
         elif self.IS_PE:
-            self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
+            entrypoint = self.lief.entrypoint
         elif self.IS_MACHO and self.lief.has_entrypoint:
-            self.log("info", "Entrypoint : {0}".format(hex(self.lief.entrypoint)))
+            entrypoint = self.lief.entrypoint
         else:
             self.log("warning", "No entrypoint found")
+        if entrypoint:
+            self.log("info", "Entrypoint : {0}".format(hex(entrypoint)))
+
     
     def architecture(self):
         if not self.__check_session():
             return
+        architecture = None
         if self.IS_ELF:
-            self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.machine_type)))
+            architecture = self.lief.header.machine_type
         elif self.IS_PE:
-            self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.machine)))
+            architecture = self.lief.header.machine
         elif self.IS_MACHO:
-            self.log("info", "Architecture : {0}".format(self.liefConstToString(self.lief.header.cpu_type)))
+            architecture = self.lief.header.cpu_type
         else:
             self.log("warning", "No architecture found")
+        if architecture:
+            self.log("info", "Architecture : {0}".format(self.liefConstToString(architecture)))
 
     def entropy(self):
         if not self.__check_session():
