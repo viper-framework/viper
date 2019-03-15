@@ -35,6 +35,8 @@ class Lief(Module):
         self.IS_ART      = False
         self.FILE_PATH   = None
 
+        """ Parsers """
+
         parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
         parser_pe.add_argument("-A", "--architecture",      action="store_true", help="Show PE architecture")
         parser_pe.add_argument("-b", "--debug",             action="store_true", help="Show PE debug information")
@@ -113,12 +115,12 @@ class Lief(Module):
         parser_macho.add_argument("-y", "--symbols",        action="store_true", help="Show MachO symbols")
 
         parser_oat = subparsers.add_parser("oat", help="Extract information from OAT files")
-        parser_oat.add_argument("-c", "--classname",            nargs=1,             help="Full name of class (Lcom/android/...;). Used with --methods", metavar="fullname", type=str)
+        parser_oat.add_argument("-c", "--classname",            nargs=1,             help="Full name of class (com.android.etc...). Used with -m", metavar="fullname", type=str)
         parser_oat.add_argument("-C", "--classes",              action="store_true", help="Show OAT classes")
         parser_oat.add_argument("-b", "--impsymbols",           action="store_true", help="Show OAT imported symbols")
         parser_oat.add_argument("-B", "--staticsymbols",        action="store_true", help="Show OAT static symbols")
         parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
-        parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Strip OAT dynamic relocations")
+        parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Show OAT dynamic relocations")
         parser_oat.add_argument("-e", "--entrypoint",           action="store_true", help="Show OAT entrypoint")
         parser_oat.add_argument("-E", "--entropy",              action="store_true", help="Show OAT entropy")
         parser_oat.add_argument("-f", "--dexfiles",             action="store_true", help="Show OAT dex files")
@@ -136,8 +138,8 @@ class Lief(Module):
         parser_oat.add_argument("-s", "--sections",             action="store_true", help="Show OAT sections")
         parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
         parser_oat.add_argument("-t", "--type",                 action="store_true", help="Show OAT type")
-        parser_oat.add_argument("-T", "--dynamicentries",       action="store_true", help="Strip OAT dynamic entries")
-        parser_oat.add_argument("-v", "--androidversion",       action="store_true", help="Strip OAT android version")
+        parser_oat.add_argument("-T", "--dynamicentries",       action="store_true", help="Show OAT dynamic entries")
+        parser_oat.add_argument("-v", "--androidversion",       action="store_true", help="Show OAT android version")
         parser_oat.add_argument("-w", "--write",                nargs=1,             help="Write binary into file", metavar="fileName")
         parser_oat.add_argument("-x", "--extractdexfiles",      nargs='?',           help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
         parser_oat.add_argument("-y", "--symbols",              action="store_true", help="Show OAT static and dynamic symbols")
@@ -145,7 +147,7 @@ class Lief(Module):
         parser_oat.add_argument("-z", "--strip",                action="store_true", help="Strip OAT binary")
         
         parser_dex = subparsers.add_parser("dex", help="Extract information from DEX files")
-        parser_dex.add_argument("-c", "--classname",nargs=1,             help="Full name of class (Lcom/android/...;). Used with --methods", metavar="fullname", type=str)
+        parser_dex.add_argument("-c", "--classname",nargs=1,             help="Full name of class (com.android.etc...). Used with -m", metavar="fullname", type=str)
         parser_dex.add_argument("-C", "--classes",  action="store_true", help="Show DEX classes")
         parser_dex.add_argument("-H", "--header",   action="store_true", help="Show DEX header")
         parser_dex.add_argument("-m", "--methods",  action="store_true", help="Show DEX methods by class")
@@ -198,7 +200,6 @@ class Lief(Module):
                 ])
             self.log("info", "Sections : ")
             self.log("table", dict(header=["Name", "Address", "RVA", "Size", "Type", "Flags", "Entropy"], rows=rows))
-
         elif self.IS_PE:
             for section in self.lief.sections:
                 rows.append([
@@ -318,7 +319,6 @@ class Lief(Module):
         else:
             self.log("warning", "No entrypoint found")
 
-    
     def architecture(self):
         if not self.__check_session():
             return
@@ -654,7 +654,6 @@ class Lief(Module):
             self.log("table", dict(header=["Command", "Cmd offset", "Cmd size", "Data offset", "Date size"], rows=rows))
         else:
             self.log("warning", "No code signature found")
-
 
     def exportedFunctions(self):
         if not self.__check_session():
@@ -1322,21 +1321,54 @@ class Lief(Module):
     """Usefuls methods"""
     
     def formatMagicList(self, magicList):
+        """
+            Formatting of magic list of bytes
+
+            :param (list) magicList : List of bytes representing the magic identifier of the binary
+            :return (str) : Pretty representation of magic identifier
+        """
         if not magicList:
             return None
         return "{0} ({1})".format(''.join(chr(m) if chr(m) in string.printable.replace(string.whitespace, '') else "'\{0}'".format(m) for m in magicList), ' '.join(str(hex(m))[2:] for m in magicList))
 
     def liefConstToString(self, const):
+        """
+            Conversion of lief const to printable const
+
+            :param (lief constant) const : lief constant thus represented : CLASS.CONST
+            :return (str) : Only the CONST part of the const parameter
+        """
         return str(const).split('.')[1]
 
     def prettyJavaClassFullName(self, className):
+        """
+            Conversion of Java class name into nicer class name
+
+            :param (str) className : Java class name thus represented : Lcom/android/..../;
+            :return (str) : Pretty format of class name : com.android.etc...
+        """
+        if not className:
+            return None
         return className[1:-1].replace('/', '.')
 
     def fromTimestampToDate(self, timestamp):
+        """
+            Conversion of timestamp into printable date
+
+            :param (int) timestamp : Timestamp to be converted
+            :return (str) : Formatted date : Jan 01 2019 at 00:00:00
+        """
+        if not timestamp:
+            return None
         return datetime.utcfromtimestamp(timestamp).strftime("%b %d %Y at %H:%M:%S")
 
     def fromListOfDatetoDate(self, dateList):
-        """Format of list : [Y, m, d, H, M, s]"""
+        """
+            Conversion of a date represented as a list into a printable date
+
+            :param (list) dateList : date represented as a list : [Y, m, d, H, M, S] (example : [2019, 01, 01, 00, 00, 00])
+            :return (str) : Formatted date : Jan 01 2019 at 00:00:00
+        """
         if not dateList:
             return None
         dateString = '-'.join(str(value) for value in dateList)
@@ -1344,6 +1376,12 @@ class Lief(Module):
         return self.fromTimestampToDate(timestamp)
 
     def getEntropy(self, data):
+        """
+            Entropy calculation of raw data
+
+            :param (bytes) data : Raw data
+            :return (float) : Entropy of raw data
+        """
         if not data:
             return 0
         e = 0
@@ -1355,6 +1393,12 @@ class Lief(Module):
         return entropy
 
     def listUuidToUuid(self, listUuid):
+        """
+            Conversion of a uuid represented as a list into formatted uuid
+
+            :param (list) listUuid : List of bytes representing a uuid
+            :return (str) : Formatted uuid thus represented : 00000000-0000-0000-0000-000000000000
+        """
         if not listUuid:
             return None
         else:
@@ -1366,6 +1410,12 @@ class Lief(Module):
             return uuid
 
     def listVersionToDottedVersion(self, listVersion):
+        """
+            Conversion of a version represented as a list into dotted representation
+
+            :param (list) listVersion : List of version values
+            :return (str) : Formatted version : 0.0.0.0....
+        """
         if not listVersion:
             return None
         else:
@@ -1378,6 +1428,12 @@ class Lief(Module):
             return version
 
     def printElfAndOatSymbols(self, symbols, title):
+        """
+            Code factorisation for elf and oat symbols display
+
+            :param (list) symbols : List of symbols
+            :param (str) title : Title for the display
+        """
         rows = []
         if symbols:
             for symbol in symbols:
@@ -1397,6 +1453,12 @@ class Lief(Module):
             self.log("warning", "No symbol found")
 
     def printElfAndOatRelocations(self, relocations, title):
+        """
+            Code factorisation for elf and oat relocations display
+
+            :param (list) relocations : List of relocations
+            :param (str) title : Title for the display
+        """
         rows = []
         if relocations:
             for relocation in relocations:
@@ -1413,7 +1475,10 @@ class Lief(Module):
 
     def parseBinary(self, binary):
         """
-            :param str binary : The path of the binary file
+            Binary parsing for the self.lief variable
+
+            :param (str) binary : The path of the binary file
+            :return (lief.ELF.Binary or lief.PE.Binary or lief.MachO.Binary or lief.OAT.Binary or lief.DEX.File or lief.VDEX.File or lief.ART.File) : The lief binary
         """
         self.IS_PE       = lief.is_pe(binary)
         self.IS_ELF      = lief.is_elf(binary) and not lief.is_oat(binary)
@@ -1435,6 +1500,11 @@ class Lief(Module):
             raise e
 
     def wrongBinaryType(self, expected):
+        """
+            Display error message if wring binary type for a command
+
+            :param (str) expected : The binary type expected
+        """
         self.log("error", "Wrong binary type")
         fileType =  "MACH-O" if self.IS_MACHO else "OAT" if self.IS_OAT else "PE" if self.IS_PE else "ELF" if self.IS_ELF else "DEX" if self.IS_DEX else "VDEX" if self.IS_VDEX else "ART" if self.IS_ART else "UNKNOWN"
         self.log("info", "Expected filtype : {0}".format(expected))
