@@ -43,7 +43,6 @@ class Lief(Module):
         parser_pe.add_argument("-d", "--dlls",              action="store_true", help="Show PE imported dlls")
         parser_pe.add_argument("-D", "--datadirectories",   action="store_true", help="Show PE data directories")
         parser_pe.add_argument("-e", "--entrypoint",        action="store_true", help="Show PE entrypoint")
-        parser_pe.add_argument("-f", "--format",            action="store_true", help="Show PE format")
         parser_pe.add_argument("-g", "--signature",         action="store_true", help="Show PE signature")
         parser_pe.add_argument("-G", "--dialogs",           action="store_true", help="Show PE dialogs box information")
         parser_pe.add_argument("-H", "--header",            action="store_true", help="Show PE header")
@@ -413,20 +412,13 @@ class Lief(Module):
             return
         rows = []
         if self.IS_PE:
+            self.log("info", "PE imports")
             for imp in self.lief.imports:
                 self.log("info", "{0}".format(imp.name))
                 for function in imp.entries:
                     self.log("item", "{0} : {1}".format(hex(function.iat_address), function.name))
         else:
             self.log("warning", "No import found")
-
-    def format(self):
-        if not self.__check_session():
-            return
-        if self.IS_PE:
-            self.log("info", "Format : {0}".format(self.liefConstToString(self.lief.format)))
-        else:
-            self.log("warning", "No format found")
 
     def imphash(self):
         if not self.__check_session():
@@ -480,7 +472,7 @@ class Lief(Module):
             self.log("error", "Please enter a file name")
         else:
             self.lief.write(fileName)
-            self.log("success", "File succesfully saved")
+            self.log("success", "File successfully saved")
 
     def notes(self):
         if not self.__check_session():
@@ -1466,8 +1458,6 @@ class Lief(Module):
                 self.imports()
             elif self.args.architecture:
                 self.architecture()
-            elif self.args.format:
-                self.format()
             elif self.args.header:
                 self.header()
             elif self.args.type:
