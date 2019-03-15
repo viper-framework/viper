@@ -628,7 +628,7 @@ class TestLIEF:
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Exported symbols.*"),
     ])
-    def test_exportedfunctions_elf(soat, capsys, filename, expected):
+    def test_exportedsymbols_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = lief.Lief()
         instance.set_commandline(["elf", "--expsymbols"])
@@ -639,10 +639,412 @@ class TestLIEF:
     @pytest.mark.parametrize("filename, expected", [
         ("sample.macho", r".*No exported symbol found.*"),
     ])
-    def test_exportedfunctions_macho(soat, capsys, filename, expected):
+    def test_exportedsymbols_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = lief.Lief()
         instance.set_commandline(["macho", "--expsymbols"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.elf", r".*Imported functions.*"),
+    ])
+    def test_importedfunctions_elf(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["elf", "--impfunctions"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.elf", r".*Imported symbols.*"),
+    ])
+    def test_importedsymbols_elf(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["elf", "--impsymbols"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.macho", r".*MachO imported symbols.*"),
+    ])
+    def test_importedsymbols_macho(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["macho", "--impsymbols"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample1.macho", r".*Source version :.*"),
+    ])
+    def test_sourceversion_macho(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["macho", "--sourceversion"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.macho", r".*No sub-framework found.*"),
+    ])
+    def test_subFramework_macho(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["macho", "--subframework"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.macho", r".*Uuid :.*"),
+    ])
+    def test_uuid_macho(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["macho", "--uuid"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample1.macho", r".*Data in code :.*"),
+    ])
+    def test_dataincode_macho(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["macho", "--dataincode"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample1.macho", r".*Main command :.*"),
+    ])
+    def test_maincommand_macho(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["macho", "--maincommand"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.macho", r".*MachO commands :.*"),
+    ])
+    def test_commands_macho(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["macho", "--commands"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*DOS header.*"),
+    ])
+    def test_dosheader_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--dosheader"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*Data directories.*"),
+    ])
+    def test_datadirectories_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--datadirectories"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*DOS stub :.*"),
+    ])
+    def test_dosstub_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--dosstub"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*Debug information.*"),
+    ])
+    def test_debug_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--debug"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample1.pe", r".*Load configuration :.*"),
+    ])
+    def test_loadconfiguration_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--loadconfiguration"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*No dynamic relocation found.*"),
+    ])
+    def test_dynamicrelocations_oat(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--dynamicrelocations"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.elf", r".*No object relocation found.*"),
+    ])
+    def test_objectrelocations_elf(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["elf", "--objectrelocations"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.elf", r".*Relocations :.*"),
+    ])
+    def test_relocations_elf(soat, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["elf", "--relocations"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*PE relocations :.*"),
+    ])
+    def test_relocations_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--relocations"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*PE resources :.*"),
+    ])
+    def test_resources_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--resources"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample3.pe", r".*PE tls :.*"),
+    ])
+    def test_tls_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--tls"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*Rich header key.*"),
+    ])
+    def test_richheader_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--richheader"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*PE signature :.*"),
+    ])
+    def test_signature_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--signature"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*PE manifest :.*"),
+    ])
+    def test_manifest_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--manifest"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*Resources types availables.*"),
+    ])
+    def test_resourcestypes_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--resourcestypes"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*Langs availables.*"),
+    ])
+    def test_langs_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--langs"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*PE icons :.*"),
+    ])
+    def test_icons_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--icons"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*File successfully saved.*"),
+    ])
+    def test_extracticons_pe_success(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--extracticons", "/tmp/"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*File already exists.*"),
+    ])
+    def test_extracticons_pe_exists(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--extracticons", "/tmp/"])
+        instance.run()
+        for root, dirs, files in os.walk("/tmp/"):
+            for file in filter(lambda x: re.match("^sample2_pe.*.ico$", x), files):
+                os.remove(os.path.join(root, file))
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*File successfully saved.*"),
+    ])
+    def test_extracticons_pe_id_success(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--extracticons", "/tmp/", "--id", "1"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*File already exists.*"),
+    ])
+    def test_extracticons_pe_id_exists(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--extracticons", "/tmp/", "--id", "1"])
+        instance.run()
+        for root, dirs, files in os.walk("/tmp/"):
+            for file in filter(lambda x: re.match("^sample2_pe.*.ico$", x), files):
+                os.remove(os.path.join(root, file))
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*Cannot write into folder.*"),
+    ])
+    def test_extracticons_pe_error(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--extracticons", "/inexistentfolder"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*Icon does not exist.*"),
+    ])
+    def test_extracticons_pe_id_not_exist(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--extracticons", "/tmp/", "--id", "999999"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.pe", r".*No icon found.*"),
+    ])
+    def test_extracticons_pe_no_icon_found(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--extracticons", "/tmp/"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample2.pe", r".*Dialog N°.*"),
+    ])
+    def test_dialogs_pe(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["pe", "--dialogs"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*OAT classes :.*"),
+    ])
+    def test_classes_oat(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--classes"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.dex", r".*DEX classes :.*"),
+    ])
+    def test_classes_dex(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["dex", "--classes"])
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(expected, out)

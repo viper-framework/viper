@@ -796,6 +796,7 @@ class Lief(Module):
                     "{0:<6} bytes".format(command.size),
                     hex(command.command_offset),
                 ])
+            self.log("info", "MachO commands : ")
             self.log("table", dict(header=["Command", "Size", "Offset"], rows=rows))
         else:
             self.log("warning", "No command found")
@@ -848,7 +849,7 @@ class Lief(Module):
         if self.IS_PE:
             rawDosStub = ''.join(chr(stub) if chr(stub) in string.printable.replace(string.whitespace, '') else '.' for stub in self.lief.dos_stub)
             printableDosStub = [rawDosStub[i:i+16] for i in range(0, len(rawDosStub), 16)]
-            self.log("info", "{0}{1}".format('Dos stub : \n','\n'.join(printableDosStub)))
+            self.log("info", "{0}{1}".format('DOS stub : \n','\n'.join(printableDosStub)))
         else:
             self.log("warning", "No DOS stub found")
     
@@ -857,19 +858,20 @@ class Lief(Module):
             return
         if self.IS_PE and self.lief.has_debug:
             self.log("info", "Debug information : ")
-            self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(self.lief.debug.addressof_rawdata)))
-            self.log("item", "{0:<28} : {1}".format("Minor version of debug data", self.lief.debug.minor_version))
-            self.log("item", "{0:<28} : {1}".format("Major version of debug data", self.lief.debug.major_version))
-            self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(self.lief.debug.pointerto_rawdata)))
-            self.log("item", "{0:<28} : {1} bytes".format("Size of data", self.lief.debug.sizeof_data))
-            self.log("item", "{0:<28} : {1}".format("Data of data creation", self.fromTimestampToDate(self.lief.debug.timestamp)))
-            self.log("item", "{0:<28} : {1}".format("Type of debug information", self.liefConstToString(self.lief.debug.type)))
-            if self.lief.debug.has_code_view:
-                self.log("item", "{0:<28} : {1}".format("Code view", self.liefConstToString(self.lief.debug.code_view.cv_signature)))
-                if isinstance(self.lief.debug.code_view, lief.PE.CodeViewPDB):
-                    self.log("item", "{0:<28} : {1}".format("Age", self.lief.debug.code_view.age))
-                    self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.debug.code_view.signature)))
-                    self.log("item", "{0:<28} : {1}".format("Path", self.lief.debug.code_view.filename))
+            for debug in self.lief.debug:
+                self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(debug.addressof_rawdata)))
+                self.log("item", "{0:<28} : {1}".format("Minor version of debug data", debug.minor_version))
+                self.log("item", "{0:<28} : {1}".format("Major version of debug data", debug.major_version))
+                self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(debug.pointerto_rawdata)))
+                self.log("item", "{0:<28} : {1} bytes".format("Size of data", debug.sizeof_data))
+                self.log("item", "{0:<28} : {1}".format("Data of data creation", self.fromTimestampToDate(debug.timestamp)))
+                self.log("item", "{0:<28} : {1}".format("Type of debug information", self.liefConstToString(debug.type)))
+                if debug.has_code_view:
+                    self.log("item", "{0:<28} : {1}".format("Code view", self.liefConstToString(debug.code_view.cv_signature)))
+                    if isinstance(debug.code_view, lief.PE.CodeViewPDB):
+                        self.log("item", "{0:<28} : {1}".format("Age", debug.code_view.age))
+                        self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in debug.code_view.signature)))
+                        self.log("item", "{0:<28} : {1}".format("Path", debug.code_view.filename))
         else:
             self.log("warning", "No debug information found")
 
@@ -998,7 +1000,7 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_signature:
-            self.log("info", "PE signature")
+            self.log("info", "PE signature : ")
             self.log("item", "{0:<20} : {1}".format("Version", self.lief.signature.version))
             self.log("item", "{0:<20} : {1}".format("Digestion algorithm", lief.PE.oid_to_string(self.lief.signature.digest_algorithm)))
             self.log("success", "Content information")
