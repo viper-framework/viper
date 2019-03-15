@@ -252,7 +252,7 @@ class Lief(Module):
                     ':'.join(flag for flag in flags),
                     self.getEntropy(bytes(segment.content))
                 ])
-            self.log("info", "ELF segments : ")
+            self.log("info", "Segments : ")
             self.log("table", dict(header=["Type", "PhysicalAddress", "FileSize", "VirtuAddr", "MemSize", "Flags", "Entropy"], rows=rows))
         elif self.IS_MACHO:
             self.log("info", "MachO segments : ")
@@ -297,10 +297,10 @@ class Lief(Module):
             binaryType = lief.PE.get_type(self.FILE_PATH)
         elif self.IS_MACHO:
             binaryType = self.lief.header.file_type
-        else:
-            self.log("warning", "No type found")
         if binaryType:
             self.log("info", "Type : {0}".format(self.liefConstToString(binaryType)))
+        else:
+            self.log("warning", "No type found")
 
     def entrypoint(self):
         if not self.__check_session():
@@ -314,10 +314,10 @@ class Lief(Module):
             entrypoint = self.lief.entrypoint
         elif self.IS_MACHO and self.lief.has_entrypoint:
             entrypoint = self.lief.entrypoint
-        else:
-            self.log("warning", "No entrypoint found")
         if entrypoint:
             self.log("info", "Entrypoint : {0}".format(hex(entrypoint)))
+        else:
+            self.log("warning", "No entrypoint found")
 
     
     def architecture(self):
@@ -330,10 +330,10 @@ class Lief(Module):
             architecture = self.lief.header.machine
         elif self.IS_MACHO:
             architecture = self.lief.header.cpu_type
-        else:
-            self.log("warning", "No architecture found")
         if architecture:
             self.log("info", "Architecture : {0}".format(self.liefConstToString(architecture)))
+        else:
+            self.log("warning", "No architecture found")
 
     def entropy(self):
         if not self.__check_session():
@@ -346,7 +346,7 @@ class Lief(Module):
     def interpreter(self):
         if not self.__check_session():
             return
-        if (self.IS_OAT and self.lief.has_interpreter) or (self.IS_ELF and self.lief.has_interpreter):
+        if (self.IS_OAT  or self.IS_ELF) and self.lief.has_interpreter:
             self.log("info", "Interpreter : {0}".format(self.lief.interpreter))
         else:
             self.log("warning", "No interpreter found")
@@ -356,6 +356,7 @@ class Lief(Module):
             return
         rows = []
         if (self.IS_OAT or self.IS_ELF or self.IS_PE) and self.lief.libraries:
+            self.log("info", "Dynamic libraries : ")
             for lib in self.lief.libraries:
                 self.log("info", lib)
         elif self.IS_MACHO and self.lief.libraries:
@@ -401,6 +402,7 @@ class Lief(Module):
             return
         rows = []
         if self.IS_PE:
+            self.log("info", "PE dlls : ")
             for lib in self.lief.libraries:
                 self.log("info", lib)
         else:
