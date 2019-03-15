@@ -1217,12 +1217,15 @@ class Lief(Module):
         if not self.__check_session():
             return
         try:
+            androidversion = None
             if self.IS_OAT:
-                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief))), lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief)))))
+                androidversion = "{0} ({1})".format(lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief))), lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief))))
             elif self.IS_VDEX:
-                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH))), lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH)))))
+                androidversion = "{0} ({1})".format(lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH))), lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH))))
             elif self.IS_ART:
-                self.log("info", "Android version : {0} ({1})".format(lief.Android.version_string(lief.ART.android_version(lief.ART.version(self.FILE_PATH))), lief.Android.code_name(lief.ART.android_version(lief.ART.version(self.FILE_PATH)))))
+                androidversion = "{0} ({1})".format(lief.Android.version_string(lief.ART.android_version(lief.ART.version(self.FILE_PATH))), lief.Android.code_name(lief.ART.android_version(lief.ART.version(self.FILE_PATH))))
+            if androidversion:
+                self.log("info", "Android version : {0}".format(androidversion))
             else:
                 self.log("warning", "No android version found")
         except Exception as e:
@@ -1315,6 +1318,7 @@ class Lief(Module):
                     self.log("item", "{0}".format(string))
         else:
             self.log("warning", "No string found")
+
     """Usefuls methods"""
     
     def formatMagicList(self, magicList):

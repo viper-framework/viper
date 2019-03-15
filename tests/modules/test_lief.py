@@ -21,6 +21,13 @@ class TestLIEF:
         assert isinstance(instance, lief.Lief)
         assert isinstance(instance, Module)
 
+    def test(self, capsys):
+        instance = lief.Lief()
+        instance.set_commandline(["elf"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(r".*No open session.*", out)
+
     def test_args_exception(self):
         instance = lief.Lief()
 
@@ -467,7 +474,6 @@ class TestLIEF:
         instance = lief.Lief()
         instance.set_commandline(["elf", "--write", "/tmp/test"])
         instance.run()
-        os.remove("/tmp/test")
         out, err = capsys.readouterr()
         assert re.search(expected, out)
 
@@ -488,7 +494,7 @@ class TestLIEF:
     def test_write_elf_3(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = lief.Lief()
-        instance.set_commandline(["elf", "--write", "/test"])
+        instance.set_commandline(["elf", "--write", "/inexistentfolder"])
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(expected, out)
@@ -499,8 +505,9 @@ class TestLIEF:
     def test_write_elf_4(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = lief.Lief()
-        instance.set_commandline(["elf", "--write", "./sample.elf"])
+        instance.set_commandline(["elf", "--write", "/tmp/test"])
         instance.run()
+        os.remove("/tmp/test")
         out, err = capsys.readouterr()
         assert re.search(expected, out)
 
@@ -1045,6 +1052,233 @@ class TestLIEF:
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = lief.Lief()
         instance.set_commandline(["dex", "--classes"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*A class name must be set.*"),
+    ])
+    def test_methods_oat_no_class(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--methods"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*This class does not exist.*"),
+    ])
+    def test_methods_oat_inexistent_class(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--methods", "--classname", "inexistentclass"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*Information of method.*"),
+    ])
+    def test_methods_oat_existent_class(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--methods", "--classname", "com.qualcomm.qcrilhook.QmiOemHook"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.dex", r".*Information of method.*"),
+    ])
+    def test_methods_dex_existent_class(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["dex", "--methods", "--classname", "java.lang.Runtime"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*Information of method.*"),
+    ])
+    def test_methods_oat_existent_class_name(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--methods", "--classname", "com.qualcomm.qcrilhook.QmiOemHook", "--name", "sendQmiMessageSync"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.dex", r".*Information of method.*"),
+    ])
+    def test_methods_dex_existent_class_name(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["dex", "--methods", "--classname", "java.lang.Runtime", "--name", "exec"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*Android version :.*"),
+    ])
+    def test_androidversion_oat(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--androidversion"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.vdex", r".*Android version :.*"),
+    ])
+    def test_androidversion_vdex(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["vdex", "--androidversion"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.art", r".*Android version :.*"),
+    ])
+    def test_androidversion_art(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["art", "--androidversion"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*Dex files :.*"),
+    ])
+    def test_dexfiles_oat(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--dexfiles"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.elf", r".*Dynamic entries.*"),
+    ])
+    def test_dynamicentries_elf(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["elf", "--dynamicentries"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.elf", r".*Dynamic symbols.*"),
+    ])
+    def test_dynamicsymbols_elf(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["elf", "--dynamicsymbols"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.elf", r".*No static symbol found.*"),
+    ])
+    def test_staticsymbols_elf(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["elf", "--staticsymbols"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*Cannot write into folder.*"),
+    ])
+    def test_extractdexfiles_oat_no_access(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--extractdexfiles", "/inexistentfolder"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*Dex file does not exist.*"),
+    ])
+    def test_extractdexfiles_oat_inexistent_name(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--extractdexfiles", "/tmp/", "--name", "inexistentdexfile"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*File successfully saved.*"),
+    ])
+    def test_extractdexfiles_oat_ok(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--extractdexfiles", "/tmp/"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*File already exist.*"),
+    ])
+    def test_extractdexfiles_oat_not_ok(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--extractdexfiles", "/tmp/"])
+        instance.run()
+        for root, dirs, files in os.walk("/tmp/"):
+            for file in filter(lambda x: re.match("^0x.*.dex$", x), files):
+                os.remove(os.path.join(root, file))
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*File successfully saved.*"),
+    ])
+    def test_extractdexfiles_oat__name_ok(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--extractdexfiles", "/tmp/", "--name", "classes.dex"])
+        instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.oat", r".*File already exist.*"),
+    ])
+    def test_extractdexfiles_oat_name_not_ok(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["oat", "--extractdexfiles", "/tmp/", "--name", "classes.dex"])
+        instance.run()
+        for root, dirs, files in os.walk("/tmp/"):
+            for file in filter(lambda x: re.match("^0x.*.dex$", x), files):
+                os.remove(os.path.join(root, file))
+        out, err = capsys.readouterr()
+        assert re.search(expected, out)
+
+    @pytest.mark.parametrize("filename, expected", [
+        ("sample.dex", r".*DEX strings.*"),
+    ])
+    def test_strings_dex(self, capsys, filename, expected):
+        __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        instance = lief.Lief()
+        instance.set_commandline(["dex", "--strings"])
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(expected, out)
