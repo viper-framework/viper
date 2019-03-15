@@ -2,7 +2,6 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-
 import math, os.path, string
 from os import access
 from viper.common.abstracts import Module
@@ -35,7 +34,7 @@ class Lief(Module):
         self.IS_ART      = False
         self.FILE_PATH   = None
 
-        """ Parsers """
+        """ Arguments parsers """
 
         parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
         parser_pe.add_argument("-A", "--architecture",      action="store_true", help="Show PE architecture")
@@ -184,6 +183,9 @@ class Lief(Module):
     """Binaries methods"""
     
     def sections(self):
+        """
+           Display sections of ELF, PE, Mach-O and OAT formats
+        """
         if not self.__check_session():
             return
         rows = []
@@ -229,6 +231,9 @@ class Lief(Module):
             return
     
     def segments(self):
+        """
+            Display segments of ELF, Mach-O and OAT formats
+        """
         if not self.__check_session():
             return
         rows = []
@@ -249,7 +254,7 @@ class Lief(Module):
                     hex(segment.physical_size),
                     hex(segment.virtual_address),
                     hex(segment.virtual_size),
-                    ':'.join(flag for flag in flags),
+                    ':'.join(flags),
                     self.getEntropy(bytes(segment.content))
                 ])
             self.log("info", "Segments : ")
@@ -286,6 +291,9 @@ class Lief(Module):
             self.log("warning", "No segment found")
 
     def type(self):
+        """
+            Display type of ELF, PE, Mach-O and OAT formats
+        """
         if not self.__check_session():
             return
         binaryType = None
@@ -303,6 +311,9 @@ class Lief(Module):
             self.log("warning", "No type found")
 
     def entrypoint(self):
+        """
+            Display entrypoint of ELF, PE, Mach-O and OAT formats
+        """
         if not self.__check_session():
             return
         entrypoint = None
@@ -320,6 +331,9 @@ class Lief(Module):
             self.log("warning", "No entrypoint found")
 
     def architecture(self):
+        """
+            Display architecture type of ELF, PE and Mach-O formats
+        """
         if not self.__check_session():
             return
         architecture = None
@@ -335,6 +349,9 @@ class Lief(Module):
             self.log("warning", "No architecture found")
 
     def entropy(self):
+        """
+            Display entropy of a binary file
+        """
         if not self.__check_session():
             return
         entropy = self.getEntropy(bytes(__sessions__.current.file.data))
@@ -343,6 +360,9 @@ class Lief(Module):
             self.log("warning", "The binary is probably packed")
 
     def interpreter(self):
+        """
+            Display interpreter of ELF and OAT formats
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT  or self.IS_ELF) and self.lief.has_interpreter:
@@ -351,6 +371,9 @@ class Lief(Module):
             self.log("warning", "No interpreter found")
 
     def dynamic(self):
+        """
+            Display dynamic libraries of ELF, PE, Mach-O and OAT formats
+        """
         if not self.__check_session():
             return
         rows = []
@@ -375,6 +398,9 @@ class Lief(Module):
             self.log("warning", "No dynamic library found")
     
     def symbols(self):
+        """
+            Display symbols of ELF, Mach-O and OAT formats
+        """
         if not self.__check_session():
             return
         rows = []
@@ -397,10 +423,13 @@ class Lief(Module):
             self.log("warning", "No symbol found")
 
     def dlls(self):
+        """
+            Display PE binary imported dlls if any
+        """
         if not self.__check_session():
             return
         rows = []
-        if self.IS_PE:
+        if self.IS_PE and self.lief.libraries:
             self.log("info", "PE dlls : ")
             for lib in self.lief.libraries:
                 self.log("info", lib)
@@ -408,10 +437,13 @@ class Lief(Module):
             self.log("error", "No DLL found")
 
     def imports(self):
+        """
+            Display Pe imports if any
+        """
         if not self.__check_session():
             return
         rows = []
-        if self.IS_PE:
+        if self.IS_PE and self.lief.imports:
             self.log("info", "PE imports")
             for imp in self.lief.imports:
                 self.log("info", "{0}".format(imp.name))
@@ -421,6 +453,9 @@ class Lief(Module):
             self.log("warning", "No import found")
 
     def imphash(self):
+        """
+            Display PE imphash
+        """
         if not self.__check_session():
             return
         if self.IS_PE:
@@ -429,6 +464,9 @@ class Lief(Module):
             self.log("warning", "No imphash found")
 
     def gnu_hash(self):
+        """
+            Display GNU hash of ELF and OAT formats
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT and self.lief.use_gnu_hash) or (self.IS_ELF and not self.IS_OAT and self.lief.gnu_hash):
@@ -442,6 +480,9 @@ class Lief(Module):
             self.log("warning", "No GNU hash found")
 
     def compileDate(self):
+        """
+            Display PE compilation date
+        """
         if not self.__check_session():
             return
         if self.IS_PE:
@@ -450,6 +491,9 @@ class Lief(Module):
             self.log("warning", "No compilation date found")
 
     def strip(self):
+        """
+            Strip ELF and OAT formats
+        """
         if not self.__check_session():
             return
         if self.IS_OAT or self.IS_ELF:
@@ -460,6 +504,10 @@ class Lief(Module):
             self.log("warning", "Binary must be of type ELF or OAT")
 
     def write(self):
+        """
+            Write the open binary into another file, useful after being stripped
+            A destination folder can be set (default ./)
+        """
         if not self.__check_session():
             return
         fileName = self.args.write[0]
@@ -475,6 +523,9 @@ class Lief(Module):
             self.log("success", "File successfully saved")
 
     def notes(self):
+        """
+            Display ELF and OAT notes
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT or self.IS_ELF) and self.lief.has_notes:
@@ -490,6 +541,9 @@ class Lief(Module):
             self.log("warning", "No note found")
 
     def map(self):
+        """
+            Display DEX map items
+        """
         if not self.__check_session():
             return
         rows = []
@@ -506,6 +560,9 @@ class Lief(Module):
             self.log("warning", "No map found")
 
     def header(self):
+        """
+            Display header of ELF, PE, Mach-O, OAT, DEX, VDEX and ART formats
+        """
         if not self.__check_session():
             return
         if self.IS_ART:
@@ -639,6 +696,9 @@ class Lief(Module):
             self.log("warning", "No header found")
 
     def codeSignature(self):
+        """
+            Display Mach-O code signature if any
+        """
         if not self.__check_session():
             return
         if self.IS_MACHO and self.lief.has_code_signature:
@@ -656,6 +716,9 @@ class Lief(Module):
             self.log("warning", "No code signature found")
 
     def exportedFunctions(self):
+        """
+            Display ELf, PE, Mach-O and OAT exported functions if any
+        """
         if not self.__check_session():
             return
         if (
@@ -671,6 +734,9 @@ class Lief(Module):
             self.log("warning", "No exported function found")
 
     def exportedSymbols(self):
+        """
+            Display ELF, Mach-O and OAT exported symbols if any
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT or self.IS_ELF) and self.lief.exported_symbols:
@@ -690,6 +756,9 @@ class Lief(Module):
             self.log("warning", "No exported symbol found")
 
     def importedFunctions(self):
+        """
+            Display ELF, PE, Mach-O and OAT imported functions if any
+        """
         if not self.__check_session():
             return
         if (
@@ -705,6 +774,9 @@ class Lief(Module):
             self.log("warning", "No imported function found")
 
     def importedSymbols(self):
+        """
+            Display ELF, Mach-O and OAT imported symbols if any
+        """
         if not self.__check_session():
             return
         rows = []
@@ -724,6 +796,9 @@ class Lief(Module):
             self.log("warning", "No imported symbol found")
 
     def sourceVersion(self):
+        """
+            Display Mach-O source version if any
+        """
         if not self.__check_session():
             return
         if self.IS_MACHO and self.lief.has_source_version:
@@ -736,6 +811,9 @@ class Lief(Module):
             self.log("warning", "No source version found")
 
     def subFramework(self):
+        """
+            Display Mach-O sub-framework if any
+        """
         if not self.__check_session():
             return
         if self.IS_MACHO and self.lief.has_sub_framework:
@@ -748,6 +826,9 @@ class Lief(Module):
             self.log("warning", "No sub-framework found")
 
     def uuid(self):
+        """
+            Display Mach-O uuid if any
+        """
         if not self.__check_session():
             return
         if self.IS_MACHO and self.lief.has_uuid:
@@ -760,6 +841,9 @@ class Lief(Module):
             self.log("warning", "No uuid found")
 
     def dataInCode(self):
+        """
+            Display Mach-O data in code if any
+        """
         if not self.__check_session():
             return
         if self.IS_MACHO and self.lief.has_data_in_code:
@@ -772,6 +856,9 @@ class Lief(Module):
             self.log("warning", "No data in code found")
 
     def mainCommand(self):
+        """
+            Display Mach-O main command if any
+        """
         if not self.__check_session():
             return
         if self.IS_MACHO and self.lief.has_main_command:
@@ -785,6 +872,9 @@ class Lief(Module):
             self.log("warning", "No main command found")
 
     def commands(self):
+        """
+            Display all Mach-O commands
+        """
         if not self.__check_session():
             return
         rows = []
@@ -801,6 +891,9 @@ class Lief(Module):
             self.log("warning", "No command found")
 
     def dosHeader(self):
+        """
+            Display PE DOS header
+        """
         if not self.__check_session():
             return
         if self.IS_PE:
@@ -826,6 +919,9 @@ class Lief(Module):
             self.log("warning", "No DOS header found")
 
     def datadirectories(self):
+        """
+            Display PE data directories if any
+        """
         if not self.__check_session():
             return
         rows = []
@@ -843,6 +939,9 @@ class Lief(Module):
             self.log("warning", "No data directory found")
     
     def dosStub(self):
+        """
+            Disaply PE DOS stub
+        """
         if not self.__check_session():
             return
         if self.IS_PE:
@@ -853,6 +952,9 @@ class Lief(Module):
             self.log("warning", "No DOS stub found")
     
     def debug(self):
+        """
+            Display PE debug information
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_debug:
@@ -875,6 +977,9 @@ class Lief(Module):
             self.log("warning", "No debug information found")
 
     def loadConfiguration(self):
+        """
+            Display PE load configuration if any
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_configuration:
@@ -901,6 +1006,9 @@ class Lief(Module):
             self.log("warning", "No load configuration found")
 
     def dynamicRelocations(self):
+        """
+            Display OAT dynamic relocations if any
+        """
         if not self.__check_session():
             return
         rows = []
@@ -919,6 +1027,9 @@ class Lief(Module):
             self.log("warning", "No dynamic relocation found")
 
     def objectRelocations(self):
+        """
+            Display ELF and OAT object relocations if any
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT or self.IS_ELF) and self.lief.object_relocations:
@@ -927,6 +1038,9 @@ class Lief(Module):
             self.log("warning", "No object relocation found")
 
     def relocations(self):
+        """
+            Display ELF, PE and OAT relocations if any
+        """
         if not self.__check_session():
             return
         rows = []
@@ -949,6 +1063,9 @@ class Lief(Module):
             self.log("warning", "No relocation found")
    
     def resources(self):
+        """
+            Display PE resources if any
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources:
@@ -962,6 +1079,9 @@ class Lief(Module):
             self.log("warning", "No resource found")
 
     def tls(self):
+        """
+            Display PE TLS if any
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_tls:
@@ -979,6 +1099,9 @@ class Lief(Module):
             self.log("warning", "No tls found")
     
     def richHeader(self):
+        """
+            Display PE rich header if any
+        """
         if not self.__check_session():
             return
         rows = []
@@ -996,6 +1119,9 @@ class Lief(Module):
             self.log("warning", "No rich header found")
     
     def signature(self):
+        """
+            Display PE signature if any
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_signature:
@@ -1020,6 +1146,9 @@ class Lief(Module):
             self.log("warning", "No signature found")
     
     def manifest(self):
+        """
+            Display PE manifest if any
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_manifest:
@@ -1028,6 +1157,9 @@ class Lief(Module):
             self.log("warning", "No manifest found")
 
     def resourcesTypes(self):
+        """
+            Display PE resources types if any
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_type:
@@ -1036,6 +1168,9 @@ class Lief(Module):
             self.log("warning", "No resources type found")
 
     def langs(self):
+        """
+            Display PE used lands and sublangs
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.langs_available:
@@ -1045,6 +1180,9 @@ class Lief(Module):
             self.log("warning", "No lang found")
 
     def icons(self):
+        """
+            Display PE embedded icons if any
+        """
         if not self.__check_session():
             return
         rows = []
@@ -1064,6 +1202,11 @@ class Lief(Module):
             self.log("warning", "No icon found")
 
     def extractIcons(self):
+        """
+            Extract PE embedded icons if any
+            A destination folder can be set (default ./)
+            An icon id can be set (default all)
+        """
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_icons:
@@ -1093,6 +1236,9 @@ class Lief(Module):
             self.log("warning", "No icon found")
 
     def dialogs(self):
+        """
+            Display PE dialogs if any
+        """
         if not self.__check_session():
             return
         rows = []
@@ -1127,6 +1273,9 @@ class Lief(Module):
             self.log("warning", "No dialog found")
 
     def classes(self):
+        """
+            Display OAT and DEX classes
+        """
         if not self.__check_session():
             return
         rows = []
@@ -1157,6 +1306,11 @@ class Lief(Module):
             self.log("warning", "No class found")
 
     def methods(self):
+        """
+            Display OAT and DEX methods by class
+            A class name must be set
+            A method name can be set (default all)
+        """
         if not self.__check_session():
             return
         def oatMethodProcessing(method):
@@ -1213,6 +1367,9 @@ class Lief(Module):
             self.log("warning", "No method found")
     
     def androidVersion(self):
+        """
+            Display OAT, VDEX and ART android version
+        """
         if not self.__check_session():
             return
         try:
@@ -1231,6 +1388,9 @@ class Lief(Module):
             self.log("error", "Problem with android version : {0}".format(e))
 
     def dexFiles(self):
+        """
+            Display OAT and VDEX dex files
+        """
         if not self.__check_session():
             return
         rows = []
@@ -1248,6 +1408,9 @@ class Lief(Module):
             self.log("warning", "No dex file found")
 
     def dynamicEntries(self):
+        """
+            Display ELF and OAT dynamic entries
+        """
         if not self.__check_session():
             return
         rows = []
@@ -1263,6 +1426,9 @@ class Lief(Module):
             self.log("warning", "No dynamic entry found")
     
     def dynamicSymbols(self):
+        """
+            Display ELF and OAT dynamic symbols
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT or self.IS_ELF) and self.lief.dynamic_symbols:
@@ -1271,6 +1437,9 @@ class Lief(Module):
             self.log("warning", "No dynamic symbol found")
 
     def staticSymbols(self):
+        """
+            Display ELF and OAT static symbols
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT or self.IS_ELF) and self.lief.static_symbols:
@@ -1279,6 +1448,11 @@ class Lief(Module):
             self.log("warning", "No static symbol found")
 
     def extractDexFiles(self):
+        """
+            Extract dex files from OAT and VDEX formats
+            A destination folder can be set (default ./)
+            A dex file name can be set (default all)
+        """
         if not self.__check_session():
             return
         if (self.IS_OAT or self.IS_VDEX) and self.lief.dex_files:
@@ -1308,6 +1482,9 @@ class Lief(Module):
             self.log("warning", "No dexFile found")
 
     def strings(self):
+        """
+            Display DEX strings
+        """
         if not self.__check_session():
             return
         if self.IS_DEX and self.lief.strings:
