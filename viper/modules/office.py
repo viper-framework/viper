@@ -11,7 +11,6 @@ import os
 import struct
 import zipfile
 import xml.etree.ElementTree as ET
-import sys
 
 from viper.common.utils import string_clean, string_clean_hex
 from viper.common.abstracts import Module
@@ -24,10 +23,7 @@ try:
     from oletools import msodde
     from oletools import ooxml
 
-    if sys.version_info >= (3, 0):
-        from oletools.olevba3 import VBA_Parser, VBA_Scanner
-    else:
-        from oletools.olevba import VBA_Parser, VBA_Scanner
+    from oletools.olevba import VBA_Parser, VBA_Scanner
     HAVE_OLE = True
 except ImportError:
     HAVE_OLE = False
@@ -147,17 +143,22 @@ class Office(Module):
 
         ole.close()
 
-    def export(self, ole, export_path):
-        if not os.path.exists(export_path):
+    def safe_makedir(self, path):
+        if not os.path.exists(path):
             try:
-                os.makedirs(export_path)
+                os.makedirs(path)
             except Exception as e:
-                self.log('error', "Unable to create directory at {0}: {1}".format(export_path, e))
-                return
+                self.log('error', "Unable to create directory at {0}: {1}".format(path, e))
+                return False
         else:
-            if not os.path.isdir(export_path):
+            if not os.path.isdir(path):
                 self.log('error', "You need to specify a folder, not a file")
-                return
+                return False
+        return True
+
+    def export(self, ole, export_path):
+        if not self.safe_makedir(export_path):
+            return
 
         for stream in ole.listdir(streams=True, storages=True):
             try:
@@ -366,11 +367,11 @@ class Office(Module):
                 # Save the code to external File
                 if save_path:
                     try:
-                        with open(save_path, 'ab') as out:
+                        with open(save_path, 'a') as out:
                             out.write(vba_code)
                         save = True
-                    except Exception:
-                        self.log('error', "Unable to write to {0}".format(save_path))
+                    except Exception as e:
+                        self.log('error', "Unable to write to {0}: {1}".format(save_path, e))
                         return
             # Print all Tables together
             self.log('info', "AutoRun Macros Found")
@@ -497,7 +498,7 @@ class Office(Module):
     def get_dde(self, file_path):
         try:
             dde_result = msodde.process_file(file_path, 'only dde')
-            dde_fields = [[i+1, x.strip()] for i, x in enumerate(dde_result.split('\n'))]
+            dde_fields = [[i + 1, x.strip()] for i, x in enumerate(dde_result.split('\n'))]
             if (len(dde_fields) == 1) and (dde_fields[0][1] == ''):
                 self.log('info', "No DDE Links Detected.")
             else:
