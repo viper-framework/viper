@@ -378,7 +378,7 @@ class MISP(Module):
             self.log('info', 'No known (in Viper) samples in that event.')
 
     def _find_related_id(self, event):
-        if not event.RelatedEvent:
+        if 'RelatedEvent' not in event:
             return []
         related = [(_event.id, _event.info) for _event in event.RelatedEvent]
         to_return = list(set(related))
@@ -399,8 +399,7 @@ class MISP(Module):
             to_dump.load(event)
         if to_dump.id:
             filename = str(to_dump.id)
-        elif (__sessions__.is_attached_misp(True) and
-                __sessions__.current.misp_event.current_dump_file):
+        elif (__sessions__.is_attached_misp(True) and __sessions__.current.misp_event.current_dump_file):
             filename = __sessions__.current.misp_event.current_dump_file
         else:
             i = 1
@@ -580,8 +579,7 @@ class MISP(Module):
             self.offline_mode = False
             if __sessions__.is_attached_misp(True):
                 __sessions__.current.misp_event.off = False
-        elif self.args.off or (__sessions__.is_attached_misp(True) and
-                               __sessions__.current.misp_event.off):
+        elif self.args.off or (__sessions__.is_attached_misp(True) and __sessions__.current.misp_event.off):
             self.offline_mode = True
             if __sessions__.is_attached_misp(True):
                 __sessions__.current.misp_event.off = True

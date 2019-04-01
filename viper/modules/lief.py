@@ -5,7 +5,6 @@
 import math
 import os.path
 import string
-from os import access
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 from datetime import datetime
@@ -13,160 +12,160 @@ from datetime import datetime
 try:
     import lief
     HAVE_LIEF = True
-except Exception as e:
+except Exception:
     HAVE_LIEF = False
 
 
 class Lief(Module):
-    cmd         = "lief"
+    cmd = "lief"
     description = "Parse and extract information from ELF, PE, MachO, DEX, OAT, ART and VDEX formats"
-    authors     = ["Jordan Samhi"]
+    authors = ["Jordan Samhi"]
 
     def __init__(self):
         super(Lief, self).__init__()
-        subparsers  = self.parser.add_subparsers(dest="subname")
+        subparsers = self.parser.add_subparsers(dest="subname")
 
         """ Constants """
 
-        self.IS_PE       = False
-        self.IS_ELF      = False
-        self.IS_MACHO    = False
-        self.IS_OAT      = False
-        self.IS_DEX      = False
-        self.IS_VDEX     = False
-        self.IS_ART      = False
-        self.FILE_PATH   = None
+        self.IS_PE = False
+        self.IS_ELF = False
+        self.IS_MACHO = False
+        self.IS_OAT = False
+        self.IS_DEX = False
+        self.IS_VDEX = False
+        self.IS_ART = False
+        self.FILE_PATH = None
 
         """ Arguments parsers """
 
         parser_pe = subparsers.add_parser("pe", help="Extract information from PE files")
-        parser_pe.add_argument("-A", "--architecture",      action="store_true", help="Show PE architecture")
-        parser_pe.add_argument("-b", "--debug",             action="store_true", help="Show PE debug information")
-        parser_pe.add_argument("-c", "--compiledate",       action="store_true", help="Show PE date of compilation")
-        parser_pe.add_argument("-C", "--richheader",        action="store_true", help="Show PE rich header")
-        parser_pe.add_argument("-d", "--dlls",              action="store_true", help="Show PE imported dlls")
-        parser_pe.add_argument("-D", "--datadirectories",   action="store_true", help="Show PE data directories")
-        parser_pe.add_argument("-e", "--entrypoint",        action="store_true", help="Show PE entrypoint")
-        parser_pe.add_argument("-g", "--signature",         action="store_true", help="Show PE signature")
-        parser_pe.add_argument("-G", "--dialogs",           action="store_true", help="Show PE dialogs box information")
-        parser_pe.add_argument("-H", "--header",            action="store_true", help="Show PE header")
-        parser_pe.add_argument("-i", "--imports",           action="store_true", help="Show PE imported functions and DLLs")
-        parser_pe.add_argument("-I", "--impfunctions",      action="store_true", help="Show PE imported functions")
-        parser_pe.add_argument("-j", "--expfunctions",      action="store_true", help="Show PE exported functions")
+        parser_pe.add_argument("-A", "--architecture", action="store_true", help="Show PE architecture")
+        parser_pe.add_argument("-b", "--debug", action="store_true", help="Show PE debug information")
+        parser_pe.add_argument("-c", "--compiledate", action="store_true", help="Show PE date of compilation")
+        parser_pe.add_argument("-C", "--richheader", action="store_true", help="Show PE rich header")
+        parser_pe.add_argument("-d", "--dlls", action="store_true", help="Show PE imported dlls")
+        parser_pe.add_argument("-D", "--datadirectories", action="store_true", help="Show PE data directories")
+        parser_pe.add_argument("-e", "--entrypoint", action="store_true", help="Show PE entrypoint")
+        parser_pe.add_argument("-g", "--signature", action="store_true", help="Show PE signature")
+        parser_pe.add_argument("-G", "--dialogs", action="store_true", help="Show PE dialogs box information")
+        parser_pe.add_argument("-H", "--header", action="store_true", help="Show PE header")
+        parser_pe.add_argument("-i", "--imports", action="store_true", help="Show PE imported functions and DLLs")
+        parser_pe.add_argument("-I", "--impfunctions", action="store_true", help="Show PE imported functions")
+        parser_pe.add_argument("-j", "--expfunctions", action="store_true", help="Show PE exported functions")
         parser_pe.add_argument("-l", "--loadconfiguration", action="store_true", help="Show PE load configuration")
-        parser_pe.add_argument("-L", "--langs",             action="store_true", help="Show PE langs and sublangs used")
-        parser_pe.add_argument("-m", "--imphash",           action="store_true", help="Show PE imported functions hash")
-        parser_pe.add_argument("-M", "--manifest",          action="store_true", help="Show PE Manifest")
-        parser_pe.add_argument("-o", "--dosheader",         action="store_true", help="Show PE DOS header")
-        parser_pe.add_argument("-O", "--icons",             action="store_true", help="Show PE icons information")
-        parser_pe.add_argument("-r", "--relocations",       action="store_true", help="Show PE relocations")
-        parser_pe.add_argument("-R", "--resources",         action="store_true", help="Show PE resources")
-        parser_pe.add_argument("-s", "--sections",          action="store_true", help="Show PE sections")
-        parser_pe.add_argument("-t", "--type",              action="store_true", help="Show PE type")
-        parser_pe.add_argument("-T", "--tls",               action="store_true", help="Show PE tls")
-        parser_pe.add_argument("-u", "--dosstub",           action="store_true", help="Show PE DOS stub")
-        parser_pe.add_argument("-x", "--extracticons",      nargs='?',           help="Extract icons to the given path (default : ./)", const="./", metavar="path")
-        parser_pe.add_argument("-y", "--dynamic",           action="store_true", help="Show PE dynamic libraries")
-        parser_pe.add_argument("-Y", "--resourcestypes",    action="store_true", help="Show PE types of resources")
-        parser_pe.add_argument("--id",                      nargs=1, type=int,   help="Define an id for following commands : -x", metavar="id")
+        parser_pe.add_argument("-L", "--langs", action="store_true", help="Show PE langs and sublangs used")
+        parser_pe.add_argument("-m", "--imphash", action="store_true", help="Show PE imported functions hash")
+        parser_pe.add_argument("-M", "--manifest", action="store_true", help="Show PE Manifest")
+        parser_pe.add_argument("-o", "--dosheader", action="store_true", help="Show PE DOS header")
+        parser_pe.add_argument("-O", "--icons", action="store_true", help="Show PE icons information")
+        parser_pe.add_argument("-r", "--relocations", action="store_true", help="Show PE relocations")
+        parser_pe.add_argument("-R", "--resources", action="store_true", help="Show PE resources")
+        parser_pe.add_argument("-s", "--sections", action="store_true", help="Show PE sections")
+        parser_pe.add_argument("-t", "--type", action="store_true", help="Show PE type")
+        parser_pe.add_argument("-T", "--tls", action="store_true", help="Show PE tls")
+        parser_pe.add_argument("-u", "--dosstub", action="store_true", help="Show PE DOS stub")
+        parser_pe.add_argument("-x", "--extracticons", nargs='?', help="Extract icons to the given path (default : ./)", const="./", metavar="path")
+        parser_pe.add_argument("-y", "--dynamic", action="store_true", help="Show PE dynamic libraries")
+        parser_pe.add_argument("-Y", "--resourcestypes", action="store_true", help="Show PE types of resources")
+        parser_pe.add_argument("--id", nargs=1, type=int, help="Define an id for following commands : -x", metavar="id")
 
         parser_elf = subparsers.add_parser("elf", help="Extract information from ELF files")
-        parser_elf.add_argument("-A", "--architecture",         action="store_true", help="Show ELF architecture")
-        parser_elf.add_argument("-b", "--impsymbols",           action="store_true", help="Show ELF imported symbols")
-        parser_elf.add_argument("-B", "--staticsymbols",        action="store_true", help="Show ELF static symbols")
-        parser_elf.add_argument("-d", "--dynamic",              action="store_true", help="Show ELF dynamic libraries")
-        parser_elf.add_argument("-e", "--entrypoint",           action="store_true", help="Show ELF entrypoint")
-        parser_elf.add_argument("-E", "--entropy",              action="store_true", help="Show ELF entropy")
-        parser_elf.add_argument("-g", "--gnu_hash",             action="store_true", help="Show ELF GNU hash")
-        parser_elf.add_argument("-H", "--header",               action="store_true", help="Show ELF header")
-        parser_elf.add_argument("-i", "--interpreter",          action="store_true", help="Show ELF interpreter")
-        parser_elf.add_argument("-I", "--impfunctions",         action="store_true", help="Show ELF imported functions")
-        parser_elf.add_argument("-j", "--expfunctions",         action="store_true", help="Show ELF exported functions")
-        parser_elf.add_argument("-k", "--expsymbols",           action="store_true", help="Show ELF exported symbols")
-        parser_elf.add_argument("-n", "--notes",                action="store_true", help="Show ELF notes")
-        parser_elf.add_argument("-o", "--objectrelocations",    action="store_true", help="Show ELF object relocations")
-        parser_elf.add_argument("-r", "--relocations",          action="store_true", help="Show ELF relocations")
-        parser_elf.add_argument("-s", "--sections",             action="store_true", help="Show ELF sections")
-        parser_elf.add_argument("-S", "--segments",             action="store_true", help="Show ELF segments")
-        parser_elf.add_argument("-t", "--type",                 action="store_true", help="Show ELF type")
-        parser_elf.add_argument("-T", "--dynamicentries",       action="store_true", help="Strip ELF dynamic entries")
-        parser_elf.add_argument("-w", "--write",                nargs=1,             help="Write binary into file", metavar="fileName")
-        parser_elf.add_argument("-y", "--symbols",              action="store_true", help="Show ELF symbols")
-        parser_elf.add_argument("-Y", "--dynamicsymbols",       action="store_true", help="Show ELF dynamic symbols")
-        parser_elf.add_argument("-z", "--strip",                action="store_true", help="Strip ELF binary")
+        parser_elf.add_argument("-A", "--architecture", action="store_true", help="Show ELF architecture")
+        parser_elf.add_argument("-b", "--impsymbols", action="store_true", help="Show ELF imported symbols")
+        parser_elf.add_argument("-B", "--staticsymbols", action="store_true", help="Show ELF static symbols")
+        parser_elf.add_argument("-d", "--dynamic", action="store_true", help="Show ELF dynamic libraries")
+        parser_elf.add_argument("-e", "--entrypoint", action="store_true", help="Show ELF entrypoint")
+        parser_elf.add_argument("-E", "--entropy", action="store_true", help="Show ELF entropy")
+        parser_elf.add_argument("-g", "--gnu_hash", action="store_true", help="Show ELF GNU hash")
+        parser_elf.add_argument("-H", "--header", action="store_true", help="Show ELF header")
+        parser_elf.add_argument("-i", "--interpreter", action="store_true", help="Show ELF interpreter")
+        parser_elf.add_argument("-I", "--impfunctions", action="store_true", help="Show ELF imported functions")
+        parser_elf.add_argument("-j", "--expfunctions", action="store_true", help="Show ELF exported functions")
+        parser_elf.add_argument("-k", "--expsymbols", action="store_true", help="Show ELF exported symbols")
+        parser_elf.add_argument("-n", "--notes", action="store_true", help="Show ELF notes")
+        parser_elf.add_argument("-o", "--objectrelocations", action="store_true", help="Show ELF object relocations")
+        parser_elf.add_argument("-r", "--relocations", action="store_true", help="Show ELF relocations")
+        parser_elf.add_argument("-s", "--sections", action="store_true", help="Show ELF sections")
+        parser_elf.add_argument("-S", "--segments", action="store_true", help="Show ELF segments")
+        parser_elf.add_argument("-t", "--type", action="store_true", help="Show ELF type")
+        parser_elf.add_argument("-T", "--dynamicentries", action="store_true", help="Strip ELF dynamic entries")
+        parser_elf.add_argument("-w", "--write", nargs=1, help="Write binary into file", metavar="fileName")
+        parser_elf.add_argument("-y", "--symbols", action="store_true", help="Show ELF symbols")
+        parser_elf.add_argument("-Y", "--dynamicsymbols", action="store_true", help="Show ELF dynamic symbols")
+        parser_elf.add_argument("-z", "--strip", action="store_true", help="Strip ELF binary")
 
         parser_macho = subparsers.add_parser("macho", help="Extract information from MachO files")
-        parser_macho.add_argument("-A", "--architecture",   action="store_true", help="Show MachO architecture")
-        parser_macho.add_argument("-c", "--commands",       action="store_true", help="Show MachO commands")
-        parser_macho.add_argument("-C", "--codesignature",  action="store_true", help="Show MachO code signature")
-        parser_macho.add_argument("-d", "--dynamic",        action="store_true", help="Show MachO dynamic libraries")
-        parser_macho.add_argument("-D", "--dataincode",     action="store_true", help="Show MachO data in code")
-        parser_macho.add_argument("-e", "--entrypoint",     action="store_true", help="Show MachO entrypoint")
-        parser_macho.add_argument("-f", "--subframework",   action="store_true", help="Show MachO sub-framework")
-        parser_macho.add_argument("-H", "--header",         action="store_true", help="Show MachO header")
-        parser_macho.add_argument("-I", "--impfunctions",   action="store_true", help="Show MachO imported functions")
-        parser_macho.add_argument("-j", "--expfunctions",   action="store_true", help="Show MachO exported functions")
-        parser_macho.add_argument("-k", "--expsymbols",     action="store_true", help="Show MachO exported symbols")
-        parser_macho.add_argument("-m", "--maincommand",    action="store_true", help="Show MachO main command")
-        parser_macho.add_argument("-q", "--impsymbols",     action="store_true", help="Show MachO imported symbols")
-        parser_macho.add_argument("-s", "--sections",       action="store_true", help="Show MachO sections")
-        parser_macho.add_argument("-S", "--segments",       action="store_true", help="Show MachO segments")
-        parser_macho.add_argument("-t", "--type",           action="store_true", help="Show MachO type")
-        parser_macho.add_argument("-u", "--uuid",           action="store_true", help="Show MachO uuid")
-        parser_macho.add_argument("-v", "--sourceversion",  action="store_true", help="Show MachO source version")
-        parser_macho.add_argument("-y", "--symbols",        action="store_true", help="Show MachO symbols")
+        parser_macho.add_argument("-A", "--architecture", action="store_true", help="Show MachO architecture")
+        parser_macho.add_argument("-c", "--commands", action="store_true", help="Show MachO commands")
+        parser_macho.add_argument("-C", "--codesignature", action="store_true", help="Show MachO code signature")
+        parser_macho.add_argument("-d", "--dynamic", action="store_true", help="Show MachO dynamic libraries")
+        parser_macho.add_argument("-D", "--dataincode", action="store_true", help="Show MachO data in code")
+        parser_macho.add_argument("-e", "--entrypoint", action="store_true", help="Show MachO entrypoint")
+        parser_macho.add_argument("-f", "--subframework", action="store_true", help="Show MachO sub-framework")
+        parser_macho.add_argument("-H", "--header", action="store_true", help="Show MachO header")
+        parser_macho.add_argument("-I", "--impfunctions", action="store_true", help="Show MachO imported functions")
+        parser_macho.add_argument("-j", "--expfunctions", action="store_true", help="Show MachO exported functions")
+        parser_macho.add_argument("-k", "--expsymbols", action="store_true", help="Show MachO exported symbols")
+        parser_macho.add_argument("-m", "--maincommand", action="store_true", help="Show MachO main command")
+        parser_macho.add_argument("-q", "--impsymbols", action="store_true", help="Show MachO imported symbols")
+        parser_macho.add_argument("-s", "--sections", action="store_true", help="Show MachO sections")
+        parser_macho.add_argument("-S", "--segments", action="store_true", help="Show MachO segments")
+        parser_macho.add_argument("-t", "--type", action="store_true", help="Show MachO type")
+        parser_macho.add_argument("-u", "--uuid", action="store_true", help="Show MachO uuid")
+        parser_macho.add_argument("-v", "--sourceversion", action="store_true", help="Show MachO source version")
+        parser_macho.add_argument("-y", "--symbols", action="store_true", help="Show MachO symbols")
 
         parser_oat = subparsers.add_parser("oat", help="Extract information from OAT files")
-        parser_oat.add_argument("-c", "--classname",            nargs=1,             help="Full name of class (com.android.etc...). Used with -m", metavar="fullname", type=str)
-        parser_oat.add_argument("-C", "--classes",              action="store_true", help="Show OAT classes")
-        parser_oat.add_argument("-b", "--impsymbols",           action="store_true", help="Show OAT imported symbols")
-        parser_oat.add_argument("-B", "--staticsymbols",        action="store_true", help="Show OAT static symbols")
-        parser_oat.add_argument("-d", "--dynamic",              action="store_true", help="Show OAT dynamic libraries")
-        parser_oat.add_argument("-D", "--dynamicrelocations",   action="store_true", help="Show OAT dynamic relocations")
-        parser_oat.add_argument("-e", "--entrypoint",           action="store_true", help="Show OAT entrypoint")
-        parser_oat.add_argument("-E", "--entropy",              action="store_true", help="Show OAT entropy")
-        parser_oat.add_argument("-f", "--dexfiles",             action="store_true", help="Show OAT dex files")
-        parser_oat.add_argument("-g", "--gnu_hash",             action="store_true", help="Show OAT GNU hash")
-        parser_oat.add_argument("-H", "--header",               action="store_true", help="Show OAT header")
-        parser_oat.add_argument("-i", "--interpreter",          action="store_true", help="Show OAT interpreter")
-        parser_oat.add_argument("-I", "--impfunctions",         action="store_true", help="Show OAT imported functions")
-        parser_oat.add_argument("-j", "--expfunctions",         action="store_true", help="Show OAT exported functions")
-        parser_oat.add_argument("-k", "--expsymbols",           action="store_true", help="Show OAT exported symbols")
-        parser_oat.add_argument("-m", "--methods",              action="store_true", help="Show OAT methods by class")
-        parser_oat.add_argument("-n", "--name",                 nargs=1, type=str,   help="Define a name for the following commands : -m, -x", metavar="name")
-        parser_oat.add_argument("-N", "--notes",                action="store_true", help="Show OAT notes")
-        parser_oat.add_argument("-o", "--objectrelocations",    action="store_true", help="Show OAT object relocations")
-        parser_oat.add_argument("-r", "--relocations",          action="store_true", help="Show OAT relocations")
-        parser_oat.add_argument("-s", "--sections",             action="store_true", help="Show OAT sections")
-        parser_oat.add_argument("-S", "--segments",             action="store_true", help="Show OAT segments")
-        parser_oat.add_argument("-t", "--type",                 action="store_true", help="Show OAT type")
-        parser_oat.add_argument("-T", "--dynamicentries",       action="store_true", help="Show OAT dynamic entries")
-        parser_oat.add_argument("-v", "--androidversion",       action="store_true", help="Show OAT android version")
-        parser_oat.add_argument("-w", "--write",                nargs=1,             help="Write binary into file", metavar="fileName")
-        parser_oat.add_argument("-x", "--extractdexfiles",      nargs='?',           help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
-        parser_oat.add_argument("-y", "--symbols",              action="store_true", help="Show OAT static and dynamic symbols")
-        parser_oat.add_argument("-Y", "--dynamicsymbols",       action="store_true", help="Show OAT dynamic symbols")
-        parser_oat.add_argument("-z", "--strip",                action="store_true", help="Strip OAT binary")
+        parser_oat.add_argument("-c", "--classname", nargs=1, help="Full name of class (com.android.etc...). Used with -m", metavar="fullname", type=str)
+        parser_oat.add_argument("-C", "--classes", action="store_true", help="Show OAT classes")
+        parser_oat.add_argument("-b", "--impsymbols", action="store_true", help="Show OAT imported symbols")
+        parser_oat.add_argument("-B", "--staticsymbols", action="store_true", help="Show OAT static symbols")
+        parser_oat.add_argument("-d", "--dynamic", action="store_true", help="Show OAT dynamic libraries")
+        parser_oat.add_argument("-D", "--dynamicrelocations", action="store_true", help="Show OAT dynamic relocations")
+        parser_oat.add_argument("-e", "--entrypoint", action="store_true", help="Show OAT entrypoint")
+        parser_oat.add_argument("-E", "--entropy", action="store_true", help="Show OAT entropy")
+        parser_oat.add_argument("-f", "--dexfiles", action="store_true", help="Show OAT dex files")
+        parser_oat.add_argument("-g", "--gnu_hash", action="store_true", help="Show OAT GNU hash")
+        parser_oat.add_argument("-H", "--header", action="store_true", help="Show OAT header")
+        parser_oat.add_argument("-i", "--interpreter", action="store_true", help="Show OAT interpreter")
+        parser_oat.add_argument("-I", "--impfunctions", action="store_true", help="Show OAT imported functions")
+        parser_oat.add_argument("-j", "--expfunctions", action="store_true", help="Show OAT exported functions")
+        parser_oat.add_argument("-k", "--expsymbols", action="store_true", help="Show OAT exported symbols")
+        parser_oat.add_argument("-m", "--methods", action="store_true", help="Show OAT methods by class")
+        parser_oat.add_argument("-n", "--name", nargs=1, type=str, help="Define a name for the following commands : -m, -x", metavar="name")
+        parser_oat.add_argument("-N", "--notes", action="store_true", help="Show OAT notes")
+        parser_oat.add_argument("-o", "--objectrelocations", action="store_true", help="Show OAT object relocations")
+        parser_oat.add_argument("-r", "--relocations", action="store_true", help="Show OAT relocations")
+        parser_oat.add_argument("-s", "--sections", action="store_true", help="Show OAT sections")
+        parser_oat.add_argument("-S", "--segments", action="store_true", help="Show OAT segments")
+        parser_oat.add_argument("-t", "--type", action="store_true", help="Show OAT type")
+        parser_oat.add_argument("-T", "--dynamicentries", action="store_true", help="Show OAT dynamic entries")
+        parser_oat.add_argument("-v", "--androidversion", action="store_true", help="Show OAT android version")
+        parser_oat.add_argument("-w", "--write", nargs=1, help="Write binary into file", metavar="fileName")
+        parser_oat.add_argument("-x", "--extractdexfiles", nargs='?', help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
+        parser_oat.add_argument("-y", "--symbols", action="store_true", help="Show OAT static and dynamic symbols")
+        parser_oat.add_argument("-Y", "--dynamicsymbols", action="store_true", help="Show OAT dynamic symbols")
+        parser_oat.add_argument("-z", "--strip", action="store_true", help="Strip OAT binary")
 
         parser_dex = subparsers.add_parser("dex", help="Extract information from DEX files")
-        parser_dex.add_argument("-c", "--classname",    nargs=1,             help="Full name of class (com.android.etc...). Used with -m", metavar="fullname", type=str)
-        parser_dex.add_argument("-C", "--classes",      action="store_true", help="Show DEX classes")
-        parser_dex.add_argument("-H", "--header",       action="store_true", help="Show DEX header")
-        parser_dex.add_argument("-m", "--methods",      action="store_true", help="Show DEX methods by class")
-        parser_dex.add_argument("-M", "--map",          action="store_true", help="Show DEX map items")
-        parser_dex.add_argument("-n", "--name",         nargs=1, type=str,   help="Define a name for the following commands : -m", metavar="name")
-        parser_dex.add_argument("-s", "--strings",      action="store_true", help="Show DEX strings")
+        parser_dex.add_argument("-c", "--classname", nargs=1, help="Full name of class (com.android.etc...). Used with -m", metavar="fullname", type=str)
+        parser_dex.add_argument("-C", "--classes", action="store_true", help="Show DEX classes")
+        parser_dex.add_argument("-H", "--header", action="store_true", help="Show DEX header")
+        parser_dex.add_argument("-m", "--methods", action="store_true", help="Show DEX methods by class")
+        parser_dex.add_argument("-M", "--map", action="store_true", help="Show DEX map items")
+        parser_dex.add_argument("-n", "--name", nargs=1, type=str, help="Define a name for the following commands : -m", metavar="name")
+        parser_dex.add_argument("-s", "--strings", action="store_true", help="Show DEX strings")
 
         parser_vdex = subparsers.add_parser("vdex", help="Extract information from VDEX files")
-        parser_vdex.add_argument("-f", "--dexfiles",        action="store_true", help="Show VDEX dex files")
-        parser_vdex.add_argument("-H", "--header",          action="store_true", help="Show VDEX header")
-        parser_vdex.add_argument("-n", "--name",            nargs=1, type=str,   help="Define a name for the following commands : -x", metavar="name")
-        parser_vdex.add_argument("-v", "--androidversion",  action="store_true", help="Show VDEX android version")
-        parser_vdex.add_argument("-x", "--extractdexfiles", nargs='?',           help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
+        parser_vdex.add_argument("-f", "--dexfiles", action="store_true", help="Show VDEX dex files")
+        parser_vdex.add_argument("-H", "--header", action="store_true", help="Show VDEX header")
+        parser_vdex.add_argument("-n", "--name", nargs=1, type=str, help="Define a name for the following commands : -x", metavar="name")
+        parser_vdex.add_argument("-v", "--androidversion", action="store_true", help="Show VDEX android version")
+        parser_vdex.add_argument("-x", "--extractdexfiles", nargs='?', help="Extract dex files to the given path (default : ./)", const="./", metavar="path")
 
         parser_art = subparsers.add_parser("art", help="Extract information from ART files")
-        parser_art.add_argument("-H", "--header",          action="store_true", help="Show ART header")
-        parser_art.add_argument("-v", "--androidversion",  action="store_true", help="Show ART android version")
+        parser_art.add_argument("-H", "--header", action="store_true", help="Show ART header")
+        parser_art.add_argument("-v", "--androidversion", action="store_true", help="Show ART android version")
 
         self.lief = None
 
@@ -176,8 +175,8 @@ class Lief(Module):
             return False
         if not self.lief:
             try:
-                self.lief       = self.parseBinary(__sessions__.current.file.path)
-                self.FILE_PATH   = __sessions__.current.file.path
+                self.lief = self.parseBinary(__sessions__.current.file.path)
+                self.FILE_PATH = __sessions__.current.file.path
             except lief.parser_error as e:
                 self.log("error", "Unable to parse file : {0}".format(e))
                 return False
@@ -368,7 +367,7 @@ class Lief(Module):
         """
         if not self.__check_session():
             return
-        if (self.IS_OAT  or self.IS_ELF) and self.lief.has_interpreter:
+        if (self.IS_OAT or self.IS_ELF) and self.lief.has_interpreter:
             self.log("info", "Interpreter : {0}".format(self.lief.interpreter))
         else:
             self.log("warning", "No interpreter found")
@@ -431,7 +430,6 @@ class Lief(Module):
         """
         if not self.__check_session():
             return
-        rows = []
         if self.IS_PE and self.lief.libraries:
             self.log("info", "PE dlls : ")
             for lib in self.lief.libraries:
@@ -445,7 +443,6 @@ class Lief(Module):
         """
         if not self.__check_session():
             return
-        rows = []
         if self.IS_PE and self.lief.imports:
             self.log("info", "PE imports")
             for imp in self.lief.imports:
@@ -514,12 +511,12 @@ class Lief(Module):
         if not self.__check_session():
             return
         fileName = self.args.write[0]
-        destFolder = './' if '/' not in fileName else fileName[:fileName.rfind('/')+1]
+        destFolder = './' if '/' not in fileName else fileName[:fileName.rfind('/') + 1]
         if os.path.isfile(fileName):
             self.log("error", "File already exists")
         elif not os.access(destFolder, os.X_OK | os.W_OK):
             self.log("error", "Cannot write into folder : {0}".format(destFolder))
-        elif fileName[len(fileName)-1] == '/':
+        elif fileName[len(fileName) - 1] == '/':
             self.log("error", "Please enter a file name")
         else:
             self.lief.write(fileName)
@@ -724,12 +721,10 @@ class Lief(Module):
         """
         if not self.__check_session():
             return
-        if (
-                (self.IS_MACHO and self.lief.exported_functions) or
-                (self.IS_OAT and self.lief.exported_functions) or
-                (self.IS_ELF and self.lief.exported_functions) or
-                (self.IS_PE and self.lief.exported_functions)
-        ):
+        if ((self.IS_MACHO and self.lief.exported_functions)
+                or (self.IS_OAT and self.lief.exported_functions)
+                or (self.IS_ELF and self.lief.exported_functions)
+                or (self.IS_PE and self.lief.exported_functions)):
             self.log("info", "Exported functions : ")
             for function in self.lief.exported_functions:
                 self.log("info", function)
@@ -764,12 +759,10 @@ class Lief(Module):
         """
         if not self.__check_session():
             return
-        if (
-                (self.IS_MACHO and self.lief.imported_functions) or
-                (self.IS_OAT and self.lief.imported_functions) or
-                (self.IS_ELF and self.lief.imported_functions) or
-                (self.IS_PE and self.lief.imported_functions)
-        ):
+        if ((self.IS_MACHO and self.lief.imported_functions)
+                or (self.IS_OAT and self.lief.imported_functions)
+                or (self.IS_ELF and self.lief.imported_functions)
+                or (self.IS_PE and self.lief.imported_functions)):
             self.log("info", "Imported functions : ")
             for function in self.lief.imported_functions:
                 self.log("info", function)
@@ -949,7 +942,7 @@ class Lief(Module):
             return
         if self.IS_PE:
             rawDosStub = ''.join(chr(stub) if chr(stub) in string.printable.replace(string.whitespace, '') else '.' for stub in self.lief.dos_stub)
-            printableDosStub = [rawDosStub[i:i+16] for i in range(0, len(rawDosStub), 16)]
+            printableDosStub = [rawDosStub[i:i + 16] for i in range(0, len(rawDosStub), 16)]
             self.log("info", "{0}{1}".format('DOS stub : \n', '\n'.join(printableDosStub)))
         else:
             self.log("warning", "No DOS stub found")
@@ -962,20 +955,20 @@ class Lief(Module):
             return
         if self.IS_PE and self.lief.has_debug:
             self.log("info", "Debug information : ")
-            for debug in self.lief.debug:
-                self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(debug.addressof_rawdata)))
-                self.log("item", "{0:<28} : {1}".format("Minor version of debug data", debug.minor_version))
-                self.log("item", "{0:<28} : {1}".format("Major version of debug data", debug.major_version))
-                self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(debug.pointerto_rawdata)))
-                self.log("item", "{0:<28} : {1} bytes".format("Size of data", debug.sizeof_data))
-                self.log("item", "{0:<28} : {1}".format("Data of data creation", self.fromTimestampToDate(debug.timestamp)))
-                self.log("item", "{0:<28} : {1}".format("Type of debug information", self.liefConstToString(debug.type)))
-                if debug.has_code_view:
-                    self.log("item", "{0:<28} : {1}".format("Code view", self.liefConstToString(debug.code_view.cv_signature)))
-                    if isinstance(debug.code_view, lief.PE.CodeViewPDB):
-                        self.log("item", "{0:<28} : {1}".format("Age", debug.code_view.age))
-                        self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in debug.code_view.signature)))
-                        self.log("item", "{0:<28} : {1}".format("Path", debug.code_view.filename))
+            debug = self.lief.debug
+            self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(debug.addressof_rawdata)))
+            self.log("item", "{0:<28} : {1}".format("Minor version of debug data", debug.minor_version))
+            self.log("item", "{0:<28} : {1}".format("Major version of debug data", debug.major_version))
+            self.log("item", "{0:<28} : {1}".format("Pointer to raw data", hex(debug.pointerto_rawdata)))
+            self.log("item", "{0:<28} : {1} bytes".format("Size of data", debug.sizeof_data))
+            self.log("item", "{0:<28} : {1}".format("Data of data creation", self.fromTimestampToDate(debug.timestamp)))
+            self.log("item", "{0:<28} : {1}".format("Type of debug information", self.liefConstToString(debug.type)))
+            if debug.has_code_view:
+                self.log("item", "{0:<28} : {1}".format("Code view", self.liefConstToString(debug.code_view.cv_signature)))
+                if isinstance(debug.code_view, lief.PE.CodeViewPDB):
+                    self.log("item", "{0:<28} : {1}".format("Age", debug.code_view.age))
+                    self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in debug.code_view.signature)))
+                    self.log("item", "{0:<28} : {1}".format("Path", debug.code_view.filename))
         else:
             self.log("warning", "No debug information found")
 
@@ -1137,7 +1130,7 @@ class Lief(Module):
             self.log("item", "{0:<20} : {1}".format("Digest algorithm", self.lief.signature.content_info.digest_algorithm if self.lief.signature.content_info.digest_algorithm else '-'))
             self.log("success", "Certificates")
             for index, certificate in enumerate(self.lief.signature.certificates):
-                self.log("info", "Certificate N°{0}".format(index+1))
+                self.log("info", "Certificate N°{0}".format(index + 1))
                 self.log("item", "{0:<20} : {1}".format("Version", certificate.version))
                 self.log("item", "{0:<20} : {1}".format("Serial number", '.'.join(str(num) for num in certificate.serial_number)))
                 self.log("item", "{0:<20} : {1}".format("Signature algorithm", lief.PE.oid_to_string(certificate.signature_algorithm)))
@@ -1191,14 +1184,12 @@ class Lief(Module):
         rows = []
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_icons:
             for icon in self.lief.resources_manager.icons:
-                rows.append([
-                    icon.id,
-                    "{0} x {1}".format(icon.width, icon.height),
-                    icon.bit_count,
-                    icon.color_count,
-                    self.liefConstToString(icon.lang),
-                    self.liefConstToString(icon.sublang)
-                    ])
+                rows.append([icon.id,
+                             "{0} x {1}".format(icon.width, icon.height),
+                             icon.bit_count,
+                             icon.color_count,
+                             self.liefConstToString(icon.lang),
+                             self.liefConstToString(icon.sublang)])
             self.log("info", "PE icons : ")
             self.log("table", dict(header=["ID", "Size", "Bits/pixel", "Nb colors/icon", "Lang", "Sublang"], rows=rows))
         else:
@@ -1223,7 +1214,7 @@ class Lief(Module):
                     icon.save(fileName)
                     self.log("success", "{0:<25} : {1}".format("File successfully saved", fileName))
             destFolder = self.args.extracticons
-            if destFolder[len(destFolder)-1] != '/':
+            if destFolder[len(destFolder) - 1] != '/':
                 destFolder += '/'
             if not os.access(destFolder, os.X_OK | os.W_OK):
                 self.log("error", "Cannot write into folder : {0}".format(destFolder))
@@ -1246,10 +1237,9 @@ class Lief(Module):
         """
         if not self.__check_session():
             return
-        rows = []
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_dialogs:
             for index, dialog in enumerate(self.lief.resources_manager.dialogs):
-                self.log("info", "Dialog N°{0}".format(index+1))
+                self.log("info", "Dialog N°{0}".format(index + 1))
                 self.log("item", "{0:<31} : {1}".format("Title", dialog.title if dialog.title else '-'))
                 self.log("item", "{0:<31} : {1}".format("Version", dialog.version))
                 self.log("item", "{0:<31} : {1:<5} px".format("Width of dialog", dialog.cx))
@@ -1267,7 +1257,7 @@ class Lief(Module):
                 self.log("item", "{0:<31} : {1}".format("Upper-left corner x coordinate", dialog.x))
                 self.log("item", "{0:<31} : {1}".format("Upper-left corner y coordinate", dialog.y))
                 for item in dialog.items:
-                    self.log("success", "Item in dialog N°{0} of id {1}".format(index+1, item.id))
+                    self.log("success", "Item in dialog N°{0} of id {1}".format(index + 1, item.id))
                     self.log("item", "{0:<31} : {1}".format("Title", item.title))
                     self.log("item", "{0:<31} : {1:<5} px".format("Width of item", item.cx))
                     self.log("item", "{0:<31} : {1:<5} px".format("Height of item", item.cy))
@@ -1474,7 +1464,7 @@ class Lief(Module):
                     dexFile.save(fileName)
                     self.log("success", "{0:<25} : {1}".format("File successfully saved", fileName))
             destFolder = self.args.extractdexfiles
-            if destFolder[len(destFolder)-1] != '/':
+            if destFolder[len(destFolder) - 1] != '/':
                 destFolder += '/'
             if not os.access(destFolder, os.X_OK | os.W_OK):
                 self.log("error", "Cannot write into folder : {0}".format(destFolder))
@@ -1499,9 +1489,9 @@ class Lief(Module):
             return
         if self.IS_DEX and self.lief.strings:
             self.log("info", "DEX strings : ")
-            for string in self.lief.strings:
-                if string:
-                    self.log("item", "{0}".format(string))
+            for dex_string in self.lief.strings:
+                if dex_string:
+                    self.log("item", "{0}".format(dex_string))
         else:
             self.log("warning", "No string found")
 
@@ -1667,13 +1657,13 @@ class Lief(Module):
             :param (str) binary : The path of the binary file
             :return (lief.ELF.Binary or lief.PE.Binary or lief.MachO.Binary or lief.OAT.Binary or lief.DEX.File or lief.VDEX.File or lief.ART.File) : The lief binary
         """
-        self.IS_PE       = lief.is_pe(binary)
-        self.IS_ELF      = lief.is_elf(binary) and not lief.is_oat(binary)
-        self.IS_MACHO    = lief.is_macho(binary)
-        self.IS_OAT      = lief.is_oat(binary)
-        self.IS_DEX      = lief.is_dex(binary)
-        self.IS_VDEX     = lief.is_vdex(binary)
-        self.IS_ART      = lief.is_art(binary)
+        self.IS_PE = lief.is_pe(binary)
+        self.IS_ELF = lief.is_elf(binary) and not lief.is_oat(binary)
+        self.IS_MACHO = lief.is_macho(binary)
+        self.IS_OAT = lief.is_oat(binary)
+        self.IS_DEX = lief.is_dex(binary)
+        self.IS_VDEX = lief.is_vdex(binary)
+        self.IS_ART = lief.is_art(binary)
         try:
             if self.IS_OAT or self.IS_ELF or self.IS_MACHO or self.IS_PE:
                 return lief.parse(binary)
@@ -1693,7 +1683,7 @@ class Lief(Module):
             :param (str) expected : The binary type expected
         """
         self.log("error", "Wrong binary type")
-        fileType =  "MACH-O" if self.IS_MACHO else "OAT" if self.IS_OAT else "PE" if self.IS_PE else "ELF" if self.IS_ELF else "DEX" if self.IS_DEX else "VDEX" if self.IS_VDEX else "ART" if self.IS_ART else "UNKNOWN"
+        fileType = "MACH-O" if self.IS_MACHO else "OAT" if self.IS_OAT else "PE" if self.IS_PE else "ELF" if self.IS_ELF else "DEX" if self.IS_DEX else "VDEX" if self.IS_VDEX else "ART" if self.IS_ART else "UNKNOWN"
         self.log("info", "Expected filtype : {0}".format(expected))
         self.log("info", "Current filetype : {0}".format(fileType))
 

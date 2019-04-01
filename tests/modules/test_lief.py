@@ -4,7 +4,6 @@
 
 import os
 import re
-from datetime import datetime
 
 import pytest
 from tests.conftest import FIXTURE_DIR
@@ -15,7 +14,12 @@ from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
 
+
 class TestLIEF:
+
+    def teardown_method(self):
+        __sessions__.close()
+
     def test_init(self):
         instance = lief.Lief()
         assert isinstance(instance, lief.Lief)
@@ -60,7 +64,8 @@ class TestLIEF:
         assert re.search(r".*argument subname: invalid choice.*", out)
 
     @pytest.mark.parametrize("filename, expected", [
-        ("sample.elf", r".*Sections :.*"),
+        ("sample.elf", r".* Sections :.*"),
+        ("sample2.elf", r".* Sections :.*"),
     ])
     def test_sections_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -116,6 +121,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Segments :.*"),
+        ("sample2.elf", r".*Segments :.*"),
     ])
     def test_segments_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -148,7 +154,8 @@ class TestLIEF:
         assert re.search(expected, out)
 
     @pytest.mark.parametrize("filename, expected", [
-        ("sample.elf", r".*Type :.*"),
+        ("sample.elf", r".*Type : DYNAMIC.*"),
+        ("sample2.elf", r".*Type : EXECUTABLE.*"),
     ])
     def test_type_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -193,6 +200,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Entrypoint :.*"),
+        ("sample2.elf", r".*Entrypoint :.*"),
     ])
     def test_entrypoint_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -226,6 +234,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Architecture :.*"),
+        ("sample2.elf", r".*Architecture :.*"),
     ])
     def test_architecture_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -259,6 +268,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Entropy :.*"),
+        ("sample2.elf", r".*Entropy :.*"),
     ])
     def test_entropy_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -281,6 +291,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Interpreter :.*"),
+        ("sample2.elf", r".*Interpreter :.*"),
     ])
     def test_interpreter_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -314,6 +325,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Dynamic libraries :.*"),
+        ("sample2.elf", r".*Dynamic libraries :.*"),
     ])
     def test_dynamic_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -358,6 +370,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Static and dynamic symbols.*"),
+        ("sample2.elf", r".*Static and dynamic symbols.*"),
     ])
     def test_symbols_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -424,6 +437,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*GNU hash :.*"),
+        ("sample2.elf", r".*GNU hash :.*"),
     ])
     def test_gnu_hash_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -457,6 +471,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*The binary has been stripped.*"),
+        ("sample2.elf", r".*The binary has been stripped.*"),
     ])
     def test_strip_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -468,17 +483,22 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*File successfully saved.*"),
+        ("sample2.elf", r".*File successfully saved.*"),
     ])
     def test_write_elf_1(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = lief.Lief()
-        instance.set_commandline(["elf", "--write", "/tmp/test"])
+        if os.path.exists("/tmp/viper_test"):
+            os.remove("/tmp/viper_test")
+        instance.set_commandline(["elf", "--write", "/tmp/viper_test"])
         instance.run()
+        os.remove("/tmp/viper_test")
         out, err = capsys.readouterr()
         assert re.search(expected, out)
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Please enter a file name.*"),
+        ("sample2.elf", r".*Please enter a file name.*"),
     ])
     def test_write_elf_2(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -490,6 +510,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Cannot write into folder.*"),
+        ("sample2.elf", r".*Cannot write into folder.*"),
     ])
     def test_write_elf_3(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -501,9 +522,12 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*File already exists.*"),
+        ("sample2.elf", r".*File already exists.*"),
     ])
     def test_write_elf_4(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
+        with open("/tmp/test", 'w') as f:
+            f.write('')
         instance = lief.Lief()
         instance.set_commandline(["elf", "--write", "/tmp/test"])
         instance.run()
@@ -513,6 +537,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Notes :.*"),
+        ("sample2.elf", r".*Notes :.*"),
     ])
     def test_notes_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -601,6 +626,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*ELF header.*"),
+        ("sample2.elf", r".*ELF header.*"),
     ])
     def test_header_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -623,6 +649,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Exported functions.*"),
+        ("sample2.elf", r".*Exported functions.*"),
     ])
     def test_exportedfunctions_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -634,6 +661,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Exported symbols.*"),
+        ("sample2.elf", r".*Exported symbols.*"),
     ])
     def test_exportedsymbols_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -656,6 +684,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Imported functions.*"),
+        ("sample2.elf", r".*Imported functions.*"),
     ])
     def test_importedfunctions_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -667,6 +696,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Imported symbols.*"),
+        ("sample2.elf", r".*Imported symbols.*"),
     ])
     def test_importedsymbols_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -821,6 +851,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*No object relocation found.*"),
+        ("sample2.elf", r".*No object relocation found.*"),
     ])
     def test_objectrelocations_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -832,6 +863,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Relocations :.*"),
+        ("sample2.elf", r".*Relocations :.*"),
     ])
     def test_relocations_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -1168,6 +1200,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Dynamic entries.*"),
+        ("sample2.elf", r".*Dynamic entries.*"),
     ])
     def test_dynamicentries_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -1179,6 +1212,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*Dynamic symbols.*"),
+        ("sample2.elf", r".*Dynamic symbols.*"),
     ])
     def test_dynamicsymbols_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -1190,6 +1224,7 @@ class TestLIEF:
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.elf", r".*No static symbol found.*"),
+        ("sample2.elf", r".*No static symbol found.*"),
     ])
     def test_staticsymbols_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -1209,7 +1244,6 @@ class TestLIEF:
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(expected, out)
-
 
     @pytest.mark.parametrize("filename, expected", [
         ("sample.oat", r".*Dex file does not exist.*"),
@@ -1282,4 +1316,3 @@ class TestLIEF:
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(expected, out)
-
