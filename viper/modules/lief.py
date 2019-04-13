@@ -988,10 +988,10 @@ class Lief(Module):
             return
         if self.IS_PE and self.lief.has_debug:
             signature = ""
+            debug = self.lief.debug[0]
             for sig in debug.code_view.signature:
                 signature += str(hex(sig))[2:]
             self.log("info", "Debug information : ")
-            debug = self.lief.debug
             self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(debug.addressof_rawdata)))
             self.log("item", "{0:<28} : {1}".format("Minor version of debug data", debug.minor_version))
             self.log("item", "{0:<28} : {1}".format("Major version of debug data", debug.major_version))
@@ -1180,7 +1180,7 @@ class Lief(Module):
             if self.lief.signature.content_info.digest_algorithm:
                 digestAlgo = self.lief.signature.content_info.digest_algorithm
             else:
-                '-'
+                digestAlgo = '-'
             self.log("info", "PE signature : ")
             self.log("item", "{0:<20} : {1}".format("Version", self.lief.signature.version))
             self.log("item", "{0:<20} : {1}".format("Digestion algorithm", lief.PE.oid_to_string(self.lief.signature.digest_algorithm)))
