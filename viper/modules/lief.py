@@ -470,12 +470,27 @@ class Lief(Module):
         if not self.__check_session():
             return
         if (self.IS_OAT and self.lief.use_gnu_hash) or (self.IS_ELF and not self.IS_OAT and self.lief.gnu_hash):
+            bloomFilters = ""
+            hashBuckets = ""
+            hashValues = ""
+            for fil in self.lief.gnu_hash.bloom_filters:
+                bloomFilters += str(hex(fil))
+                if fil != self.lief.gnu_hash.bloom_filters[len(self.lief.gnu_hash.bloom_filters)-1]:
+                    bloomFilters += ", "
+            for bucket in self.lief.gnu_hash.buckets:
+                hashBuckets += str(hex(bucket))
+                if bucket != self.lief.gnu_hash.buckets[len(self.lief.gnu_hash.buckets)-1]:
+                    hashBuckets += ", "
+            for h in self.lief.gnu_hash.hash_values:
+                hashValues += str(hex(h))
+                if h != self.lief.gnu_hash.hash_values[len(self.lief.gnu_hash.hash_values)-1]:
+                    hashValues += ", "
             self.log("info", "GNU hash : ")
             self.log("item", "{0} : {1}".format("Number of buckets", self.lief.gnu_hash.nb_buckets))
             self.log("item", "{0} : {1}".format("First symbol index", hex(self.lief.gnu_hash.symbol_index)))
-            self.log("item", "{0} : {1}".format("Bloom filters", ', '.join(str(hex(fil)) for fil in self.lief.gnu_hash.bloom_filters)))
-            self.log("item", "{0} : {1}".format("Hash buckets", ', '.join(str(hex(bucket)) for bucket in self.lief.gnu_hash.buckets)))
-            self.log("item", "{0} : {1}".format("Hash values", ', '.join(str(hex(h)) for h in self.lief.gnu_hash.hash_values)))
+            self.log("item", "{0} : {1}".format("Bloom filters", bloomFilters))
+            self.log("item", "{0} : {1}".format("Hash buckets", hashBuckets))
+            self.log("item", "{0} : {1}".format("Hash values", hashValues))
         else:
             self.log("warning", "No GNU hash found")
 
@@ -531,10 +546,13 @@ class Lief(Module):
         if (self.IS_OAT or self.IS_ELF) and self.lief.has_notes:
             self.log("info", "Notes : ")
             for note in self.lief.notes:
+                description = ""
+                for desc in note.description:
+                    description += str(hex(desc))[2:]
                 self.log("success", "Information of {0} note : ".format(note.name))
                 self.log("item", "{0} : {1}".format("Name", note.name))
                 self.log("item", "{0} : {1}".format("ABI", self.liefConstToString(note.abi)))
-                self.log("item", "{0} : {1}".format("Description", ''.join(str(hex(desc))[2:] for desc in note.description)))
+                self.log("item", "{0} : {1}".format("Description", description))
                 self.log("item", "{0} : {1}".format("Type", self.liefConstToString(note.type)))
                 self.log("item", "{0} : {1}".format("Version", self.listVersionToDottedVersion(note.version)))
         else:
@@ -594,6 +612,9 @@ class Lief(Module):
             self.log("item", "{0:<22} : {1} bytes".format("Size of all DEX files", self.lief.header.dex_size))
             self.log("item", "{0:<22} : {1}".format("Version", self.lief.header.version))
         elif self.IS_DEX:
+            signature = ""
+            for sig in self.lief.header.signature:
+                signature += str(hex(sig))[2:]
             self.log("info", "DEX header : ")
             self.log("item", "{0:<17} : {1}".format("Magic", self.formatMagicList(self.lief.header.magic)))
             self.log("item", "{0:<17} : {1}".format("Checksum", hex(self.lief.header.checksum)))
@@ -602,7 +623,7 @@ class Lief(Module):
             self.log("item", "{0:<17} : {1} bytes".format("Size", self.lief.header.file_size))
             self.log("item", "{0:<17} : {1} bytes".format("Header size", self.lief.header.header_size))
             self.log("item", "{0:<17} : {1}".format("Map offset", hex(self.lief.header.map_offset)))
-            self.log("item", "{0:<17} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in self.lief.header.signature)))
+            self.log("item", "{0:<17} : {1}".format("Signature", signature))
             self.log("item", "{0:<17} : {1}".format("DEX version", self.lief.version))
             self.log("item", "{0:<17} : {1}".format("Nb of Prototypes", "{0:<6} => id : {1}".format(self.lief.header.prototypes[1], hex(self.lief.header.prototypes[0]))))
             self.log("item", "{0:<17} : {1}".format("Nb of Strings", "{0:<6} => id : {1}".format(self.lief.header.strings[1], hex(self.lief.header.strings[0]))))
@@ -674,6 +695,10 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack commited", self.lief.optional_header.sizeof_stack_commit))
                 self.log("item", "{0:<28} : {1:<8} bytes".format("Size of stack reserved", self.lief.optional_header.sizeof_stack_reserve))
         elif self.IS_ELF:
+            if self.lief.header.mips_flags_list:
+                mipsFlags = ':'.join(self.liefConstToString(flag) for flag in self.lief.header.mips_flags_list)
+            else:
+                mipsFlags = "No flags"
             self.log("info", "ELF header : ")
             self.log("item", "{0:<26} : {1}".format("Magic", self.formatMagicList(self.lief.header.identity)))
             self.log("item", "{0:<26} : {1}".format("Type", self.liefConstToString(self.lief.header.file_type)))
@@ -685,7 +710,7 @@ class Lief(Module):
             self.log("item", "{0:<26} : {1}".format("OS/ABI", self.liefConstToString(self.lief.header.identity_os_abi)))
             self.log("item", "{0:<26} : {1}".format("Version", self.liefConstToString(self.lief.header.identity_version)))
             self.log("item", "{0:<26} : {1}".format("Architecture", self.liefConstToString(self.lief.header.machine_type)))
-            self.log("item", "{0:<26} : {1}".format("MIPS Flags", ':'.join(self.liefConstToString(flag) for flag in self.lief.header.mips_flags_list) if self.lief.header.mips_flags_list else "No flags"))
+            self.log("item", "{0:<26} : {1}".format("MIPS Flags", mipsFlags))
             self.log("item", "{0:<26} : {1}".format("Number of sections", self.lief.header.numberof_sections))
             self.log("item", "{0:<26} : {1}".format("Number of segments", self.lief.header.numberof_segments))
             self.log("item", "{0:<26} : {1}".format("Program header offet", hex(self.lief.header.program_header_offset)))
@@ -941,9 +966,17 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE:
-            rawDosStub = ''.join(chr(stub) if chr(stub) in string.printable.replace(string.whitespace, '') else '.' for stub in self.lief.dos_stub)
-            printableDosStub = [rawDosStub[i:i + 16] for i in range(0, len(rawDosStub), 16)]
-            self.log("info", "{0}{1}".format('DOS stub : \n', '\n'.join(printableDosStub)))
+            rawDosStub = ""
+            for stub in self.lief.dos_stub:
+                if chr(stub) in string.printable.replace(string.whitespace, ''):
+                    rawDosStub += chr(stub)
+                else:
+                    rawDosStub += '.'
+            printableDosStub = ""
+            for i in range(0, len(rawDosStub), 16):
+                printableDosStub += rawDosStub[i:i + 16]
+                printableDosStub += '\n'
+            self.log("info", "{0}{1}".format('DOS stub : \n', printableDosStub))
         else:
             self.log("warning", "No DOS stub found")
 
@@ -954,6 +987,9 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_debug:
+            signature = ""
+            for sig in debug.code_view.signature:
+                signature += str(hex(sig))[2:]
             self.log("info", "Debug information : ")
             debug = self.lief.debug
             self.log("item", "{0:<28} : {1}".format("Address of Raw data", hex(debug.addressof_rawdata)))
@@ -967,7 +1003,7 @@ class Lief(Module):
                 self.log("item", "{0:<28} : {1}".format("Code view", self.liefConstToString(debug.code_view.cv_signature)))
                 if isinstance(debug.code_view, lief.PE.CodeViewPDB):
                     self.log("item", "{0:<28} : {1}".format("Age", debug.code_view.age))
-                    self.log("item", "{0:<28} : {1}".format("Signature", ''.join(str(hex(sig))[2:] for sig in debug.code_view.signature)))
+                    self.log("item", "{0:<28} : {1}".format("Signature", signature))
                     self.log("item", "{0:<28} : {1}".format("Path", debug.code_view.filename))
         else:
             self.log("warning", "No debug information found")
@@ -1065,11 +1101,17 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources:
+            if self.lief.resources.is_directory:
+                resourceType = "Directory"
+            elif self.lief.resources.is_data:
+                resourceType = "Data"
+            else:
+                resourceType = "Unknown"
             self.log("info", "PE resources : ")
             self.log("item", "{0:<17} : {1}".format("Name", self.lief.resources.name if self.lief.resources.has_name else "No name"))
             self.log("item", "{0:<17} : {1}".format("Number of childs", len(self.lief.resources.childs)))
             self.log("item", "{0:<17} : {1}".format("Depth", self.lief.resources.depth))
-            self.log("item", "{0:<17} : {1}".format("Type", "Directory" if self.lief.resources.is_directory else "Data" if self.lief.resources.is_data else "Unknown"))
+            self.log("item", "{0:<17} : {1}".format("Type", resourceType))
             self.log("item", "{0:<17} : {1}".format("Id", hex(self.lief.resources.id)))
         else:
             self.log("warning", "No resource found")
@@ -1081,15 +1123,25 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_tls:
+            addressOfRawData = " - ".join(hex(addr) for addr in self.lief.tls.addressof_raw_data)
+            callbacks = " - ".join(hex(callback) for callback in self.lief.tls.callbacks)
+            if self.lief.tls.has_data_directory:
+                directory = self.liefConstToString(self.lief.tls.directory.type)
+            else:
+                directory = '-'
+            if self.lief.tls.has_section:
+                section = self.lief.tls.section.name
+            else:
+                section = '-'
             self.log("info", "PE tls : ")
             self.log("item", "{0:<21} : {1}".format("Address of callbacks", hex(self.lief.tls.addressof_callbacks)))
             self.log("item", "{0:<21} : {1}".format("Address of index", hex(self.lief.tls.addressof_index)))
-            self.log("item", "{0:<21} : {1}".format("Address of raw data", " - ".join(hex(addr) for addr in self.lief.tls.addressof_raw_data)))
-            self.log("item", "{0:<21} : {1}".format("Callbacks", " - ".join(hex(callback) for callback in self.lief.tls.callbacks)))
+            self.log("item", "{0:<21} : {1}".format("Address of raw data", addressOfRawData))
+            self.log("item", "{0:<21} : {1}".format("Callbacks", callbacks))
             self.log("item", "{0:<21} : {1}".format("Characteristics", hex(self.lief.tls.characteristics)))
             self.log("item", "{0:<21} : {1}".format("Data template", self.lief.tls.data_template))
-            self.log("item", "{0:<21} : {1}".format("Directory", self.liefConstToString(self.lief.tls.directory.type) if self.lief.tls.has_data_directory else '-'))
-            self.log("item", "{0:<21} : {1}".format("Section", self.lief.tls.section.name if self.lief.tls.has_section else '-'))
+            self.log("item", "{0:<21} : {1}".format("Directory", directory))
+            self.log("item", "{0:<21} : {1}".format("Section", section))
             self.log("item", "{0:<21} : {1}".format("Size of zero fill", self.lief.tls.sizeof_zero_fill))
         else:
             self.log("warning", "No tls found")
@@ -1121,18 +1173,27 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_signature:
+            if self.lief.signature.content_info.digest:
+                digest = self.lief.signature.content_info.digest
+            else:
+                digest = '-'
+            if self.lief.signature.content_info.digest_algorithm:
+                digestAlgo = self.lief.signature.content_info.digest_algorithm
+            else:
+                '-'
             self.log("info", "PE signature : ")
             self.log("item", "{0:<20} : {1}".format("Version", self.lief.signature.version))
             self.log("item", "{0:<20} : {1}".format("Digestion algorithm", lief.PE.oid_to_string(self.lief.signature.digest_algorithm)))
             self.log("success", "Content information")
             self.log("item", "{0:<20} : {1}".format("Content type", lief.PE.oid_to_string(self.lief.signature.content_info.content_type)))
-            self.log("item", "{0:<20} : {1}".format("Digest", self.lief.signature.content_info.digest if self.lief.signature.content_info.digest else '-'))
-            self.log("item", "{0:<20} : {1}".format("Digest algorithm", self.lief.signature.content_info.digest_algorithm if self.lief.signature.content_info.digest_algorithm else '-'))
+            self.log("item", "{0:<20} : {1}".format("Digest", digest))
+            self.log("item", "{0:<20} : {1}".format("Digest algorithm", digestAlgo))
             self.log("success", "Certificates")
             for index, certificate in enumerate(self.lief.signature.certificates):
+                serialNumber = '.'.join(str(num) for num in certificate.serial_number)
                 self.log("info", "Certificate N°{0}".format(index + 1))
                 self.log("item", "{0:<20} : {1}".format("Version", certificate.version))
-                self.log("item", "{0:<20} : {1}".format("Serial number", '.'.join(str(num) for num in certificate.serial_number)))
+                self.log("item", "{0:<20} : {1}".format("Serial number", serialNumber))
                 self.log("item", "{0:<20} : {1}".format("Signature algorithm", lief.PE.oid_to_string(certificate.signature_algorithm)))
                 self.log("item", "{0:<20} : {1}".format("Valid from", self.fromListOfDatetoDate(certificate.valid_from)))
                 self.log("item", "{0:<20} : {1}".format("Valid to", self.fromListOfDatetoDate(certificate.valid_to)))
@@ -1159,7 +1220,8 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_type:
-            self.log("info", "Resources types availables : {0}".format(", ".join(self.liefConstToString(rType) for rType in self.lief.resources_manager.types_available)))
+            resourceType = ", ".join(self.liefConstToString(rType) for rType in self.lief.resources_manager.types_available)
+            self.log("info", "Resources types availables : {0}".format(resourceType))
         else:
             self.log("warning", "No resources type found")
 
@@ -1170,8 +1232,10 @@ class Lief(Module):
         if not self.__check_session():
             return
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.langs_available:
-            self.log("info", "Langs availables      : {0}".format(", ".join(self.liefConstToString(lang) for lang in self.lief.resources_manager.langs_available)))
-            self.log("info", "Sublangs availables   : {0}".format(", ".join(self.liefConstToString(sublang) for sublang in self.lief.resources_manager.sublangs_available)))
+            langsAvailable = ", ".join(self.liefConstToString(lang) for lang in self.lief.resources_manager.langs_available)
+            sublangsAvailable = ", ".join(self.liefConstToString(sublang) for sublang in self.lief.resources_manager.sublangs_available)
+            self.log("info", "Langs availables      : {0}".format(langsAvailable))
+            self.log("info", "Sublangs availables   : {0}".format(sublangsAvailable))
         else:
             self.log("warning", "No lang found")
 
@@ -1239,13 +1303,21 @@ class Lief(Module):
             return
         if self.IS_PE and self.lief.has_resources and self.lief.resources_manager.has_dialogs:
             for index, dialog in enumerate(self.lief.resources_manager.dialogs):
+                if dialog.has_dialogbox_style:
+                    dialogBoxStyles = ", ".join(self.liefConstToString(style) for style in dialog.dialogbox_style_list)
+                else:
+                    dialogBoxStyles = '-'
+                if dialog.has_style:
+                    windowStyles = ", ".join(self.liefConstToString(style) for style in dialog.style_list)
+                else:
+                    windowStyles = '-'
                 self.log("info", "Dialog N°{0}".format(index + 1))
                 self.log("item", "{0:<31} : {1}".format("Title", dialog.title if dialog.title else '-'))
                 self.log("item", "{0:<31} : {1}".format("Version", dialog.version))
                 self.log("item", "{0:<31} : {1:<5} px".format("Width of dialog", dialog.cx))
                 self.log("item", "{0:<31} : {1:<5} px".format("Height of dialog", dialog.cy))
-                self.log("item", "{0:<31} : {1}".format("Dialog box styles", ", ".join(self.liefConstToString(style) for style in dialog.dialogbox_style_list) if dialog.has_dialogbox_style else '-'))
-                self.log("item", "{0:<31} : {1}".format("Window styles", ", ".join(self.liefConstToString(style) for style in dialog.style_list) if dialog.has_style else '-'))
+                self.log("item", "{0:<31} : {1}".format("Dialog box styles", dialogBoxStyles))
+                self.log("item", "{0:<31} : {1}".format("Window styles", windowStyles))
                 self.log("item", "{0:<31} : {1}".format("Help id", dialog.help_id))
                 self.log("item", "{0:<31} : {1}".format("Lang", self.liefConstToString(dialog.lang)))
                 self.log("item", "{0:<31} : {1}".format("Sublang", self.liefConstToString(dialog.sub_lang)))
@@ -1287,9 +1359,13 @@ class Lief(Module):
             self.log("table", dict(header=["Name", "index", "Methods", "Status", "Type"], rows=rows))
         elif self.IS_DEX and self.lief.classes:
             for cl in self.lief.classes:
+                if cl.access_flags:
+                    flags = ' '.join(self.liefConstToString(flag) for flag in cl.access_flags)
+                else:
+                    flags = '-'
                 rows.append([
                     cl.pretty_name,
-                    ' '.join(self.liefConstToString(flag) for flag in cl.access_flags) if cl.access_flags else '-',
+                    flags,
                     hex(cl.index) if cl.index else '-',
                     len(cl.methods),
                     cl.parent.name if cl.has_parent else '-',
@@ -1323,11 +1399,42 @@ class Lief(Module):
             methodProcessing(method)
 
         def methodProcessing(method):
-            self.log("item", "{0:<17} : {1}".format("Access flags", ' '.join(self.liefConstToString(flag) for flag in method.access_flags) if method else '-'))
+            if method:
+                accessFlags = ' '.join(self.liefConstToString(flag) for flag in method.access_flags)
+            else:
+                accessFlags = '-'
+            if not method:
+                virtualMethod = '-'
+            elif method.is_virtual:
+                virtualMethod = "Yes"
+            else:
+                virtualMethod = "No"
+            if not method or not method.prototype.parameters_type:
+                paramType = '-'
+            else:
+                paramType = ""
+                for pt in method.prototype.parameters_type:
+                    if pt.type == lief.DEX.Type.TYPES.PRIMITIVE:
+                        paramType += self.liefConstToString(pt.value)
+                    elif pt.type == lief.DEX.Type.TYPES.CLASS:
+                        paramType += pt.value.pretty_name
+                    else:
+                        paramType += '-'
+                    if pt != method.prototype.parameters_type[len(method.prototype.parameters_type)-1]:
+                        paramType += ", "
+            if not method:
+                returnType = '-'
+            elif method.prototype.return_type.type == lief.DEX.Type.TYPES.PRIMITIVE:
+                returnType = self.liefConstToString(method.prototype.return_type.value)
+            elif method.prototype.return_type.type == lief.DEX.Type.TYPES.CLASS:
+                returnType = method.prototype.return_type.value.pretty_name
+            else:
+                returnType = '-'
+            self.log("item", "{0:<17} : {1}".format("Access flags", accessFlags))
             self.log("item", "{0:<17} : {1}".format("Offset", hex(method.code_offset) if method else '-'))
-            self.log("item", "{0:<17} : {1}".format("Virtual method", '-' if not method else "Yes" if method.is_virtual else "No"))
-            self.log("item", "{0:<17} : {1}".format("Parameters type", '-' if not method else ", ".join(self.liefConstToString(paramType.value) if paramType.type == lief.DEX.Type.TYPES.PRIMITIVE else paramType.value.pretty_name if paramType.type == lief.DEX.Type.TYPES.CLASS else '-' for paramType in method.prototype.parameters_type) if method.prototype.parameters_type else '-'))
-            self.log("item", "{0:<17} : {1}".format("Return type", '-' if not method else self.liefConstToString(method.prototype.return_type.value) if method.prototype.return_type.type == lief.DEX.Type.TYPES.PRIMITIVE else method.prototype.return_type.value.pretty_name if method.prototype.return_type.type == lief.DEX.Type.TYPES.CLASS else '-'))
+            self.log("item", "{0:<17} : {1}".format("Virtual method", virtualMethod))
+            self.log("item", "{0:<17} : {1}".format("Parameters type", paramType))
+            self.log("item", "{0:<17} : {1}".format("Return type", returnType))
         if (self.IS_OAT or self.IS_DEX) and self.lief.methods:
             if self.args.classname:
                 className = self.args.classname[0]
@@ -1371,14 +1478,18 @@ class Lief(Module):
         if not self.__check_session():
             return
         try:
-            androidversion = None
+            numericalVersion = None
             if self.IS_OAT:
-                androidversion = "{0} ({1})".format(lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief))), lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief))))
+                numericalVersion = lief.Android.version_string(lief.OAT.android_version(lief.OAT.version(self.lief)))
+                versionName = lief.Android.code_name(lief.OAT.android_version(lief.OAT.version(self.lief)))
             elif self.IS_VDEX:
-                androidversion = "{0} ({1})".format(lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH))), lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH))))
+                numericalVersion = lief.Android.version_string(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH)))
+                versionName = lief.Android.code_name(lief.VDEX.android_version(lief.VDEX.version(self.FILE_PATH)))
             elif self.IS_ART:
-                androidversion = "{0} ({1})".format(lief.Android.version_string(lief.ART.android_version(lief.ART.version(self.FILE_PATH))), lief.Android.code_name(lief.ART.android_version(lief.ART.version(self.FILE_PATH))))
-            if androidversion:
+                numericalVersion = lief.Android.version_string(lief.ART.android_version(lief.ART.version(self.FILE_PATH)))
+                versionName = lief.Android.code_name(lief.ART.android_version(lief.ART.version(self.FILE_PATH)))
+            if numericalVersion:
+                androidversion = "{0} ({1})".format(numericalVersion, versionName)
                 self.log("info", "Android version : {0}".format(androidversion))
             else:
                 self.log("warning", "No android version found")
@@ -1506,7 +1617,14 @@ class Lief(Module):
         """
         if not magicList:
             return None
-        return "{0} ({1})".format(''.join(chr(m) if chr(m) in string.printable.replace(string.whitespace, '') else "'\\{0}'".format(m) for m in magicList), ' '.join(str(hex(m))[2:] for m in magicList))
+        magicStr = ""
+        for m in magicList:
+            if chr(m) in string.printable.replace(string.whitespace, ''):
+                magicStr += chr(m)
+            else:
+                magicStr += "'\\{0}'".format(m)
+        magicHex = ' '.join(str(hex(m))[2:] for m in magicList)
+        return "{0} ({1})".format(magicStr, magicHex)
 
     def liefConstToString(self, const):
         """
@@ -1683,7 +1801,22 @@ class Lief(Module):
             :param (str) expected : The binary type expected
         """
         self.log("error", "Wrong binary type")
-        fileType = "MACH-O" if self.IS_MACHO else "OAT" if self.IS_OAT else "PE" if self.IS_PE else "ELF" if self.IS_ELF else "DEX" if self.IS_DEX else "VDEX" if self.IS_VDEX else "ART" if self.IS_ART else "UNKNOWN"
+        if self.IS_MACHO:
+            fileType = "MACH-O"
+        elif self.IS_OAT:
+            fileType = "OAT"
+        elif self.IS_PE:
+            fileType = "PE"
+        elif self.IS_ELF:
+            fileType = "ELF"
+        elif self.IS_DEX:
+            fileType = "DEX"
+        elif self.IS_VDEX:
+            fileType = "VDEX"
+        elif self.IS_ART:
+            fileType = "ART"
+        else:
+            fileType = "UNKNOWN"
         self.log("info", "Expected filtype : {0}".format(expected))
         self.log("info", "Current filetype : {0}".format(fileType))
 
