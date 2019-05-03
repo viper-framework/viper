@@ -24,7 +24,7 @@ class SIZE(Module):
         self.file_size = 0
 
     def __check_session(self):
-        if not __sessions__.is_set():
+        if not __sessions__.is_set() and (not self.args.all and not self.args.cluster):
             self.log('error', "No open session. This command expects a file to be open.")
             return False
         return True
@@ -115,14 +115,13 @@ class SIZE(Module):
             self.usage()
             return
 
-        self.file_size = __sessions__.current.file.size
-        self.log("info", "Size: {0} B".format(self.file_size))
-
         if self.args.all:
             self.size_all()
         elif self.args.cluster:
             self.size_cluster()
         elif self.args.scan:
+            self.file_size = __sessions__.current.file.size
+            self.log("info", "Size: {0} B".format(self.file_size))
             self.size_scan()
         else:
             self.log('error', 'At least one of the parameters is required')
