@@ -34,8 +34,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link disabled" id="nav-download-vt-tab" data-toggle="tab" href="#nav-download-vt" role="tab" aria-controls="nav-download-vt" aria-selected="false">
-                            Download Sample from Virustotal (disabled)
+                        <a class="nav-link" id="nav-download-vt-tab" data-toggle="tab" href="#nav-download-vt" role="tab" aria-controls="nav-download-vt" aria-selected="false">
+                            Download Sample from Virustotal
                         </a>
                     </li>
                 </ul>
@@ -279,16 +279,10 @@
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
-
-                    console.log("jqXHR:" + jqXHR);
-                    console.log("textStatus:" + textStatus);
-                    console.log("errorThrown:" + errorThrown);
-
+                    console.log("jqXHR:" + jqXHR + "; textStatus:" + textStatus + "; errorThrown:" + errorThrown);
                     var obj = jQuery.parseJSON(jqXHR["responseText"]);
-                    var error = obj.error;
-                    console.log(error);
-                    console.log(error.message);
-                    alert("Upload failed: " + error.message);
+                    console.log(obj);
+                    alert("Upload failed: " + JSON.stringify(obj));
                 }
             });
             return false;
@@ -314,11 +308,10 @@
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
                     console.log("Submit failed");
+                    console.log("jqXHR:" + jqXHR + "; textStatus:" + textStatus + "; errorThrown:" + errorThrown);
                     var obj = jQuery.parseJSON(jqXHR["responseText"]);
-                    var error = obj.error;
-                    console.log(error);
-                    console.log(error.message);
-                    alert("Upload failed: " + error.message);
+                    console.log(obj);
+                    alert("Upload failed: " + JSON.stringify(obj));
                 }
             });
             return false;

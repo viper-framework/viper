@@ -1,18 +1,19 @@
 language: python
 sudo: required
 
+dist: bionic
+group: edge
+
 cache:
     pip: true
 
 python:
-    - 3.5
-    - "3.5-dev"
     - 3.6
     - "3.6-dev"
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install gcc python-socksipy libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor clamav-daemon -qq
+    - sudo apt-get install gcc python-socks libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor clamav-daemon -qq
     - sudo freshclam
     - sudo /etc/init.d/clamav-daemon start
 
