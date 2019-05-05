@@ -95,4 +95,4 @@ git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
 ocrd-pyexiftool==0.2.0
 
 # LIEF module
-lief==0.9.0
+# lief==0.9.0
