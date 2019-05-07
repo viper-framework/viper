@@ -551,10 +551,12 @@ class Lief(Module):
                     description += str(hex(desc))[2:]
                 self.log("success", "Information of {0} note : ".format(note.name))
                 self.log("item", "{0} : {1}".format("Name", note.name))
-                self.log("item", "{0} : {1}".format("ABI", self.liefConstToString(note.abi)))
                 self.log("item", "{0} : {1}".format("Description", description))
                 self.log("item", "{0} : {1}".format("Type", self.liefConstToString(note.type)))
-                self.log("item", "{0} : {1}".format("Version", self.listVersionToDottedVersion(note.version)))
+                if note.type == lief.ELF.NOTE_TYPES.ABI_TAG:
+                    note_abi = note.details
+                    self.log("item", "{0} : {1}".format("ABI", self.liefConstToString(note_abi.abi)))
+                    self.log("item", "{0} : {1}".format("Version", self.listVersionToDottedVersion(note_abi.version)))
         else:
             self.log("warning", "No note found")
 
