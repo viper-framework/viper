@@ -92,6 +92,7 @@ class Strings(Module):
         self.parser.add_argument('-H', '--hosts', action='store_true', help='Extract IP addresses and domains from strings')
         self.parser.add_argument('-N', '--network', action='store_true', help='Extract various network related strings')
         self.parser.add_argument('-I', '--interesting', action='store_true', help='Extract various interesting strings')
+        self.parser.add_argument('-S', '--search', dest='search_string', help='Search for a specfic string')
         self.parser.add_argument('-s', '--scan', action='store_true', help='Scan all files in the project with all the scanners')
 
     def extract_hosts(self, strings):
@@ -166,6 +167,15 @@ class Strings(Module):
 
         return results
 
+    def extract_search(self, strings, search_regex):
+        results = []
+        for entry in strings:
+            to_add = False
+            if re.search(search_regex, entry):
+                results.append(entry)
+
+        return results
+
     def get_strings(self, f, min=4):
         '''
         String implementation see http://stackoverflow.com/a/17197027/6880819
@@ -234,6 +244,12 @@ class Strings(Module):
                 self.log('success', '{}Various interesting strings:'.format(prefix))
                 for result in results:
                     self.log('item', result)
+        if self.args.search_string:
+            results = self.extract_search(strings, self.args.search_string.replace('"',''))
+            if results:
+                self.log('success','{}Found strings:'.format(prefix))
+                for result in results:
+                    self.log('item', result)
 
     def run(self):
         super(Strings, self).run()
@@ -241,7 +257,7 @@ class Strings(Module):
         if self.args is None:
             return
 
-        if not (self.args.all or self.args.files or self.args.hosts or self.args.network or self.args.interesting):
+        if not (self.args.all or self.args.files or self.args.hosts or self.args.network or self.args.interesting or self.args.search_string):
             self.log('error', 'At least one of the parameters is required')
             self.usage()
             return
