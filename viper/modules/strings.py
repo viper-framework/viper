@@ -170,7 +170,6 @@ class Strings(Module):
     def extract_search(self, strings, search_regex):
         results = []
         for entry in strings:
-            to_add = False
             if re.search(search_regex, entry):
                 results.append(entry)
 
@@ -245,9 +244,9 @@ class Strings(Module):
                 for result in results:
                     self.log('item', result)
         if self.args.search_string:
-            results = self.extract_search(strings, self.args.search_string.replace('"',''))
+            results = self.extract_search(strings, self.args.search_string.replace('"', ''))
             if results:
-                self.log('success','{}Found strings:'.format(prefix))
+                self.log('success', '{}Found strings:'.format(prefix))
                 for result in results:
                     self.log('item', result)
 
