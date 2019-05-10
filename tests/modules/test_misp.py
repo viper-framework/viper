@@ -150,10 +150,12 @@ class TestMISP:
 
         instance.command_line = ['add_hashes']
         instance.run()
+        out, err = capsys.readouterr()
+        assert re.search(rf".*Session on MISP event {event_id} refreshed.*", out)
         instance.command_line = ['--url', url, '-k', apikey, '-v', 'show']
         instance.run()
         out, err = capsys.readouterr()
-        assert re.search(rf".*Session on MISP event {event_id} refreshed.*", out)
+        assert re.search(rf".*sha256[ ]*| 583a2d05ff0d4864f525a6cdd3bfbd549616d9e1d84e96fe145794ba0519d752.*", out)
 
     # Live tests - require a MISP instance.
     @pytest.mark.skipif(not live_tests, reason="No API key provided")

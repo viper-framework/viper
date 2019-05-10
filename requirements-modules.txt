@@ -1,76 +1,71 @@
-# appdirs==1.4.3 # unused?
-# cached-property==1.3.0 # unused?
-# enum34==1.1.6 # Unused?
-# mccabe==0.6.1 # Dev Feature?
-# pycodestyle==2.3.1 # Dev Feature?
-# simplejson==3.10.0
+--extra-index-url https://lief-project.github.io/packages/
 
 # APK module
-androguard==3.2.0
+androguard==3.3.5
 
 # ClamAV Module
 pyclamd==0.4.0
 
 # DNS Module
-pypdns==1.3
+pypdns==1.4.1
 
 # ELF Module
-pyelftools==0.24
+pyelftools==0.25
 
 # Email module
-dnspython==1.15.0
+dnspython==1.16.0
 # SEE: olefile under Office module
 
 # Fuzzy Module
 # SEE: pydeep in requirements-base.txt
 
 # Joe Sandbox module
-jbxapi==2.3.0
+jbxapi==3.0.0
 
 # McAfee BUP Files Module
 # SEE: olefile under Office module
 
 # MISP
 pymisp[fileobjects,virustotal] >= 2.4.96
-jsonschema==2.6.0
+jsonschema==3.0.1
 
 # Office module
 olefile==0.46
-xxxswf==2.0.0
-pyparsing==2.2.0
-packaging==16.8
+-e git+https://github.com/viper-framework/xxxswf.git@9188316eb7a179326d99bfde9fe0184bb3cee6a3#egg=xxxswf
+pyparsing==2.4.0
+packaging==19.0
 
 # PE module
-pefile==2018.8.8
+pefile==2019.4.18
 
 # PE module (verify sigs)
 # SEE: bitstring in requirements-core.txt
-pyasn1==0.4.2
-pyOpenSSL==18.0.0
-cryptography==2.3.1
-cffi==1.11.2
+pyasn1==0.4.5
+pyopenssl==19.0.0
+cryptography==2.6.1
+cffi==1.12.3
 asn1crypto==0.24.0
-idna==2.6
+idna==2.8
 ipaddress==1.0.22
-pycparser==2.18
+pycparser==2.19
 
 # PSSL Module
-pypssl
+pypssl==2.1
 
 # Radare
-r2pipe==0.9.1
+r2pipe==1.2.0
 
 # Reports Module
-beautifulsoup4==4.6.0
+beautifulsoup4==4.7.1
 
 # SWF Module
-pylzma==0.4.9
+pylzma==0.5.0
 
 # VirusTotal Module
-virustotal-api==1.1.7
+virustotal-api==1.1.10
 
 # Yara Module
-yara-python==3.7.0
+yara-python==3.10.0
 
 # Rats
 pycrypto==2.6.1
@@ -79,13 +74,13 @@ pycrypto==2.6.1
 # Source Code Dependencies
 
 # Scraper
-git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=Scrapy
+git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
 
 # PE module (verify sigs)
 git+https://github.com/sebdraven/verify-sigs.git#egg=verify-sigs
 
 # Office module
-git+https://github.com/decalage2/oletools.git#egg=oletools
+oletools==0.54.1
 
 # MISP
 git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
@@ -93,3 +88,6 @@ git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
 
 # EXIF Module
 ocrd-pyexiftool==0.2.0
+
+# LIEF module
+lief==0.9.0.dev0 ; python_version >= '3.5'
