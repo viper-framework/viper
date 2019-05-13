@@ -72,4 +72,4 @@ git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashW
 jbxapi
 
 # Lief module
-lief==0.9.0.dev0 ; python_version >= '3.5'
+lief>=0.10.0.dev0 ; python_version >= '3.5'
