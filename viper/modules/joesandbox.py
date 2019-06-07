@@ -113,9 +113,7 @@ class JoeSandbox(Module):
     def dropped(self):
         self._update_tasks()
 
-        tasks = [task for task in self._tasks
-                      if not task.dropped_extracted
-                      and task.status == "finished"]
+        tasks = [task for task in self._tasks if not task.dropped_extracted and task.status == "finished"]
 
         if not tasks:
             self.log('warning', "No tasks found or not finished yet.")
@@ -158,17 +156,14 @@ class JoeSandbox(Module):
         self.log('info', "Removed all tasks from the list.")
 
     def report(self):
-        tasks = [task for task in self._tasks
-                      if task.sha256 == __sessions__.current.file.sha256
-                      and task.status == "finished"]
+        tasks = [task for task in self._tasks if task.sha256 == __sessions__.current.file.sha256 and task.status == "finished"]
 
         if not tasks:
             self.log('warning', "No matching task found or not finished yet.")
             return
 
         # filter to only have those which started analyses
-        tasks = [task for task in tasks
-                      if task.most_relevant_webid is not None]
+        tasks = [task for task in tasks if task.most_relevant_webid is not None]
 
         if not tasks:
             self.log('warning', "No report available since the submission did not spawn any analyses.")
