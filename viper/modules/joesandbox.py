@@ -20,14 +20,14 @@ from viper.core.session import __sessions__
 cfg = __config__
 cfg.parse_http_client(cfg.joesandbox)
 
-# dictionary to store the running analyses
-_tasks = []
-
 
 class JoeSandbox(Module):
     cmd = 'joe'
-    description = 'This module does this and that'
+    description = 'Manage sandbox analyses with Joe Sandbox'
     authors = ['Joe Security LLC']
+
+    # store for the running analyses (class variable)
+    _tasks = []
 
     def __init__(self):
         super(JoeSandbox, self).__init__()
@@ -48,7 +48,8 @@ class JoeSandbox(Module):
         self.joe = jbxapi.JoeSandbox(apiurl=cfg.joesandbox.apiurl,
                                      apikey=cfg.joesandbox.apikey,
                                      accept_tac=cfg.joesandbox.accept_tac,
-                                     verify_ssl=cfg.joesandbox.verify)
+                                     verify_ssl=cfg.joesandbox.verify,
+                                     user_agent="viper")
 
         if self.args is None:
             return
@@ -81,21 +82,22 @@ class JoeSandbox(Module):
 
             data = self.joe.submit_sample((filename, f), params=params)
 
-        for webid in data["webids"]:
-            t = _Task(__sessions__.current.file.sha256, webid)
-            _tasks.append(t)
-            self.log('success', "Webid {0}".format(webid))
+        submission_id = data["submission_id"]
+
+        t = _Task(__sessions__.current.file.sha256, submission_id)
+        self._tasks.append(t)
+        self.log('success', "Submission {0}".format(submission_id))
 
     def tasks(self):
-        if not _tasks:
+        if not self._tasks:
             self.log('warning', "No pending tasks.")
             return
 
         self._update_tasks()
 
         self.log("info", "Tasks:")
-        for task in _tasks:
-            line = "{0}: {1}".format(task.webid, task.status)
+        for task in self._tasks:
+            line = "{0}: {1}".format(task.submission_id, task.status)
 
             # mark tasks belonging to current session
             if task.sha256 == __sessions__.current.file.sha256:
@@ -104,74 +106,79 @@ class JoeSandbox(Module):
             self.log("item", line)
 
     def _update_tasks(self):
-        for task in _tasks:
+        for task in self._tasks:
             if task.status != "finished":
-                task.info = self.joe.info(task.webid)
+                task.info = self.joe.submission_info(task.submission_id)
 
     def dropped(self):
         self._update_tasks()
 
-        queue = []
-        for task in _tasks:
-            if task.status != "finished":
-                continue
+        tasks = [task for task in self._tasks
+                      if not task.dropped_extracted
+                      and task.status == "finished"]
 
-            if task.dropped_extracted:
-                continue
-            else:
-                task.dropped_extracted = True
-
-            queue.append(task)
-
-        if not queue:
-            self.log('warning', "No matching tasks found.")
+        if not tasks:
+            self.log('warning', "No tasks found or not finished yet.")
             return
 
-        for task in queue:
-            f = io.BytesIO("")
-            try:
-                self.joe.download(task.webid, "bins", file=f)
-            except jbxapi.JoeException:
-                self.log('info', "Analysis {0} did not drop anything.".format(task.webid))
-                continue
+        for task in tasks:
+            task.dropped_extracted = True
 
-            f.seek(0)
+            for webid in task.webids:
+                f = io.BytesIO()
+                try:
+                    self.joe.analysis_download(webid, "bins", file=f)
+                except jbxapi.JoeException:
+                    self.log('info', "Analysis {0} did not drop anything.".format(webid))
+                    continue
 
-            with zipfile.ZipFile(f) as z:
-                z.setpassword("infected")
+                f.seek(0)
 
-                for name in z.namelist():
-                    self.log('info', name)
-                    try:
-                        name_str = unicode(name, 'utf-8', 'replace')
-                    except NameError:
-                        name_str = str(name, 'utf-8', 'replace')
+                with zipfile.ZipFile(f) as z:
+                    z.setpassword("infected")
 
-                    try:
-                        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                            data = z.read(name)
-                            tmp.write(data)
-                        _add_file(tmp.name, name=name_str, tags="joe_webid_{0}".format(task.webid), parent_sha=task.sha256)
-                        self.log("success", "Inserted {0}".format(name_str))
-                    finally:
-                        os.remove(tmp.name)
+                    for name in z.namelist():
+                        self.log('info', name)
+                        try:
+                            name_str = unicode(name, 'utf-8', 'replace')
+                        except NameError:
+                            name_str = str(name, 'utf-8', 'replace')
+
+                        try:
+                            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                                data = z.read(name)
+                                tmp.write(data)
+                            _add_file(tmp.name, name=name_str, tags="joe_webid_{0}".format(webid), parent_sha=task.sha256)
+                            self.log("success", "Inserted {0}".format(name_str))
+                        finally:
+                            os.remove(tmp.name)
 
     def clear(self):
-        _tasks[:] = []
+        self._tasks[:] = []
         self.log('info', "Removed all tasks from the list.")
 
     def report(self):
-        tasks = [task for task in _tasks if task.sha256 == __sessions__.current.file.sha256]
+        tasks = [task for task in self._tasks
+                      if task.sha256 == __sessions__.current.file.sha256
+                      and task.status == "finished"]
 
         if not tasks:
-            self.log('warning', "No matching task found.")
+            self.log('warning', "No matching task found or not finished yet.")
             return
 
-        # only do this for the first one
-        for task in tasks:
-            _, content = self.joe.download(task.webid, "irjsonfixed")
-            content = json.loads(content.decode())
-            self.log('info', json.dumps(content, indent=4))
+        # filter to only have those which started analyses
+        tasks = [task for task in tasks
+                      if task.most_relevant_webid is not None]
+
+        if not tasks:
+            self.log('warning', "No report available since the submission did not spawn any analyses.")
+            return
+
+        task = tasks[0]
+
+        _, content = self.joe.analysis_download(task.most_relevant_webid, "irjsonfixed")
+        content = json.loads(content.decode())
+        self.log('info', json.dumps(content, indent=4))
 
 
 class _Task(object):
@@ -181,16 +188,30 @@ class _Task(object):
     info = None
     dropped_extracted = False
 
-    def __init__(self, sha256, webid):
+    def __init__(self, sha256, submission_id):
         self.sha256 = sha256
-        self.webid = webid
+        self.submission_id = submission_id
 
     @property
     def status(self):
         try:
             return self.info["status"]
-        except TypeError:
+        except Exception:
             return "submitted"
+
+    @property
+    def webids(self):
+        try:
+            return [a["webid"] for a in self.info["analyses"]]
+        except Exception:
+            return []
+
+    @property
+    def most_relevant_webid(self):
+        try:
+            return self.info["most_relevant_analysis"]["webid"]
+        except Exception:
+            return None
 
 
 def _add_file(file_path, name, tags, parent_sha):
