@@ -20,7 +20,7 @@ dnspython==1.16.0
 # SEE: pydeep in requirements-base.txt
 
 # Joe Sandbox module
-jbxapi==3.0.0
+jbxapi>=3.1.3,<4
 
 # McAfee BUP Files Module
 # SEE: olefile under Office module

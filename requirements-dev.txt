@@ -69,7 +69,7 @@ pymisp[fileobjects,virustotal] >= 2.4.84
 git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
 
 # Joe Sandbox
-jbxapi
+jbxapi>=3.1.3,<4
 
 # Lief module
 lief>=0.10.0.dev0 ; python_version >= '3.5'
