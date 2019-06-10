@@ -10,6 +10,7 @@ cache:
 python:
     - 3.6
     - "3.6-dev"
+    - "3.7-dev"
 
 before_install:
     - sudo apt-get update -qq
@@ -18,8 +19,9 @@ before_install:
     - sudo /etc/init.d/clamav-daemon start
 
 install:
-    - pip install -U -r requirements.txt
     - pip install -U tox-travis
+    - pip install -r requirements.txt
+    - pip install -e .
 
 script:
     - echo "exit" | python viper-cli

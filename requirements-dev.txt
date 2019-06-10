@@ -1,3 +1,6 @@
+-i https://pypi.org/simple
+--extra-index-url https://lief-project.github.io/packages/
+
 SQLAlchemy
 beautifulsoup4
 bitstring
@@ -33,7 +36,7 @@ yara-python
 cryptography
 requests[socks]
 
-git+https://github.com/viper-framework/pefile.git#egg=pefile
+pefile
 git+https://github.com/smarnach/pyexiftool.git#egg=pyexiftool
 git+https://github.com/kbandla/pydeep.git#egg=pydeep
 
@@ -52,7 +55,7 @@ pyclamd
 
 # apk module
 ipython < 6; python_version == '2.7'
-git+https://github.com/androguard/androguard.git#egg=androguard
+androguard
 
 # archiving
 rarfile
@@ -66,4 +69,7 @@ pymisp[fileobjects,virustotal] >= 2.4.84
 git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
 
 # Joe Sandbox
-jbxapi
+jbxapi>=3.1.3,<4
+
+# Lief module
+lief>=0.10.0.dev0 ; python_version >= '3.5'

@@ -56,7 +56,7 @@ class YaraScan(Module):
         parser_rules.add_argument('-e', '--edit', help='Open an editor to edit the specified rule')
         parser_rules.add_argument('-u', '--update', action='store_true', help='Download latest rules from selected repositories')
 
-        self.local_rules = os.path.join(expanduser('~'), '.viper', 'data', 'yara')
+        self.local_rules = os.path.join(expanduser('~'), '.viper', 'yara')
         self.rules_paths = [
             '/usr/share/viper/yara',
             self.local_rules
