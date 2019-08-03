@@ -6,20 +6,14 @@ http://www.decalage.info/python/oletools
 '''
 
 import os
-import sys
 import tempfile
 
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
 
 try:
-    from oletools import rtfobj
     from oletools.rtfobj import RtfObjParser
-    from oletools.rtfobj import RtfObject
-    from oletools.rtfobj import sanitize_filename
     from oletools import oleobj
-    import olefile
-    from oletools.common import clsid 
 
     HAVE_RTF = True
 except ImportError:
@@ -43,8 +37,8 @@ class Rtf(Module):
         '''
         self.log('success', 'File: {name} - size: {size} bytes'.format(name=filename, size=hex(len(data))))
         table = []
-        h = ['id','index','OLE Object']
-        
+        h = ['id', 'index', 'OLE Object']
+
         rtfp = RtfObjParser(data)
         rtfp.parse()
         for rtfobj in rtfp.objects:
@@ -80,8 +74,6 @@ class Rtf(Module):
                     if temp_ext != file_ext:
                         obj_col.append("MODIFIED FILE EXTENSION")
 
-                    if re_executable_extensions.match(temp_ext) or re_executable_extensions.match(file_ext):
-                        obj_col.append('EXECUTABLE FILE')
                 else:
                     obj_col.append('MD5 = {md5}'.format(md5=rtfobj.oledata_md5))
                 if rtfobj.clsid is not None:
@@ -106,7 +98,7 @@ class Rtf(Module):
         self.log('table', dict(rows=table, header=h))
 
     def list(self):
-       self.parse_rtf(__sessions__.current.file.name, __sessions__.current.file.data) 
+        self.parse_rtf(__sessions__.current.file.name, __sessions__.current.file.data) 
 
     def save_ole_objects(self, data, save_object, filename):
         '''
@@ -114,18 +106,14 @@ class Rtf(Module):
           See link for license
         '''
 
-        base_dir = os.path.dirname(filename)
-        sane_fname = sanitize_filename(filename)
-        fname_prefix = os.path.join(base_dir, sane_fname)
-
         rtfp = RtfObjParser(data)
         rtfp.parse()
 
         try:
             i = int(save_object)
-            objects = [ rtfp.objects[i] ]
-        except:
-            self.log('error', 'The -s option must be followed by an object index, such as "-s 2"')
+            objects = [rtfp.objects[i]]
+        except Exception as ex:
+            self.log('error', 'The -s option must be followed by an object index, such as "-s 2"\n{ex}'.format(ex=ex))
             return
         for rtfobj in objects:
             i = objects.index(rtfobj)
@@ -135,12 +123,6 @@ class Rtf(Module):
                 self.log('info', '  Filename = %r' % rtfobj.filename)
                 self.log('info', '  Source path = %r' % rtfobj.src_path)
                 self.log('info', '  Temp path = %r' % rtfobj.temp_path)
-                if rtfobj.filename:
-                    fname = '%s_%s' % (fname_prefix,
-                                       sanitize_filename(rtfobj.filename))
-                else:
-                    fname = '%s_object_%08X.noname' % (fname_prefix, rtfobj.start)
-                #self.log('info', '  saving to file %s' % fname)
                 self.log('info', '  saving to file %s' % tmp.name)
                 self.log('info', '  md5 %s' % rtfobj.olepkgdata_md5)
                 tmp.write(rtfobj.olepkgdata)
@@ -152,23 +134,12 @@ class Rtf(Module):
                 self.log('info', '  class name = %r' % rtfobj.class_name)
                 self.log('info', '  data size  = %d' % rtfobj.oledata_size)
                 # set a file extension according to the class name:
-                class_name = rtfobj.class_name.lower()
-                if class_name.startswith(b'word'):
-                    ext = 'doc'
-                elif class_name.startswith(b'package'):
-                    ext = 'package'
-                else:
-                    ext = 'bin'
-                fname = '%s_object_%08X.%s' % (fname_prefix, rtfobj.start, ext)
-                #self.log('info', '  saving to file %s' % fname)
                 self.log('info', '  saving to file %s' % tmp.name)
                 self.log('info', '  md5 %s' % rtfobj.oledata_md5)
                 tmp.write(rtfobj.oledata)
                 tmp.close()
             else:
                 self.log('info', 'Saving raw data in object #%d:' % i)
-                fname = '%s_object_%08X.raw' % (fname_prefix, rtfobj.start)
-                #self.log('info', '  saving object to file %s' % fname)
                 self.log('info', '  saving object to file %s' % tmp.name)
                 self.log('info', '  md5 %s' % rtfobj.rawdata_md5)
                 tmp.write(rtfobj.rawdata)
@@ -176,7 +147,6 @@ class Rtf(Module):
 
         if not save_object == 'all':
             __sessions__.new(tmp.name)
-
 
     def save(self, idx):
         self.save_ole_objects(__sessions__.current.file.data, idx, __sessions__.current.file.name)
@@ -189,7 +159,7 @@ class Rtf(Module):
         if not __sessions__.is_set():
             self.log('error', 'No open session. This command expects a file to be open.')
             return
-        
+
         if not HAVE_RTF:
             self.log('error', 'Missing dependancy.  install oletools (pip install oletools)')
             return
