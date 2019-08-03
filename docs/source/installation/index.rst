@@ -11,7 +11,15 @@ In order to have support for the most basic modules, you will need to install th
 
     $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev unrar p7zip-full
 
-To install Viper::
+To install Viper from pip::
+
+    $ pip3 install viper-framework
+
+To update Viper from pip::
+
+    $ pip3 install -U viper-framework
+
+To install Viper from sources::
 
     $ git clone https://github.com/viper-framework/viper
     $ cd viper
@@ -51,8 +59,11 @@ Uninstall
 
 To uninstall Viper::
 
+    $ pip3 uninstall -y viper-framework
+
+To uninstall all dependencies (this might break other packages):
+
     $ cd viper
-    $ pip3 uninstall -y viper
     $ pip3 uninstall -y -r requirements.txt
 
 
