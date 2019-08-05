@@ -44,7 +44,7 @@ class TestCommands:
 
         self.cmd['notes']['obj']('-l')
         out, err = capsys.readouterr()
-        assert re.search(".*No open session.*", out)
+        assert re.search(".*No notes available for this file or.*", out)
 
     def test_open(self, capsys):
         self.cmd['open']['obj']('-h')
