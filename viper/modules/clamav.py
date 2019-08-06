@@ -11,7 +11,7 @@ except ImportError:
 import os
 
 from viper.common.abstracts import Module
-from viper.core.database import Database
+from viper.core.database import Database, Malware
 from viper.core.session import __sessions__
 from viper.core.storage import get_sample_path
 
@@ -74,7 +74,10 @@ class ClamAV(Module):
 
     def ScanFile(self, sample):
 
-        sample_path = sample.path
+        if isinstance(sample, Malware):
+            sample_path = get_sample_path(sample.sha256)
+        else:
+            sample_path = sample.path
         if not os.path.exists(sample_path):
             self.log('error', 'The file does not exists at path {0}'.format(sample_path))
             return
