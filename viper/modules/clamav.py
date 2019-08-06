@@ -13,6 +13,7 @@ import os
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
+from viper.core.storage import get_sample_path
 
 
 class ClamAV(Module):
@@ -40,13 +41,12 @@ class ClamAV(Module):
             self.log('error', 'Daemon is not responding!')
             return
 
-        if not __sessions__.is_set():
-            if self.args.all:
-                self.ScanAll()
-            else:
-                self.log('error', 'No open session')
-        else:
+        if self.args.all:
+            self.ScanAll()
+        elif __sessions__.is_set():
             self.ScanFile(__sessions__.current.file)
+        else:
+            self.log('error', 'No open session')
 
     def ScanAll(self):
         samples = self.db.find(key='all')
@@ -72,20 +72,21 @@ class ClamAV(Module):
             self.log('error,', msg)
             return False
 
-    def ScanFile(self, session_file):
+    def ScanFile(self, sample):
 
-        if not os.path.exists(session_file.path):
-            self.log('error', 'The file does not exists at path {0}'.format(session_file.path))
+        sample_path = get_sample_path(sample.sha256)
+        if not os.path.exists(sample_path):
+            self.log('error', 'The file does not exists at path {0}'.format(sample_path))
             return
 
         try:
             if self.daemon.ping():
-                with open(session_file.path, 'rb') as fd:
+                with open(sample_path, 'rb') as fd:
                     results = self.daemon.scan_stream(fd.read())
             else:
                 self.log('error', "Unable to connect to the daemon")
         except Exception as ex:
-            msg = 'Unable to scan file {0} with antivirus daemon, {1}'.format(session_file.sha256, ex)
+            msg = 'Unable to scan file {0} with antivirus daemon, {1}'.format(sample.sha256, ex)
             self.log('error', msg)
             return
 
@@ -102,8 +103,8 @@ class ClamAV(Module):
         else:
             if name is not None:
                 if self.args.tag:
-                    self.db.add_tags(session_file.sha256, name)
+                    self.db.add_tags(sample.sha256, name)
             else:
                 name = 'Threat not found!'
 
-            self.log('info', "{0} identify {1} as : {2}".format(self.socket, session_file.sha256, name))
+            self.log('info', "{0} identify {1} as : {2}".format(self.socket, sample.sha256, name))
