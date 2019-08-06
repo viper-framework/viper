@@ -8,7 +8,7 @@ import string
 from socket import inet_pton, AF_INET6, error as socket_error
 
 from viper.common.abstracts import Module
-from viper.common.objects import File
+from viper.common.objects import File, IOBytes
 from viper.core.session import __sessions__
 from viper.core.database import Database
 from viper.core.storage import get_sample_path
@@ -94,6 +94,8 @@ class Strings(Module):
         self.parser.add_argument('-I', '--interesting', action='store_true', help='Extract various interesting strings')
         self.parser.add_argument('-S', '--search', dest='search_string', help='Search for a specfic string')
         self.parser.add_argument('-s', '--scan', action='store_true', help='Scan all files in the project with all the scanners')
+        self.parser.add_argument('-x', '--xor', type=lambda x: int(x, 0), help='Apply xor key prior to searching for strings.')
+        self.parser.add_argument('-r', '--rabin2', action='store_true', help='Use r2 izz (aka rabin2 -zz) for string extraction.')
 
     def extract_hosts(self, strings):
         results = []
@@ -174,6 +176,55 @@ class Strings(Module):
                 results.append(entry)
 
         return results
+
+    def get_strings_r2(self, f, min=4, xor_key=None):
+        '''
+            Uses r2 izzj to pull strings from the binary
+
+            returns a dict: offset, value 
+        '''
+        results = []
+
+        try:
+            import r2pipe
+            from base64 import b64decode
+        except Exception as ex:
+            print('Failed to import r2pipe.  Is r2pipe installed?\n{ex}'.format(ex=ex))
+            return results
+
+        r2 = r2pipe.open(f)
+        if xor_key:
+            print('XOR not currently support when using rabin2, try without "-x"')
+            return results
+        else:
+            r2results = r2.cmdj('izzj')
+            for r in r2results:
+                if r['length'] >= min:
+                    results.append(b64decode(r['string']).decode('utf-8'))
+            return results
+
+    def get_strings_base(self, f, min=4, rabin_extract=False, xor_key=None):
+        '''
+        A wrapper class to handle XORing of the file and which string extraction
+        method to usee.
+        -x does not work when using -r (rabin) to extract the strings.
+        '''
+        if rabin_extract:
+            strings = self.get_strings_r2(f, min, xor_key)
+        else:
+            if xor_key:
+                decoded = self.xordata(File(f), self.args.xor)
+                strings = self.get_strings(decoded, min)
+            else:
+                strings = self.get_strings(File(f), min)
+
+        return strings
+
+    def xordata(self, f, key):
+        encoded = bytearray(f.data)
+        for i in range(len(encoded)):
+            encoded[i] ^= key
+        return IOBytes(encoded)
 
     def get_strings(self, f, min=4):
         '''
@@ -266,12 +317,12 @@ class Strings(Module):
             samples = db.find(key='all')
             for sample in samples:
                 sample_path = get_sample_path(sample.sha256)
-                strings = self.get_strings(File(sample_path))
+                strings = self.get_strings_base(sample_path, xor_key=self.args.xor, rabin_extract=self.args.rabin2)
                 self.process_strings(strings, sample.name)
         else:
             if not __sessions__.is_set():
                 self.log('error', "No open session. This command expects a file to be open.")
                 return
             if os.path.exists(__sessions__.current.file.path):
-                strings = self.get_strings(__sessions__.current.file)
+                strings = self.get_strings_base(__sessions__.current.file.path, xor_key=self.args.xor, rabin_extract=self.args.rabin2)
                 self.process_strings(strings)
