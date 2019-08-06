@@ -308,13 +308,18 @@ class Database:
                 raise Python2UnsupportedUnicode("Non ASCII character(s) in Notes not supported on Python2.\n"
                                                 "Please use Python >= 3.4".format(err), "error")
 
-        malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
-        if not malware_entry:
-            return
+        if sha256 is not None:
+            malware_entry = session.query(Malware).filter(Malware.sha256 == sha256).first()
+            if not malware_entry:
+                return
 
         try:
             new_note = Note(title, body)
-            malware_entry.note.append(new_note)
+            if sha256 is not None:
+                malware_entry.note.append(new_note)
+            else:
+                session.add(new_note)
+
             session.commit()
             self.added_ids.setdefault("note", []).append(new_note.id)
         except SQLAlchemyError as e:

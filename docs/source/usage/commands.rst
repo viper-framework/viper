@@ -292,15 +292,16 @@ notes
 During an analysis you might want to keep track of your discoveries and results. Instead of having unorganized text files lying around, Viper allows you to create notes directly linked to the relevant files and even search across them.
 When you have a file opened, you can add any number of text notes associated to it through the ``notes`` command. This is the help message::
 
-    usage: notes [-h] [-l] [-a] [-e <note id>] [-d <note id>]
+    usage: notes [-h] [-l] [-a] [-e <note id>] [-d <note id>] [-p]
 
     Options:
-        --help (-h) Show this help message
-        --list (-h) List all notes available for the current file
-        --add (-a)  Add a new note to the current file
-        --view (-v) View the specified note
-        --edit (-e) Edit an existing note
-        --delete (-d)   Delete an existing note
+        --help (-h)    Show this help message
+        --list (-h)    List all notes available for the current file
+        --add (-a)     Add a new note to the current file
+        --view (-v)    View the specified note
+        --edit (-e)    Edit an existing note
+        --delete (-d)  Delete an existing note
+        --project (-p) Use project notes instead of notes being tied to a file
 
 As shown in the help message, you can list add a note::
 
@@ -325,6 +326,20 @@ Now you can see the new note in the list and view its content::
     - poisonivy.malicious.tld
     - poisonivy2.malicious.tld
 
+It is also possible to add notes directly to the project without associating it to a file.
+With no file open, notes created will only be added to the project. If a file is open, a project note can be added by using the ``--project`` flag::
+
+    shell poisonivy.exe > notes --add --project
+    Enter a title for the new note:
+
+You can list the project notes when a file is open with the command shown below::
+
+    shell poisonivy.exe > notes --list --project
+    +----+---------+
+    | ID | Title   |
+    +----+---------+
+    | 1  | Domains |
+    +----+---------+
 
 open
 ====

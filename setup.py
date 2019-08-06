@@ -85,7 +85,7 @@ setup(
     url='http://viper.li',
 
     platforms='any',
-    scripts=['viper-cli', 'viper-web', 'viper-update'],
+    scripts=['viper-cli', 'viper-web'],
 
     packages=get_packages('viper'),
     package_data=get_package_data('viper'),
