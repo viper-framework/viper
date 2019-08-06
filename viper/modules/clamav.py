@@ -74,7 +74,7 @@ class ClamAV(Module):
 
     def ScanFile(self, sample):
 
-        sample_path = get_sample_path(sample.sha256)
+        sample_path = sample.path
         if not os.path.exists(sample_path):
             self.log('error', 'The file does not exists at path {0}'.format(sample_path))
             return
