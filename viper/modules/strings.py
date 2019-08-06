@@ -181,7 +181,7 @@ class Strings(Module):
         '''
             Uses r2 izzj to pull strings from the binary
 
-            returns a dict: offset, value 
+            returns a dict: offset, value
         '''
         results = []
 
