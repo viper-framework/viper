@@ -69,7 +69,7 @@ class Rtf(Module):
                     _, temp_ext = os.path.splitext(rtfobj.temp_path)
                     self.log('debug', 'Temp path extension: {ext}'.format(ext=temp_ext))
                     _, file_ext = os.path.splitext(rtfobj.filename)
-                    self.log.debug('File extension: %r' % file_ext)
+                    self.log('debug', 'File extension: %r' % file_ext)
 
                     if temp_ext != file_ext:
                         obj_col.append("MODIFIED FILE EXTENSION")
