@@ -279,7 +279,7 @@ class PE(Module):
                     continue
 
                 try:
-                    pe = pefile.PE(sample_path) 
+                    pe = pefile.PE(sample_path)
                     pdbstr = pe.get_string_from_data(0x18, pe.get_data(pe.DIRECTORY_ENTRY_DEBUG[0].struct.AddressOfRawData, pe.DIRECTORY_ENTRY_DEBUG[0].struct.SizeOfData))
                 except Exception:
                     continue
@@ -328,7 +328,7 @@ class PE(Module):
                     continue
 
                 try:
-                    pe = pefile.PE(sample_path) 
+                    pe = pefile.PE(sample_path)
                     cur_pdbstr = pe.get_string_from_data(0x18, pe.get_data(pe.DIRECTORY_ENTRY_DEBUG[0].struct.AddressOfRawData, pe.DIRECTORY_ENTRY_DEBUG[0].struct.SizeOfData))
                 except Exception:
                     continue
