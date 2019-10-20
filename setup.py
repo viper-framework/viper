@@ -66,7 +66,7 @@ print("===================================================")
 
 for idx, link in enumerate(links, 1):
     print("{} - Source: {}".format(idx, link))
-    pip_main(['install', link])
+    pip_main.main(['install', link])
 
 data_files = [('/usr/share/viper/', ['viper.conf.sample']),
               ('/usr/share/viper/peid/', ['data/peid/UserDB.TXT'])]
