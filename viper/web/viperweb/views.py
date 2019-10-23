@@ -426,6 +426,8 @@ class FileView(LoginRequiredMixin, TemplateView):
         children = db.list_children(malware_obj.id)
         parent = db.get_parent(malware_obj.id)
 
+        sample_list = db.find('all')
+
         return render(request, template_name, {'malware': malware_obj,
                                                'note_list': note_list,
                                                'tag_list': tag_list,
@@ -433,6 +435,7 @@ class FileView(LoginRequiredMixin, TemplateView):
                                                'parent': parent,
                                                'module_history': module_history,
                                                'project': project,
+                                               'sample_list': sample_list,
                                                'projects': get_project_list()})
 
 
@@ -776,3 +779,118 @@ class SearchFileView(LoginRequiredMixin, TemplateView):
                                                    'searched_key': key,
                                                    'searched_value': value,
                                                    'projects': get_project_list()})
+
+
+class AddParentView(LoginRequiredMixin, TemplateView):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
+
+    def post(self, request, *args, **kwargs):
+        child = request.POST.get('child').lower()
+        parent = request.POST.get('parent').lower()
+        project = request.POST.get('project', 'default')
+        db = open_db(project)
+
+        if not child:
+            log.error("no sha256 hashed for child provided")
+            raise Http404("no sha256 hashed for child provided")
+        if not parent:
+            log.error("no sha256 hashed for parent provided")
+            raise Http404("no sha256 hashed for parent provided")
+
+        # Open a session
+        try:
+            path = get_sample_path(child)
+            if not path:
+                raise Http404("could not retrieve file for sha256 hash: {}".format(child))
+            __sessions__.new(path)
+        except Exception as err:
+            log.error("Error: {}".format(err))
+            return HttpResponse('<span class="alert alert-danger">Invalid Submission</span>'.format())
+
+        db.add_parent(child, parent)
+
+        # Get additional details for file
+        malware = db.find(key='sha256', value=child)
+        try:
+            malware_obj = malware[0]
+        except IndexError:
+            raise Http404("could not find file for sha256 hash: {}".format(child))
+
+        note_list = []
+        notes = malware_obj.note
+        if notes:
+            for note in notes:
+                note_list.append({'title': note.title,
+                                  'body': note.body,
+                                  'id': note.id})
+
+        module_history = []
+        analysis_list = malware_obj.analysis
+        if analysis_list:
+            for item in analysis_list:
+                module_history.append({'id': item.id,
+                                       'cmd_line': item.cmd_line})
+
+        tag_list = db.list_tags_for_malware(child)
+        children = db.list_children(malware_obj.id)
+        parent = db.get_parent(malware_obj.id)
+
+        return redirect(reverse("file-view", kwargs={"project": project, "sha256": child}))
+
+class DeleteParentView(LoginRequiredMixin, TemplateView):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse('This is a POST only view')
+
+    def post(self, request, *args, **kwargs):
+        child = request.POST.get('child').lower()
+        parent = request.POST.get('parent').lower()
+        project = request.POST.get('project', 'default')
+        db = open_db(project)
+
+        if not child:
+            log.error("no sha256 hashed for child provided")
+            raise Http404("no sha256 hashed for child provided")
+        if not parent:
+            log.error("no sha256 hashed for parent provided")
+            raise Http404("no sha256 hashed for parent provided")
+
+        # Open a session
+        try:
+            path = get_sample_path(child)
+            if not path:
+                raise Http404("could not retrieve file for sha256 hash: {}".format(child))
+            __sessions__.new(path)
+        except Exception as err:
+            log.error("Error: {}".format(err))
+            return HttpResponse('<span class="alert alert-danger">Invalid Submission</span>'.format())
+
+        db.delete_parent(child)
+
+        # Get additional details for file
+        malware = db.find(key='sha256', value=child)
+        try:
+            malware_obj = malware[0]
+        except IndexError:
+            raise Http404("could not find file for sha256 hash: {}".format(child))
+
+        note_list = []
+        notes = malware_obj.note
+        if notes:
+            for note in notes:
+                note_list.append({'title': note.title,
+                                  'body': note.body,
+                                  'id': note.id})
+
+        module_history = []
+        analysis_list = malware_obj.analysis
+        if analysis_list:
+            for item in analysis_list:
+                module_history.append({'id': item.id,
+                                       'cmd_line': item.cmd_line})
+
+        tag_list = db.list_tags_for_malware(child)
+        children = db.list_children(malware_obj.id)
+        parent = db.get_parent(malware_obj.id)
+
+        return redirect(reverse("file-view", kwargs={"project": project, "sha256": child}))

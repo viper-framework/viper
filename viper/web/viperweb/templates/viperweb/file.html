@@ -25,6 +25,10 @@
         <li class="nav-item">
             <a class="nav-link" id="nav-hex-tab" data-toggle="tab" href="#nav-hex" role="tab" aria-controls="nav-hex" aria-selected="false">Hex View</a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" id="nav-parent-tab" data-toggle="tab" href="#nav-parent" role="tab"
+            aria-controls="nav-parent" aria-selected="false">Parent edit View</a>
+        </li>
     </ul>
 
     <div id="spin_loader"></div>
@@ -354,6 +358,105 @@
                 </div>
             </div>
         </div>
+        <!-- PARENTS -->
+        <div class="tab-pane" id="nav-parent" role="tabpanel" aria-labelledby="nav-parent-tab">
+
+            <!-- Samples Table -->
+            <div class="row">
+
+                <div class="col">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="float-left">Samples in Project: <b>{{ project }}</b></h6>
+                        </div>
+
+                        <div class="card-body">
+                            <table id="samples" class="table table-hover" cellspacing="0" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>SHA256</th>
+                                        <th>Name</th>
+                                        <th>Mime Type</th>
+                                        <th>Size</th>
+                                        <th>Tags</th>
+                                        <th>Add as Parent</th>
+                                        {#                                <th>Added</th>#}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in sample_list %}
+                                    {% if row.sha256 != malware.sha256 %}
+                                    <tr>
+                                        <td>{{ row.id }}</td>
+                                        <td class="mono small">{{ row.sha256 }}</td>
+                                        <td><a
+                                                href="{% url "file-view" project=project sha256=row.sha256 %}">{{ row.name }}</a>
+                                        </td>
+                                        <td>{{ row.mime }}</td>
+                                        <td data-search="{{ row.size }}" data-order="{{ row.size }}">
+                                            {{ row.size|filesizeformat }}</td>
+                                        <td>
+                                            {% for tag in row.tag %}
+                                            <div style="display: inline-block;">
+                                                <form id="search_form_row_{{ row.id }}_tag_{{ tag.id }}" role="form"
+                                                    enctype="multipart/form-data" accept-charset="utf-8" method="post"
+                                                    action="{% url "search-file" %}">
+                                                    <input class="form-control" type="hidden" name="key" value="tag" />
+                                                    <input class="form-control" type="hidden" name="term"
+                                                        value="{{ tag.tag }}" />
+                                                    <input class="form-control" type="hidden" name="cur_project"
+                                                        value="{{ project }}" />
+                                                    <a href="#">
+                                                        <span class="badge badge-dark" aria-hidden="true"
+                                                            onclick="search_form_row_{{ row.id }}_tag_{{ tag.id }}.submit()">
+                                                            {{ tag.tag }}</span></a>
+                                                    {% csrf_token %}
+                                                </form>
+                                            </div>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% if row.sha256 == parent.sha256 %}
+                                            <form class="form-inline" role="form" id="delete_parent_form_{{ row.sha256 }}"
+                                            method="post"
+                                            action="{% url 'delete-parent' project=project %}"
+                                            >
+                                                <input type="hidden" id="child" name="child" value="{{ malware.sha256 }}" />
+                                                <input type="hidden" id="parent" name="parent"
+                                                value="{{ row.sha256 }}" />
+                                                <button type="submit" class="btn btn-primary my-1" name="submit"
+                                                >Delete parent </button>
+                                                {% csrf_token %}
+                                            </form>
+                                            {% else %}
+                                            <form class="form-inline" role="form" id="add_parent_form_{{ row.sha256 }}"
+                                            method="post"
+                                            action="{% url 'add-parent' project=project %}"
+                                            >
+                                                <input type="hidden" id="child" name="child" value="{{ malware.sha256 }}" />
+                                                <input type="hidden" id="parent" name="parent"
+                                                value="{{ row.sha256 }}" />
+                                                <button type="submit" class="btn btn-primary my-1" name="submit"
+                                                >Add parent </button>
+                                                {% csrf_token %}
+                                            </form>
+                                            {% endif %}
+                                        </td>
+                                        {#                                <td data-search="{{ row.created_at }}" data-order="{{ row.created_at }}">{{ row.created_at|date:"r" }}</td>#}
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
     </div>
 
 {% endblock %}
@@ -610,6 +713,34 @@
                 }
             });
         });
+        // Parent tab:
+        /*
+        $('[id^=add_parent_form_]').submit(function (event) {
+            $.ajax({
+                url: "{% url 'add-parent' project=project %}",
+                type: 'post',
+                dataType: 'html',
+                data: $('#parentsubmit').serialize(),
+                beforeSend: function () {
+                    var target = document.getElementById('spin_loader');
+                    var spinner = new Spinner(opts).spin(target);
+                    $(target).data('spinner', spinner);
+                    console.log($(this).attr("data-id"));
+            },
+                complete: function () {
+                    $('#spin_loader').data('spinner').stop();
+                    var hex_start = document.getElementById('hex_start');
+                    hex_start.value = parseInt(hex_start.value, 10) + 256;
+            },
+                success: function (data, textStatus, jqXHR) {
+                    $('#hexview').append(data);
+            },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    console.log('error(s):' + textStatus, errorThrown);
+            }
+            });
+        });
+        */
 
         function clear_div() {
             document.getElementById("ajaxresponse").innerHTML = "";

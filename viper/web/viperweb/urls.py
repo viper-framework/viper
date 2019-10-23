@@ -33,6 +33,9 @@ urlpatterns = [
 
     url(r'^project/(?P<project>[^/]+)/hex/$', views.HexView.as_view(), name='hex-view'),  # Hex View
     url(r'^project/(?P<project>[^/]+)/module/$', views.RunModuleView.as_view(), name='run-module'),  # Run Module Ajax
+    url(r'^project/(?P<project>[^/]+)/addchild/$', views.AddParentView.as_view(), name='add-parent'),
+    url(r'^project/(?P<project>[^/]+)/deletechild/$', views.DeleteParentView.as_view(), name='delete-parent'),
+
 
     url(r'^search/$', views.SearchFileView.as_view(), name='search-file'),  # Search
     url(r'^urldownload/', views.UrlDownloadView.as_view(), name='url-download'),  # Download from URL
