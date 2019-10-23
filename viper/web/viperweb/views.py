@@ -812,6 +812,7 @@ class AddParentView(LoginRequiredMixin, TemplateView):
 
         return redirect(reverse("file-view", kwargs={"project": project, "sha256": child}))
 
+
 class DeleteParentView(LoginRequiredMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         return HttpResponse('This is a POST only view')
