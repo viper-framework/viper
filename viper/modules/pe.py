@@ -26,7 +26,7 @@ except ImportError:
 
 try:
     from .sigs_helper.sigs_helper import get_auth_data
-    from .verifysigs.asn1utils import dn
+    from verifysigs.asn1utils import dn
     HAVE_VERIFYSIGS = True
 except ImportError:
     HAVE_VERIFYSIGS = False
