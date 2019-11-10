@@ -1,4 +1,4 @@
---extra-index-url https://lief-project.github.io/packages/
+#--extra-index-url https://lief-project.github.io/packages/
 
 # APK module
 androguard==3.3.5
@@ -31,7 +31,7 @@ jsonschema==3.0.1
 
 # Office module
 olefile==0.46
--e git+https://github.com/viper-framework/xxxswf.git@9188316eb7a179326d99bfde9fe0184bb3cee6a3#egg=xxxswf
+xxxswf @ git+https://github.com/viper-framework/xxxswf.git@9188316eb7a179326d99bfde9fe0184bb3cee6a3#egg=xxxswf
 pyparsing==2.4.0
 packaging==19.0
 
@@ -74,17 +74,17 @@ pycrypto==2.6.1
 # Source Code Dependencies
 
 # Scraper
-git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
+ScrapySplashWrapper @ git+https://github.com/viper-framework/ScrapySplashWrapper.git#egg=ScrapySplashWrapper
 
 # PE module (verify sigs)
-git+https://github.com/sebdraven/verify-sigs.git#egg=verify-sigs
+verify-sigs @ git+https://github.com/sebdraven/verify-sigs.git#egg=verify-sigs
 
 # Office module
 oletools==0.54.1
 
 # MISP
-git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
-git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
+PyTaxonomies @ git+https://github.com/MISP/PyTaxonomies.git#egg=PyTaxonomies
+PyMISPGalaxies @ git+https://github.com/MISP/PyMISPGalaxies.git#egg=PyMISPGalaxies
 
 # EXIF Module
 ocrd-pyexiftool==0.2.0
