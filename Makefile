@@ -11,3 +11,9 @@ upload:
 
 test-upload:
 	python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+install:
+	git submodule init
+	git submodule update
+	pip3 install setuptools wheel --upgrade
+	pip3 install .
