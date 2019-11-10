@@ -25,11 +25,8 @@ To install Viper from sources::
     $ cd viper
     $ git submodule init
     $ git submodule update
-    $ sudo pip3 install setuptools wheel --upgrade
-    $ sudo pip3 install -r requirements.txt
-    # Or for the most recent packages (not as well tested):
-    # sudo pip3 install -r requirements-dev.txt
-    $ sudo pip3 install .
+    $ pip3 install setuptools wheel --upgrade
+    $ pip3 install .
 
 
 First launch

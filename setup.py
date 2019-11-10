@@ -56,11 +56,6 @@ def get_requirements():
 
     return requires
 
-data_files = [("/usr/share/viper/", ["viper.conf.sample"]),
-              ("/usr/share/viper/peid/", ["data/peid/UserDB.TXT"])]
-for rule_name in os.listdir("data/yara/"):
-    data_files.append(("/usr/share/viper/yara/", ["data/yara/{0}".format(rule_name)]))
-
 setup(
     name="viper-framework",
     version=__version__,
@@ -75,8 +70,9 @@ setup(
 
     packages=get_packages("viper"),
     package_data=get_package_data("viper"),
+    include_package_data=True,
     install_requires=get_requirements(),
-    data_files=data_files,
+    # data_files=data_files,
     zip_safe=False,
 
     tests_require=["pytest"],

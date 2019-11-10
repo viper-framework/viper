@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
-# See the file 'LICENSE' for copying permission.
+# See the file "LICENSE" for copying permission.
 
 import os
 import shutil
 import logging
+import pkgutil
 from os.path import expanduser
 from configparser import ConfigParser
 
 from viper.common.objects import Dictionary
-from viper.common.constants import VIPER_ROOT
 
-log = logging.getLogger('viper')
+log = logging.getLogger("viper")
 
 
 class Config:
@@ -25,9 +25,9 @@ class Config:
             # Possible paths for the configuration file.
             # This should go in order from local to global.
             config_paths = [
-                os.path.join(os.getcwd(), 'viper.conf'),
-                os.path.join(expanduser('~'), '.viper', 'viper.conf'),
-                '/etc/viper/viper.conf'
+                os.path.join(os.getcwd(), "viper.conf"),
+                os.path.join(expanduser("~"), ".viper", "viper.conf"),
+                "/etc/viper/viper.conf"
             ]
 
             # Try to identify the best location for the config file.
@@ -38,24 +38,17 @@ class Config:
                     break
 
             # If no config is available, we try to copy it either from the
-            # /usr/share/viper folder, or from VIPER_ROOT.
+            # package sample.
             if not self.config_file:
-                share_viper = '/usr/share/viper/viper.conf.sample'
-
-                # If the local storage folder doesn't exist, we create it.
-                local_storage = os.path.join(expanduser("~"), '.viper')
+                # If the local storage folder doesn"t exist, we create it.
+                local_storage = os.path.join(expanduser("~"), ".viper")
                 if not os.path.exists(local_storage):
                     os.makedirs(local_storage)
 
-                self.config_file = os.path.join(local_storage, 'viper.conf')
-
-                if os.path.exists(share_viper):
-                    shutil.copy(share_viper, self.config_file)
-                else:
-                    # TODO: This does not work anymore with pip3 install,
-                    # because the sample config file is not actually copied over.
-                    cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
-                    shutil.copy(cwd_viper, self.config_file)
+                self.config_file = os.path.join(local_storage, "viper.conf")
+                config_sample = pkgutil.get_data("viper", "data/viper.conf.sample")
+                with open(self.config_file, "wb") as handle:
+                    handle.write(config_sample)
 
         # Parse the config file.
         config = self._config = ConfigParser()
@@ -67,7 +60,7 @@ class Config:
             setattr(self, section, Dictionary())
             for name, raw_value in config.items(section):
                 try:
-                    if config.get(section, name) in ['0', '1']:
+                    if config.get(section, name) in ["0", "1"]:
                         raise ValueError
 
                     value = config.getboolean(section, name)
@@ -188,4 +181,4 @@ class Config:
 __config__ = Config()
 
 console_output = {}
-console_output['filename'] = False
+console_output["filename"] = False

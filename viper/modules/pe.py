@@ -31,6 +31,7 @@ try:
 except ImportError:
     HAVE_VERIFYSIGS = False
 
+import viper
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.common.utils import get_type, get_md5
@@ -561,11 +562,7 @@ class PE(Module):
     def peid(self):
 
         def get_signatures():
-            userdb_path = None
-            for path_attempt in ['/usr/share/viper/peid/UserDB.TXT', os.path.join(VIPER_ROOT, 'data/peid/UserDB.TXT')]:
-                if os.path.exists(path_attempt):
-                    userdb_path = path_attempt
-                    break
+            userdb_path = os.path.join(os.path.dirname(viper.__file__), "data", "peid", "UserDB.TXT")
 
             if not userdb_path:
                 return

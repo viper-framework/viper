@@ -5,6 +5,7 @@
 import os
 import importlib
 
+import viper
 from viper.common.out import bold
 from viper.common.abstracts import Module
 from viper.core.session import __sessions__
@@ -37,7 +38,8 @@ class RAT(Module):
     def list(self):
         self.log('info', "List of available RAT modules:")
 
-        for folder, folders, files in walk(os.path.join(VIPER_ROOT, 'viper/modules/rats/')):
+        rat_modules_path = os.path.join(os.path.join(os.path.dirname(viper.__file__), 'modules/rats/'))
+        for folder, folders, files in walk(rat_modules_path):
             for file_name in files:
                 if not file_name.endswith('.py') or file_name.startswith('__init__'):
                     continue
@@ -81,18 +83,7 @@ class RAT(Module):
             self.log('error', "No open session. This command expects a file to be open.")
             return
 
-        rules_paths = [
-            '/usr/share/viper/yara/rats.yara',
-            os.path.join(VIPER_ROOT, 'data/yara/rats.yara')
-        ]
-
-        rules_path = None
-        for cur_path in rules_paths:
-            if os.path.exists(cur_path):
-                rules_path = cur_path
-                break
-
-        rules = yara.compile(rules_path)
+        rules = yara.compile(os.path.join(os.path.dirname(viper.__file__), "data", "yara", "rats.yara"))
         for match in rules.match(__sessions__.current.file.path):
             if 'family' in match.meta:
                 self.log('info', "Automatically detected supported RAT {0}".format(match.rule))

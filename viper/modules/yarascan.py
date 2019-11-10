@@ -12,6 +12,7 @@ try:
 except ImportError:
     from os import walk
 
+import viper
 from viper.common.abstracts import Module
 from viper.core.database import Database
 from viper.core.session import __sessions__
@@ -58,7 +59,7 @@ class YaraScan(Module):
 
         self.local_rules = os.path.join(expanduser('~'), '.viper', 'yara')
         self.rules_paths = [
-            '/usr/share/viper/yara',
+            os.path.join(os.path.dirname(viper.__file__), "data", "yara"),
             self.local_rules
         ]
 
