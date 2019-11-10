@@ -7,10 +7,16 @@ import os
 from setuptools import setup
 
 try:
-    from pip._internal import main as pip_main
+    from pip._internal.main import main as pip_main
+except ImportError:
+    try:
+        from pip._internal import main as pip_main
+    except ImportError:
+        from pip import main as pip_main
+
+try:
     from pip._internal.req import parse_requirements
 except ImportError:
-    from pip import main as pip_main
     from pip.req import parse_requirements
 
 from viper.common.version import __version__
@@ -43,8 +49,8 @@ def get_package_data(package):
 
 # Collect requirements for `install_requires` setting
 requirement_files = ['requirements-base.txt',
-                     "requirements-modules.txt",
-                     "requirements-web.txt"]
+                     'requirements-modules.txt',
+                     'requirements-web.txt']
 
 links = []
 requires = []
@@ -109,6 +115,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Operating System :: POSIX :: Linux',
     ],
 
