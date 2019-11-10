@@ -3,13 +3,10 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-from os.path import expanduser
-import logging
 import shutil
-try:
-    from configparser import ConfigParser
-except ImportError:
-    from ConfigParser import ConfigParser
+import logging
+from os.path import expanduser
+from configparser import ConfigParser
 
 from viper.common.objects import Dictionary
 from viper.common.constants import VIPER_ROOT
