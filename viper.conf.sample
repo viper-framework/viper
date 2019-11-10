@@ -130,13 +130,6 @@ accept_tac = False
 # On-premise exclusive parameters
 #priority = 5
 
-[reports]
-malwr_login = https://malwr.com/account/login/
-malwr_user =
-malwr_pass =
-malwr_search = https://malwr.com/analysis/search/
-malwr_prefix = https://malwr.com
-
 [misp]
 misp_url =
 misp_key =
