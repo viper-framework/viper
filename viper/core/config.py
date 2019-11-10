@@ -29,7 +29,7 @@ class Config:
             # This should go in order from local to global.
             config_paths = [
                 os.path.join(os.getcwd(), 'viper.conf'),
-                os.path.join(expanduser("~"), '.viper', 'viper.conf'),
+                os.path.join(expanduser('~'), '.viper', 'viper.conf'),
                 '/etc/viper/viper.conf'
             ]
 
@@ -45,8 +45,6 @@ class Config:
             if not self.config_file:
                 share_viper = '/usr/share/viper/viper.conf.sample'
 
-                cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
-
                 # If the local storage folder doesn't exist, we create it.
                 local_storage = os.path.join(expanduser("~"), '.viper')
                 if not os.path.exists(local_storage):
@@ -57,6 +55,9 @@ class Config:
                 if os.path.exists(share_viper):
                     shutil.copy(share_viper, self.config_file)
                 else:
+                    # TODO: This does not work anymore with pip3 install,
+                    # because the sample config file is not actually copied over.
+                    cwd_viper = os.path.join(VIPER_ROOT, 'viper.conf.sample')
                     shutil.copy(cwd_viper, self.config_file)
 
         # Parse the config file.
