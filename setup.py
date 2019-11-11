@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
-# See the file "LICENSE" for copying permission.
+# See the file 'LICENSE' for copying permission.
 
 import os
 from setuptools import setup
@@ -34,28 +34,6 @@ def get_package_data(package):
                           for filename in filenames])
     return {package: filepaths}
 
-def get_requirements():
-    """
-    Return all requirements from necessary files.
-    """
-    requirement_files = [
-        "requirements-base.txt",
-        "requirements-modules.txt",
-        "requirements-web.txt"
-    ]
-
-    requires = []
-    for file_name in requirement_files:
-        with open(file_name) as handle:
-            for line in handle:
-                line = line.strip()
-                if line == "" or line.startswith("#"):
-                    continue
-
-                requires.append(line)
-
-    return requires
-
 setup(
     name="viper-framework",
     version=__version__,
@@ -64,24 +42,35 @@ setup(
     description=__description__,
     long_description=__description__,
     url="http://viper.li",
-
     platforms="any",
-    scripts=["viper-cli", "viper-web"],
-
+    entry_points={
+        "console_scripts": [
+            "viper = viper.core.ui.main:main",
+        ],
+    },
     packages=get_packages("viper"),
     package_data=get_package_data("viper"),
     include_package_data=True,
-    install_requires=get_requirements(),
-    # data_files=data_files,
+    install_requires=[
+        "bitstring==3.1.5",
+        "pbkdf2==1.3",
+        "python-dateutil==2.8.0",
+        "python-magic==0.4.15",
+        "requests[socks]==2.21.0",
+        "requests-cache==0.5.0",
+        "scandir==1.10",
+        "six==1.12.0",
+        "sqlalchemy==1.3.3",
+        "terminaltables==3.1.0",
+        "pydeep==0.4",
+        "rarfile==3.0",
+    ],
     zip_safe=False,
-
     tests_require=["pytest"],
-
     # BSD 3-Clause License:
     # - http://choosealicense.com/licenses/bsd-3-clause
     # - http://opensource.org/licenses/BSD-3-Clause
     license="BSD 3-Clause",
-
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         "Topic :: Security",
@@ -93,6 +82,5 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Operating System :: POSIX :: Linux",
     ],
-
     keywords="binary analysis management malware research",
 )

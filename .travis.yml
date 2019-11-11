@@ -26,6 +26,6 @@ install:
     - pip install -e .
 
 script:
-    - echo "exit" | python viper-cli
+    - echo "exit" | python viper
     - tox
     - tox -e pep8

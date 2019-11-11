@@ -1,9 +1,8 @@
-=============
 Final Remarks
 =============
 
 Developers
-==========
+----------
 
 Viper is an open and collaborative development effort. It is built by volunteers from all
 over the world. Following are the ones who contributed up to the latest stable release::
@@ -95,7 +94,7 @@ over the world. Following are the ones who contributed up to the latest stable r
 
 
 Join Us
-=======
+-------
 
 The best way to start contributing to the project is by start digging through the open
 tickets on our `GitHub`_. Before submitting code make sure you read our `Contribution Guidelines`_

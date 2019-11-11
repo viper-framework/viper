@@ -15,8 +15,8 @@ In this way you can for example create different workbenches for each malware ca
 
 As you can see from Viper's help message, you can specify a project name at startup::
 
-    nex@nex:~/$ viper-cli -h
-    usage: viper-cli [-h] [-p PROJECT]
+    nex@nex:~/$ viper -h
+    usage: viper [-h] [-p PROJECT]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -28,7 +28,7 @@ When doing so, Viper will try to open an existing project with the given name an
 
 If you opened a project, it will appear both in a startup message as well as in Viper's terminal::
 
-    nex@nex:~/$ viper-cli -p test
+    nex@nex:~/$ viper -p test
              _                   
             (_) 
        _   _ _ ____  _____  ____ 

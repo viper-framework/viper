@@ -31,12 +31,16 @@ class Help(Command):
         rows = sorted(rows, key=lambda entry: entry[0])
 
         self.log('table', dict(header=['Command', 'Description'], rows=rows))
-        self.log('info', "Modules")
 
-        rows = []
-        for module_name, module_item in __modules__.items():
-            rows.append([module_name, module_item['description']])
 
-        rows = sorted(rows, key=lambda entry: entry[0])
+        if len(__modules__) == 0:
+            self.log('info', "No modules installed.")
+        else:
+            self.log('info', "Modules")
+            rows = []
+            for module_name, module_item in __modules__.items():
+                rows.append([module_name, module_item['description']])
 
-        self.log('table', dict(header=['Command', 'Description'], rows=rows))
+            rows = sorted(rows, key=lambda entry: entry[0])
+
+            self.log('table', dict(header=['Command', 'Description'], rows=rows))

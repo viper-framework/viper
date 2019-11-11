@@ -1,29 +1,29 @@
 Installation
 ============
 
-Viper is written in Python requires **Python >= 3.4**. As of Viper 2.0, Python 2.x is no longer supported. In this documentation we will use Debian GNU/Linux based distributions, such as Ubuntu, as a reference platform. The following installation instructions should apply similarly to other distributions and possibly to Mac OS X as well, although it has not been properly tested.
+Viper is written in Python and requires **Python >= 3.4**. As of Viper 2.0, Python 2.x is no longer supported. In this documentation we will use Debian GNU/Linux based distributions, such as Ubuntu, as a reference platform. The following installation instructions should apply similarly to other distributions and possibly to Mac OS X as well, although it has not been properly tested.
 
 Before proceeding, you should make sure you have the basic tools installed to be able to compile additional Python extensions::
 
-    $ sudo apt-get install make git gcc python3-dev python3-pip
+    $ sudo apt-get install git gcc python3-dev python3-pip
 
-In order to have support for the most basic modules, you will need to install the following dependencies too before proceeding::
+To install Viper from pip::
 
-    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev unrar p7zip-full
+    $ pip3 install viper-framework
 
-.. To install Viper from pip::
+To update Viper from pip::
 
-..     $ pip3 install viper-framework
+    $ pip3 install -U viper-framework
 
-.. To update Viper from pip::
+The console script `viper` will then be installed in `$HOME/.local/bin`, make sure to have the folder added to your `$PATH`. If you wish to install Viper globally::
 
-..     $ pip3 install -U viper-framework
+    $ sudo pip3 install viper-framework
 
 To install Viper from sources::
 
     $ git clone https://github.com/viper-framework/viper
     $ cd viper
-    $ make install
+    $ pip3 install .
 
 
 First launch
@@ -31,7 +31,7 @@ First launch
 
 If everything worked out fine, you should be able to launch Viper's shell without raising any exceptions, like following::
 
-    nex@nex:~/$ viper-cli
+    nex@nex:~/$ viper
              _
             (_)
        _   _ _ ____  _____  ____
@@ -41,7 +41,23 @@ If everything worked out fine, you should be able to launch Viper's shell withou
               |_|
 
     You have 0 files in your default repository
-    shell >
+
+    You do not have any modules installed!
+    If you wish to download community modules from GitHub run:
+        update-modules
+    viper >
+
+On the first launch you will notice that Viper warns you that you do not have any modules installed. Since Viper 2.0 modules are installed separately.
+
+In order to have support for the most basic modules, you will need to install the following dependencies too before proceeding::
+
+    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev unrar p7zip-full
+
+You can now download the modules directly from our community GitHub repository using::
+
+    viper > update-modules
+
+Modules will be installed in `$HOME/.viper/modules`. If you wish to do so, you can manually add modules of your own to that folder.
 
 .. _official website: http://ssdeep.sourceforge.net
 .. _Tor: https://www.torproject.org
@@ -54,11 +70,6 @@ Uninstall
 To uninstall Viper::
 
     $ pip3 uninstall -y viper-framework
-
-To uninstall all dependencies (**WARNING:** this might break other packages):
-
-    $ cd viper
-    $ pip3 uninstall -y -r requirements.txt
 
 
 Module Dependencies

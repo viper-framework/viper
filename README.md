@@ -5,9 +5,8 @@ Viper is a binary analysis and management framework. Its fundamental objective i
 ### Get started!
 
 ```bash
-$ git clone https://github.com/viper-framework/viper.git
-$ cd viper
-$ make install
+$ pip3 install viper-framework
+$ viper
 ```
 
 For more information and instructions on how to install it visit [viper.li](http://viper.li/)
