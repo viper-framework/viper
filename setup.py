@@ -18,7 +18,6 @@ def get_packages(package):
             for dirpath, dirnames, filenames in os.walk(package)
             if os.path.exists(os.path.join(dirpath, "__init__.py"))]
 
-
 def get_package_data(package):
     """
     Return all files under the root package, that are not in a
