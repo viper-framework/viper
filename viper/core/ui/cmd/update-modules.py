@@ -20,11 +20,18 @@ class UpdateModules(Command):
         self.log("info", "Updating modules...")
 
         dot_viper = os.path.join(os.path.expanduser("~"), ".viper")
-        # Clone the repository.
-        p = subprocess.Popen(["git", "clone", "git@github.com:viper-framework/viper-modules.git",
-            "modules"], cwd=dot_viper)
-        p.wait()
         dot_viper_modules = os.path.join(dot_viper, "modules")
+
+        if os.path.exists(dot_viper_modules):
+            # Pull updates
+            p = subprocess.Popen(["git", "pull"], cwd=dot_viper_modules)
+            p.wait()
+        else:
+            # Clone the repository.
+            p = subprocess.Popen(["git", "clone", "git@github.com:viper-framework/viper-modules.git",
+                "modules"], cwd=dot_viper)
+            p.wait()
+
         # Initialize submodules.
         p = subprocess.Popen(["git", "submodule", "init"], cwd=dot_viper_modules)
         p.wait()
