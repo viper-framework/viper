@@ -79,6 +79,7 @@ def load_modules():
                     if issubclass(member_object, Module) and member_object is not Module:
                         plugins[member_object.cmd] = dict(obj=member_object,
                                                           description=member_object.description,
+                                                          categories=getattr(member_object, "categories", []),
                                                           parser_args=get_argparse_parser_actions(member_object().parser),
                                                           subparser_args=get_argparse_subparser_actions(member_object().parser))
 
