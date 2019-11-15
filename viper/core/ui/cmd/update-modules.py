@@ -28,9 +28,14 @@ class UpdateModules(Command):
             p.wait()
         else:
             # Clone the repository.
-            p = subprocess.Popen(["git", "clone", "git@github.com:viper-framework/viper-modules.git",
+            p = subprocess.Popen(["git", "clone", "https://github.com/viper-framework/viper-modules.git",
                 "modules"], cwd=dot_viper)
             p.wait()
+
+            # Check whether previous command executed successfully
+            if p.returncode != 0:
+                self.log("error", "Module download failed. Returncode of `git clone ...`: " + str(p.returncode))
+                return
 
         # Initialize submodules.
         p = subprocess.Popen(["git", "submodule", "init"], cwd=dot_viper_modules)
