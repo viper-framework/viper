@@ -28,7 +28,7 @@ class UpdateModules(Command):
             p.wait()
         else:
             # Clone the repository.
-            p = subprocess.Popen(["git", "clone", "git@github.com:viper-framework/viper-modules.git",
+            p = subprocess.Popen(["git", "clone", "https://github.com/viper-framework/viper-modules.git",
                 "modules"], cwd=dot_viper)
             p.wait()
 
