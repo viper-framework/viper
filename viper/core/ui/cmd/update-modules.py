@@ -32,6 +32,11 @@ class UpdateModules(Command):
                 "modules"], cwd=dot_viper)
             p.wait()
 
+            # Check whether previous command executed successfully
+            if p.returncode != 0:
+                self.log("error", "Module download failed. Returncode of `git clone ...`: " + str(p.returncode))
+                return
+
         # Initialize submodules.
         p = subprocess.Popen(["git", "submodule", "init"], cwd=dot_viper_modules)
         p.wait()
