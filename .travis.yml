@@ -23,10 +23,9 @@ before_install:
 
 install:
     - pip install -U tox-travis
-    - pip install -r requirements.txt
     - pip install -e .
 
 script:
-    - echo "exit" | python viper-cli
+    - echo "exit" | python viper
     - tox
     - tox -e pep8

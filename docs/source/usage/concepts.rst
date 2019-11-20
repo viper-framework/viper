@@ -15,8 +15,8 @@ In this way you can for example create different workbenches for each malware ca
 
 As you can see from Viper's help message, you can specify a project name at startup::
 
-    nex@nex:~/$ viper-cli -h
-    usage: viper-cli [-h] [-p PROJECT]
+    nex@nex:~/$ viper -h
+    usage: viper [-h] [-p PROJECT]
 
     optional arguments:
       -h, --help            show this help message and exit
@@ -28,7 +28,7 @@ When doing so, Viper will try to open an existing project with the given name an
 
 If you opened a project, it will appear both in a startup message as well as in Viper's terminal::
 
-    nex@nex:~/$ viper-cli -p test
+    nex@nex:~/$ viper -p test
              _                   
             (_) 
        _   _ _ ____  _____  ____ 
@@ -38,11 +38,11 @@ If you opened a project, it will appear both in a startup message as well as in 
               |_|
         
     You have 0 files in your test repository
-    test shell > 
+    test viper > 
 
 From within the terminal, you can see which projects exist and eventually you can switch from one to another::
 
-    test1 shell > projects --list
+    test1 viper > projects --list
     [*] Projects Available:
     +--------------+--------------------------+---------+
     | Project Name | Creation Time            | Current |
@@ -50,9 +50,9 @@ From within the terminal, you can see which projects exist and eventually you ca
     | test2        | Fri Jul 11 02:05:55 2014 |         |
     | test1        | Fri Jul 11 02:05:51 2014 | Yes     |
     +--------------+--------------------------+---------+
-    test1 shell > projects --switch test2
+    test1 viper > projects --switch test2
     [*] Switched to project test2
-    test2 shell > 
+    test2 viper > 
 
 More details on the ``projects`` command are available in the :doc:`commands` chapter.
 
@@ -63,15 +63,15 @@ Most of commands and especially modules provided by Viper, are designed to opera
 
 In order to do so, you'll have to open the file of your choice and every time you do so a new **session** will be created. You'll be able to see the name of the file you opened in the terminal::
 
-    shell > open 9f2520a3056543d49bb0f822d85ce5dd
+    viper > open 9f2520a3056543d49bb0f822d85ce5dd
     [*] Session opened on ~/viper/binaries/2/d/7/9/2d79fcc6b02a2e183a0cb30e0e25d103f42badda9fbf86bbee06f93aa3855aff
-    shell darkcomet.exe >
+    viper darkcomet.exe >
 
 From then on, every command and module you launch will execute against the file you just opened (if the module requires to do so obviously).
 
 Similarly to the projects, you can just as easily see which sessions you have currently opened::
 
-    shell darkcomet.exe > sessions --list
+    viper darkcomet.exe > sessions --list
     [*] Opened Sessions:
     +---+-----------------+----------------------------------+---------------------+---------+
     | # | Name            | MD5                              | Created At          | Current |
@@ -83,14 +83,14 @@ Similarly to the projects, you can just as easily see which sessions you have cu
 
 You can eventually decide to switch to a different one::
 
-    shell darkcomet.exe > sessions --switch 1
+    viper darkcomet.exe > sessions --switch 1
     [*] Switched to session #1 on ~/viper/binaries/1/5/c/3/15c34d2b0e834727949dbacea897db33c785a32ac606c0935e3758c8dc975535
-    shell blackshades.exe > 
+    viper blackshades.exe > 
 
 You can also abandon the current session with the ``close`` command (the session will remain available if you wish to re-open it later)::
 
-    shell blackshades.exe > close
-    shell > 
+    viper blackshades.exe > close
+    viper > 
 
 A session will also keep track of the results of the last ``find`` command so that you'll be able to easily open new sessions without having to perform repeated searches on your repository. You can find more details about this in the :doc:`commands` chapter.
 
@@ -101,11 +101,11 @@ Commands & Modules
 
 The operations you can execute within Viper are fundamentally distinguished between **commands** and **modules**. Commands are functions that are provided by Viper's core and enable you to interact with the file repository (by adding, searching, tagging and removing files), with projects and with sessions. They are static and they should not be modified.
 
-Modules are plugins that are dynamically loaded by Viper at startup and are contained under the ``modules/`` folder. Modules implement additional analytical functions that can be executed on an opened file or on the whole repository, for example: analyzing PE32 executables, parsing PDF documents, analyzing Office documents, clustering files by fuzzy hashing or imphash, etc.
+Modules are plugins that are dynamically loaded by Viper at startup and are contained under the ``~/.viper/modules/`` folder. Modules implement additional analytical functions that can be executed on an opened file or on the whole repository, for example: analyzing PE32 executables, parsing PDF documents, analyzing Office documents, clustering files by fuzzy hashing or imphash, etc.
 
 Modules are the most actively developed portion of Viper and they represent the most important avenue for contributions from the community: if you have an idea or you want to re-implement a script that you have lying around, make sure you `submit it`_ to Viper.
 
-.. _submit it: https://github.com/viper-framework/viper
+.. _submit it: https://github.com/viper-framework/viper-modules
 
 Database
 ========

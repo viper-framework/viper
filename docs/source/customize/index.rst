@@ -56,9 +56,7 @@ When a module is invoked from the Viper shell it can be provided with a number o
 Using the Config File
 ---------------------
 
-Viper provides a config file that will allow you to store user editable sections in a single file rather than inside the modules.
-
-    /usr/share/viper/viper.conf.sample
+Viper provides a config file that will allow you to store user editable sections in a single file rather than inside the modules. This file is normally stored under `~/.viper/viper.conf`.
 
 You can easily access the config file:
 

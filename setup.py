@@ -6,15 +6,9 @@
 import os
 from setuptools import setup
 
-try:
-    from pip._internal import main as pip_main
-    from pip._internal.req import parse_requirements
-except ImportError:
-    from pip import main as pip_main
-    from pip.req import parse_requirements
-
 from viper.common.version import __version__
 
+__description__ = "Binary Analysis & Management Framework"
 
 def get_packages(package):
     """
@@ -22,17 +16,16 @@ def get_packages(package):
     """
     return [dirpath
             for dirpath, dirnames, filenames in os.walk(package)
-            if os.path.exists(os.path.join(dirpath, '__init__.py'))]
-
+            if os.path.exists(os.path.join(dirpath, "__init__.py"))]
 
 def get_package_data(package):
     """
     Return all files under the root package, that are not in a
     package themselves.
     """
-    walk = [(dirpath.replace(package + os.sep, '', 1), filenames)
+    walk = [(dirpath.replace(package + os.sep, "", 1), filenames)
             for dirpath, dirnames, filenames in os.walk(package)
-            if not os.path.exists(os.path.join(dirpath, '__init__.py'))]
+            if not os.path.exists(os.path.join(dirpath, "__init__.py"))]
 
     filepaths = []
     for base, filenames in walk:
@@ -40,77 +33,53 @@ def get_package_data(package):
                           for filename in filenames])
     return {package: filepaths}
 
-
-# Collect requirements for `install_requires` setting
-requirement_files = ['requirements-base.txt',
-                     "requirements-modules.txt",
-                     "requirements-web.txt"]
-
-links = []
-requires = []
-for req_file in requirement_files:
-    requirements = parse_requirements(req_file, session=False)
-    for item in requirements:
-        # we want to handle package names and also repo urls
-        if getattr(item, 'url', None):   # older pip has url
-            links.append(str(item.url))
-        if getattr(item, 'link', None):  # newer pip has link
-            links.append(str(item.link))
-        if item.req:
-            requires.append(str(item.req))
-
-# TODO(frennkie) Evil Hack!
-print("===================================================")
-print("Starting installation of dependencies from Github..")
-print("===================================================")
-
-for idx, link in enumerate(links, 1):
-    print("{} - Source: {}".format(idx, link))
-    pip_main(['install', link])
-
-data_files = [('/usr/share/viper/', ['viper.conf.sample']),
-              ('/usr/share/viper/peid/', ['data/peid/UserDB.TXT'])]
-for rule_name in os.listdir('data/yara/'):
-    data_files.append(('/usr/share/viper/yara/', ['data/yara/{0}'.format(rule_name)]))
-
-description = "Binary Analysis & Management Framework"
-
 setup(
-    name='viper-framework',
+    name="viper-framework",
     version=__version__,
-    author='Claudio Guarnieri',
-    author_email='nex@nex.sx',
-    description=description,
-    long_description=description,
-    url='http://viper.li',
-
-    platforms='any',
-    scripts=['viper-cli', 'viper-web'],
-
-    packages=get_packages('viper'),
-    package_data=get_package_data('viper'),
-    install_requires=requires,
-    dependency_links=[],
-    data_files=data_files,
+    author="Claudio Guarnieri",
+    author_email="nex@nex.sx",
+    description=__description__,
+    long_description=__description__,
+    url="http://viper.li",
+    platforms="any",
+    entry_points={
+        "console_scripts": [
+            "viper = viper.core.ui.main:main",
+        ],
+    },
+    packages=get_packages("viper"),
+    package_data=get_package_data("viper"),
+    include_package_data=True,
+    install_requires=[
+        "bitstring==3.1.5",
+        "pbkdf2==1.3",
+        "python-dateutil==2.8.0",
+        "python-magic==0.4.15",
+        "requests[socks]==2.21.0",
+        "requests-cache==0.5.0",
+        "scandir==1.10",
+        "six==1.12.0",
+        "sqlalchemy==1.3.3",
+        "terminaltables==3.1.0",
+        "pydeep==0.4",
+        "rarfile==3.0",
+    ],
     zip_safe=False,
-
-    tests_require=['pytest'],
-
+    tests_require=["pytest"],
     # BSD 3-Clause License:
     # - http://choosealicense.com/licenses/bsd-3-clause
     # - http://opensource.org/licenses/BSD-3-Clause
-    license='BSD 3-Clause',
-
+    license="BSD 3-Clause",
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
-        'Topic :: Security',
-        'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Operating System :: POSIX :: Linux',
+        "Topic :: Security",
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Operating System :: POSIX :: Linux",
     ],
-
-    keywords='binary analysis management malware research',
+    keywords="binary analysis management malware research",
 )

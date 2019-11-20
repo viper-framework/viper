@@ -4,33 +4,34 @@ Commands
 
 Viper provides a set of core commands used to interact repositories of files you want to collect. In order to see which commands are available, type ``help``::
 
-    shell > help
+    viper > help
     Commands:
-    +------------+-----------------------------------------------+
-    | Command    | Description                                   |
-    +------------+-----------------------------------------------+
-    | about      | Show information about this Viper instance    |
-    | analysis   | View the stored analysis                      |
-    | clear      | Clear the console                             |
-    | close      | Close the current session                     |
-    | copy       | Copy opened file(s) into another project      |
-    | delete     | Delete the opened file                        |
-    | exit, quit | Exit Viper                                    |
-    | export     | Export the current session to file or zip     |
-    | find       | Find a file                                   |
-    | help       | Show this help message                        |
-    | info       | Show information on the opened file           |
-    | new        | Create new file                               |
-    | notes      | View, add and edit notes on the opened file   |
-    | open       | Open a file                                   |
-    | parent     | Add or remove a parent file                   |
-    | projects   | List or switch existing projects              |
-    | rename     | Rename the file in the database               |
-    | sessions   | List or switch sessions                       |
-    | stats      | Viper Collection Statistics                   |
-    | store      | Store the opened file to the local repository |
-    | tags       | Modify tags of the opened file                |
-    +----------+-------------------------------------------------+
+    +----------------+-------------------------------------------------------------+
+    | Command        | Description                                                 |
+    +----------------+-------------------------------------------------------------+
+    | about          | Show information about this Viper instance                  |
+    | analysis       | View the stored analysis                                    |
+    | clear          | Clear the console                                           |
+    | close          | Close the current session                                   |
+    | copy           | Copy opened file(s) into another project                    |
+    | delete         | Delete the opened file                                      |
+    | exit, quit     | Exit Viper                                                  |
+    | export         | Export the current session to file or zip                   |
+    | find           | Find a file                                                 |
+    | help           | Show this help message                                      |
+    | info           | Show information on the opened file                         |
+    | new            | Create new file                                             |
+    | notes          | View, add and edit notes on the opened file or project      |
+    | open           | Open a file                                                 |
+    | parent         | Add or remove a parent file                                 |
+    | projects       | List or switch existing projects                            |
+    | rename         | Rename the file in the database                             |
+    | sessions       | List or switch sessions                                     |
+    | stats          | Viper Collection Statistics                                 |
+    | store          | Store the opened file to the local repository               |
+    | tags           | Modify tags of the opened file                              |
+    | update-modules | Download Viper modules from the community GitHub repository |
+    +----------------+-------------------------------------------------------------+
 
 Following are details for all the currently available commands.
 
@@ -168,10 +169,10 @@ delete
 
 The ``delete`` command you simply remove the currently opened file from the local repository::
 
-    shell poisonivy.exe > delete
+    viper poisonivy.exe > delete
     Are you sure you want to delete this binary? Can't be reverted! [y/n] y
     [+] File deleted
-    shell >
+    viper >
     
     
 exit, quit
@@ -235,7 +236,7 @@ This command expects a key and eventually a value. As shown by the help message,
 
 For example::
 
-    shell > find tag rat
+    viper > find tag rat
     +---+---------------+-----------------------+----------------------------------+
     | # | Name          | Mime                  | MD5                              |
     +---+---------------+-----------------------+----------------------------------+
@@ -253,7 +254,7 @@ info
 
 The ``info`` command will return you some basic information on the file you currently have opened, for example::
 
-    shell poisonivy.exe > info
+    viper poisonivy.exe > info
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
     | Key    | Value                                                                                                                            |
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
@@ -305,7 +306,7 @@ When you have a file opened, you can add any number of text notes associated to 
 
 As shown in the help message, you can list add a note::
 
-    shell poisonivy.exe > notes --add
+    viper poisonivy.exe > notes --add
     Enter a title for the new note:
 
 Now you should enter a title, when you proceed Viper will open your default editor to edit the body of the note. Once done and the editor is closed, the new note will be stored::
@@ -314,13 +315,13 @@ Now you should enter a title, when you proceed Viper will open your default edit
 
 Now you can see the new note in the list and view its content::
 
-    shell poisonivy.exe > notes --list
+    viper poisonivy.exe > notes --list
     +----+---------+
     | ID | Title   |
     +----+---------+
     | 1  | Domains |
     +----+---------+
-    shell poisonivy.exe > notes --view 1
+    viper poisonivy.exe > notes --view 1
     [*] Title: Domains
     [*] Body:
     - poisonivy.malicious.tld
@@ -329,12 +330,12 @@ Now you can see the new note in the list and view its content::
 It is also possible to add notes directly to the project without associating it to a file.
 With no file open, notes created will only be added to the project. If a file is open, a project note can be added by using the ``--project`` flag::
 
-    shell poisonivy.exe > notes --add --project
+    viper poisonivy.exe > notes --add --project
     Enter a title for the new note:
 
 You can list the project notes when a file is open with the command shown below::
 
-    shell poisonivy.exe > notes --list --project
+    viper poisonivy.exe > notes --list --project
     +----+---------+
     | ID | Title   |
     +----+---------+
@@ -366,34 +367,34 @@ You can fundamentally open:
 
 If you don't specify any option, Viper will interpret the value you provided as an hash it has to look up in the local database, for example::
 
-    shell > open 22f77c113cc6d43d8c12ed3c9fb39825
+    viper > open 22f77c113cc6d43d8c12ed3c9fb39825
     [*] Session opened on ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
-    shell poisonivy.exe >
+    viper poisonivy.exe >
 
 If you want to open a file elsewhere on the filesystem, you need to specify the ``--file`` (or ``-f``) flag::
 
-    shell > open -f /tmp/poisonivy.exe
+    viper > open -f /tmp/poisonivy.exe
     [*] Session opened on /tmp/poisonivy.exe
 
 If you want to open an URL you can use the ``--url`` flag::
 
-    shell > open --url http://malicious.tld/path/to/file.exe
+    viper > open --url http://malicious.tld/path/to/file.exe
     [*] Session opened on /tmp/tmpcuIOIj
-    shell tmpcuIOIj >
+    viper tmpcuIOIj >
 
 If you have Tor running, you can fetch the file through it by additionally specifying ``--tor``.
 
 Through the ``open`` command you can also directly open one of the entries from the results of the last executed ``find`` command, for example::
 
-    shell > find all
+    viper > find all
     +---+---------------+-----------------------+----------------------------------+
     | # | Name          | Mime                  | MD5                              |
     +---+---------------+-----------------------+----------------------------------+
     | 1 | poisonivy.exe | application/x-dosexec | 22f77c113cc6d43d8c12ed3c9fb39825 |
     +---+---------------+-----------------------+----------------------------------+
-    shell > open --last 1
+    viper > open --last 1
     [*] Session opened on ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
-    shell poisonivy.exe >
+    viper poisonivy.exe >
 
 
 parent
@@ -468,9 +469,9 @@ projects
 ========
 
 As anticipated in the :doc:`concepts` section, Viper provides a way to create multiple **projects** which represent isolated collections of files.
-You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper-cli``.
+You can create a project by simply specifying a value to the ``--project`` argument at launch of ``viper``.
 
-From within the Viper shell, you can list the existing projects and switch from one to another by simply using the ``projects`` command. Following is the help message::
+From within the Viper viper, you can list the existing projects and switch from one to another by simply using the ``projects`` command. Following is the help message::
 
     usage: projects [-h] [-l] [-s=project]
 
@@ -483,7 +484,7 @@ Each project will have its own local file repository, its own ``viper.db`` SQLit
 
 For example, this is how to launch Viper with a specific project::
 
-    nex@nex:$ viper-cli --project test1
+    nex@nex:$ viper --project test1
              _
             (_)
        _   _ _ ____  _____  ____
@@ -493,11 +494,11 @@ For example, this is how to launch Viper with a specific project::
               |_|
 
     You have 0 files in your test1 repository
-    test1 shell >
+    test1 viper >
 
 From within the terminal, you can see which projects exist::
 
-    test1 shell > projects -l
+    test1 viper > projects -l
     [*] Projects Available:
     +--------------+--------------------------+---------+
     | Project Name | Creation Time            | Current |
@@ -507,9 +508,9 @@ From within the terminal, you can see which projects exist::
 
 You can eventually switch to a different one::
 
-    test1 shell > projects --switch test2
+    test1 viper > projects --switch test2
     [*] Switched to project test2
-    test2 shell >
+    test2 viper >
 
 Note that if you specify a name of a project that doesn't exist to the ``--switch`` parameter, Viper will create that project and open it nevertheless.
 
@@ -560,7 +561,7 @@ You can see which sessions are currently active and eventually switch from one t
 
 An example of execution is the following::
 
-    shell poisonivy.exe > sessions --list
+    viper poisonivy.exe > sessions --list
     [*] Opened Sessions:
     +---+---------------+----------------------------------+---------------------+---------+
     | # | Name          | MD5                              | Created At          | Current |
@@ -569,9 +570,9 @@ An example of execution is the following::
     | 2 | zeus.exe      | 9b2de8b062a5538d2a126ba93835d1e9 | 2014-07-12 01:36:19 |         |
     | 3 | darkcomet.exe | 9f2520a3056543d49bb0f822d85ce5dd | 2014-07-12 01:36:23 |         |
     +---+---------------+----------------------------------+---------------------+---------+
-    shell poisonivy.exe > sessions --switch 2
+    viper poisonivy.exe > sessions --switch 2
     [*] Switched to session #2 on ~/viper/binaries/6/7/6/a/676a818365c573e236245e8182db87ba1bc021c5d8ee7443b9f673f26e7fd7d1
-    shell zeus.exe >
+    viper zeus.exe >
 
 
 stats
@@ -637,12 +638,12 @@ The ``store`` command is used to store the currently opened file to the local re
 
 If you specify ``--delete`` it will instruct Viper to delete the original copy of the file you want to store in the local repository, for example::
 
-    shell > open -f /tmp/poisonivy.exe
+    viper > open -f /tmp/poisonivy.exe
     [*] Session opened on /tmp/poisonivy.exe
-    shell poisonivy.exe > store --delete
+    viper poisonivy.exe > store --delete
     [+] Stored file "poisonivy.exe" to ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
     [*] Session opened on ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
-    shell poisonivy.exe >
+    viper poisonivy.exe >
 
 If you want, you can store the content of an entire folder by specifying its path to the ``--folder`` parameter. In case the folder contains a large variety of files, you can filter which ones you're particularly interested in: with ``--file-size`` you can specify a maximum size in bytes, with ``--file-type`` you can specify a pattern of magic file type (e.g. *PE32*) and with ``--file-name`` you can specify a wildcard-enabled pattern to be matched with the file names (e.g. *apt_**).
 
@@ -650,7 +651,7 @@ If you want, you can already specify a list of comma separated tags to apply to 
 
 Following is an example::
 
-    shell > store --folder /tmp/malware --file-type PE32 --file-size 10000000 --file-name apt_* --tags apt,trojan
+    viper > store --folder /tmp/malware --file-type PE32 --file-size 10000000 --file-name apt_* --tags apt,trojan
 
 
 tags
@@ -668,14 +669,14 @@ In order to easily group and identify files, Viper allows you to create one or m
 
 Once you have a file opened, you can add one ore more tags separated by a comma::
 
-    shell poisonivy.exe > tags --add rat,poisonivy
+    viper poisonivy.exe > tags --add rat,poisonivy
     [*] Tags added to the currently opened file
     [*] Refreshing session to update attributes...
     [*] Session opened on ~/viper/binaries/5/0/8/5/50855f9321de846f6a02b264e25e4c59983badb912c3c51d8c71fcd517205f26
 
 Once added, the session will be refreshed so that the new attributes will be visible as you can see from the output of an ``info`` command::
 
-    shell poisonivy.exe > info
+    viper poisonivy.exe > info
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
     | Key    | Value                                                                                                                            |
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
@@ -694,3 +695,9 @@ Once added, the session will be refreshed so that the new attributes will be vis
     | Parent  |                                                                                                                          |
     | Children  |                                                                                                                          |
     +--------+----------------------------------------------------------------------------------------------------------------------------------+
+
+
+update-modules
+==============
+
+Through this command you can download and update community modules from the dedicated GitHub repository.

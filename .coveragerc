@@ -1,7 +1,2 @@
 [html]
 directory = /tmp/htmlcov
-
-[run]
-omit =
-    viper/modules/pymacho_helper/pymacho/*
-    viper/modules/pdftools/*

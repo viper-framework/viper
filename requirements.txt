@@ -1,3 +1,0 @@
--r requirements-base.txt
--r requirements-modules.txt
--r requirements-web.txt
