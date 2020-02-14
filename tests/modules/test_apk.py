@@ -10,12 +10,13 @@ import pytest
 
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules import apk
-from viper.modules.apk import HAVE_ANDROGUARD
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+apk = __modules__['apk']["obj"]
 
 
 class TestAPK:
@@ -23,28 +24,18 @@ class TestAPK:
         __sessions__.close()
 
     def test_init(self):
-        instance = apk.AndroidPackage()
-        assert isinstance(instance, apk.AndroidPackage)
+        instance = apk()
+        assert isinstance(instance, apk)
         assert isinstance(instance, Module)
 
-    def test_androguard_installed(self):
-        assert HAVE_ANDROGUARD is True
-
-    # def test_androguard_not_installed(self):
-    #     # assert HAVE_ANDROGUARD is True
-    #     HAVE_ANDROGUARD = False
-    #     instance = apk.AndroidPackage()
-    #     assert isinstance(instance, apk.AndroidPackage)
-    #     assert isinstance(instance, Module)
-
     def test_args_exception(self):
-        instance = apk.AndroidPackage()
+        instance = apk()
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Parse Android Applications.*")
 
     def test_no_session(self, capsys):
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-i"]
 
         instance.run()
@@ -56,7 +47,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_info(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-i"]
 
         instance.run()
@@ -67,7 +58,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_perm(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-p"]
 
         instance.run()
@@ -78,7 +69,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_file(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-f"]
 
         instance.run()
@@ -89,7 +80,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_url(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-u"]
 
         instance.run()
@@ -101,7 +92,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_cert(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-c"]
 
         instance.run()
@@ -113,7 +104,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename,pkg_name", [("hello-world.apk", "de.rhab.helloworld")])
     def test_all(self, capsys, filename, pkg_name):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-a"]
 
         instance.run()
@@ -124,7 +115,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_dump_no_parameter(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-d"]
 
         instance.run()
@@ -138,7 +129,7 @@ class TestAPK:
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_dump(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = apk.AndroidPackage()
+        instance = apk()
         instance.command_line = ["-d hello-world.dump"]
 
         instance.run()

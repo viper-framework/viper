@@ -8,27 +8,29 @@ import re
 import pytest
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules import fuzzy
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+fuzzy = __modules__['fuzzy']["obj"]
 
 
 class TestFuzzy:
     def test_init(self):
-        instance = fuzzy.Fuzzy()
-        assert isinstance(instance, fuzzy.Fuzzy)
+        instance = fuzzy()
+        assert isinstance(instance, fuzzy)
         assert isinstance(instance, Module)
 
     def test_args_exception(self):
-        instance = fuzzy.Fuzzy()
+        instance = fuzzy()
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Search for similar files through fuzzy hashing.*")
 
     def test_run_help(self, capsys):
-        instance = fuzzy.Fuzzy()
+        instance = fuzzy()
         instance.set_commandline(["--help"])
 
         instance.run()
@@ -36,7 +38,7 @@ class TestFuzzy:
         assert re.search(r"^usage:.*", out)
 
     def test_run_short_help(self, capsys):
-        instance = fuzzy.Fuzzy()
+        instance = fuzzy()
         instance.set_commandline(["-h"])
 
         instance.run()
@@ -44,7 +46,7 @@ class TestFuzzy:
         assert re.search(r"^usage:.*", out)
 
     def test_run_invalid_option(self, capsys):
-        instance = fuzzy.Fuzzy()
+        instance = fuzzy()
         instance.set_commandline(["invalid"])
 
         instance.run()
@@ -52,7 +54,7 @@ class TestFuzzy:
         assert re.search(r".*unrecognized arguments:.*", out)
 
     def test_run_cluster(self, capsys):
-        instance = fuzzy.Fuzzy()
+        instance = fuzzy()
         instance.set_commandline(['-c'])
 
         instance.run()
@@ -62,7 +64,7 @@ class TestFuzzy:
     @pytest.mark.parametrize("filename", ["cmd.exe"])
     def test_run_session(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = fuzzy.Fuzzy()
+        instance = fuzzy()
         instance.command_line = []
 
         instance.run()

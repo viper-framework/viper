@@ -8,35 +8,34 @@ import re
 import pytest
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules.macho import Macho, HAVE_MACHO
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+macho = __modules__['macho']["obj"]
 
 
-class TestMacho:
+class Testmacho:
 
     def teardown_method(self):
         __sessions__.close()
 
     def test_init(self):
-        instance = Macho()
-        assert isinstance(instance, Macho)
+        instance = macho()
+        assert isinstance(instance, macho)
         assert isinstance(instance, Module)
 
-    def test_have_macho(self):
-        assert HAVE_MACHO is True
-
     def test_args_exception(self):
-        instance = Macho()
+        instance = macho()
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
-        excinfo.match(r".*Get Macho OSX Headers.*")
+        excinfo.match(r".*Get macho OSX Headers.*")
 
     @pytest.mark.usefixtures("cleandir")
     def test_no_session(self, capsys):
-        instance = Macho()
+        instance = macho()
         instance.command_line = ["-a"]
 
         instance.run()
@@ -47,7 +46,7 @@ class TestMacho:
     @pytest.mark.parametrize("filename", ["whoami.exe"])
     def test_no_macho_file(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = Macho()
+        instance = macho()
         instance.command_line = ["-hd"]
 
         instance.run()
@@ -59,7 +58,7 @@ class TestMacho:
     @pytest.mark.parametrize("filename", ["MachO-OSX-x86-ls"])
     def test_no_argument(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = Macho()
+        instance = macho()
 
         instance.run()
         out, err = capsys.readouterr()
@@ -73,7 +72,7 @@ class TestMacho:
     ])
     def test_headers(self, capsys, filename, magic, cputype):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = Macho()
+        instance = macho()
         instance.command_line = ["-hd"]
 
         instance.run()
@@ -89,7 +88,7 @@ class TestMacho:
     ])
     def test_segments(self, capsys, filename, amount_segments):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = Macho()
+        instance = macho()
         instance.command_line = ["-sg"]
 
         instance.run()
@@ -103,7 +102,7 @@ class TestMacho:
     ])
     def test_load_commands(self, capsys, filename, amount_commands):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = Macho()
+        instance = macho()
         instance.command_line = ["-lc"]
 
         instance.run()
@@ -115,7 +114,7 @@ class TestMacho:
     @pytest.mark.parametrize("filename", ["MachO-OSX-x86-ls"])
     def test_all(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = Macho()
+        instance = macho()
         instance.command_line = ["-a"]
 
         instance.run()

@@ -55,7 +55,7 @@ def load_modules():
 
     try:
         import modules
-    except ImportError:
+    except ImportError as e:
         return dict()
     else:
         plugins = dict()
