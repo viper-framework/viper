@@ -24,8 +24,9 @@ before_install:
 install:
     - pip install -U tox-travis
     - pip install -e .
+    - echo "update-modules" | viper
 
 script:
-    - echo "exit" | python viper
+    - echo "exit" | viper
     - tox
     - tox -e pep8

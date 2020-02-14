@@ -10,6 +10,7 @@ from viper.common.version import __version__
 
 __description__ = "Binary Analysis & Management Framework"
 
+
 def get_packages(package):
     """
     Return root package and all sub-packages.
@@ -17,6 +18,7 @@ def get_packages(package):
     return [dirpath
             for dirpath, dirnames, filenames in os.walk(package)
             if os.path.exists(os.path.join(dirpath, "__init__.py"))]
+
 
 def get_package_data(package):
     """
@@ -32,6 +34,7 @@ def get_package_data(package):
         filepaths.extend([os.path.join(base, filename)
                           for filename in filenames])
     return {package: filepaths}
+
 
 setup(
     name="viper-framework",
@@ -58,7 +61,7 @@ setup(
         "requests[socks]==2.21.0",
         "requests-cache==0.5.0",
         "scandir==1.10",
-        "six==1.12.0",
+        "six==1.14.0",
         "sqlalchemy==1.3.3",
         "terminaltables==3.1.0",
         "pydeep==0.4",
