@@ -19,15 +19,15 @@ before_install:
     - sudo apt-get update -qq
     - sudo apt-get install gcc python-socks libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor clamav-daemon -qq
     - sudo service clamav-freshclam restart
-    - sleep 90  # takes time to initialize the database
-    - sudo service clamav-daemon restart
-    - sudo service clamav-freshclam status
-    - sudo service clamav-daemon status
 
 install:
     - pip install -U tox-travis
     - pip install -e .
     - echo "update-modules" | viper
+    - sleep 180  # takes time to initialize the clamav database
+    - sudo service clamav-daemon restart
+    - sudo service clamav-freshclam status
+    - sudo service clamav-daemon status
 
 script:
     - echo "exit" | viper
