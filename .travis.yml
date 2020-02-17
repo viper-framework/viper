@@ -17,7 +17,7 @@ python:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install gcc python-socks libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor clamav-daemon -qq
+    - sudo apt-get install gcc python-socks libssl-dev swig p7zip-full unrar ssdeep libfuzzy-dev tor clamav-daemon unrar -qq
     - sudo service clamav-freshclam stop
     - sudo freshclam
     - sudo service clamav-freshclam start
