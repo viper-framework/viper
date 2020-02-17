@@ -8,11 +8,14 @@ import re
 import pytest
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules import lief
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+
+lief = __modules__['lief']["obj"]
 
 
 class TestLIEF:
@@ -21,26 +24,26 @@ class TestLIEF:
         __sessions__.close()
 
     def test_init(self):
-        instance = lief.Lief()
-        assert isinstance(instance, lief.Lief)
+        instance = lief()
+        assert isinstance(instance, lief)
         assert isinstance(instance, Module)
 
     def test(self, capsys):
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf"])
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(r".*No open session.*", out)
 
     def test_args_exception(self):
-        instance = lief.Lief()
+        instance = lief()
 
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*extract information from ELF, PE, MachO, DEX, OAT, ART and VDEX.*")
 
     def test_run_help(self, capsys):
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["--help"])
 
         instance.run()
@@ -48,7 +51,7 @@ class TestLIEF:
         assert re.search(r"^usage:.*", out)
 
     def test_run_short_help(self, capsys):
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["-h"])
 
         instance.run()
@@ -56,7 +59,7 @@ class TestLIEF:
         assert re.search(r"^usage:.*", out)
 
     def test_run_invalid_option(self, capsys):
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["invalid"])
 
         instance.run()
@@ -69,7 +72,7 @@ class TestLIEF:
     ])
     def test_sections_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--sections"])
         instance.run()
         out, err = capsys.readouterr()
@@ -80,7 +83,7 @@ class TestLIEF:
     ])
     def test_sections_macho(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--sections"])
         instance.run()
         out, err = capsys.readouterr()
@@ -91,7 +94,7 @@ class TestLIEF:
     ])
     def test_sections_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--sections"])
         instance.run()
         out, err = capsys.readouterr()
@@ -102,7 +105,7 @@ class TestLIEF:
     ])
     def test_sections_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--sections"])
         instance.run()
         out, err = capsys.readouterr()
@@ -113,7 +116,7 @@ class TestLIEF:
     ])
     def test_segments_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--segments"])
         instance.run()
         out, err = capsys.readouterr()
@@ -125,7 +128,7 @@ class TestLIEF:
     ])
     def test_segments_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--segments"])
         instance.run()
         out, err = capsys.readouterr()
@@ -136,7 +139,7 @@ class TestLIEF:
     ])
     def test_segments_macho(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--segments"])
         instance.run()
         out, err = capsys.readouterr()
@@ -147,7 +150,7 @@ class TestLIEF:
     ])
     def test_type_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--type"])
         instance.run()
         out, err = capsys.readouterr()
@@ -159,7 +162,7 @@ class TestLIEF:
     ])
     def test_type_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--type"])
         instance.run()
         out, err = capsys.readouterr()
@@ -170,7 +173,7 @@ class TestLIEF:
     ])
     def test_type_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--type"])
         instance.run()
         out, err = capsys.readouterr()
@@ -181,7 +184,7 @@ class TestLIEF:
     ])
     def test_type_macho(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--type"])
         instance.run()
         out, err = capsys.readouterr()
@@ -192,7 +195,7 @@ class TestLIEF:
     ])
     def test_entrypoint_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--entrypoint"])
         instance.run()
         out, err = capsys.readouterr()
@@ -204,7 +207,7 @@ class TestLIEF:
     ])
     def test_entrypoint_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--entrypoint"])
         instance.run()
         out, err = capsys.readouterr()
@@ -215,7 +218,7 @@ class TestLIEF:
     ])
     def test_entrypoint_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--entrypoint"])
         instance.run()
         out, err = capsys.readouterr()
@@ -226,7 +229,7 @@ class TestLIEF:
     ])
     def test_entrypoint_macho(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--entrypoint"])
         instance.run()
         out, err = capsys.readouterr()
@@ -238,7 +241,7 @@ class TestLIEF:
     ])
     def test_architecture_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--architecture"])
         instance.run()
         out, err = capsys.readouterr()
@@ -249,7 +252,7 @@ class TestLIEF:
     ])
     def test_architecture_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--architecture"])
         instance.run()
         out, err = capsys.readouterr()
@@ -260,7 +263,7 @@ class TestLIEF:
     ])
     def test_architecture_macho(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--architecture"])
         instance.run()
         out, err = capsys.readouterr()
@@ -272,7 +275,7 @@ class TestLIEF:
     ])
     def test_entropy_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--entropy"])
         instance.run()
         out, err = capsys.readouterr()
@@ -283,7 +286,7 @@ class TestLIEF:
     ])
     def test_entropy_oat(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--entropy"])
         instance.run()
         out, err = capsys.readouterr()
@@ -295,7 +298,7 @@ class TestLIEF:
     ])
     def test_interpreter_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--interpreter"])
         instance.run()
         out, err = capsys.readouterr()
@@ -306,7 +309,7 @@ class TestLIEF:
     ])
     def test_interpreter_oat(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--interpreter"])
         instance.run()
         out, err = capsys.readouterr()
@@ -317,7 +320,7 @@ class TestLIEF:
     ])
     def test_dynamic_oat(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--dynamic"])
         instance.run()
         out, err = capsys.readouterr()
@@ -329,7 +332,7 @@ class TestLIEF:
     ])
     def test_dynamic_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--dynamic"])
         instance.run()
         out, err = capsys.readouterr()
@@ -340,7 +343,7 @@ class TestLIEF:
     ])
     def test_dynamic_pe(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--dynamic"])
         instance.run()
         out, err = capsys.readouterr()
@@ -351,7 +354,7 @@ class TestLIEF:
     ])
     def test_dynamic_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--dynamic"])
         instance.run()
         out, err = capsys.readouterr()
@@ -362,7 +365,7 @@ class TestLIEF:
     ])
     def test_symbols_oat(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--symbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -374,7 +377,7 @@ class TestLIEF:
     ])
     def test_symbols_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--symbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -385,7 +388,7 @@ class TestLIEF:
     ])
     def test_symbols_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--symbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -396,7 +399,7 @@ class TestLIEF:
     ])
     def test_dlls_pe(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--dlls"])
         instance.run()
         out, err = capsys.readouterr()
@@ -407,7 +410,7 @@ class TestLIEF:
     ])
     def test_imports_pe(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--imports"])
         instance.run()
         out, err = capsys.readouterr()
@@ -418,7 +421,7 @@ class TestLIEF:
     ])
     def test_imphash_pe(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--imphash"])
         instance.run()
         out, err = capsys.readouterr()
@@ -429,7 +432,7 @@ class TestLIEF:
     ])
     def test_gnu_hash_oat(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--gnu_hash"])
         instance.run()
         out, err = capsys.readouterr()
@@ -441,7 +444,7 @@ class TestLIEF:
     ])
     def test_gnu_hash_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--gnu_hash"])
         instance.run()
         out, err = capsys.readouterr()
@@ -452,7 +455,7 @@ class TestLIEF:
     ])
     def test_compiledate_pe(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--compiledate"])
         instance.run()
         out, err = capsys.readouterr()
@@ -463,7 +466,7 @@ class TestLIEF:
     ])
     def test_strip_oat(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--strip"])
         instance.run()
         out, err = capsys.readouterr()
@@ -475,7 +478,7 @@ class TestLIEF:
     ])
     def test_strip_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--strip"])
         instance.run()
         out, err = capsys.readouterr()
@@ -487,7 +490,7 @@ class TestLIEF:
     ])
     def test_write_elf_1(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         if os.path.exists("/tmp/viper_test"):
             os.remove("/tmp/viper_test")
         instance.set_commandline(["elf", "--write", "/tmp/viper_test"])
@@ -502,7 +505,7 @@ class TestLIEF:
     ])
     def test_write_elf_2(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--write", "/tmp/"])
         instance.run()
         out, err = capsys.readouterr()
@@ -514,7 +517,7 @@ class TestLIEF:
     ])
     def test_write_elf_3(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--write", "/inexistentfolder"])
         instance.run()
         out, err = capsys.readouterr()
@@ -528,7 +531,7 @@ class TestLIEF:
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         with open("/tmp/test", 'w') as f:
             f.write('')
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--write", "/tmp/test"])
         instance.run()
         os.remove("/tmp/test")
@@ -541,7 +544,7 @@ class TestLIEF:
     ])
     def test_notes_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--notes"])
         instance.run()
         out, err = capsys.readouterr()
@@ -552,7 +555,7 @@ class TestLIEF:
     ])
     def test_map_dex(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["dex", "--map"])
         instance.run()
         out, err = capsys.readouterr()
@@ -563,7 +566,7 @@ class TestLIEF:
     ])
     def test_header_art(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["art", "--header"])
         instance.run()
         out, err = capsys.readouterr()
@@ -574,7 +577,7 @@ class TestLIEF:
     ])
     def test_header_vdex(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["vdex", "--header"])
         instance.run()
         out, err = capsys.readouterr()
@@ -585,7 +588,7 @@ class TestLIEF:
     ])
     def test_header_dex(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["dex", "--header"])
         instance.run()
         out, err = capsys.readouterr()
@@ -596,7 +599,7 @@ class TestLIEF:
     ])
     def test_header_oat(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--header"])
         instance.run()
         out, err = capsys.readouterr()
@@ -607,7 +610,7 @@ class TestLIEF:
     ])
     def test_header_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--header"])
         instance.run()
         out, err = capsys.readouterr()
@@ -618,7 +621,7 @@ class TestLIEF:
     ])
     def test_header_pe(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--header"])
         instance.run()
         out, err = capsys.readouterr()
@@ -630,7 +633,7 @@ class TestLIEF:
     ])
     def test_header_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--header"])
         instance.run()
         out, err = capsys.readouterr()
@@ -641,7 +644,7 @@ class TestLIEF:
     ])
     def test_codesignature_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--codesignature"])
         instance.run()
         out, err = capsys.readouterr()
@@ -653,7 +656,7 @@ class TestLIEF:
     ])
     def test_exportedfunctions_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--expfunctions"])
         instance.run()
         out, err = capsys.readouterr()
@@ -665,7 +668,7 @@ class TestLIEF:
     ])
     def test_exportedsymbols_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--expsymbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -676,7 +679,7 @@ class TestLIEF:
     ])
     def test_exportedsymbols_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--expsymbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -688,7 +691,7 @@ class TestLIEF:
     ])
     def test_importedfunctions_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--impfunctions"])
         instance.run()
         out, err = capsys.readouterr()
@@ -700,7 +703,7 @@ class TestLIEF:
     ])
     def test_importedsymbols_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--impsymbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -711,7 +714,7 @@ class TestLIEF:
     ])
     def test_importedsymbols_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--impsymbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -722,7 +725,7 @@ class TestLIEF:
     ])
     def test_sourceversion_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--sourceversion"])
         instance.run()
         out, err = capsys.readouterr()
@@ -733,7 +736,7 @@ class TestLIEF:
     ])
     def test_subFramework_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--subframework"])
         instance.run()
         out, err = capsys.readouterr()
@@ -744,7 +747,7 @@ class TestLIEF:
     ])
     def test_uuid_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--uuid"])
         instance.run()
         out, err = capsys.readouterr()
@@ -755,7 +758,7 @@ class TestLIEF:
     ])
     def test_dataincode_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--dataincode"])
         instance.run()
         out, err = capsys.readouterr()
@@ -766,7 +769,7 @@ class TestLIEF:
     ])
     def test_maincommand_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--maincommand"])
         instance.run()
         out, err = capsys.readouterr()
@@ -777,7 +780,7 @@ class TestLIEF:
     ])
     def test_commands_macho(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["macho", "--commands"])
         instance.run()
         out, err = capsys.readouterr()
@@ -788,7 +791,7 @@ class TestLIEF:
     ])
     def test_dosheader_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--dosheader"])
         instance.run()
         out, err = capsys.readouterr()
@@ -799,7 +802,7 @@ class TestLIEF:
     ])
     def test_datadirectories_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--datadirectories"])
         instance.run()
         out, err = capsys.readouterr()
@@ -810,7 +813,7 @@ class TestLIEF:
     ])
     def test_dosstub_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--dosstub"])
         instance.run()
         out, err = capsys.readouterr()
@@ -821,7 +824,7 @@ class TestLIEF:
     ])
     def test_debug_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--debug"])
         instance.run()
         out, err = capsys.readouterr()
@@ -832,7 +835,7 @@ class TestLIEF:
     ])
     def test_loadconfiguration_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--loadconfiguration"])
         instance.run()
         out, err = capsys.readouterr()
@@ -843,7 +846,7 @@ class TestLIEF:
     ])
     def test_dynamicrelocations_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--dynamicrelocations"])
         instance.run()
         out, err = capsys.readouterr()
@@ -855,7 +858,7 @@ class TestLIEF:
     ])
     def test_objectrelocations_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--objectrelocations"])
         instance.run()
         out, err = capsys.readouterr()
@@ -867,7 +870,7 @@ class TestLIEF:
     ])
     def test_relocations_elf(soat, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--relocations"])
         instance.run()
         out, err = capsys.readouterr()
@@ -878,7 +881,7 @@ class TestLIEF:
     ])
     def test_relocations_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--relocations"])
         instance.run()
         out, err = capsys.readouterr()
@@ -889,7 +892,7 @@ class TestLIEF:
     ])
     def test_resources_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--resources"])
         instance.run()
         out, err = capsys.readouterr()
@@ -900,7 +903,7 @@ class TestLIEF:
     ])
     def test_tls_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--tls"])
         instance.run()
         out, err = capsys.readouterr()
@@ -911,7 +914,7 @@ class TestLIEF:
     ])
     def test_richheader_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--richheader"])
         instance.run()
         out, err = capsys.readouterr()
@@ -922,7 +925,7 @@ class TestLIEF:
     ])
     def test_signature_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--signature"])
         instance.run()
         out, err = capsys.readouterr()
@@ -933,7 +936,7 @@ class TestLIEF:
     ])
     def test_manifest_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--manifest"])
         instance.run()
         out, err = capsys.readouterr()
@@ -944,7 +947,7 @@ class TestLIEF:
     ])
     def test_resourcestypes_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--resourcestypes"])
         instance.run()
         out, err = capsys.readouterr()
@@ -955,7 +958,7 @@ class TestLIEF:
     ])
     def test_langs_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--langs"])
         instance.run()
         out, err = capsys.readouterr()
@@ -966,7 +969,7 @@ class TestLIEF:
     ])
     def test_icons_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--icons"])
         instance.run()
         out, err = capsys.readouterr()
@@ -977,7 +980,7 @@ class TestLIEF:
     ])
     def test_extracticons_pe_success(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--extracticons", "/tmp/"])
         instance.run()
         out, err = capsys.readouterr()
@@ -988,7 +991,7 @@ class TestLIEF:
     ])
     def test_extracticons_pe_exists(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--extracticons", "/tmp/"])
         instance.run()
         for root, dirs, files in os.walk("/tmp/"):
@@ -1002,7 +1005,7 @@ class TestLIEF:
     ])
     def test_extracticons_pe_id_success(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--extracticons", "/tmp/", "--id", "1"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1013,7 +1016,7 @@ class TestLIEF:
     ])
     def test_extracticons_pe_id_exists(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--extracticons", "/tmp/", "--id", "1"])
         instance.run()
         for root, dirs, files in os.walk("/tmp/"):
@@ -1027,7 +1030,7 @@ class TestLIEF:
     ])
     def test_extracticons_pe_error(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--extracticons", "/inexistentfolder"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1038,7 +1041,7 @@ class TestLIEF:
     ])
     def test_extracticons_pe_id_not_exist(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--extracticons", "/tmp/", "--id", "999999"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1049,7 +1052,7 @@ class TestLIEF:
     ])
     def test_extracticons_pe_no_icon_found(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--extracticons", "/tmp/"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1060,7 +1063,7 @@ class TestLIEF:
     ])
     def test_dialogs_pe(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["pe", "--dialogs"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1071,7 +1074,7 @@ class TestLIEF:
     ])
     def test_classes_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--classes"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1082,7 +1085,7 @@ class TestLIEF:
     ])
     def test_classes_dex(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["dex", "--classes"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1093,7 +1096,7 @@ class TestLIEF:
     ])
     def test_methods_oat_no_class(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--methods"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1104,7 +1107,7 @@ class TestLIEF:
     ])
     def test_methods_oat_inexistent_class(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--methods", "--classname", "inexistentclass"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1115,7 +1118,7 @@ class TestLIEF:
     ])
     def test_methods_oat_existent_class(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--methods", "--classname", "com.qualcomm.qcrilhook.QmiOemHook"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1126,7 +1129,7 @@ class TestLIEF:
     ])
     def test_methods_dex_existent_class(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["dex", "--methods", "--classname", "java.lang.Runtime"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1137,7 +1140,7 @@ class TestLIEF:
     ])
     def test_methods_oat_existent_class_name(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--methods", "--classname", "com.qualcomm.qcrilhook.QmiOemHook", "--name", "sendQmiMessageSync"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1148,7 +1151,7 @@ class TestLIEF:
     ])
     def test_methods_dex_existent_class_name(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["dex", "--methods", "--classname", "java.lang.Runtime", "--name", "exec"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1159,7 +1162,7 @@ class TestLIEF:
     ])
     def test_androidversion_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--androidversion"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1170,7 +1173,7 @@ class TestLIEF:
     ])
     def test_androidversion_vdex(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["vdex", "--androidversion"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1181,7 +1184,7 @@ class TestLIEF:
     ])
     def test_androidversion_art(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["art", "--androidversion"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1192,7 +1195,7 @@ class TestLIEF:
     ])
     def test_dexfiles_oat(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--dexfiles"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1204,7 +1207,7 @@ class TestLIEF:
     ])
     def test_dynamicentries_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--dynamicentries"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1216,7 +1219,7 @@ class TestLIEF:
     ])
     def test_dynamicsymbols_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--dynamicsymbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1228,7 +1231,7 @@ class TestLIEF:
     ])
     def test_staticsymbols_elf(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["elf", "--staticsymbols"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1239,7 +1242,7 @@ class TestLIEF:
     ])
     def test_extractdexfiles_oat_no_access(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--extractdexfiles", "/inexistentfolder"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1250,7 +1253,7 @@ class TestLIEF:
     ])
     def test_extractdexfiles_oat_inexistent_name(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--extractdexfiles", "/tmp/", "--name", "inexistentdexfile"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1261,7 +1264,7 @@ class TestLIEF:
     ])
     def test_extractdexfiles_oat_ok(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--extractdexfiles", "/tmp/"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1272,7 +1275,7 @@ class TestLIEF:
     ])
     def test_extractdexfiles_oat_not_ok(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--extractdexfiles", "/tmp/"])
         instance.run()
         for root, dirs, files in os.walk("/tmp/"):
@@ -1286,7 +1289,7 @@ class TestLIEF:
     ])
     def test_extractdexfiles_oat__name_ok(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--extractdexfiles", "/tmp/", "--name", "classes.dex"])
         instance.run()
         out, err = capsys.readouterr()
@@ -1297,7 +1300,7 @@ class TestLIEF:
     ])
     def test_extractdexfiles_oat_name_not_ok(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["oat", "--extractdexfiles", "/tmp/", "--name", "classes.dex"])
         instance.run()
         for root, dirs, files in os.walk("/tmp/"):
@@ -1311,7 +1314,7 @@ class TestLIEF:
     ])
     def test_strings_dex(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = lief.Lief()
+        instance = lief()
         instance.set_commandline(["dex", "--strings"])
         instance.run()
         out, err = capsys.readouterr()

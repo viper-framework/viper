@@ -7,11 +7,13 @@ import re
 import pytest
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules import rat
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+rat = __modules__['rat']["obj"]
 
 
 class TestRAT:
@@ -20,17 +22,17 @@ class TestRAT:
         __sessions__.close()
 
     def test_init(self):
-        instance = rat.RAT()
+        instance = rat()
         assert isinstance(instance, Module)
 
     def test_args_exception(self):
-        instance = rat.RAT()
+        instance = rat()
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Extract information from known RAT families.*")
 
     def test_run_help(self, capsys):
-        instance = rat.RAT()
+        instance = rat()
         instance.set_commandline(["--help"])
 
         instance.run()
@@ -38,7 +40,7 @@ class TestRAT:
         assert re.search(r"^usage:.*", out)
 
     def test_run_short_help(self, capsys):
-        instance = rat.RAT()
+        instance = rat()
         instance.set_commandline(["-h"])
 
         instance.run()
@@ -46,7 +48,7 @@ class TestRAT:
         assert re.search(r"^usage:.*", out)
 
     def test_run_list(self, capsys):
-        instance = rat.RAT()
+        instance = rat()
         instance.set_commandline(["-l"])
 
         instance.run()
@@ -54,7 +56,7 @@ class TestRAT:
         assert re.search(r".*List of available RAT modules:.*", out)
 
     def test_run_auto_no_session(self, capsys):
-        instance = rat.RAT()
+        instance = rat()
         instance.set_commandline(["-a"])
 
         instance.run()
@@ -62,7 +64,7 @@ class TestRAT:
         assert re.search(r'.*No open session.*', out)
 
     def test_run_family_no_session(self, capsys):
-        instance = rat.RAT()
+        instance = rat()
         instance.set_commandline(["-f", "adwind"])
 
         instance.run()
@@ -75,7 +77,7 @@ class TestRAT:
     def test_run_family_no_module(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
 
-        instance = rat.RAT()
+        instance = rat()
         instance.run()
         out, err = capsys.readouterr()
         instance.set_commandline(["-f", "foobar"])
@@ -91,7 +93,7 @@ class TestRAT:
     def test_run_auto(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
 
-        instance = rat.RAT()
+        instance = rat()
         instance.set_commandline(["-a"])
 
         instance.run()
@@ -109,7 +111,7 @@ class TestRAT:
         # FIXME: this test isn't really useful.
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
 
-        instance = rat.RAT()
+        instance = rat()
         instance.set_commandline(["-f", "adwind"])
 
         instance.run()
@@ -117,4 +119,4 @@ class TestRAT:
         if expected:
             assert re.search(r'.*Automatically detected supported.*', out)
         else:
-            assert re.search(r'.*No Configuration Detected.*', out)
+            assert re.search(r'.*There is no module for family.*', out)

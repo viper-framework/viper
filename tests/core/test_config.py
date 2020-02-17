@@ -14,12 +14,12 @@ class TestConfig:
         assert re.search("viper.conf", instance.config_file)
 
     def test_sample(self):
-        instance = Config("viper.conf.sample")
+        instance = Config()
         assert isinstance(instance, Config)
         assert instance.modules.store_output is True
 
     def test_missing_section_http_client(self):
-        instance = Config("viper.conf.sample")
+        instance = Config()
         assert hasattr(instance, "http_client")
 
         delattr(instance, "http_client")
@@ -29,7 +29,7 @@ class TestConfig:
         assert hasattr(instance, "http_client")
 
     def test_sample_parse_global(self):
-        instance = Config("viper.conf.sample")
+        instance = Config()
 
         instance.parse_http_client()
         assert instance.http_client.proxies is None
@@ -37,7 +37,7 @@ class TestConfig:
         assert instance.http_client.cert is None
 
     def test_sample_parse_global_section(self):
-        instance = Config("viper.conf.sample")
+        instance = Config()
 
         instance.parse_http_client(instance.cuckoo)
 
@@ -50,7 +50,7 @@ class TestConfig:
         assert instance.cuckoo.cert is None
 
     def test_custom_parse_global(self):
-        instance = Config("viper.conf.sample")
+        instance = Config()
 
         # http_proxy, no_proxy
         instance.http_client.https_proxy = None
@@ -95,7 +95,7 @@ class TestConfig:
 
         # TODO (frennkie) Write some more parser logic validations here
     def test_custom_parse_global_section(self):
-        instance = Config("viper.conf.sample")
+        instance = Config()
 
         # http_proxy, no_proxy
         instance.http_client.https_proxy = None

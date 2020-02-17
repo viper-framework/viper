@@ -11,9 +11,8 @@ from tests.conftest import FIXTURE_DIR
 
 from viper.core.session import __sessions__
 from viper.core.config import __config__
+from viper.core.plugins import __modules__
 
-
-from viper.modules import misp
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
@@ -24,20 +23,23 @@ except ImportError:
     live_tests = False
 
 
+misp = __modules__['misp']["obj"]
+
+
 class TestMISP:
     def test_init(self):
-        instance = misp.MISP()
-        assert isinstance(instance, misp.MISP)
+        instance = misp()
+        assert isinstance(instance, misp)
         assert isinstance(instance, Module)
 
     def test_args_exception(self):
-        instance = misp.MISP()
+        instance = misp()
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Upload and query IOCs to/from a MISP instance*")
 
     def test_run_help(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.set_commandline(["--help"])
 
         instance.run()
@@ -45,7 +47,7 @@ class TestMISP:
         assert re.search(r"^usage:.*", out)
 
     def test_run_short_help(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.set_commandline(["-h"])
 
         instance.run()
@@ -53,7 +55,7 @@ class TestMISP:
         assert re.search(r"^usage:.*", out)
 
     def test_run_invalid_option(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.set_commandline(["invalid"])
 
         instance.run()
@@ -61,7 +63,7 @@ class TestMISP:
         assert re.search(r".*argument subname: invalid choice: 'invalid'.*", out)
 
     def test_tag_list(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--off', 'tag', '--list']
 
         instance.run()
@@ -71,7 +73,7 @@ class TestMISP:
 
     @pytest.mark.skipif(sys.version_info < (3, 0), reason="Encoding foobar, don't care.")
     def test_tag_search(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--off', 'tag', '-s', 'ciRcl']
 
         instance.run()
@@ -80,7 +82,7 @@ class TestMISP:
         assert re.search(r".*circl:incident-classification=\"system-compromise\".*", out)
 
     def test_tag_details(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--off', 'tag', '-d', 'circl']
 
         instance.run()
@@ -89,7 +91,7 @@ class TestMISP:
         assert re.search(r".*Denial of Service | denial-of-service.*", out)
 
     def test_galaxies_list(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--off', 'galaxies', '--list']
 
         instance.run()
@@ -98,7 +100,7 @@ class TestMISP:
         assert re.search(r".*microsoft-activity-group.*", out)
 
     def test_galaxies_search(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--off', 'galaxies', '--search', 'foo']
 
         instance.run()
@@ -107,7 +109,7 @@ class TestMISP:
         assert re.search(r".*Foozer.*", out)
 
     def test_galaxies_list_cluster(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--off', 'galaxies', '-d', 'rat']
 
         instance.run()
@@ -116,7 +118,7 @@ class TestMISP:
         assert re.search(r".*BlackNix.*", out)
 
     def test_galaxies_list_cluster_value(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--off', 'galaxies', '-d', 'rat', '-v', 'BlackNix']
 
         instance.run()
@@ -127,7 +129,7 @@ class TestMISP:
     # Live tests - require a MISP instance.
     @pytest.mark.skipif(not live_tests, reason="No API key provided")
     def test_create_event(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--url', url, '-k', apikey, '-v', 'create_event', '-i', 'Viper test event']
 
         instance.run()
@@ -160,7 +162,7 @@ class TestMISP:
     # Live tests - require a MISP instance.
     @pytest.mark.skipif(not live_tests, reason="No API key provided")
     def test_check_hashes(self, capsys):
-        instance = misp.MISP()
+        instance = misp()
         instance.command_line = ['--url', url, '-k', apikey, '-v', 'create_event', '-i', 'Viper test event - check hashes']
 
         instance.run()
