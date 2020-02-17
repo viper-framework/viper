@@ -32,7 +32,8 @@ def get_package_data(package):
     filepaths = []
     for base, filenames in walk:
         filepaths.extend([os.path.join(base, filename)
-                          for filename in filenames])
+                          for filename in filenames
+                          if not filename.endswith('pyc')])
     return {package: filepaths}
 
 

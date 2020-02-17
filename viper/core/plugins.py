@@ -55,7 +55,7 @@ def load_modules():
 
     try:
         import modules
-    except ImportError as e:
+    except ImportError:
         return dict()
     else:
         plugins = dict()
@@ -84,5 +84,6 @@ def load_modules():
                                                           subparser_args=get_argparse_subparser_actions(member_object().parser))
 
         return plugins
+
 
 __modules__ = load_modules()

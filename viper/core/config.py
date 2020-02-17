@@ -3,7 +3,6 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
-import shutil
 import logging
 import pkgutil
 from os.path import expanduser

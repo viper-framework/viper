@@ -26,7 +26,6 @@ install:
     - pip install -U tox-travis
     - pip install -e .
     - echo "update-modules" | viper
-    - sleep 180  # takes time to initialize the clamav database
     - sudo service clamav-daemon restart
     - sudo service clamav-freshclam status
     - sudo service clamav-daemon status
