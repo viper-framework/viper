@@ -119,4 +119,4 @@ class TestRAT:
         if expected:
             assert re.search(r'.*Automatically detected supported.*', out)
         else:
-            assert re.search(r'.*No Configuration Detected.*', out)
+            assert re.search(r'.*There is no module for family.*', out)

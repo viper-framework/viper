@@ -9,7 +9,6 @@ import pytest
 from tests.conftest import FIXTURE_DIR
 
 from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
@@ -26,12 +25,6 @@ class Testmacho:
         instance = macho()
         assert isinstance(instance, macho)
         assert isinstance(instance, Module)
-
-    def test_args_exception(self):
-        instance = macho()
-        with pytest.raises(ArgumentErrorCallback) as excinfo:
-            instance.parser.parse_args(["-h"])
-        excinfo.match(r".*Get macho OSX Headers.*")
 
     @pytest.mark.usefixtures("cleandir")
     def test_no_session(self, capsys):
