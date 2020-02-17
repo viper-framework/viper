@@ -57,7 +57,7 @@ setup(
     install_requires=[
         "bitstring==3.1.6",
         "pbkdf2==1.3",
-        "python-dateutil==2.8.0",
+        "python-dateutil==2.8.1",
         "python-magic==0.4.15",
         "requests[socks]==2.22.0",
         "requests-cache==0.5.2",
