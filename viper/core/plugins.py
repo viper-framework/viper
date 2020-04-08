@@ -2,12 +2,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
 import sys
 import pkgutil
 import inspect
 import importlib
-from os.path import expanduser
 
 from viper.common.abstracts import Command, Module
 from viper.common.abstracts import get_argparse_parser_actions
@@ -16,6 +14,7 @@ from viper.common.out import print_warning
 from viper.core.config import __config__
 
 cfg = __config__
+
 
 def load_commands():
     # Import modules package.
