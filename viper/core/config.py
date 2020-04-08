@@ -72,7 +72,7 @@ class Config:
                 setattr(getattr(self, section), name, value)
 
         # Set a default value for the module_path if one was not set
-        if not 'module_path' in self.paths:
+        if not 'module_path' in self.paths or len(self.paths['module_path'])<1:
             self.paths['module_path'] = os.path.join(expanduser('~'), ".viper")
             if not os.path.exists(self.paths['module_path']):
                 os.makedirs(self.paths['module_path'])
