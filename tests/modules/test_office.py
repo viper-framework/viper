@@ -8,27 +8,29 @@ import re
 import pytest
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules import office
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+office = __modules__['office']["obj"]
 
 
 class TestOffice:
     def test_init(self):
-        instance = office.Office()
-        assert isinstance(instance, office.Office)
+        instance = office()
+        assert isinstance(instance, office)
         assert isinstance(instance, Module)
 
     def test_args_exception(self):
-        instance = office.Office()
+        instance = office()
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Office Document Parser.*")
 
     def test_run_help(self, capsys):
-        instance = office.Office()
+        instance = office()
         instance.set_commandline(["--help"])
 
         instance.run()
@@ -36,7 +38,7 @@ class TestOffice:
         assert re.search(r"^usage:.*", out)
 
     def test_run_short_help(self, capsys):
-        instance = office.Office()
+        instance = office()
         instance.set_commandline(["-h"])
 
         instance.run()
@@ -44,7 +46,7 @@ class TestOffice:
         assert re.search(r"^usage:.*", out)
 
     def test_run_invalid_option(self, capsys):
-        instance = office.Office()
+        instance = office()
         instance.set_commandline(["invalid"])
 
         instance.run()
@@ -54,7 +56,7 @@ class TestOffice:
     @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
     def test_meta(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = office.Office()
+        instance = office()
         instance.command_line = ["-m"]
 
         instance.run()
@@ -67,7 +69,7 @@ class TestOffice:
     @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
     def test_oleid(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = office.Office()
+        instance = office()
         instance.command_line = ["-o"]
 
         instance.run()
@@ -78,7 +80,7 @@ class TestOffice:
     @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
     def test_streams(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = office.Office()
+        instance = office()
         instance.command_line = ["-s"]
 
         instance.run()
@@ -91,7 +93,7 @@ class TestOffice:
                               ("9afa90370cfd217ae1ec36e752a393537878a2f3b5f9159f61690e7790904b0d", [r".*Workbook_Open.*", r".*SbieDll.dll.*"])])
     def test_vba(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = office.Office()
+        instance = office()
         instance.command_line = ["-v"]
 
         instance.run()
@@ -104,7 +106,7 @@ class TestOffice:
     @pytest.mark.parametrize("filename", ["c026ebfa3a191d4f27ee72f34fa0d97656113be368369f605e7845a30bc19f6a"])
     def test_export(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = office.Office()
+        instance = office()
         instance.command_line = ["-e", 'out_all']
 
         instance.run()
@@ -116,7 +118,7 @@ class TestOffice:
     @pytest.mark.parametrize("filename", ["Douglas-Resume.doc"])
     def test_code(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = office.Office()
+        instance = office()
         instance.command_line = ["-c", 'out_macro']
 
         instance.run()

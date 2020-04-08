@@ -12,6 +12,7 @@ from viper.common.version import __version__
 from viper.core.project import __project__
 from viper.core.session import __sessions__
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(

@@ -32,7 +32,6 @@ class Help(Command):
 
         self.log("table", dict(header=["Command", "Description"], rows=rows))
 
-
         if len(__modules__) == 0:
             self.log("info", "No modules installed.")
         else:
@@ -40,7 +39,7 @@ class Help(Command):
             rows = []
             for module_name, module_item in __modules__.items():
                 rows.append([module_name, module_item["description"],
-                    ", ".join(c for c in module_item["categories"])])
+                             ", ".join(c for c in module_item["categories"])])
 
             rows = sorted(rows, key=lambda entry: entry[0])
 

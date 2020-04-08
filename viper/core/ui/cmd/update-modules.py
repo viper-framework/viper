@@ -8,6 +8,7 @@ import subprocess
 
 from viper.common.abstracts import Command
 
+
 class UpdateModules(Command):
     """
     This command downloads modules from the GitHub repository at
@@ -29,7 +30,7 @@ class UpdateModules(Command):
         else:
             # Clone the repository.
             p = subprocess.Popen(["git", "clone", "https://github.com/viper-framework/viper-modules.git",
-                "modules"], cwd=dot_viper)
+                                  "modules"], cwd=dot_viper)
             p.wait()
 
             # Check whether previous command executed successfully

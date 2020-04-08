@@ -8,27 +8,30 @@ import re
 import pytest
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules import emailparse
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+
+emailparse = __modules__['email']["obj"]
 
 
 class TestEmailParse:
     def test_init(self):
-        instance = emailparse.EmailParse()
-        assert isinstance(instance, emailparse.EmailParse)
+        instance = emailparse()
+        assert isinstance(instance, emailparse)
         assert isinstance(instance, Module)
 
     def test_args_exception(self):
-        instance = emailparse.EmailParse()
+        instance = emailparse()
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Parse eml and msg email files.*")
 
     def test_run_help(self, capsys):
-        instance = emailparse.EmailParse()
+        instance = emailparse()
         instance.set_commandline(["--help"])
 
         instance.run()
@@ -36,7 +39,7 @@ class TestEmailParse:
         assert re.search(r"^usage:.*", out)
 
     def test_run_short_help(self, capsys):
-        instance = emailparse.EmailParse()
+        instance = emailparse()
         instance.set_commandline(["-h"])
 
         instance.run()
@@ -44,7 +47,7 @@ class TestEmailParse:
         assert re.search(r"^usage:.*", out)
 
     def test_run_invalid_option(self, capsys):
-        instance = emailparse.EmailParse()
+        instance = emailparse()
         instance.set_commandline(["invalid"])
 
         instance.run()
@@ -58,7 +61,7 @@ class TestEmailParse:
                                                    ])
     def test_all(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = emailparse.EmailParse()
+        instance = emailparse()
         instance.command_line = ['-a']
 
         instance.run()

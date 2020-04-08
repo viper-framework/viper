@@ -9,28 +9,31 @@ from datetime import datetime
 import pytest
 from tests.conftest import FIXTURE_DIR
 
-from viper.modules import pe
 from viper.common.abstracts import Module
 from viper.common.abstracts import ArgumentErrorCallback
 
 from viper.core.session import __sessions__
+from viper.core.plugins import __modules__
+
+
+pe = __modules__['pe']["obj"]
 
 
 class TestPE:
     def test_init(self):
-        instance = pe.PE()
-        assert isinstance(instance, pe.PE)
+        instance = pe()
+        assert isinstance(instance, pe)
         assert isinstance(instance, Module)
 
     def test_args_exception(self):
-        instance = pe.PE()
+        instance = pe()
 
         with pytest.raises(ArgumentErrorCallback) as excinfo:
             instance.parser.parse_args(["-h"])
         excinfo.match(r".*Extract information from PE32 headers.*")
 
     def test_run_help(self, capsys):
-        instance = pe.PE()
+        instance = pe()
         instance.set_commandline(["--help"])
 
         instance.run()
@@ -38,7 +41,7 @@ class TestPE:
         assert re.search(r"^usage:.*", out)
 
     def test_run_short_help(self, capsys):
-        instance = pe.PE()
+        instance = pe()
         instance.set_commandline(["-h"])
 
         instance.run()
@@ -46,7 +49,7 @@ class TestPE:
         assert re.search(r"^usage:.*", out)
 
     def test_run_invalid_option(self, capsys):
-        instance = pe.PE()
+        instance = pe()
         instance.set_commandline(["invalid"])
 
         instance.run()
@@ -58,7 +61,7 @@ class TestPE:
     ])
     def test_compiletime(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = pe.PE()
+        instance = pe()
         instance.command_line = ["compiletime"]
 
         instance.run()
@@ -74,7 +77,7 @@ class TestPE:
     ])
     def test_sections(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = pe.PE()
+        instance = pe()
         instance.command_line = ["sections"]
 
         instance.run()
@@ -90,7 +93,7 @@ class TestPE:
     ])
     def test_security(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = pe.PE()
+        instance = pe()
         instance.command_line = ["security"]
 
         instance.run()
@@ -101,7 +104,7 @@ class TestPE:
     @pytest.mark.parametrize("filename, expected", [("cmd.exe", r".*Probable language:.*C.*")])
     def test_language(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = pe.PE()
+        instance = pe()
         instance.command_line = ["language"]
 
         instance.run()
@@ -116,7 +119,7 @@ class TestPE:
     ])
     def test_resources(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
-        instance = pe.PE()
+        instance = pe()
         instance.command_line = ["resources"]
 
         instance.run()
@@ -130,7 +133,7 @@ class TestPE:
     # def test_sections(self, filename, expected):
     #     __sessions__.new(os.path.join(FIXTURE_DIR, filename))
     #
-    #     instance = pe.PE()
+    #     instance = pe()
     #     instance.sections()
     #
     #     assert 0
