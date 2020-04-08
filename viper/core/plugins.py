@@ -13,7 +13,9 @@ from viper.common.abstracts import Command, Module
 from viper.common.abstracts import get_argparse_parser_actions
 from viper.common.abstracts import get_argparse_subparser_actions
 from viper.common.out import print_warning
+from viper.core.config import __config__
 
+cfg = __config__
 
 def load_commands():
     # Import modules package.
@@ -50,8 +52,8 @@ def load_commands():
 
 
 def load_modules():
-    # Add $HOME/.viper/ as a Python path.
-    sys.path.insert(0, os.path.join(expanduser("~"), ".viper"))
+    # Add root module_path as a Python path.
+    sys.path.insert(0, cfg.paths.module_path)
 
     try:
         import modules
