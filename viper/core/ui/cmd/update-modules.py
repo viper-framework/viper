@@ -11,6 +11,7 @@ from viper.core.config import __config__
 
 cfg = __config__
 
+
 class UpdateModules(Command):
     """
     This command downloads modules from the GitHub repository at
