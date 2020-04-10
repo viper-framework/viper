@@ -7,6 +7,9 @@ import sys
 import subprocess
 
 from viper.common.abstracts import Command
+from viper.core.config import __config__
+
+cfg = __config__
 
 
 class UpdateModules(Command):
@@ -20,8 +23,10 @@ class UpdateModules(Command):
     def run(self, *args):
         self.log("info", "Updating modules...")
 
-        dot_viper = os.path.join(os.path.expanduser("~"), ".viper")
+        dot_viper = cfg.paths.module_path
         dot_viper_modules = os.path.join(dot_viper, "modules")
+
+        self.log("info", f'Module path: {dot_viper_modules}')
 
         if os.path.exists(dot_viper_modules):
             # Pull updates
