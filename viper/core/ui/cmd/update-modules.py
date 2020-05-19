@@ -50,7 +50,7 @@ class UpdateModules(Command):
         p = subprocess.Popen(["git", "submodule", "update"], cwd=dot_viper_modules)
         p.wait()
         # Install dependencies.
-        p = subprocess.Popen(["pip3", "install", "-r", "requirements.txt"], cwd=dot_viper_modules)
+        p = subprocess.Popen(["pip3", "install", "-U", "-r", "requirements.txt"], cwd=dot_viper_modules)
         p.wait()
 
         # TODO: this is terrible. We need to find a way to move __modules__
