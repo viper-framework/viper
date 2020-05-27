@@ -2,6 +2,7 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import sys
 import pkgutil
 import inspect
 import importlib
@@ -10,6 +11,9 @@ from viper.common.abstracts import Command, Module
 from viper.common.abstracts import get_argparse_parser_actions
 from viper.common.abstracts import get_argparse_subparser_actions
 from viper.common.out import print_warning
+from viper.core.config import __config__
+
+cfg = __config__
 
 
 def load_commands():
@@ -47,35 +51,40 @@ def load_commands():
 
 
 def load_modules():
-    # Import modules package.
-    import viper.modules as modules
+    # Add root module_path as a Python path.
+    sys.path.insert(0, cfg.paths.module_path)
 
-    plugins = dict()
+    try:
+        import modules
+    except ImportError:
+        return dict()
+    else:
+        plugins = dict()
+        # Walk recursively through all modules and packages.
+        for loader, module_name, ispkg in pkgutil.walk_packages(modules.__path__, modules.__name__ + '.'):
+            # If current item is a package, skip.
+            if ispkg:
+                continue
+            # Try to import the module, otherwise skip.
+            try:
+                module = importlib.import_module(module_name)
+            except ImportError as e:
+                print_warning("Something wrong happened while importing the module {0}: {1}".format(module_name, e))
+                continue
 
-    # Walk recursively through all modules and packages.
-    for loader, module_name, ispkg in pkgutil.walk_packages(modules.__path__, modules.__name__ + '.'):
-        # If current item is a package, skip.
-        if ispkg:
-            continue
-        # Try to import the module, otherwise skip.
-        try:
-            module = importlib.import_module(module_name)
-        except ImportError as e:
-            print_warning("Something wrong happened while importing the module {0}: {1}".format(module_name, e))
-            continue
+            # Walk through all members of currently imported modules.
+            for member_name, member_object in inspect.getmembers(module):
+                # Check if current member is a class.
+                if inspect.isclass(member_object):
+                    # Yield the class if it's a subclass of Module.
+                    if issubclass(member_object, Module) and member_object is not Module:
+                        plugins[member_object.cmd] = dict(obj=member_object,
+                                                          description=member_object.description,
+                                                          categories=getattr(member_object, "categories", []),
+                                                          parser_args=get_argparse_parser_actions(member_object().parser),
+                                                          subparser_args=get_argparse_subparser_actions(member_object().parser))
 
-        # Walk through all members of currently imported modules.
-        for member_name, member_object in inspect.getmembers(module):
-            # Check if current member is a class.
-            if inspect.isclass(member_object):
-                # Yield the class if it's a subclass of Module.
-                if issubclass(member_object, Module) and member_object is not Module:
-                    plugins[member_object.cmd] = dict(obj=member_object,
-                                                      description=member_object.description,
-                                                      parser_args=get_argparse_parser_actions(member_object().parser),
-                                                      subparser_args=get_argparse_subparser_actions(member_object().parser))
-
-    return plugins
+        return plugins
 
 
 __modules__ = load_modules()

@@ -40,24 +40,24 @@ class TestCommands:
     def test_notes(self, capsys):
         self.cmd['notes']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: notes \[-h\] .*", out)
+        assert re.search(r"usage: notes \[-h\] .*", out)
 
         self.cmd['notes']['obj']('-l')
         out, err = capsys.readouterr()
-        assert re.search(".*No open session.*", out)
+        assert re.search(".*No notes available for this file or.*", out)
 
     def test_open(self, capsys):
         self.cmd['open']['obj']('-h')
         self.cmd['open']['obj']('-u', 'https://github.com/viper-framework/viper-test-files/raw/master/test_files/cmd.exe')
         out, err = capsys.readouterr()
-        assert re.search("usage: open \[-h\] .*", out)
+        assert re.search(r"usage: open \[-h\] .*", out)
         assert re.search(".*Session opened on /tmp/.*", out)
 
     def test_open_tor(self, capsys):
         self.cmd['open']['obj']('-h')
         self.cmd['open']['obj']('-t', '-u', 'https://github.com/viper-framework/viper-test-files/raw/master/test_files/cmd.exe')
         out, err = capsys.readouterr()
-        assert re.search("usage: open \[-h\] .*", out)
+        assert re.search(r"usage: open \[-h\] .*", out)
         assert re.search(".*Session opened on /tmp/.*", out)
 
     def test_notes_existing(self, capsys):
@@ -76,24 +76,24 @@ class TestCommands:
         self.cmd['analysis']['obj']('-l')
         self.cmd['analysis']['obj']('-v', '1')
         out, err = capsys.readouterr()
-        assert re.search("usage: analysis \[-h\] .*", out)
+        assert re.search(r"usage: analysis \[-h\] .*", out)
         assert re.search(".*Saved On.*", out)
         assert re.search(".*Cmd Line.*", out)
 
     def test_store(self, capsys):
         self.cmd['store']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: store \[-h\] .*", out)
+        assert re.search(r"usage: store \[-h\] .*", out)
 
     def test_delete(self, capsys):
         self.cmd['delete']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: delete \[-h\] .*", out)
+        assert re.search(r"usage: delete \[-h\] .*", out)
 
     def test_find(self, capsys):
         self.cmd['find']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: find \[-h\] .*", out)
+        assert re.search(r"usage: find \[-h\] .*", out)
 
         self.cmd['find']['obj']('all')
         out, err = capsys.readouterr()
@@ -102,7 +102,7 @@ class TestCommands:
     def test_tags(self, capsys):
         self.cmd['tags']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: tags \[-h\] .*", out)
+        assert re.search(r"usage: tags \[-h\] .*", out)
 
     def test_tags_use(self, capsys):
         self.cmd['open']['obj']('-f', os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
@@ -116,7 +116,7 @@ class TestCommands:
     def test_sessions(self, capsys):
         self.cmd['sessions']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: sessions \[-h\] .*", out)
+        assert re.search(r"usage: sessions \[-h\] .*", out)
 
         self.cmd['sessions']['obj']('-l')
         out, err = capsys.readouterr()
@@ -125,7 +125,7 @@ class TestCommands:
     def test_projects(self, capsys):
         self.cmd['projects']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: projects \[-h\] .*", out)
+        assert re.search(r"usage: projects \[-h\] .*", out)
 
         p = Project()
         p.open("project_switch_test1")
@@ -147,17 +147,17 @@ class TestCommands:
     def test_export(self, capsys):
         self.cmd['export']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: export \[-h\] .*", out)
+        assert re.search(r"usage: export \[-h\] .*", out)
 
     def test_stats(self, capsys):
         self.cmd['stats']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: stats \[-h\] .*", out)
+        assert re.search(r"usage: stats \[-h\] .*", out)
 
     def test_parent(self, capsys):
         self.cmd['parent']['obj']('-h')
         out, err = capsys.readouterr()
-        assert re.search("usage: parent \[-h\] .*", out)
+        assert re.search(r"usage: parent \[-h\] .*", out)
 
     def test_rename(self, capsys):
         self.cmd['find']['obj']("all")

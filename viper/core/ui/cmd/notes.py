@@ -14,19 +14,20 @@ from viper.core.session import __sessions__
 class Notes(Command):
     """
     This command allows you to view, add, modify and delete notes associated
-    with the currently opened file.
+    with the currently opened file or project.
     """
     cmd = "notes"
-    description = "View, add and edit notes on the opened file"
+    description = "View, add and edit notes on the opened file or project"
 
     def __init__(self):
         super(Notes, self).__init__()
         group = self.parser.add_mutually_exclusive_group()
-        group.add_argument('-l', '--list', action='store_true', help="List all notes available for the current file")
-        group.add_argument('-a', '--add', action='store_true', help="Add a new note to the current file")
+        group.add_argument('-l', '--list', action='store_true', help="List all notes available for the current file or project")
+        group.add_argument('-a', '--add', action='store_true', help="Add a new note to the current file or project")
         group.add_argument('-v', '--view', metavar='NOTE ID', type=int, help="View the specified note")
         group.add_argument('-e', '--edit', metavar='NOTE ID', type=int, help="Edit an existing note")
         group.add_argument('-d', '--delete', metavar='NOTE ID', type=int, help="Delete an existing note")
+        self.parser.add_argument('-p', '--project', action='store_true', help="Use project notes instead of notes being tied to a file")
 
     def run(self, *args):
         try:
@@ -34,24 +35,18 @@ class Notes(Command):
         except SystemExit:
             return
 
-        if not __sessions__.is_set():
-            self.log('error', "No open session. This command expects a file to be open.")
-            return
-
         db = Database()
-
-        # check if the file is already stores, otherwise exit as no notes command will work if the file is not stored in the database
-        malware = db.find(key='sha256', value=__sessions__.current.file.sha256)
-        if not malware:
-            self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
-            return
+        malware = None
+        if __sessions__.is_set() and not args.project:
+            malware = db.find(key='sha256', value=__sessions__.current.file.sha256)
+            if not malware:
+                self.log('error', "The opened file doesn't appear to be in the database, have you stored it yet?")
 
         if args.list:
             # Retrieve all notes for the currently opened file.
-
-            notes = malware[0].note
+            notes = malware[0].note if malware is not None else db.list_notes()
             if not notes:
-                self.log('info', "No notes available for this file yet")
+                self.log('info', "No notes available for this file or project yet")
                 return
 
             # Populate table rows.
@@ -70,9 +65,12 @@ class Notes(Command):
                 # Once the user is done editing, we need to read the content and
                 # store it in the database.
                 body = tmp.read()
-                db.add_note(__sessions__.current.file.sha256, title, body)
-
-            self.log('info', 'New note with title "{0}" added to the current file'.format(bold(title)))
+                if args.project or not __sessions__.is_set():
+                    db.add_note(None, title, body)
+                    self.log('info', 'New note with title "{0}" added to the current project'.format(bold(title)))
+                else:
+                    db.add_note(__sessions__.current.file.sha256, title, body)
+                    self.log('info', 'New note with title "{0}" added to the current file'.format(bold(title)))
 
         elif args.view:
             # Retrieve note wth the specified ID and print it.

@@ -88,6 +88,22 @@ class MispEvent(object):
         return event_hashes, sample_hashes
 
 
+class IOBytes(object):
+    def __init__(self, byte_array):
+        """
+        Use to emulate some of the File object features so that a
+        io.ByteIO instance can be treated like a file when it comes
+        to calling the data property.
+
+        @byte_array: a io.BytesIO instance
+        """
+        self._data = byte_array
+
+    @property
+    def data(self):
+        return self._data
+
+
 class File(object):
     def __init__(self, path):
         self.id = None
@@ -194,7 +210,7 @@ class File(object):
                 try:
                     import subprocess
                     file_process = subprocess.Popen(['file', '-b', self.path], stdout=subprocess.PIPE)
-                    file_type = file_process.stdout.read().strip()
+                    file_type = file_process.stdout.read().strip().decode("utf-8")
                 except Exception:
                     return ''
         finally:

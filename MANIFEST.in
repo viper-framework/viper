@@ -4,7 +4,7 @@ include README.md
 include CHANGELOG
 include requirements.txt
 include requirements-*.txt
-include viper.conf.sample
+include viper/data/viper.conf.sample
 include settings_local.py.sample
 recursive-include data/peid/ *.*
 recursive-include data/yara/ *.*

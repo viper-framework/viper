@@ -12,7 +12,7 @@ import pytest
 from tests.conftest import FIXTURE_DIR
 
 import subprocess
-from collections import KeysView
+from collections.abc import KeysView
 
 from viper.core.archiver import Archiver, Compressor, Extractor
 from viper.core.archiver import ZipExtractor

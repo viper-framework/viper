@@ -33,22 +33,6 @@ The API interface isn't fully aware of projects
 Most of the API commands are not able yet to interact with different projects, so most of the commands will
 be executed against the default repository.
 
-update.py from 1.1 to 1.2 IOError 'data/web/'
-=============================================
-
-If you are running a Viper version 1.1 und using update.py to update to 1.2 you might run into some error like::
-
-    python update.py
-    [!] WARNING: If you proceed you will lose any changes you might have made to Viper.
-    Are you sure you want to proceed? [y/N] y
-    Traceback (most recent call last):
-    File "update.py", line 79, in <module>
-      main()
-    File "update.py", line 66, in main
-      new_local = open(local_file_path, 'w')
-      IOError: [Errno 2] No such file or directory: 'data/web/'
-
-That issue is known and already adressed in the new version of update.py (you might wanna pull that file manually
 
 PreprocessError: data/yara/index.yara:0:Invalid file extension '.yara'.Can only include .yar
 ============================================================================================
@@ -154,4 +138,3 @@ Log::
     AttributeError: 'NoneType' object has no attribute 'split'
     ----------------------------------------
     2018-02-05 14:29:33 - django.server - INFO - basehttp.py:124 - "GET /static/viperweb/images/favicon.png HTTP/1.1" 200 2041
-
