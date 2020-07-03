@@ -51,7 +51,7 @@ On the first launch you will notice that Viper warns you that you do not have an
 
 In order to have support for the most basic modules, you will need to install the following dependencies too before proceeding::
 
-    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev unrar p7zip-full
+    $ sudo apt-get install libssl-dev swig libffi-dev ssdeep libfuzzy-dev unrar-free p7zip-full
 
 You can now download the modules directly from our community GitHub repository using::
 
