@@ -63,6 +63,7 @@ class Projects(Command):
 
             self.log("table", dict(header=["Project Name", "Creation Time", "Current"], rows=rows))
         elif args.switch:
+            db = Database()
             if not db.supports_projects:
                 self.log('info', "The database type you are using does not support projects")
                 return
