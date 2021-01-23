@@ -649,7 +649,12 @@ class Database:
 			return False
 
 		if session.query(ChildRelation).get((parent_id, child_id)) is not None:
-			print_error("Error: a relationship already exists.")
+			print_error("Error: the requested relationship already exists.")
+			return False
+
+		# Check to ensure we aren't creating a cyclical heirarchy i.e. adding a child which is already a parent/grandparent.
+		if (child_id in self.get_parents(parent_sha256, recursive=True)) or (parent_id in self.get_children(child_sha256, recursive=True)):
+			print_error("Error: cannot add {} as a child of {}. This would create a cyclical heirarchy.".format(child_sha256, parent_sha256))
 			return False
 
 		relation = ChildRelation(parent_id, child_id)
@@ -693,34 +698,47 @@ class Database:
 
 		return True
 
-	def get_parents(self, child_sha256):
+	def get_parents(self, child_sha256, recursive=False):
 		session = self.Session()
 
 		child_id = self.malware_hash_lookup(child_sha256)
 		if not child_id:
 			return False
 
-		parents = session.query(ChildRelation).filter(ChildRelation.child_id == child_id).all()
-		if not parents:
-			print_warning("No parents found for {0}.".format(child_sha256))
-			return None
+		relations = session.query(ChildRelation).filter(ChildRelation.child_id == child_id).all()
+		if not relations:
+			return []
 
-		return parents
+		parent_ids = []
+
+		for relation in relations:
+			parent_ids.append(relation.parent_id)
+			if recursive:
+				parent = session.query(Malware).get(relation.parent_id)
+				parent_ids += self.get_parents(parent.sha256, True)
+
+		return parent_ids
 
 
-	def get_children(self, parent_sha256):
+	def get_children(self, parent_sha256, recursive=False):
 		session = self.Session()
 
 		parent_id = self.malware_hash_lookup(parent_sha256)
 		if not parent_id:
 			return False
 
-		children = session.query(ChildRelation).filter(ChildRelation.parent_id == parent_id).all()
-		if not parents:
-			print_warning("No parents found for {0}.".format(parent_sha256))
-			return None
+		relations = session.query(ChildRelation).filter(ChildRelation.parent_id == parent_id).all()
+		if not relations: 
+			return []
 
-		return children
+		child_ids = []
+		for relation in relations:
+			child_ids.append(relation.child_id)
+			if recursive:
+				child = session.query(Malware).get(relation.child_id)
+				child_ids += self.get_children(child.sha256, True)
+
+		return child_ids
 
 
 	# Store Module / Cmd Output

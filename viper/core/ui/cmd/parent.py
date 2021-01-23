@@ -64,4 +64,5 @@ class Parent(Command):
             __sessions__.new(__sessions__.current.file.path)
 
         if args.list:
+            # Do something with this list. probably a nice table of id, name, sha256.
             db.get_parents(__sessions__.current.file.sha256)
