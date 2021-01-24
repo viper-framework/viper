@@ -8,19 +8,19 @@ from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
 
 
-class Parent(Command):
+class Child(Command):
     """
     This command is used to view or edit the parent child relationship between files.
     """
-    cmd = "parent"
-    description = "Add or remove a parent file"
+    cmd = "child"
+    description = "Add or remove a child file"
 
     def __init__(self):
-        super(Parent, self).__init__()
+        super(Child, self).__init__()
 
-        self.parser.add_argument('-a', '--add', metavar='SHA256', help="Add parent file by sha256")
-        self.parser.add_argument('-d', '--delete', metavar='SHA256', help="Delete Parent")
-        self.parser.add_argument('-l', '--list', action='store_true', help="List all parents")
+        self.parser.add_argument('-a', '--add', metavar='SHA256', help="Add child file by sha256")
+        self.parser.add_argument('-d', '--delete', metavar='SHA256', help="Delete Child")
+        self.parser.add_argument('-l', '--list', action='store_true', help="List all Children")
 
     def run(self, *args):
         try:
@@ -48,28 +48,26 @@ class Parent(Command):
 
         if args.add:
             if not db.find(key='sha256', value=args.add):
-                self.log('error', "the parent file is not found in the database. ")
+                self.log('error', "the child file is not found in the database. ")
                 return
 
-            if db.add_relation(args.add, __sessions__.current.file.sha256):
-                self.log('info', "parent added to the currently opened file")
+            if db.add_relation(__sessions__.current.file.sha256, args.add):
+                self.log('info', "child added to the currently opened file")
                 self.log('info', "Refreshing session to update attributes...")
                 __sessions__.new(__sessions__.current.file.path)
 
         if args.delete:
-            db.delete_relation(args.delete, __sessions__.current.file.sha256)
-            self.log('info', "parent removed from the currently opened file")
+            db.delete_relation(__sessions__.current.file.sha256, args.delete)
+            self.log('info', "child removed from the currently opened file")
 
             self.log('info', "Refreshing session to update attributes...")
             __sessions__.new(__sessions__.current.file.path)
 
         if args.list:
             # Do something with this list. probably a nice table of id, name, sha256.
-            parent_ids = db.get_parents(__sessions__.current.file.sha256)
-            if parent_ids:
-                parents = [ Database().Session().query(Malware).get(parent_id) for parent_id in parent_ids ]
-                parent_details = [ (parent.id, parent.sha256, parent.name) for parent in parents ]
-                self.log("table", dict(header=['ID', 'SHA256', 'NAME'], rows=parent_details))
-            else:
-                self.log('info', "No parents found.")
+            child_ids = db.get_children(__sessions__.current.file.sha256)
+            if child_ids:
+                children = [ Database().Session().query(Malware).get(child_id) for child_id in child_ids ]
+                child_details = [ (child.id, child.sha256, child.name) for child in children ]
+                self.log("table", dict(header=['ID', 'SHA256', 'NAME'], rows=child_details))
                 
