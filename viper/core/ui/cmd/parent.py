@@ -3,7 +3,7 @@
 # See the file 'LICENSE' for copying permission.
 
 from viper.common.abstracts import Command
-from viper.core.database import Database
+from viper.core.database import Database, Malware
 from viper.core.storage import get_sample_path
 from viper.core.session import __sessions__
 
@@ -65,4 +65,9 @@ class Parent(Command):
 
         if args.list:
             # Do something with this list. probably a nice table of id, name, sha256.
-            db.get_parents(__sessions__.current.file.sha256)
+            parent_ids = db.get_parents(__sessions__.current.file.sha256)
+            if parent_ids:
+                parents = [ Database().Session().query(Malware).get(parent_id) for parent_id in parent_ids ]
+                parent_details = [ (parent.id, parent.sha256, parent.name) for parent in parents ]
+                self.log("table", dict(header=['ID', 'SHA256', 'NAME'], rows=parent_details))
+                

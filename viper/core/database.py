@@ -103,7 +103,7 @@ class Malware(Base):
 				 type=None,
 				 mime=None,
 				 ssdeep=None,
-				 name=None:
+				 name=None):
 		self.md5 = md5
 		self.sha1 = sha1
 		self.crc32 = crc32
