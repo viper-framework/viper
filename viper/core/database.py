@@ -633,7 +633,7 @@ class Database:
 	def malware_hash_lookup(self, malware_sha256):
 		malware = self.Session().query(Malware).filter(Malware.sha256 == malware_sha256).first()
 		if not malware:
-			print_error("Unable to find malware {0}".format(parent_sha256))
+			print_error("Unable to find malware {0}".format(malware_sha256))
 			return False
 		
 		return malware.id
