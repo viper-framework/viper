@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-# This file is part of Viper - https://github.com/viper-framework/viper
-# See the file 'LICENSE' for copying permission.
-
 import os
 import sys
 import json
@@ -107,8 +103,7 @@ class Malware(Base):
 				 type=None,
 				 mime=None,
 				 ssdeep=None,
-				 name=None,
-				 parent=None):
+				 name=None:
 		self.md5 = md5
 		self.sha1 = sha1
 		self.crc32 = crc32
@@ -119,7 +114,6 @@ class Malware(Base):
 		self.mime = mime
 		self.ssdeep = ssdeep
 		self.name = name
-		self.parent = parent
 
 
 class ChildRelation(Base):
@@ -414,8 +408,7 @@ class Database:
 										type=obj.type,
 										mime=obj.mime,
 										ssdeep=obj.ssdeep,
-										name=name,
-										parent=parent_sha)
+										name=name)
 				session.add(malware_entry)
 				session.commit()
 				self.added_ids.setdefault("malware", []).append(malware_entry.id)
@@ -424,6 +417,15 @@ class Database:
 				malware_entry = session.query(Malware).filter(Malware.md5 == obj.md5).first()
 			except SQLAlchemyError as e:
 				print_error("Unable to store file: {0}".format(e))
+				session.rollback()
+				return False
+
+			try:
+				self.add_relation(parent_sha, obj.sha256)
+			except IntegrityError:
+				session.rollback()
+			except SQLAlchemyError as e:
+				print_error("Unable to add parent: {0}".format(e))
 				session.rollback()
 				return False
 
