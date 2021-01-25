@@ -68,3 +68,6 @@ class Analysis(Command):
                     self.log(line['type'], line['data'])
             else:
                 self.log('info', "There is no analysis with ID {0}".format(args.view))
+
+        elif args.delete:
+            db.delete_analysis(args.delete)

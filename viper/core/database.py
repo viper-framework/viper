@@ -688,7 +688,6 @@ class Database:
 		if not parent_id or not child_id:
 			return False
 
-
 		try:
 			relation = session.query(ChildRelation).get(parent_id, child_id)
 			if not relation:
@@ -705,6 +704,7 @@ class Database:
 			session.close()
 
 		return True
+
 
 	def get_parents(self, child_sha256, recursive=False):
 		session = self.Session()
@@ -777,3 +777,18 @@ class Database:
 		session = self.Session()
 		rows = session.query(Analysis).all()
 		return rows
+
+	def delete_analysis(self, id):
+		session = self.Session()
+
+		try:
+			analysis = session.query(Analysis).get(id)
+			if not analysis:
+				print_error("Unable to find analysis id {}".format(id))
+			session.delete(analysis)
+			session.commit()
+		except SQLAlchemyError as e:
+			print_error("Unable to delete analysis: {0}".format(e))
+			session.rollback()
+		finally:
+			session.close()
