@@ -394,9 +394,6 @@ class Database:
 		if not name:
 			name = obj.name
 
-		if parent_sha:
-			parent_sha = session.query(Malware).filter(Malware.sha256 == parent_sha).first()
-
 		if isinstance(obj, File):
 			try:
 				malware_entry = Malware(md5=obj.md5,
@@ -421,7 +418,8 @@ class Database:
 				return False
 
 			try:
-				self.add_relation(parent_sha, obj.sha256)
+				if parent_sha:
+					self.add_relation(parent_sha, obj.sha256)
 			except IntegrityError:
 				session.rollback()
 			except SQLAlchemyError as e:
@@ -534,6 +532,14 @@ class Database:
 			if not malware:
 				print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
 				return False
+
+			# Delete any relationships associated with the malware
+			children = session.query(ChildRelation).filter(ChildRelation.parent_id == id).all()
+			if children:
+				[ session.delete(child) for child in children ]
+			parents = session.query(ChildRelation).filter(ChildRelation.child_id == id).all()
+			if parents:
+				[ session.delete(parent) for parent in parents ]
 
 			session.delete(malware)
 			session.commit()
