@@ -79,7 +79,7 @@ class Find(Command):
         count = 1
         for item in items:
             tag = ', '.join([t.tag for t in item.tag if t.tag])
-            row = [count, item.name, item.mime, item.md5, tag]
+            row = [count, item.name, item.mime, item.sha256, tag]
             if key == 'ssdeep':
                 row.append(item.ssdeep)
             if key == 'latest':
@@ -92,7 +92,7 @@ class Find(Command):
         __sessions__.find = items
 
         # Generate a table with the results.
-        header = ['#', 'Name', 'Mime', 'MD5', 'Tags']
+        header = ['#', 'Name', 'Mime', 'SHA256', 'Tags']
         if key == 'latest':
             header.append('Created At')
         if key == 'ssdeep':

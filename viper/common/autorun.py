@@ -26,14 +26,14 @@ def parse_commands(data):
     return root, args
 
 
-def autorun_module(file_hash):
+def autorun_module(file_hash, commandset='commands'):
     if not file_hash:
         return
 
     if not __sessions__.is_set():
         __sessions__.new(get_sample_path(file_hash))
 
-    for cmd_line in cfg.autorun.commands.split(','):
+    for cmd_line in cfg.autorun[commandset].split(','):
         split_commands = cmd_line.split(';')
 
         for split_command in split_commands:
