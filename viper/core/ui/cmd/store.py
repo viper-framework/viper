@@ -15,9 +15,10 @@ from viper.common.objects import File
 from viper.core.database import Database
 from viper.core.session import __sessions__
 from viper.core.config import __config__
+from viper.core.mimetypes import __mimetypes__
 from viper.core.storage import store_sample, get_sample_path
 from viper.common.autorun import autorun_module
-
+from viper.common.automime import mimetype_modules
 
 class Store(Command):
     """
@@ -65,6 +66,7 @@ class Store(Command):
 
             # Try to store file object into database.
             status = Database().add(obj=obj, tags=tags)
+
             if status:
                 # If succeeds, store also in the local repository.
                 # If something fails in the database (for example unicode strings)
@@ -129,6 +131,7 @@ class Store(Command):
                         add_file(file_obj, args.tags)
                         if add_file and __config__.get('autorun').enabled:
                             autorun_module(file_obj.sha256)
+                            mimetype_modules(__sessions__.current.file.sha256) 
                             # Close the open session to keep the session table clean
                             __sessions__.close()
 
@@ -147,6 +150,8 @@ class Store(Command):
                     # Open session to the new file.
                     Open().run(*[__sessions__.current.file.sha256])
                     if __config__.get('autorun').enabled:
+                        # Passing the current sha256 appears superfluous, as autorun/automime can access the current session.
                         autorun_module(__sessions__.current.file.sha256)
+                        mimetype_modules(__sessions__.current.file.sha256) 
             else:
                 self.log('error', "No open session. This command expects a file to be open.")

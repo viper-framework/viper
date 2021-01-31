@@ -433,6 +433,11 @@ class Database:
 		if notes_body and notes_title:
 			self.add_note(sha256=obj.sha256, title=notes_title, body=notes_body)
 
+		if obj.mime:
+			# Autorun based on mimetype
+			return True
+
+
 		return True
 
 	def copy(self, id, src_project, dst_project,

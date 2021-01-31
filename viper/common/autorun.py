@@ -7,6 +7,7 @@ from viper.common.out import print_error
 from viper.common.out import print_output
 from viper.core.plugins import __modules__
 from viper.core.session import __sessions__
+from viper.core.mimetypes import __mimetypes__
 from viper.core.database import Database
 from viper.core.config import __config__
 from viper.core.storage import get_sample_path
@@ -63,3 +64,15 @@ def autorun_module(file_hash, commandset='commands'):
                     print_error("\"{0}\" is not a valid command. Please check your viper.conf file.".format(cmd_line))
             except Exception:
                 print_error("Viper was unable to complete the command {0}".format(cmd_line))
+
+
+def mimetype_modules(file_hash, file_mime):
+    if not file_hash or not file_mime:
+        return
+
+    if not __sessions__.is_set():
+        __sessions__.new(get_sample_path(file_hash))
+
+    for mimetype in __mimetypes__.get('commands'):
+        if mimetype in file_mime:
+            print("Match: {}".format(mimetype))
