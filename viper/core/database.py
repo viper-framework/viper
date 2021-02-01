@@ -72,6 +72,10 @@ class Malware(Base):
 		secondary=association_table,
 		backref=backref('malware')
 	)
+
+	project_name = Column(String(255), ForeignKey("project.name"))
+	project = relationship("Project")
+
 	__table_args__ = (Index(
 		'hash_index',
 		'md5',
@@ -114,6 +118,33 @@ class Malware(Base):
 		self.mime = mime
 		self.ssdeep = ssdeep
 		self.name = name
+
+
+class Project(Base):
+	__tablename__ = 'project'
+
+	# The 'name' property of the Project class (core/project.py) is used to uniquely identify objects.
+	# As a foreign key, this can also speed up queries as the Project table does not need to be queried for sample retrieval (compared with an ID primary key)
+	name = Column(String(255), primary_key=True)
+	path = Column(String(255), nullable=True)
+	base_path = Column(String(255), nullable=True)
+	created_at = Column(DateTime(timezone=False), default=datetime.now(), nullable=False)
+
+	def to_dict(self):
+		row_dict = {}
+		for column in self.__table__.columns:
+			value = getattr(self, column.name)
+			row_dict[column.name] = value
+
+		return row_dict
+
+	def __repr__(self):
+		return "<Project ('{0}','{1}')>".format(self.name, self.path)
+
+	def __init__(self, name, path="", base_path=""):
+		self.name = name
+		self.path = path
+		self.base_path = base_path
 
 
 class ChildRelation(Base):
@@ -407,6 +438,7 @@ class Database:
 										ssdeep=obj.ssdeep,
 										name=name)
 				session.add(malware_entry)
+
 				session.commit()
 				self.added_ids.setdefault("malware", []).append(malware_entry.id)
 			except IntegrityError:
@@ -426,6 +458,8 @@ class Database:
 				print_error("Unable to add parent: {0}".format(e))
 				session.rollback()
 				return False
+			
+			self.set_project(malware_entry.id, __project__.name)
 
 		if tags:
 			self.add_tags(sha256=obj.sha256, tags=tags)
@@ -546,6 +580,7 @@ class Database:
 			if parents:
 				[ session.delete(parent) for parent in parents ]
 
+			
 			session.delete(malware)
 			session.commit()
 		except SQLAlchemyError as e:
@@ -752,6 +787,75 @@ class Database:
 				child_ids += self.get_children(child.sha256, True)
 
 		return child_ids
+
+
+	def add_project(self, project_name):
+		session = self.Session()
+		if not project_name:
+			return
+
+		try:
+			project_entry = Project(project_name)
+			session.add(project_entry)
+			session.commit()
+		except SQLAlchemyError as e:
+			print_error("Unable to create project: {0}".format(e))
+			session.rollback()
+		finally:
+			session.close()
+
+
+	def delete_project(self, project_name):
+		session = self.Session()
+		if not project_name:
+			return
+
+		try:
+			project = session.query(Project).get(project_name)
+			if not project:
+				print_error("The project specified could not be found.")
+				return False
+
+			session.delete(project)
+			session.commit()
+		except SQLAlchemyError as e:
+			print_error("Unable to delete project: {0}".format(e))
+			session.rollback()
+			return False
+		finally:
+			session.close()
+
+
+	def set_project(self, malware_id, project_name):
+		session = self.Session()
+		if not malware_id:
+			return
+
+		# Not sure if it's better to handle this here or in the add() function
+		if not project_name:
+			project_name = "default"
+
+		malware = session.query(Malware).get(malware_id)
+		if not malware:
+			print_error("The malware specified could not be found.")
+			return False
+
+		project = session.query(Project).get(project_name)
+		if not project:
+			self.add_project(project_name)
+			project = session.query(Project).get(project_name)
+
+		try:
+			malware.project = project
+			session.commit()
+		except SQLAlchemyError as e:
+			print_error("Unable to set project: {0}".format(e))
+			session.rollback()
+			return False
+		finally:
+			session.close()
+
+		
 
 
 	# Store Module / Cmd Output
