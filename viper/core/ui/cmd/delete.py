@@ -27,7 +27,7 @@ class Delete(Command):
     def run(self, *args):
         try:
             args = self.parser.parse_args(args)
-        except SystemExit:
+        except SystemExit:z`
             return
 
         while True:

@@ -188,4 +188,4 @@ class Config:
 __config__ = Config()
 
 console_output = {}
-console_output["filename"] = False
+console_output["filename"] = False 

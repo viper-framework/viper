@@ -120,6 +120,8 @@ class Malware(Base):
 		self.name = name
 
 
+# This may no longer be necessary. Path and base_path are retrieved using core/project.py and the table information would only be a duplicate.
+# 	A string field (project_name) within the Malware table may be sufficient.
 class Project(Base):
 	__tablename__ = 'project'
 
@@ -595,13 +597,21 @@ class Database:
 	def find(self, key, value=None, offset=0):
 		session = self.Session()
 		offset = int(offset)
+
+		# This has been used to add another filter to all queries:  .filter(Malware.project_name == project_name)
+		# In the future, this should be changed to a single filter by returning a query object in each if/elif
+		#	and running a filter on the result 'rows' query object. This would allow searching all projects (optionally).
+		project_name = __project__.name
+		if not project_name:
+			project_name = "default"
+
 		rows = None
 
 		if key == 'all':
-			rows = session.query(Malware).options(subqueryload(Malware.tag)).all()
+			rows = session.query(Malware).options(subqueryload(Malware.tag)).filter(Malware.project_name == project_name).all()
 		elif key == 'ssdeep':
 			ssdeep_val = str(value)
-			rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).all()
+			rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).filter(Malware.project_name == project_name).all()
 		elif key == 'any':
 			prefix_val = str(value)
 			rows = session.query(Malware).filter(Malware.name.startswith(prefix_val) |
@@ -609,7 +619,7 @@ class Database:
 												 Malware.sha1.startswith(prefix_val) |
 												 Malware.sha256.startswith(prefix_val) |
 												 Malware.type.contains(prefix_val) |
-												 Malware.mime.contains(prefix_val)).all()
+												 Malware.mime.contains(prefix_val)).filter(Malware.project_name == project_name).all()
 		elif key == 'latest':
 			if value:
 				try:
@@ -622,13 +632,13 @@ class Database:
 
 			rows = session.query(Malware).order_by(Malware.id.desc()).limit(value).offset(offset)
 		elif key == 'md5':
-			rows = session.query(Malware).filter(Malware.md5 == value).all()
+			rows = session.query(Malware).filter(Malware.md5 == value).filter(Malware.project_name == project_name).all()
 		elif key == 'sha1':
-			rows = session.query(Malware).filter(Malware.sha1 == value).all()
+			rows = session.query(Malware).filter(Malware.sha1 == value).filter(Malware.project_name == project_name).all()
 		elif key == 'sha256':
-			rows = session.query(Malware).filter(Malware.sha256 == value).all()
+			rows = session.query(Malware).filter(Malware.sha256 == value).filter(Malware.project_name == project_name).all()
 		elif key == 'tag':
-			rows = session.query(Malware).filter(self.tag_filter(value)).all()
+			rows = session.query(Malware).filter(self.tag_filter(value)).filter(Malware.project_name == project_name).all()
 		elif key == 'name':
 			if not value:
 				print_error("You need to specify a valid file name pattern (you can use wildcards)")
@@ -639,14 +649,14 @@ class Database:
 			else:
 				value = '%{0}%'.format(value)
 
-			rows = session.query(Malware).filter(Malware.name.like(value)).all()
+			rows = session.query(Malware).filter(Malware.name.like(value)).filter(Malware.project_name == project_name).all()
 		elif key == 'note':
 			value = '%{0}%'.format(value)
-			rows = session.query(Malware).filter(Malware.note.any(Note.body.like(value))).all()
+			rows = session.query(Malware).filter(Malware.note.any(Note.body.like(value))).filter(Malware.project_name == project_name).all()
 		elif key == 'type':
-			rows = session.query(Malware).filter(Malware.type.like('%{0}%'.format(value))).all()
+			rows = session.query(Malware).filter(Malware.type.like('%{0}%'.format(value))).filter(Malware.project_name == project_name).all()
 		elif key == 'mime':
-			rows = session.query(Malware).filter(Malware.mime.like('%{0}%'.format(value))).all()
+			rows = session.query(Malware).filter(Malware.mime.like('%{0}%'.format(value))).filter(Malware.project_name == project_name).all()
 		else:
 			print_error("No valid term specified")
 
@@ -810,12 +820,26 @@ class Database:
 		if not project_name:
 			return
 
-		try:
-			project = session.query(Project).get(project_name)
-			if not project:
-				print_error("The project specified could not be found.")
-				return False
+		project = session.query(Project).get(project_name)
+		if not project:
+			print_error("The project specified could not be found.")
+			return False
 
+		# Delete associated entries in the Malware table
+		project_malware = session.query(Malware).filter(Malware.project_name == project_name).all()
+		for malware in project_malware:
+			try:
+				session.delete(malware)
+				session.commit()
+			except SQLAlchemyError as e:
+				print_error("Unable to delete malware: {0}".format(e))
+				session.rollback()
+				return False
+			finally:
+				session.close()
+
+		# Delete Project table entry
+		try:
 			session.delete(project)
 			session.commit()
 		except SQLAlchemyError as e:
