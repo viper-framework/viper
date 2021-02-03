@@ -12,7 +12,7 @@ except ImportError:
 from viper.core.ui.cmd.open import Open
 from viper.common.abstracts import Command
 from viper.common.objects import File
-from viper.core.database import Database
+from viper.core.database import Database,Malware
 from viper.core.session import __sessions__
 from viper.core.config import __config__
 from viper.core.mimetypes import __mimetypes__
@@ -54,8 +54,11 @@ class Store(Command):
             args.tags = "".join(args.tags)
 
         def add_file(obj, tags=None):
-            if get_sample_path(obj.sha256):
-                self.log('warning', "Skip, file \"{0}\" appears to be already stored".format(obj.name))
+            # This is a necessary hack to 'find' identical samples in other projects (due to the modified find command)
+            # TODO: Replace the query with a Database().find() when a db-wide find is re-implemented.
+            existing_file = Database().Session().query(Malware).filter(Malware.sha256==obj.sha256).first()
+            if existing_file is not None:
+                self.log('warning', "Skip, file \"{0}\" appears to be already stored in project '{1}'.".format(obj.name, existing_file.project_name))
                 return False
 
             if __sessions__.is_attached_misp(quiet=True):
