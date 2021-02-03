@@ -86,8 +86,8 @@ class TestAPK:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*http://schemas.android.com/apk/res/android.*", out)
-        assert not re.search(r".*http://foo.example.bar.*", out)
+        assert re.search(r".*http://schemas\.android\.com/apk/res/android.*", out)
+        assert not re.search(r".*http://foo\.example\.bar.*", out)
 
     @pytest.mark.parametrize("filename", ["hello-world.apk"])
     def test_cert(self, capsys, filename):
