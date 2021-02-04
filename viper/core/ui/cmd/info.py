@@ -39,9 +39,8 @@ class Info(Command):
                 ['SHA256', __sessions__.current.file.sha256],
                 ['SHA512', __sessions__.current.file.sha512],
                 ['SSdeep', __sessions__.current.file.ssdeep],
-                ['CRC32', __sessions__.current.file.crc32]
-                # Add these back with a reference to get_parent()
-                #['Parent', __sessions__.current.file.parent],
-                #['Children', __sessions__.current.file.children]
+                ['CRC32', __sessions__.current.file.crc32],
+                ['Parent', __sessions__.current.file.parent],
+                ['Children', __sessions__.current.file.children]
             ]
         ))

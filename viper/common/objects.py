@@ -119,6 +119,7 @@ class File(object):
         self.crc32 = ''
         self.ssdeep = ''
         self.tags = ''
+        self.parent = ''
         self.children = ''
 
         if self.is_valid():

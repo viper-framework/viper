@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-# This file is part of Viper - https://github.com/viper-framework/viper
-# See the file 'LICENSE' for copying permission.
+#TODO(alex): This closely mirrors config.py. It should be possible to modify config.py to suit both needs.
 
 import os
 import logging

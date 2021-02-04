@@ -64,3 +64,4 @@ def bold(text, readline=False):
 
 def italic(text, readline=False):
     return color(text, 3, readline)
+

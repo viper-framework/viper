@@ -53,7 +53,7 @@ class Project(object):
             path = os.path.join(self.base_path, 'projects', name)
             if not os.path.exists(path):
                 os.makedirs(path)
-                
+
         self.name = name
         self.path = path
 

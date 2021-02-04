@@ -5,7 +5,6 @@
 import os
 import logging
 import pkgutil
-import viper
 from os.path import expanduser
 from configparser import ConfigParser
 
@@ -25,7 +24,6 @@ class Config:
             # Possible paths for the configuration file.
             # This should go in order from local to global.
             config_paths = [
-                os.path.join(os.path.dirname(viper.__file__), "data/viper.conf"),
                 os.path.join(os.getcwd(), "viper.conf"),
                 os.path.join(expanduser("~"), ".viper", "viper.conf"),
                 "/etc/viper/viper.conf"
@@ -188,4 +186,4 @@ class Config:
 __config__ = Config()
 
 console_output = {}
-console_output["filename"] = False 
+console_output["filename"] = False

@@ -1,3 +1,4 @@
+#TODO(alex): This closely mirrors autorun.py. It should be possible to modify autorun.py to suit both needs.
 from viper.common.out import print_info, print_error, print_output
 
 from viper.core.mimetypes import __mimetypes__
@@ -64,4 +65,4 @@ def parse_commands(data):
     if len(words) > 1:
         args = words[1:]
 
-    return root, args
+    return root, args 

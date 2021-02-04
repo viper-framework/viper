@@ -7,7 +7,6 @@ from viper.common.out import print_error
 from viper.common.out import print_output
 from viper.core.plugins import __modules__
 from viper.core.session import __sessions__
-from viper.core.mimetypes import __mimetypes__
 from viper.core.database import Database
 from viper.core.config import __config__
 from viper.core.storage import get_sample_path
@@ -27,14 +26,14 @@ def parse_commands(data):
     return root, args
 
 
-def autorun_module(file_hash, commandset='commands'):
+def autorun_module(file_hash):
     if not file_hash:
         return
 
     if not __sessions__.is_set():
         __sessions__.new(get_sample_path(file_hash))
 
-    for cmd_line in cfg.autorun[commandset].split(','):
+    for cmd_line in cfg.autorun.commands.split(','):
         split_commands = cmd_line.split(';')
 
         for split_command in split_commands:
@@ -64,15 +63,3 @@ def autorun_module(file_hash, commandset='commands'):
                     print_error("\"{0}\" is not a valid command. Please check your viper.conf file.".format(cmd_line))
             except Exception:
                 print_error("Viper was unable to complete the command {0}".format(cmd_line))
-
-
-def mimetype_modules(file_hash, file_mime):
-    if not file_hash or not file_mime:
-        return
-
-    if not __sessions__.is_set():
-        __sessions__.new(get_sample_path(file_hash))
-
-    for mimetype in __mimetypes__.get('commands'):
-        if mimetype in file_mime:
-            print("Match: {}".format(mimetype))

@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# This file is part of Viper - https://github.com/viper-framework/viper
+# See the file 'LICENSE' for copying permission.
+
 import os
 import sys
 import json
@@ -8,9 +12,9 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy import Table, Index, create_engine, and_
 from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship, backref, sessionmaker
 from sqlalchemy.orm import subqueryload
+from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 from viper.common.out import print_warning, print_error, print_success
@@ -45,6 +49,7 @@ class Malware(Base):
 	size = Column(Integer(), nullable=False)
 	type = Column(Text(), nullable=True)
 	mime = Column(String(255), nullable=True)
+	project = Column(String(255), nullable=True)
 	md5 = Column(String(32), nullable=False, index=True)
 	crc32 = Column(String(8), nullable=False)
 	sha1 = Column(String(40), nullable=False)
@@ -52,9 +57,14 @@ class Malware(Base):
 	sha512 = Column(String(128), nullable=False)
 	ssdeep = Column(String(255), nullable=True)
 	created_at = Column(DateTime(timezone=False), default=datetime.now(), nullable=False)
-	parents = association_proxy('parent', 'child_relation')
-	children = association_proxy('child', 'parent_relation')
+	parent_id = Column(Integer(), ForeignKey('malware.id'))
+	# This has been replaced with the backreference in the children relationship below
+	# parent = relationship('Malware', lazy='subquery', remote_side=[id])
 
+	children = relationship(
+		'Malware',
+		backref=backref('parent', remote_side=id)
+	)
 	tag = relationship(
 		'Tag',
 		secondary=association_table,
@@ -72,10 +82,6 @@ class Malware(Base):
 		secondary=association_table,
 		backref=backref('malware')
 	)
-
-	project_name = Column(String(255), ForeignKey("project.name"))
-	project = relationship("Project")
-
 	__table_args__ = (Index(
 		'hash_index',
 		'md5',
@@ -98,6 +104,7 @@ class Malware(Base):
 		return "<Malware ('{0}','{1}')>".format(self.id, self.md5)
 
 	def __init__(self,
+				 project,
 				 md5,
 				 crc32,
 				 sha1,
@@ -107,7 +114,9 @@ class Malware(Base):
 				 type=None,
 				 mime=None,
 				 ssdeep=None,
-				 name=None):
+				 name=None,
+				 parent=None):
+		self.project = project
 		self.md5 = md5
 		self.sha1 = sha1
 		self.crc32 = crc32
@@ -118,52 +127,7 @@ class Malware(Base):
 		self.mime = mime
 		self.ssdeep = ssdeep
 		self.name = name
-
-
-# This may no longer be necessary. Path and base_path are retrieved using core/project.py and the table information would only be a duplicate.
-# 	A string field (project_name) within the Malware table may be sufficient.
-class Project(Base):
-	__tablename__ = 'project'
-
-	# The 'name' property of the Project class (core/project.py) is used to uniquely identify objects.
-	# As a foreign key, this can also speed up queries as the Project table does not need to be queried for sample retrieval (compared with an ID primary key)
-	name = Column(String(255), primary_key=True)
-	path = Column(String(255), nullable=True)
-	base_path = Column(String(255), nullable=True)
-	created_at = Column(DateTime(timezone=False), default=datetime.now(), nullable=False)
-
-	def to_dict(self):
-		row_dict = {}
-		for column in self.__table__.columns:
-			value = getattr(self, column.name)
-			row_dict[column.name] = value
-
-		return row_dict
-
-	def __repr__(self):
-		return "<Project ('{0}','{1}')>".format(self.name, self.path)
-
-	def __init__(self, name, path="", base_path=""):
-		self.name = name
-		self.path = path
-		self.base_path = base_path
-
-
-class ChildRelation(Base):
-	__tablename__ = 'childrelation'
-	parent_id = Column(Integer, ForeignKey('malware.id'), primary_key=True)
-	parent = relationship("Malware", backref="child_relation", primaryjoin=(Malware.id == parent_id))
-	
-	child_id = Column(Integer, ForeignKey('malware.id'), primary_key=True)
-	child = relationship("Malware", backref="parent_relation", primaryjoin=(Malware.id == child_id))
-
-
-	def __repr__(self):
-		return "<Relation (parent:'{0}',child:'{1}')>".format(self.parent_id, self.child_id)
-
-	def __init__(self, parent_id, child_id):
-		self.parent_id = parent_id
-		self.child_id = child_id
+		self.parent = parent
 
 
 class Tag(Base):
@@ -423,13 +387,21 @@ class Database:
 
 	def add(self, obj, name=None, tags=None, parent_sha=None, notes_body=None, notes_title=None):
 		session = self.Session()
+		
+		project = __project__.name
+		if not project:
+			project = 'default'
 
 		if not name:
 			name = obj.name
 
+		if parent_sha:
+			parent_sha = session.query(Malware).filter(Malware.sha256 == parent_sha).first()
+
 		if isinstance(obj, File):
 			try:
 				malware_entry = Malware(md5=obj.md5,
+										project=project,
 										crc32=obj.crc32,
 										sha1=obj.sha1,
 										sha256=obj.sha256,
@@ -438,9 +410,9 @@ class Database:
 										type=obj.type,
 										mime=obj.mime,
 										ssdeep=obj.ssdeep,
-										name=name)
+										name=name,
+										parent=parent_sha)
 				session.add(malware_entry)
-
 				session.commit()
 				self.added_ids.setdefault("malware", []).append(malware_entry.id)
 			except IntegrityError:
@@ -451,28 +423,11 @@ class Database:
 				session.rollback()
 				return False
 
-			try:
-				if parent_sha:
-					self.add_relation(parent_sha, obj.sha256)
-			except IntegrityError:
-				session.rollback()
-			except SQLAlchemyError as e:
-				print_error("Unable to add parent: {0}".format(e))
-				session.rollback()
-				return False
-			
-			self.set_project(malware_entry.id, __project__.name)
-
 		if tags:
 			self.add_tags(sha256=obj.sha256, tags=tags)
 
 		if notes_body and notes_title:
 			self.add_note(sha256=obj.sha256, title=notes_title, body=notes_body)
-
-		if obj.mime:
-			# Autorun based on mimetype
-			return True
-
 
 		return True
 
@@ -574,15 +529,6 @@ class Database:
 				print_error("The opened file doesn't appear to be in the database, have you stored it yet?")
 				return False
 
-			# Delete any relationships associated with the malware
-			children = session.query(ChildRelation).filter(ChildRelation.parent_id == id).all()
-			if children:
-				[ session.delete(child) for child in children ]
-			parents = session.query(ChildRelation).filter(ChildRelation.child_id == id).all()
-			if parents:
-				[ session.delete(parent) for parent in parents ]
-
-			
 			session.delete(malware)
 			session.commit()
 		except SQLAlchemyError as e:
@@ -597,21 +543,14 @@ class Database:
 	def find(self, key, value=None, offset=0):
 		session = self.Session()
 		offset = int(offset)
-
-		# This has been used to add another filter to all queries:  .filter(Malware.project_name == project_name)
-		# In the future, this should be changed to a single filter by returning a query object in each if/elif
-		#	and running a filter on the result 'rows' query object. This would allow searching all projects (optionally).
-		project_name = __project__.name
-		if not project_name:
-			project_name = "default"
-
 		rows = None
 
+		# TODO(alex): Add a key/option to filter for project as well (Malware.project)
 		if key == 'all':
-			rows = session.query(Malware).options(subqueryload(Malware.tag)).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).options(subqueryload(Malware.tag)).all()
 		elif key == 'ssdeep':
 			ssdeep_val = str(value)
-			rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.ssdeep.contains(ssdeep_val)).all()
 		elif key == 'any':
 			prefix_val = str(value)
 			rows = session.query(Malware).filter(Malware.name.startswith(prefix_val) |
@@ -619,7 +558,7 @@ class Database:
 												 Malware.sha1.startswith(prefix_val) |
 												 Malware.sha256.startswith(prefix_val) |
 												 Malware.type.contains(prefix_val) |
-												 Malware.mime.contains(prefix_val)).filter(Malware.project_name == project_name).all()
+												 Malware.mime.contains(prefix_val)).all()
 		elif key == 'latest':
 			if value:
 				try:
@@ -632,13 +571,13 @@ class Database:
 
 			rows = session.query(Malware).order_by(Malware.id.desc()).limit(value).offset(offset)
 		elif key == 'md5':
-			rows = session.query(Malware).filter(Malware.md5 == value).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.md5 == value).all()
 		elif key == 'sha1':
-			rows = session.query(Malware).filter(Malware.sha1 == value).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.sha1 == value).all()
 		elif key == 'sha256':
-			rows = session.query(Malware).filter(Malware.sha256 == value).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.sha256 == value).all()
 		elif key == 'tag':
-			rows = session.query(Malware).filter(self.tag_filter(value)).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(self.tag_filter(value)).all()
 		elif key == 'name':
 			if not value:
 				print_error("You need to specify a valid file name pattern (you can use wildcards)")
@@ -649,14 +588,14 @@ class Database:
 			else:
 				value = '%{0}%'.format(value)
 
-			rows = session.query(Malware).filter(Malware.name.like(value)).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.name.like(value)).all()
 		elif key == 'note':
 			value = '%{0}%'.format(value)
-			rows = session.query(Malware).filter(Malware.note.any(Note.body.like(value))).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.note.any(Note.body.like(value))).all()
 		elif key == 'type':
-			rows = session.query(Malware).filter(Malware.type.like('%{0}%'.format(value))).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.type.like('%{0}%'.format(value))).all()
 		elif key == 'mime':
-			rows = session.query(Malware).filter(Malware.mime.like('%{0}%'.format(value))).filter(Malware.project_name == project_name).all()
+			rows = session.query(Malware).filter(Malware.mime.like('%{0}%'.format(value))).all()
 		else:
 			print_error("No valid term specified")
 
@@ -683,204 +622,58 @@ class Database:
 		session = self.Session()
 		return session.query(Malware.id).count()
 
-
-	# Helped function to return id (primary) key for malware given a sha256. 
-	# This may expand to other hash fields later.
-	def malware_hash_lookup(self, malware_sha256):
-		malware = self.Session().query(Malware).filter(Malware.sha256 == malware_sha256).first()
-		if not malware:
-			print_error("Unable to find malware {0}".format(malware_sha256))
-			return False
-		
-		return malware.id
-
-
-	### NEW FUNCTIONS
-	# These new functions are used to interact with the new ChildRelation class.
-	### 
-	def add_relation(self, parent_sha256, child_sha256):
+	def add_parent(self, malware_sha256, parent_sha256):
 		session = self.Session()
 
-		parent_id = self.malware_hash_lookup(parent_sha256)
-		child_id = self.malware_hash_lookup(child_sha256)
-		if not parent_id or not child_id:
-			return False
-
-		if session.query(ChildRelation).get((parent_id, child_id)) is not None:
-			print_error("Error: the requested relationship already exists.")
-			return False
-
-		# Check to ensure we aren't creating a cyclical heirarchy i.e. adding a child which is already a parent/grandparent.
-		if (child_id in self.get_parents(parent_sha256, recursive=True)) or (parent_id in self.get_children(child_sha256, recursive=True)):
-			print_error("Error: cannot add {} as a child of {}. This would create a cyclical heirarchy.".format(child_sha256, parent_sha256))
-			return False
-
-		relation = ChildRelation(parent_id, child_id)
+		# TODO(alex): Cyclical heirarchy check i.e. ensure future parent is not in recuirsive child list.
 		try:
-			session.add(relation)
-			session.commit()
-		except IntegrityError:   
-			session.rollback()
-			relation = session.query(ChildRelation).get((parent_id, child_id))
-		except SQLAlchemyError as e:
-			print_error("Unable to add relation: {0}".format(e))
-			session.rollback()
-			return False
-
-		return True
-
-
-	def delete_relation(self, parent_sha256, child_sha256):
-		session = self.Session()
-
-		parent_id = self.malware_hash_lookup(parent_sha256)
-		child_id = self.malware_hash_lookup(child_sha256)
-		if not parent_id or not child_id:
-			return False
-
-		try:
-			relation = session.query(ChildRelation).get(parent_id, child_id)
-			if not relation:
-				print_error("The relation specified could not be found.")
-				return False
-
-			session.delete(relation)
+			malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).first()
+			parent = session.query(Malware).filter(Malware.sha256 == parent_sha256).first()
+			malware.parent_id = parent.id
 			session.commit()
 		except SQLAlchemyError as e:
-			print_error("Unable to delete relation: {0}".format(e))
-			session.rollback()
-			return False
-		finally:
-			session.close()
-
-		return True
-
-
-	def get_parents(self, child_sha256, recursive=False):
-		session = self.Session()
-
-		child_id = self.malware_hash_lookup(child_sha256)
-		if not child_id:
-			return False
-
-		relations = session.query(ChildRelation).filter(ChildRelation.child_id == child_id).all()
-		if not relations:
-			return []
-
-		parent_ids = []
-
-		for relation in relations:
-			parent_ids.append(relation.parent_id)
-			if recursive:
-				parent = session.query(Malware).get(relation.parent_id)
-				parent_ids += self.get_parents(parent.sha256, True)
-
-		return parent_ids
-
-
-	def get_children(self, parent_sha256, recursive=False):
-		session = self.Session()
-
-		parent_id = self.malware_hash_lookup(parent_sha256)
-		if not parent_id:
-			return False
-
-		relations = session.query(ChildRelation).filter(ChildRelation.parent_id == parent_id).all()
-		if not relations: 
-			return []
-
-		child_ids = []
-		for relation in relations:
-			child_ids.append(relation.child_id)
-			if recursive:
-				child = session.query(Malware).get(relation.child_id)
-				child_ids += self.get_children(child.sha256, True)
-
-		return child_ids
-
-
-	def add_project(self, project_name):
-		session = self.Session()
-		if not project_name:
-			return
-
-		try:
-			project_entry = Project(project_name)
-			session.add(project_entry)
-			session.commit()
-		except SQLAlchemyError as e:
-			print_error("Unable to create project: {0}".format(e))
+			print_error("Unable to add parent: {0}".format(e))
 			session.rollback()
 		finally:
 			session.close()
 
-
-	def delete_project(self, project_name):
+	def delete_parent(self, malware_sha256):
 		session = self.Session()
-		if not project_name:
-			return
 
-		project = session.query(Project).get(project_name)
-		if not project:
-			print_error("The project specified could not be found.")
-			return False
-
-		# Delete associated entries in the Malware table
-		project_malware = session.query(Malware).filter(Malware.project_name == project_name).all()
-		for malware in project_malware:
-			try:
-				session.delete(malware)
-				session.commit()
-			except SQLAlchemyError as e:
-				print_error("Unable to delete malware: {0}".format(e))
-				session.rollback()
-				return False
-			finally:
-				session.close()
-
-		# Delete Project table entry
 		try:
-			session.delete(project)
+			malware = session.query(Malware).filter(Malware.sha256 == malware_sha256).first()
+			malware.parent = None
 			session.commit()
 		except SQLAlchemyError as e:
-			print_error("Unable to delete project: {0}".format(e))
+			print_error("Unable to delete parent: {0}".format(e))
 			session.rollback()
-			return False
 		finally:
 			session.close()
 
-
-	def set_project(self, malware_id, project_name):
+	def get_parent(self, malware_id):
 		session = self.Session()
-		if not malware_id:
-			return
-
-		# Not sure if it's better to handle this here or in the add() function
-		if not project_name:
-			project_name = "default"
-
 		malware = session.query(Malware).get(malware_id)
-		if not malware:
-			print_error("The malware specified could not be found.")
-			return False
+		if not malware.parent_id:
+			return None
+		else:
+			parent = session.query(Malware).get(malware.parent_id)
+			return parent
 
-		project = session.query(Project).get(project_name)
-		if not project:
-			self.add_project(project_name)
-			project = session.query(Project).get(project_name)
+	def get_children(self, parent_id):
+		session = self.Session()
+		children = self.list_children(parent_id)
+		# children = session.query(Malware).filter(Malware.parent_id == parent_id).all()
+		child_samples = ''
+		for child in children:
+			child_samples += '{0},'.format(child.sha256)
+		return child_samples
 
-		try:
-			malware.project = project
-			session.commit()
-		except SQLAlchemyError as e:
-			print_error("Unable to set project: {0}".format(e))
-			session.rollback()
-			return False
-		finally:
-			session.close()
-
-		
-
+	def list_children(self, parent_id):
+		session = self.Session()
+		parent = session.query(Malware).get(parent_id)
+		children = parent.children
+		# children = session.query(Malware).filter(Malware.parent_id == parent_id).all()
+		return children
 
 	# Store Module / Cmd Output
 	def add_analysis(self, sha256, cmd_line, results):

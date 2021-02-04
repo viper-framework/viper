@@ -79,7 +79,7 @@ class Projects(Command):
 
                 __project__.close()
         elif args.delete:
-            ### Also delete entry in Project table, and anything in malware table tied to it.
+            # TODO(alex): 'cascade' and delete all DB entries with Malware.project = args.delete
             project_to_delete = args.delete
             if project_to_delete == "default":
                 self.log("error", "You can't delete the \"default\" project")
