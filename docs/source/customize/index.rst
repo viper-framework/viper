@@ -48,6 +48,7 @@ When a module is invoked from the Viper shell it can be provided with a number o
                 self.parser.add_argument('-b', '--that', action='store_true', help='Do That')
 
             def run(self):
+                super(MyModule, self).run()
                 if self.args.this:
                     print("This is FOO")
                 elif self.args.that:

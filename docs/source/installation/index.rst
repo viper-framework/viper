@@ -1,7 +1,7 @@
 Installation
 ============
 
-Viper is written in Python and requires **Python >= 3.4**. As of Viper 2.0, Python 2.x is no longer supported. In this documentation we will use Debian GNU/Linux based distributions, such as Ubuntu, as a reference platform. The following installation instructions should apply similarly to other distributions and possibly to Mac OS X as well, although it has not been properly tested.
+Viper is written in Python and requires **Python >= 3.6**. As of Viper 2.0, Python 2.x is no longer supported. In this documentation we will use Debian GNU/Linux based distributions, such as Ubuntu, as a reference platform. The following installation instructions should apply similarly to other distributions and possibly to Mac OS X as well, although it has not been properly tested.
 
 Before proceeding, you should make sure you have the basic tools installed to be able to compile additional Python extensions::
 
