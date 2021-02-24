@@ -73,7 +73,7 @@ class Notes(Command):
                     self.log('info', 'New note with title "{0}" added to the current file'.format(bold(title)))
 
         elif args.view:
-            # Retrieve note wth the specified ID and print it.
+            # Retrieve note with the specified ID and print it.
             note = db.get_note(args.view)
             if note:
                 self.log('info', bold('Title: ') + note.title)

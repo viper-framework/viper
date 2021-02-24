@@ -75,7 +75,7 @@ To uninstall Viper::
 Module Dependencies
 ------------------
 
-The following dependencies are requried to use specific modules.
+The following dependencies are required to use specific modules.
 
 Exif::
 

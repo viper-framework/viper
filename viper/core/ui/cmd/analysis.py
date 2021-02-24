@@ -60,7 +60,7 @@ class Analysis(Command):
             self.log('table', dict(header=['ID', 'Cmd Line', 'Saved On (UTC)'], rows=rows))
 
         elif args.view:
-            # Retrieve analysis wth the specified ID and print it.
+            # Retrieve analysis with the specified ID and print it.
             result = db.get_analysis(args.view)
             if result:
                 self.log('info', bold('Cmd Line: ') + result.cmd_line)
