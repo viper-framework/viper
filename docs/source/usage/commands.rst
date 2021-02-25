@@ -440,7 +440,7 @@ To add a parent file for an file **parent -a** is used::
         | Children |                                                                                                                                  |
         +----------+----------------------------------------------------------------------------------------------------------------------------------+
 
-To open a session for the parent file **parrent -o** is used (note the **children** section)::
+To open a session for the parent file **parent -o** is used (note the **children** section)::
 
     viper viper_docu_demo.txt > parent -o
     [*] Session opened on   /home/viper/.viper/projects/demo/binaries/7/4/9/b/749bb1bccfae3bc1996ad093312c4dc1c475a3488a2ea9f269482ce9d90b9af8

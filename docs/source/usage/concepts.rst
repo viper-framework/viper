@@ -110,7 +110,7 @@ Modules are the most actively developed portion of Viper and they represent the 
 Database
 ========
 
-The database that stores all meta inforation is per default in an sqlite database stored at::
+The database that stores all meta information is per default in an sqlite database stored at::
    
     $HOME/.viper/viper.db
 

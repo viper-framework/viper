@@ -20,7 +20,7 @@ def color(text, color_code, readline=False):
         return str(text)
 
     if readline:
-        # special readline escapes to fix colored input promps
+        # special readline escapes to fix colored input prompts
         # http://bugs.python.org/issue17337
         return "\x01\x1b[%dm\x02%s\x01\x1b[0m\x02" % (color_code, text)
 

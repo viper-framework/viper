@@ -1019,7 +1019,7 @@ rule XtremeRAT
 rule winnti
 {
     meta:
-        autor = "S2R2"
+        author = "S2R2"
         family = "winnti"
 
     strings:

@@ -93,7 +93,7 @@ A common use case for modules is to implement the API of an external web service
 The (great!) requests library (https://github.com/requests/requests/) provides an easy interface for making
 outbound http connections.
 Viper provides a global configuration section ``[http_client]`` where certain requests options can be set
-for Proxies, TLS Verfication, CA_BUNDLE and TLS Client Certificates.
+for Proxies, TLS Verification, CA_BUNDLE and TLS Client Certificates.
 Please check the current ``viper.conf.sample``  for more details.
 
 When implementing a custom module settings from the global ``[http_client]]`` can be overridden by specifying
@@ -192,7 +192,7 @@ Here is an example:
 Accessing the database
 ----------------------
 
-In case you're interested in automatically retreiving all files stored in the local repository or just a subset, you'll need to access the local database. Viper provides an interface called ``Database()`` to be imported from ``viper.core.database``.
+In case you're interested in automatically retrieving all files stored in the local repository or just a subset, you'll need to access the local database. Viper provides an interface called ``Database()`` to be imported from ``viper.core.database``.
 
 You can then use the ``find()`` function, specify a key and an optional value and you will obtain a list of objects you can loop through. For example:
 

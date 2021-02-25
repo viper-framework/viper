@@ -51,7 +51,7 @@ key =
 
 [http_client]
 # http client settings for outgoing requests (e.g. download, VT)
-# will be applied to requests and can be overriden per module
+# will be applied to requests and can be overridden per module
 
 # Proxy specific settings:
 # * https_proxy = e.g. http://user:pass@prx.example.com:3128 (will also set http_proxy)
