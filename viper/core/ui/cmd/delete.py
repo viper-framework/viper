@@ -23,6 +23,7 @@ class Delete(Command):
 
         self.parser.add_argument('-a', '--all', action='store_true', help="Delete ALL files in this project")
         self.parser.add_argument('-f', '--find', action="store_true", help="Delete ALL files from last find")
+        self.parser.add_argument('-y','--yes',action='store_true',help="Delete without confirmation")
 
     def run(self, *args):
         try:
@@ -30,12 +31,13 @@ class Delete(Command):
         except SystemExit:
             return
 
-        while True:
-            choice = input("Are you sure? It can't be reverted! [y/n] ")
-            if choice == 'y':
-                break
-            elif choice == 'n':
-                return
+        if not args.yes:
+            while True:
+                choice = input("Are you sure? It can't be reverted! [y/n] ")
+                if choice == 'y':
+                    break
+                elif choice == 'n':
+                    return
 
         db = Database()
 
