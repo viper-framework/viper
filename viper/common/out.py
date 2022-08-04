@@ -53,7 +53,8 @@ def table(header, rows):
                     a = a.decode('utf-8', 'backslashreplace')
             if not isinstance(a, six.text_type):
                 a = six.text_type(a)
-            to_append.append(a.replace('\t', '  ').replace('\v', '\\v'))
+            # Prevents terminaltables from parsing escape characters
+            to_append.append(a.replace('\t', '  ').replace('\v', '\\v').replace('\f', '\\f').replace('\r', '\\r').replace('\n', '\\n'))
         content.append(to_append)
     t = AsciiTable(content)
     if not t.ok:
