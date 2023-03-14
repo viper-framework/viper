@@ -54,7 +54,7 @@ class Malware(Base):
     sha256 = Column(String(64), nullable=False, index=True)
     sha512 = Column(String(128), nullable=False)
     ssdeep = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=False), default=datetime.now(), nullable=False)
+    created_at = Column(DateTime(timezone=False), default=datetime.now, nullable=False)
     parent_id = Column(Integer(), ForeignKey('malware.id'))
     parent = relationship('Malware', lazy='subquery', remote_side=[id])
     tag = relationship(
