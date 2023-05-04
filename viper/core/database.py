@@ -685,3 +685,16 @@ class Database:
         session = self.Session()
         rows = session.query(Analysis).all()
         return rows
+
+    def delete_analysis(self, analysis_id):
+        session = self.Session()
+
+        try:
+            analysis = session.query(Analysis).get(analysis_id)
+            session.delete(analysis)
+            session.commit()
+        except SQLAlchemyError as e:
+            print_error("Unable to delete analysis: {0}".format(e))
+            session.rollback()
+        finally:
+            session.close()
