@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 from collections import defaultdict
+from typing import Any
 
 from viper.common.abstracts import Command
 from viper.common.utils import convert_size
@@ -21,7 +22,7 @@ class Stats(Command):
 
         self.parser.add_argument("-t", "--top", type=int, help="Top x Items")
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:

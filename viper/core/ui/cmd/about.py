@@ -3,12 +3,13 @@
 
 import os
 import platform
+from typing import Any
 
 from viper.common.abstracts import Command
-from viper.common.version import __version__
-from viper.core.config import __config__
+from viper.common.version import VIPER_VERSION
+from viper.core.config import cfg
 from viper.core.database import Database
-from viper.core.project import __project__
+from viper.core.projects import project
 
 
 class About(Command):
@@ -20,16 +21,17 @@ class About(Command):
     cmd = "about"
     description = "Show information about this Viper instance"
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             self.parser.parse_args(args)
         except SystemExit:
             return
 
         rows = list()
-        rows.append(["Viper Version", __version__])
+        rows.append(["Viper Version", VIPER_VERSION])
         rows.append(["Python Version", platform.python_version()])
-        rows.append(["Homepage", "https://viper.li"])
+        # TODO: I let viper.li expire (sigh), so will have to commend this.
+        # rows.append(["Homepage", "https://viper.li"])
         rows.append(
             ["Issue Tracker", "https://github.com/viper-framework/viper/issues"]
         )
@@ -37,18 +39,18 @@ class About(Command):
         self.log("table", {"columns": ["About", ""], "rows": rows})
 
         rows = list()
-        rows.append(["Configuration File", __config__.config_file])
+        rows.append(["Configuration File", cfg.config_file])
 
-        module_path = os.path.join(__config__.paths.module_path, "modules")
+        module_path = os.path.join(cfg.paths.module_path, "modules")
 
-        if __project__.name:
-            rows.append(["Active Project", __project__.name])
-            rows.append(["Storage Path", __project__.path])
+        if project.name:
+            rows.append(["Active Project", project.name])
+            rows.append(["Storage Path", project.path])
             rows.append(["Module Path", module_path])
             rows.append(["Database Path", str(Database().engine.url)])
         else:
             rows.append(["Active Project", "default"])
-            rows.append(["Storage Path", __project__.path])
+            rows.append(["Storage Path", project.path])
             rows.append(["Module Path", module_path])
             rows.append(["Database Path", str(Database().engine.url)])
 

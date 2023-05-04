@@ -2,23 +2,24 @@
 # See the file 'LICENSE' for copying permission.
 
 import os
+from typing import Any
 
 from viper.common.abstracts import Command
 from viper.core.database import Database
-from viper.core.project import __project__
-from viper.core.session import __sessions__
+from viper.core.projects import project
+from viper.core.sessions import sessions
 from viper.core.storage import get_sample_path
 
 
 class Copy(Command):
     """
-    This command copies the opened file into another project. Analysis, Notes
+    This command copies the open file into another project. Analysis, Notes
     and Tags are - by default - also copies. Children can (optionally) also
     be copied (recursively).
     """
 
     cmd = "copy"
-    description = "Copy opened file(s) into another project"
+    description = "Copy open file(s) into another project"
 
     def __init__(self):
         super(Copy, self).__init__()
@@ -49,28 +50,28 @@ class Copy(Command):
             "from current project after copy",
         )
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
             return
 
-        if not __sessions__.is_set():
+        if not sessions.is_set():
             self.log(
                 "error", "No open session. This command expects a file to be open."
             )
             return
 
-        if not __project__.name:
+        if not project.name:
             src_project = "default"
         else:
-            src_project = __project__.name
+            src_project = project.name
 
         db = Database()
 
         db.copied_id_sha256 = []
         res = db.copy(
-            __sessions__.current.file.id,
+            sessions.current.file.id,
             src_project=src_project,
             dst_project=args.project,
             copy_analysis=True,
@@ -80,7 +81,7 @@ class Copy(Command):
         )
 
         if args.delete:
-            __sessions__.close()
+            sessions.close()
             for item_id, item_sha256 in db.copied_id_sha256:
                 db.delete_file(item_id)
                 os.remove(get_sample_path(item_sha256))

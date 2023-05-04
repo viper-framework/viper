@@ -4,7 +4,7 @@
 import os
 
 from viper.common.out import print_error, print_warning
-from viper.core.project import __project__
+from viper.core.projects import project
 
 
 def store_sample(file_object):
@@ -15,7 +15,7 @@ def store_sample(file_object):
         return None
 
     folder = os.path.join(
-        __project__.get_path(), "binaries", sha256[0], sha256[1], sha256[2], sha256[3]
+        project.get_path(), "binaries", sha256[0], sha256[1], sha256[2], sha256[3]
     )
 
     if not os.path.exists(folder):
@@ -36,7 +36,7 @@ def store_sample(file_object):
 
 def get_sample_path(sha256):
     path = os.path.join(
-        __project__.get_path(),
+        project.get_path(),
         "binaries",
         sha256[0],
         sha256[1],

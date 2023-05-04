@@ -4,11 +4,10 @@
 import os
 import subprocess
 import sys
+from typing import Any
 
 from viper.common.abstracts import Command
-from viper.core.config import __config__
-
-cfg = __config__
+from viper.core.config import cfg
 
 
 class UpdateModules(Command):
@@ -20,7 +19,7 @@ class UpdateModules(Command):
     cmd = "update-modules"
     description = "Download Viper modules from the community GitHub repository"
 
-    def run(self, *args):
+    def run(self, *args: Any):
         self.log("info", "Updating modules...")
 
         dot_viper = cfg.paths.module_path
@@ -66,7 +65,7 @@ class UpdateModules(Command):
         )
         p.wait()
 
-        # TODO: this is terrible. We need to find a way to move __modules__
+        # TODO: this is terrible. We need to find a way to move modules
         # to  proper place that can be reloaded.
         self.log("info", "Modules updated, please relaunch `viper`.")
         sys.exit()

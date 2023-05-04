@@ -3,9 +3,10 @@
 
 import os
 import tempfile
+from typing import Any
 
 from viper.common.abstracts import Command
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 
 
 class New(Command):
@@ -17,7 +18,7 @@ class New(Command):
     cmd = "new"
     description = "Create new file"
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
@@ -31,8 +32,8 @@ class New(Command):
         # Open the temporary file with the default editor, or with nano.
         os.system('"${EDITOR:-nano}" ' + tmp.name)
 
-        __sessions__.new(tmp.name)
-        __sessions__.current.file.name = title
+        sessions.new(tmp.name)
+        sessions.current.file.name = title
 
         self.log(
             "info",

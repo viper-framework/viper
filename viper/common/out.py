@@ -1,36 +1,38 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from typing import Optional
+
 from rich.console import Console
 from rich.table import Table
 
 
-def print_info(message):
+def print_info(message: str):
     console = Console()
     console.print(message)
 
 
-def print_item(message, tabs=0):
+def print_item(message: str, tabs: Optional[int] = 0):
     console = Console()
     console.print(f"  [cyan]-[/cyan] {message}")
 
 
-def print_warning(message):
+def print_warning(message: str):
     console = Console()
     console.print(f"[bold yellow]WARNING: {message}[/bold yellow]")
 
 
-def print_error(message):
+def print_error(message: str):
     console = Console()
     console.print(f"[bold red]ERROR: {message}[/bold red]")
 
 
-def print_success(message):
+def print_success(message: str):
     console = Console()
     console.print(f"[bold green]{message}[/bold green]")
 
 
-def table(columns, rows):
+def table(columns: list, rows: list):
     console = Console()
     table = Table(show_header=True, header_style="bold")
 
@@ -43,7 +45,7 @@ def table(columns, rows):
     console.print(table)
 
 
-def print_output(output, filename=None):
+def print_output(output: str, filename: Optional[str] = None):
     if not output:
         return
 

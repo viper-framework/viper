@@ -5,7 +5,7 @@ from viper.core.database import Database
 from viper.core.plugins import load_commands
 
 
-class Commands(object):
+class Commands:
     output = []
 
     def __init__(self):

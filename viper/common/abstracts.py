@@ -2,6 +2,7 @@
 # See the file 'LICENSE' for copying permission.
 
 import argparse
+from typing import Any, Optional
 
 import viper.common.out as out
 from viper.common.exceptions import ArgumentErrorCallback
@@ -9,26 +10,24 @@ from viper.core.config import console_output
 
 
 class ArgumentParser(argparse.ArgumentParser):
-    def print_usage(self, file=None):
+    def print_usage(self, file: Optional[str] = None):
         raise ArgumentErrorCallback(self.format_usage())
 
-    def print_help(self, file=None):
+    def print_help(self, file: Optional[str] = None):
         raise ArgumentErrorCallback(self.format_help())
 
-    def error(self, message):
+    def error(self, message: str):
         raise ArgumentErrorCallback(message, "error")
 
-    def exit(self, status=0, message=None):
-        if message is not None:
+    def exit(self, status: Optional[int] = 0, message: Optional[str] = None):
+        if message:
             raise ArgumentErrorCallback(message)
 
 
-class Command(object):
+class Command:
     cmd = ""
     description = ""
-    command_line = []
     args = None
-    authors = []
     output = []
     fs_path_completion = False
 
@@ -37,14 +36,12 @@ class Command(object):
             prog=self.cmd, description=self.description
         )
 
-    def log(self, event_type, event_data):
-        self.output.append(dict(type=event_type, data=event_data))
-        out.print_output(
-            [{"type": event_type, "data": event_data}], console_output["filename"]
-        )
+    def log(self, log_type: str, data: Any):
+        self.output.append({"type": log_type, "data": data})
+        out.print_output([{"type": log_type, "data": data}], console_output["filename"])
 
 
-class Module(object):
+class Module:
     cmd = ""
     description = ""
     command_line = []
@@ -55,13 +52,13 @@ class Module(object):
     def __init__(self):
         self.parser = ArgumentParser(prog=self.cmd, description=self.description)
 
-    def set_commandline(self, command):
+    def set_commandline(self, command: str):
         self.command_line = command
 
-    def log(self, event_type, event_data):
-        self.output.append(dict(type=event_type, data=event_data))
+    def log(self, log_type: str, data: Any):
+        self.output.append({"type": log_type, "data": data})
         out.print_output(
-            [{"type": event_type, "data": event_data}], console_output["filename"]
+            [{"type": log_type, "data": log_msg}], console_output["filename"]
         )
 
     def usage(self):

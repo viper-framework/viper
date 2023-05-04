@@ -14,17 +14,16 @@ from rich.console import Console as RichConsole
 
 # from viper.common.out import print_output  # currently not used
 from viper.common.out import print_error
-from viper.common.version import __version__
-from viper.core.config import __config__, console_output
+from viper.common.version import VIPER_VERSION
+from viper.core.config import cfg, console_output
 from viper.core.database import Database
-from viper.core.plugins import __modules__
-from viper.core.project import __project__, get_project_list
-from viper.core.session import __sessions__
+from viper.core.plugins import modules
+from viper.core.projects import get_project_list, project
+from viper.core.sessions import sessions
 from viper.core.ui.commands import Commands
 
 log = logging.getLogger("viper")
 
-cfg = __config__
 cfg.parse_http_client()
 
 
@@ -35,7 +34,7 @@ def logo():
   ██    ██ ██ ██   ██ ██      ██   ██ 
   ██    ██ ██ ██████  █████   ██████  
    ██  ██  ██ ██      ██      ██   ██ 
-    ████   ██ ██      ███████ ██   ██  v{__version__}
+    ████   ██ ██      ███████ ██   ██  v{VIPER_VERSION}
 """
     )
 
@@ -47,8 +46,8 @@ def logo():
     except Exception:
         sys.exit()
 
-    if __project__.name:
-        name = __project__.name
+    if project.name:
+        name = project.name
     else:
         name = "default"
 
@@ -57,7 +56,7 @@ def logo():
         f"[magenta]You have [bold]{count}[/bold] files in your [bold]{name}[/bold] repository"
     )
 
-    modules_count = len(__modules__)
+    modules_count = len(modules)
     if modules_count == 0:
         print("")
         console.print("[bold red]You do not have any modules installed![/bold red]")
@@ -71,13 +70,14 @@ def logo():
         )
 
 
-class Console(object):
+class Console:
     def __init__(self):
         # This will keep the main loop active as long as it's set to True.
         self.active = True
         self.cmd = Commands()
 
-    def parse(self, data):
+    @staticmethod
+    def parse(data):
         root = ""
         args = []
 
@@ -92,19 +92,113 @@ class Console(object):
 
         return (root, args)
 
-    def keywords(self, data):
+    @staticmethod
+    def keywords(data):
         # Check if $self is in the user input data.
         if "$self" in data:
             # Check if there is an open session.
-            if __sessions__.is_set():
-                # If a session is opened, replace $self with the path to
+            if sessions.is_set():
+                # If a session is open, replace $self with the path to
                 # the file which is currently being analyzed.
-                data = data.replace("$self", __sessions__.current.file.path)
+                data = data.replace("$self", sessions.current.file.path)
             else:
                 print("No open session")
                 return None
 
         return data
+
+    @staticmethod
+    def complete(text, state):
+        # filesystem path completion only makes sense for a few commands/modules
+        fs_path_completion = False
+
+        # clean up user input so far (no leading/trailing/duplicate spaces)
+        line = " ".join(readline.get_line_buffer().split())
+        words = line.split(
+            " "
+        )  # split words; e.g. store -f /tmp -> ["store", "-f", "/tmp"]
+
+        if words[0] in [i for i in self.cmd.commands]:
+            # handle completion for commands
+
+            # enable filesystem path completion for certain commands (e.g. export, store)
+            if words[0] in [
+                x
+                for x in self.cmd.commands
+                if self.cmd.commands[x]["fs_path_completion"]
+            ]:
+                fs_path_completion = True
+
+            options = [key for key in self.cmd.commands[words[0]]["parser_args"]]
+
+            # enable tab completion for projects --switch
+            if words[0] == "projects":
+                if "--switch" in words or "-s" in words:
+                    options += get_project_list()
+
+                    # enable tab completion for copy (list projects)
+            if words[0] == "copy":
+                options += get_project_list()
+
+            completions = [
+                i for i in options if i.startswith(text) and i not in words
+            ]
+
+        elif words[0] in [i for i in modules]:
+            # handle completion for modules
+            if len(words) == 1:
+                # only the module name is give so far - present all args and the subparsers (if any)
+                options = [key for key in modules[words[0]]["parser_args"]]
+                options += [key for key in modules[words[0]]["subparser_args"]]
+
+            elif len(words) == 2:
+                # 1 complete word and one either complete or incomplete that specifies the subparser or an arg
+                if words[1] in list(modules[words[0]]["parser_args"]):
+                    # full arg for a module is given
+                    options = [key for key in modules[words[0]]["parser_args"]]
+
+                elif words[1] in list(modules[words[0]]["subparser_args"]):
+                    # subparser is specified - get all subparser args
+                    options = [
+                        key for key in modules[words[0]]["subparser_args"][words[1]]
+                    ]
+
+                else:
+                    options = [key for key in modules[words[0]]["parser_args"]]
+                    options += [key for key in modules[words[0]]["subparser_args"]]
+
+            else:  # more that 2 words
+                if words[1] in list(modules[words[0]]["subparser_args"]):
+                    # subparser is specified - get all subparser args
+                    options = [
+                        key for key in modules[words[0]]["subparser_args"][words[1]]
+                    ]
+                else:
+                    options = [key for key in modules[words[0]]["parser_args"]]
+
+            completions = [
+                i for i in options if i.startswith(text) and i not in words
+            ]
+
+        else:
+            # initial completion for both commands and modules
+            completions = [i for i in self.cmd.commands if i.startswith(text)]
+            completions += [i for i in modules if i.startswith(text)]
+
+        if state < len(completions):
+            return completions[state]
+
+        if fs_path_completion:
+            # completion for paths only if it makes sense
+            if text.startswith("~"):
+                text = "{0}{1}".format(expanduser("~"), text[1:])
+            return (glob.glob(text + "*") + [None])[state]
+
+        return
+
+    @staticmethod
+    def save_history(path):
+        readline.write_history_file(path)
 
     def stop(self):
         # Stop main loop.
@@ -117,154 +211,46 @@ class Console(object):
         # Logo.
         logo()
 
-        # Setup shell auto-complete.
-        def complete(text, state):
-            # filesystem path completion only makes sense for a few commands/modules
-            fs_path_completion = False
-
-            # clean up user input so far (no leading/trailing/duplicate spaces)
-            line = " ".join(readline.get_line_buffer().split())
-            words = line.split(
-                " "
-            )  # split words; e.g. store -f /tmp -> ["store", "-f", "/tmp"]
-
-            if words[0] in [i for i in self.cmd.commands]:
-                # handle completion for commands
-
-                # enable filesystem path completion for certain commands (e.g. export, store)
-                if words[0] in [
-                    x
-                    for x in self.cmd.commands
-                    if self.cmd.commands[x]["fs_path_completion"]
-                ]:
-                    fs_path_completion = True
-
-                options = [key for key in self.cmd.commands[words[0]]["parser_args"]]
-
-                # enable tab completion for projects --switch
-                if words[0] == "projects":
-                    if "--switch" in words or "-s" in words:
-                        options += get_project_list()
-
-                        # enable tab completion for copy (list projects)
-                if words[0] == "copy":
-                    options += get_project_list()
-
-                completions = [
-                    i for i in options if i.startswith(text) and i not in words
-                ]
-
-            elif words[0] in [i for i in __modules__]:
-                # handle completion for modules
-                if len(words) == 1:
-                    # only the module name is give so far - present all args and the subparsers (if any)
-                    options = [key for key in __modules__[words[0]]["parser_args"]]
-                    options += [key for key in __modules__[words[0]]["subparser_args"]]
-
-                elif len(words) == 2:
-                    # 1 complete word and one either complete or incomplete that specifies the subparser or an arg
-                    if words[1] in list(__modules__[words[0]]["parser_args"]):
-                        # full arg for a module is given
-                        options = [key for key in __modules__[words[0]]["parser_args"]]
-
-                    elif words[1] in list(__modules__[words[0]]["subparser_args"]):
-                        # subparser is specified - get all subparser args
-                        options = [
-                            key
-                            for key in __modules__[words[0]]["subparser_args"][words[1]]
-                        ]
-
-                    else:
-                        options = [key for key in __modules__[words[0]]["parser_args"]]
-                        options += [
-                            key for key in __modules__[words[0]]["subparser_args"]
-                        ]
-
-                else:  # more that 2 words
-                    if words[1] in list(__modules__[words[0]]["subparser_args"]):
-                        # subparser is specified - get all subparser args
-                        options = [
-                            key
-                            for key in __modules__[words[0]]["subparser_args"][words[1]]
-                        ]
-                    else:
-                        options = [key for key in __modules__[words[0]]["parser_args"]]
-
-                completions = [
-                    i for i in options if i.startswith(text) and i not in words
-                ]
-
-            else:
-                # initial completion for both commands and modules
-                completions = [i for i in self.cmd.commands if i.startswith(text)]
-                completions += [i for i in __modules__ if i.startswith(text)]
-
-            if state < len(completions):
-                return completions[state]
-
-            if fs_path_completion:
-                # completion for paths only if it makes sense
-                if text.startswith("~"):
-                    text = "{0}{1}".format(expanduser("~"), text[1:])
-                return (glob.glob(text + "*") + [None])[state]
-
-            return
-
         # Auto-complete on tabs.
         readline.set_completer_delims(" \t\n;")
         readline.parse_and_bind("tab: complete")
-        readline.set_completer(complete)
-
-        # Save commands in history file.
-        def save_history(path):
-            readline.write_history_file(path)
+        readline.set_completer(self.complete)
 
         # If there is an history file, read from it and load the history
         # so that they can be loaded in the shell.
         # Now we are storing the history file in the local project folder
-        history_path = os.path.join(__project__.path, "history")
+        history_path = os.path.join(project.path, "history")
 
         if os.path.exists(history_path):
             readline.read_history_file(history_path)
 
         readline.set_history_length(10000)
 
-        # Register the save history at program"s exit.
-        atexit.register(save_history, path=history_path)
+        # Register the save history at program's exit.
+        atexit.register(self.save_history, path=history_path)
 
         # Main loop.
         while self.active:
-            # If there is an open session, we include the path to the opened
+            # If there is an open session, we include the path to the open
             # file in the shell prompt.
             # TODO: perhaps this block should be moved into the session so that
             # the generation of the prompt is done only when the session"s
             # status changes.
             prefix = ""
-            if __project__.name:
-                prefix = f"[bold cyan]{__project__.name}[/bold cyan] "
+            if project.name:
+                prefix = f"[bold cyan]{project.name}[/bold cyan] "
 
-            if __sessions__.is_set():
+            if sessions.is_set():
                 stored = ""
                 filename = ""
-                if __sessions__.current.file:
-                    filename = __sessions__.current.file.name
+                if sessions.current.file:
+                    filename = sessions.current.file.name
                     if not Database().find(
-                        key="sha256", value=__sessions__.current.file.sha256
+                        key="sha256", value=sessions.current.file.sha256
                     ):
                         stored = " [magenta][not stored][/magenta]"
 
-                misp = ""
-                if __sessions__.current.misp_event:
-                    misp = " [MISP"
-                    if __sessions__.current.misp_event.event.id:
-                        misp += " {}".format(__sessions__.current.misp_event.event.id)
-                    else:
-                        misp += " New Event"
-                    if __sessions__.current.misp_event.off:
-                        misp += " (Offline)"
-                    misp += "]"
-
-                prompt = f"{prefix}[cyan]viper [/cyan][white]{filename}[/white][blue]{misp}[/blue]{stored}[cyan]> [/cyan]"
+                prompt = f"{prefix}[cyan]viper [/cyan][white]{filename}[/white]{stored}[cyan]> [/cyan]"
             # Otherwise display the basic prompt.
             else:
                 prompt = f"{prefix}[cyan]viper > [/cyan]"
@@ -341,15 +327,15 @@ class Console(object):
                             del self.cmd.output[:]
                         # If the root command is part of loaded modules, we initialize
                         # the module and execute it.
-                        elif root in __modules__:
-                            module = __modules__[root]["obj"]()
+                        elif root in modules:
+                            module = modules[root]["obj"]()
                             module.set_commandline(args)
                             module.run()
 
-                            if cfg.modules.store_output and __sessions__.is_set():
+                            if cfg.modules.store_output and sessions.is_set():
                                 try:
                                     Database().add_analysis(
-                                        __sessions__.current.file.sha256,
+                                        sessions.current.file.sha256,
                                         split_command,
                                         module.output,
                                     )

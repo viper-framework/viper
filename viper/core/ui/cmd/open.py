@@ -4,11 +4,12 @@
 import argparse
 import os
 import tempfile
+from typing import Any
 
 from viper.common.abstracts import Command
 from viper.common.network import download
 from viper.core.database import Database
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 from viper.core.storage import get_sample_path
 
 
@@ -30,7 +31,7 @@ class Open(Command):
         self.parser = argparse.ArgumentParser(
             prog=self.cmd,
             description=self.description,
-            epilog="You can also specify a MD5 or SHA256 hash to a previously stored file in order to open a session on it.",
+            epilog="You can also specify a MD5, SHA1 or SHA256 hash to a previously stored file in order to open a session on it.",
         )
 
         group = self.parser.add_mutually_exclusive_group()
@@ -52,7 +53,7 @@ class Open(Command):
             help="Target to open. Hash can be md5 or sha256. ID has to be from the last search.",
         )
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
@@ -72,7 +73,7 @@ class Open(Command):
                 self.log("error", "File not found: {0}".format(target))
                 return
 
-            __sessions__.new(target)
+            sessions.new(target)
         # If it's a URL, download it and open a session on the temporary file.
         elif args.url:
             data = download(url=target, tor=args.tor)
@@ -82,11 +83,11 @@ class Open(Command):
                 tmp.write(data)
                 tmp.close()
 
-                __sessions__.new(tmp.name)
+                sessions.new(tmp.name)
         # Try to open the specified file from the list of results from
         # the last find command.
         elif args.last:
-            if __sessions__.find:
+            if sessions.find:
                 try:
                     target = int(target)
                 except ValueError:
@@ -96,9 +97,9 @@ class Open(Command):
                     )
                     return
 
-                for idx, item in enumerate(__sessions__.find, start=1):
+                for idx, item in enumerate(sessions.find, start=1):
                     if idx == target:
-                        __sessions__.new(get_sample_path(item.sha256))
+                        sessions.new(get_sample_path(item.sha256))
                         break
             else:
                 self.log("warning", "You haven't performed a find yet")
@@ -108,6 +109,8 @@ class Open(Command):
 
             if len(target) == 32:
                 key = "md5"
+            elif len(target) == 40:
+                key = "sha1"
             elif len(target) == 64:
                 key = "sha256"
             else:
@@ -118,11 +121,9 @@ class Open(Command):
             rows = db.find(key=key, value=target)
 
             if not rows:
-                self.log(
-                    "warning", "No file found with the given hash {0}".format(target)
-                )
+                self.log("warning", f"No file found with the given hash {target}")
                 return
 
             path = get_sample_path(rows[0].sha256)
             if path:
-                __sessions__.new(path)
+                sessions.new(path)

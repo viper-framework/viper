@@ -4,10 +4,11 @@
 import getpass
 import os
 import shutil
+from typing import Any
 
 from viper.common.abstracts import Command
 from viper.core.archiver import Compressor
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 
 
 def get_password_twice():
@@ -50,14 +51,14 @@ class Export(Command):
         )
         self.parser.add_argument("value", help="path or archive name")
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
             return
 
-        # This command requires a session to be opened.
-        if not __sessions__.is_set():
+        # This command requires a session to be open.
+        if not sessions.is_set():
             self.log("error", "No open session: this command expects a file to be open")
             self.parser.print_usage()
             return
@@ -70,7 +71,7 @@ class Export(Command):
         if args.zip and args.sevenzip:
             self.log("error", "Please select either -z or -7 not both, abort")
 
-        store_path = os.path.join(args.value, __sessions__.current.file.name)
+        store_path = os.path.join(args.value, sessions.current.file.name)
 
         if not args.zip and not args.sevenzip:
             # Abort if the specified path already exists
@@ -89,7 +90,7 @@ class Export(Command):
                     return
 
             try:
-                shutil.copyfile(__sessions__.current.file.path, store_path)
+                shutil.copyfile(sessions.current.file.path, store_path)
             except IOError as e:
                 self.log("error", f"Unable to export file: {e}")
             else:
@@ -114,8 +115,8 @@ class Export(Command):
                     self.log("error", "Passwords did not match, abort")
                     return
                 res = c.compress(
-                    __sessions__.current.file.path,
-                    file_name=__sessions__.current.file.name,
+                    sessions.current.file.path,
+                    file_name=sessions.current.file.name,
                     archive_path=store_path,
                     cls_name=cls,
                     password=_password,
@@ -123,16 +124,16 @@ class Export(Command):
             else:
                 self.log("warning", f"Ignoring password (not supported): {cls}")
                 res = c.compress(
-                    __sessions__.current.file.path,
-                    file_name=__sessions__.current.file.name,
+                    sessions.current.file.path,
+                    file_name=sessions.current.file.name,
                     archive_path=store_path,
                     cls_name=cls,
                 )
 
         else:
             res = c.compress(
-                __sessions__.current.file.path,
-                file_name=__sessions__.current.file.name,
+                sessions.current.file.path,
+                file_name=sessions.current.file.name,
                 archive_path=store_path,
                 cls_name=cls,
             )

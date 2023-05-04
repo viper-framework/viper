@@ -1,9 +1,11 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from typing import Optional
+
 
 class GenericException(Exception):
-    def __init__(self, message, level=""):
+    def __init__(self, message: str, level: Optional[str] = ""):
         self.message = message.strip() + "\n"
         self.level = level.strip()
 

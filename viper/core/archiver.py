@@ -22,7 +22,7 @@ import pkg_resources
 log = logging.getLogger("viper")
 
 
-class Archiver(object):
+class Archiver:
     """Archiver Class"""
 
     title = None

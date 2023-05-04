@@ -1,8 +1,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file "LICENSE" for copying permission.
 
+from typing import Any
+
 from viper.common.abstracts import Command
-from viper.core.plugins import __modules__, load_commands
+from viper.core.plugins import load_commands, modules
 
 
 class Help(Command):
@@ -14,7 +16,7 @@ class Help(Command):
     cmd = "help"
     description = "Show this help message"
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
@@ -32,12 +34,12 @@ class Help(Command):
 
         self.log("table", {"columns": ["Command", "Description"], "rows": rows})
 
-        if len(__modules__) == 0:
+        if len(modules) == 0:
             self.log("info", "No modules installed")
         else:
             self.log("info", "Modules")
             rows = []
-            for module_name, module_item in __modules__.items():
+            for module_name, module_item in modules.items():
                 rows.append(
                     [
                         module_name,

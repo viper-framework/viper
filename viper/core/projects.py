@@ -5,15 +5,13 @@ import logging
 import os
 from os.path import expanduser
 
-from viper.core.config import __config__
+from viper.core.config import cfg
 from viper.core.logger import init_logger
 
 log = logging.getLogger("viper")
 
-cfg = __config__
 
-
-class Project(object):
+class Project:
     def __init__(self):
         self.name = None
         self.path = None
@@ -76,12 +74,9 @@ class Project(object):
         return os.path.join(self.base_path, "projects")
 
 
-__project__ = Project()
-
-
 def get_project_list(exclude_default=False):
     """get_project_list - get list of all projects"""
-    projects_path = __project__.get_projects_path()
+    projects_path = project.get_projects_path()
     project_list = []
     if os.path.exists(projects_path):
         for project in os.listdir(projects_path):
@@ -95,3 +90,6 @@ def get_project_list(exclude_default=False):
         project_list.append("default")
 
     return sorted(project_list)
+
+
+project = Project()

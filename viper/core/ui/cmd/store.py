@@ -3,25 +3,26 @@
 
 import fnmatch
 import os
+from typing import Any
 
 from viper.common.abstracts import Command
 from viper.common.autorun import autorun_module
 from viper.common.objects import File
-from viper.core.config import __config__
+from viper.core.config import cfg
 from viper.core.database import Database
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 from viper.core.storage import get_sample_path, store_sample
 from viper.core.ui.cmd.open import Open
 
 
 class Store(Command):
     """
-    This command stores the opened file in the local repository and tries
+    This command stores the open file in the local repository and tries
     to store details in the database.
     """
 
     cmd = "store"
-    description = "Store the opened file to the local repository"
+    description = "Store the open file to the local repository"
     fs_path_completion = True
 
     def __init__(self):
@@ -50,7 +51,7 @@ class Store(Command):
             help="Specify a list of comma-separated tags",
         )
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
@@ -71,12 +72,6 @@ class Store(Command):
                     f'Skip, file "{obj.name}" appears to be already stored',
                 )
                 return False
-
-            if __sessions__.is_attached_misp(quiet=True):
-                if tags is not None:
-                    tags += f",misp:{__sessions__.current.misp_event.event.id}"
-                else:
-                    tags = f"misp:{__sessions__.current.misp_event.event.id}"
 
             # Try to store file object into database.
             status = Database().add(obj=obj, tags=tags)
@@ -148,30 +143,30 @@ class Store(Command):
 
                         # Add file.
                         add_file(file_obj, args.tags)
-                        if add_file and __config__.get("autorun").enabled:
+                        if add_file and cfg.get("autorun").enabled:
                             autorun_module(file_obj.sha256)
                             # Close the open session to keep the session table clean
-                            __sessions__.close()
+                            sessions.close()
 
             else:
                 self.log("error", f"You specified an invalid folder: {args.folder}")
-        # Otherwise we try to store the currently opened file, if there is any.
+        # Otherwise we try to store the currently open file, if there is any.
         else:
-            if __sessions__.is_set():
-                if __sessions__.current.file.size == 0:
+            if sessions.is_set():
+                if sessions.current.file.size == 0:
                     self.log(
                         "warning",
-                        f'Skip, file "{__sessions__.current.file.name}" appears to be empty',
+                        f'Skip, file "{sessions.current.file.name}" appears to be empty',
                     )
                     return False
 
                 # Add file.
-                if add_file(__sessions__.current.file, args.tags):
+                if add_file(sessions.current.file, args.tags):
                     # TODO: review this. Is there a better way?
                     # Open session to the new file.
-                    Open().run(*[__sessions__.current.file.sha256])
-                    if __config__.get("autorun").enabled:
-                        autorun_module(__sessions__.current.file.sha256)
+                    Open().run(*[sessions.current.file.sha256])
+                    if cfg.get("autorun").enabled:
+                        autorun_module(sessions.current.file.sha256)
             else:
                 self.log(
                     "error", "No open session. This command expects a file to be open."

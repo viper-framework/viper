@@ -1,0 +1,28 @@
+site_name: Viper Framework
+repo_url: https://github.com/viper-framework/viper
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2013-2023 Claudio Guarnieri
+site_description: Viper Framework Documentation
+markdown_extensions:
+    - attr_list
+    - admonition
+    - pymdownx.emoji:
+        emoji_index: !!python/name:materialx.emoji.twemoji
+        emoji_generator: !!python/name:materialx.emoji.to_svg
+    - pymdownx.superfences
+    - pymdownx.inlinehilite
+    - pymdownx.highlight:
+        use_pygments: true
+theme:
+    name: material
+    features:
+        - tabs
+plugins:
+    - search
+    - mkdocstrings
+extra:
+    social:
+        - icon: fontawesome/brands/github
+          link: https://github.com/viper-framework/viper
+nav:
+    - Welcome: "index.md"

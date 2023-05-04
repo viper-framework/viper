@@ -1,13 +1,15 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from typing import Any
+
 from viper.common.abstracts import Command
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 
 
 class Sessions(Command):
     """
-    This command is used to list and switch across all the opened sessions.
+    This command is used to list and switch across all the open sessions.
     """
 
     cmd = "sessions"
@@ -24,28 +26,28 @@ class Sessions(Command):
             "-s", "--switch", type=int, help="Switch to the specified session"
         )
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
             return
 
         if args.list:
-            if not __sessions__.sessions:
-                self.log("info", "There are no opened sessions")
+            if not sessions.list():
+                self.log("info", "There are no open sessions")
                 return
 
             rows = []
-            for session in __sessions__.sessions:
+            for session in sessions.list():
                 current = ""
-                if session == __sessions__.current:
+                if session == sessions.current:
                     current = "Yes"
 
                 rows.append(
                     [
-                        session.id,
+                        str(session.id),
                         session.file.name,
-                        session.file.md5,
+                        session.file.sha1,
                         session.created_at,
                         current,
                     ]
@@ -54,12 +56,15 @@ class Sessions(Command):
             self.log("info", "Opened Sessions:")
             self.log(
                 "table",
-                dict(header=["#", "Name", "MD5", "Created At", "Current"], rows=rows),
+                {
+                    "columns": ["#", "Name", "SHA1", "Created At", "Current"],
+                    "rows": rows,
+                },
             )
         elif args.switch:
-            for session in __sessions__.sessions:
+            for session in sessions.list():
                 if args.switch == session.id:
-                    __sessions__.switch(session)
+                    sessions.switch(session)
                     return
 
             self.log("warning", "The specified session ID doesn't seem to exist")

@@ -1,9 +1,11 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from typing import Any
+
 from viper.common.abstracts import Command
 from viper.core.database import Database
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 
 
 class Find(Command):
@@ -42,7 +44,7 @@ class Find(Command):
         )
         self.parser.add_argument("value", nargs="?", help="String to search.")
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
@@ -99,7 +101,7 @@ class Find(Command):
         count = 1
         for item in items:
             tag = ", ".join([t.tag for t in item.tag if t.tag])
-            row = [str(count), item.name, item.mime, item.md5, tag]
+            row = [str(count), item.name, item.mime, item.sha1, tag]
             if key == "ssdeep":
                 row.append(item.ssdeep)
             if key == "latest":
@@ -109,10 +111,10 @@ class Find(Command):
             count += 1
 
         # Update find results in current session.
-        __sessions__.find = items
+        sessions.find = items
 
         # Generate a table with the results.
-        columns = ["#", "Name", "Mime", "MD5", "Tags"]
+        columns = ["#", "Name", "Mime", "SHA1", "Tags"]
         if key == "latest":
             columns.append("Created At")
         if key == "ssdeep":

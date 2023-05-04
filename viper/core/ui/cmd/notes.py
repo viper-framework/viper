@@ -3,20 +3,21 @@
 
 import os
 import tempfile
+from typing import Any
 
 from viper.common.abstracts import Command
 from viper.core.database import Database
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 
 
 class Notes(Command):
     """
     This command allows you to view, add, modify and delete notes associated
-    with the currently opened file or project.
+    with the currently open file or project.
     """
 
     cmd = "notes"
-    description = "View, add and edit notes on the opened file or project"
+    description = "View, add and edit notes on the open file or project"
 
     def __init__(self):
         super(Notes, self).__init__()
@@ -53,7 +54,7 @@ class Notes(Command):
             help="Use project notes instead of notes being tied to a file",
         )
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
@@ -61,16 +62,16 @@ class Notes(Command):
 
         db = Database()
         malware = None
-        if __sessions__.is_set() and not args.project:
-            malware = db.find(key="sha256", value=__sessions__.current.file.sha256)
+        if sessions.is_set() and not args.project:
+            malware = db.find(key="sha256", value=sessions.current.file.sha256)
             if not malware:
                 self.log(
                     "error",
-                    "The opened file doesn't appear to be in the database, have you stored it yet?",
+                    "The open file doesn't appear to be in the database, have you stored it yet?",
                 )
 
         if args.list:
-            # Retrieve all notes for the currently opened file.
+            # Retrieve all notes for the currently open file.
             notes = malware[0].note if malware is not None else db.list_notes()
             if not notes:
                 self.log("info", "No notes available for this file or project yet")
@@ -92,14 +93,14 @@ class Notes(Command):
                 # Once the user is done editing, we need to read the content and
                 # store it in the database.
                 body = tmp.read()
-                if args.project or not __sessions__.is_set():
+                if args.project or not sessions.is_set():
                     db.add_note(None, title, body)
                     self.log(
                         "info",
                         f'New note with title "{title}" added to the current project',
                     )
                 else:
-                    db.add_note(__sessions__.current.file.sha256, title, body)
+                    db.add_note(sessions.current.file.sha256, title, body)
                     self.log(
                         "info",
                         f'New note with title "{title}" added to the current file',

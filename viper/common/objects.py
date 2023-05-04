@@ -3,9 +3,8 @@
 
 import binascii
 import hashlib
+import io
 import os
-
-import six
 
 try:
     import pydeep
@@ -19,75 +18,26 @@ try:
 except ImportError:
     pass
 
-try:
-    from pymisp import MISPEvent
-except ImportError:
-    pass
+
+class Dictionary(dict):
+    def __getattr__(self, key: str):
+        return self.get(key, None)
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 
 class Singleton(type):
-    _instances = {}
+    __instances = {}
 
     def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+        if cls not in cls.__instances:
+            cls.__instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls.__instances[cls]
 
 
-class MispEvent(object):
-    def __init__(self, event, offline=False):
-        if isinstance(event, MISPEvent):
-            self.event = event
-        else:
-            self.event = MISPEvent()
-            if isinstance(event, six.string_types) and os.path.exists(event):
-                self.event.load_file(event)
-            else:
-                self.event.load(event)
-        self.off = offline
-        if self.event.id:
-            self.current_dump_file = f"{self.event_id}.json"
-        else:
-            self.current_dump_file = None
-
-    def online(self):
-        self.off = False
-
-    def offline(self):
-        self.off = True
-
-    def get_all_ips(self):
-        return [
-            a.value for a in self.event.attributes if a.type in ["ip-dst", "ip-src"]
-        ]
-
-    def get_all_domains(self):
-        return [
-            a.value for a in self.event.attributes if a.type in ["domain", "hostname"]
-        ]
-
-    def get_all_urls(self):
-        return [a.value for a in self.event.attributes if a.type == "url"]
-
-    def get_all_hashes(self):
-        event_hashes = []
-        sample_hashes = []
-        for a in self.event.attributes:
-            h = None
-            if a.type in ("md5", "sha1", "sha256"):
-                h = a.value
-                event_hashes.append(h)
-            elif a.type in ("filename|md5", "filename|sha1", "filename|sha256"):
-                h = a.value.split("|")[1]
-                event_hashes.append(h)
-            elif a.type == "malware-sample":
-                h = a.value.split("|")[1]
-                sample_hashes.append(h)
-        return event_hashes, sample_hashes
-
-
-class IOBytes(object):
-    def __init__(self, byte_array):
+class IOBytes:
+    def __init__(self, byte_array: io.BytesIO):
         """
         Use to emulate some of the File object features so that a
         io.ByteIO instance can be treated like a file when it comes
@@ -95,15 +45,15 @@ class IOBytes(object):
 
         @byte_array: a io.BytesIO instance
         """
-        self._data = byte_array
+        self.__data = byte_array
 
     @property
     def data(self):
-        return self._data
+        return self.__data
 
 
-class File(object):
-    def __init__(self, path):
+class File:
+    def __init__(self, path: str):
         self.id = None
         self.path = path
         self.name = ""
@@ -134,9 +84,7 @@ class File(object):
             return f.read()
 
     def is_valid(self):
-        if not os.path.exists(self.path):
-            return False
-        if not os.path.isfile(self.path):
+        if not os.path.exists(self.path) or not os.path.isfile(self.path):
             return False
 
         return True
@@ -220,13 +168,3 @@ class File(object):
                 return ""
 
         return mime_type
-
-
-class Dictionary(dict):
-    """Viper custom dict."""
-
-    def __getattr__(self, key):
-        return self.get(key, None)
-
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__

@@ -2,16 +2,17 @@
 # See the file 'LICENSE' for copying permission.
 
 import json
+from typing import Any
 
 from viper.common.abstracts import Command
 from viper.core.database import Database
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 
 
 class Analysis(Command):
     """
     This command allows you to view the stored output from modules that have been run
-    with the currently opened file.
+    with the currently open file.
     """
 
     cmd = "analysis"
@@ -42,13 +43,13 @@ class Analysis(Command):
             help="Delete an existing analysis",
         )
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
             return
 
-        if not __sessions__.is_set():
+        if not sessions.is_set():
             self.log(
                 "error", "No open session. This command expects a file to be open."
             )
@@ -57,16 +58,16 @@ class Analysis(Command):
         db = Database()
 
         # check if the file is already stores, otherwise exit
-        malware = db.find(key="sha256", value=__sessions__.current.file.sha256)
+        malware = db.find(key="sha256", value=sessions.current.file.sha256)
         if not malware:
             self.log(
                 "error",
-                "The opened file doesn't appear to be in the database, have you stored it yet?",
+                "The open file doesn't appear to be in the database, have you stored it yet?",
             )
             return
 
         if args.list:
-            # Retrieve all analysis for the currently opened file.
+            # Retrieve all analysis for the currently open file.
 
             analysis_list = malware[0].analysis
             if not analysis_list:

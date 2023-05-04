@@ -1,13 +1,15 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from typing import Optional
+
 import requests
 from requests import ConnectionError
 
 from viper.common.out import print_error
 
 
-def download(url, tor=False):
+def download(url: str, tor: Optional[bool] = False):
     s = requests.Session()
     s.headers.update(
         {
@@ -28,6 +30,6 @@ def download(url, tor=False):
             print_error("Connection refused, maybe Tor is not running?")
         print_error(e)
     except Exception as e:
-        print_error(f"Failed download: {e}")
+        print_error(f"Download failed: {e}")
     else:
         return res.content

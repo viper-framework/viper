@@ -25,13 +25,11 @@ from sqlalchemy.pool import NullPool
 
 from viper.common.objects import File
 from viper.common.out import print_error, print_success, print_warning
-from viper.core.config import __config__
-from viper.core.project import __project__
+from viper.core.config import cfg
+from viper.core.projects import project
 from viper.core.storage import get_sample_path, store_sample
 
 log = logging.getLogger("viper")
-
-cfg = __config__
 
 Base = declarative_base()
 
@@ -221,7 +219,7 @@ class Database:
             self.engine = create_engine(connection, connect_args={"sslmode": "disable"})
         else:
             self.supports_projects = True
-            db_path = os.path.join(__project__.get_path(), "viper.db")
+            db_path = os.path.join(project.get_path(), "viper.db")
             self.engine = create_engine(
                 "sqlite:///{0}".format(db_path), poolclass=NullPool
             )
@@ -441,7 +439,7 @@ class Database:
         session = self.Session()
 
         # make sure to open source project
-        __project__.open(src_project)
+        project.open(src_project)
 
         # get malware from DB
         malware = (
@@ -464,7 +462,7 @@ class Database:
             )
         )
         # switch to destination project, add to DB and store on disk
-        __project__.open(dst_project)
+        project.open(dst_project)
         dst_db = Database()
         dst_db.add(sample)
         store_sample(sample)
@@ -513,7 +511,7 @@ class Database:
                         dst_db.add_parent(child.sha256, _parent_sha256)
 
         # switch back to source project
-        __project__.open(src_project)
+        project.open(src_project)
 
         # store tuple of ID (in source project) and sha256 of copied samples
         self.copied_id_sha256.append((malware.id, malware.sha256))
@@ -530,7 +528,7 @@ class Database:
             malware = session.query(Malware).get(id)
             if not malware:
                 print_error(
-                    "The opened file doesn't appear to be in the database, have you stored it yet?"
+                    "The open file doesn't appear to be in the database, have you stored it yet?"
                 )
                 return False
 
@@ -552,7 +550,7 @@ class Database:
             malware = session.query(Malware).get(id)
             if not malware:
                 print_error(
-                    "The opened file doesn't appear to be in the database, have you stored it yet?"
+                    "The open file doesn't appear to be in the database, have you stored it yet?"
                 )
                 return False
 

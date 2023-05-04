@@ -5,12 +5,13 @@ import os
 import shutil
 import time
 from os.path import expanduser
+from typing import Any
 
 from viper.common.abstracts import Command
-from viper.core.config import __config__
+from viper.core.config import cfg
 from viper.core.database import Database
-from viper.core.project import __project__
-from viper.core.session import __sessions__
+from viper.core.projects import project
+from viper.core.sessions import sessions
 
 
 class Projects(Command):
@@ -39,7 +40,7 @@ class Projects(Command):
             "-c",
             "--close",
             action="store_true",
-            help="Close the currently opened project",
+            help="Close the currently open project",
         )
         group.add_argument(
             "-d",
@@ -48,14 +49,14 @@ class Projects(Command):
             help="Delete the specified project",
         )
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
             return
 
-        if __config__.get("paths").storage_path:
-            base_path = __config__.get("paths").storage_path
+        if cfg.get("paths").storage_path:
+            base_path = cfg.get("paths").storage_path
         else:
             base_path = os.path.join(expanduser("~"), ".viper")
 
@@ -73,7 +74,7 @@ class Projects(Command):
                 project_path = os.path.join(projects_path, project)
                 if os.path.isdir(project_path):
                     current = ""
-                    if __project__.name and project == __project__.name:
+                    if project.name and project == project.name:
                         current = "Yes"
                     rows.append(
                         [project, time.ctime(os.path.getctime(project_path)), current]
@@ -91,34 +92,34 @@ class Projects(Command):
                 )
                 return
 
-            if __sessions__.is_set():
-                __sessions__.close()
-                self.log("info", "Closed opened session")
+            if sessions.is_set():
+                sessions.close()
+                self.log("info", "Closed open session")
 
-            __project__.open(args.switch)
+            project.open(args.switch)
             self.log("info", f"Switched to project [bold]{args.switch}[/bold]")
 
             # Need to re-initialize the Database to open the new SQLite file.
             Database().__init__()
         elif args.close:
-            if __project__.name != "default":
-                if __sessions__.is_set():
-                    __sessions__.close()
+            if project.name != "default":
+                if sessions.is_set():
+                    sessions.close()
 
-                __project__.close()
+                project.close()
         elif args.delete:
             project_to_delete = args.delete
             if project_to_delete == "default":
                 self.log("error", 'You can\'t delete the "default" project')
                 return
 
-            # If it's the currently opened project, we close it.
-            if project_to_delete == __project__.name:
-                # We close any opened session.
-                if __sessions__.is_set():
-                    __sessions__.close()
+            # If it's the currently open project, we close it.
+            if project_to_delete == project.name:
+                # We close any open session.
+                if sessions.is_set():
+                    sessions.close()
 
-                __project__.close()
+                project.close()
 
             project_path = os.path.join(projects_path, project_to_delete)
             if not os.path.exists(project_path):

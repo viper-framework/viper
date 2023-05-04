@@ -1,8 +1,10 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+from typing import Any
+
 from viper.common.abstracts import Command
-from viper.core.session import __sessions__
+from viper.core.sessions import sessions
 
 
 class Info(Command):
@@ -13,15 +15,15 @@ class Info(Command):
     """
 
     cmd = "info"
-    description = "Show information on the opened file"
+    description = "Show information on the open file"
 
-    def run(self, *args):
+    def run(self, *args: Any):
         try:
             args = self.parser.parse_args(args)
         except SystemExit:
             return
 
-        if not __sessions__.is_set():
+        if not sessions.is_set():
             self.log(
                 "error", "No open session. This command expects a file to be open."
             )
@@ -32,20 +34,20 @@ class Info(Command):
             {
                 "columns": ["Key", "Value"],
                 "rows": [
-                    ["Name", __sessions__.current.file.name],
-                    ["Tags", __sessions__.current.file.tags],
-                    ["Path", __sessions__.current.file.path],
-                    ["Size", str(__sessions__.current.file.size)],
-                    ["Type", __sessions__.current.file.type],
-                    ["Mime", __sessions__.current.file.mime],
-                    ["MD5", __sessions__.current.file.md5],
-                    ["SHA1", __sessions__.current.file.sha1],
-                    ["SHA256", __sessions__.current.file.sha256],
-                    ["SHA512", __sessions__.current.file.sha512],
-                    ["SSdeep", __sessions__.current.file.ssdeep],
-                    ["CRC32", __sessions__.current.file.crc32],
-                    ["Parent", __sessions__.current.file.parent],
-                    ["Children", __sessions__.current.file.children],
+                    ["Name", sessions.current.file.name],
+                    ["Tags", sessions.current.file.tags],
+                    ["Path", sessions.current.file.path],
+                    ["Size", str(sessions.current.file.size)],
+                    ["Type", sessions.current.file.type],
+                    ["Mime", sessions.current.file.mime],
+                    ["MD5", sessions.current.file.md5],
+                    ["SHA1", sessions.current.file.sha1],
+                    ["SHA256", sessions.current.file.sha256],
+                    ["SHA512", sessions.current.file.sha512],
+                    ["SSdeep", sessions.current.file.ssdeep],
+                    ["CRC32", sessions.current.file.crc32],
+                    ["Parent", sessions.current.file.parent],
+                    ["Children", sessions.current.file.children],
                 ],
             },
         )

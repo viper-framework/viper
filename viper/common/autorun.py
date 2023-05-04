@@ -2,13 +2,11 @@
 # See the file 'LICENSE' for copying permission.
 
 from viper.common.out import print_error, print_info, print_output
-from viper.core.config import __config__
+from viper.core.config import cfg
 from viper.core.database import Database
-from viper.core.plugins import __modules__
-from viper.core.session import __sessions__
+from viper.core.plugins import modules
+from viper.core.sessions import sessions
 from viper.core.storage import get_sample_path
-
-cfg = __config__
 
 
 def parse_commands(data):
@@ -23,12 +21,12 @@ def parse_commands(data):
     return root, args
 
 
-def autorun_module(file_hash):
+def autorun_module(file_hash: str):
     if not file_hash:
         return
 
-    if not __sessions__.is_set():
-        __sessions__.new(get_sample_path(file_hash))
+    if not sessions.is_set():
+        sessions.new(get_sample_path(file_hash))
 
     for cmd_line in cfg.autorun.commands.split(","):
         split_commands = cmd_line.split(";")
@@ -42,14 +40,14 @@ def autorun_module(file_hash):
             root, args = parse_commands(split_command)
 
             try:
-                if root in __modules__:
+                if root in modules:
                     print_info(f'Running command "{split_command}"')
 
-                    module = __modules__[root]["obj"]()
+                    module = modules[root]["obj"]()
                     module.set_commandline(args)
                     module.run()
 
-                    if cfg.modules.store_output and __sessions__.is_set():
+                    if cfg.modules.store_output and sessions.is_set():
                         Database().add_analysis(file_hash, split_command, module.output)
 
                     if cfg.autorun.verbose:

@@ -13,9 +13,7 @@ from viper.common.abstracts import (
     get_argparse_subparser_actions,
 )
 from viper.common.out import print_warning
-from viper.core.config import __config__
-
-cfg = __config__
+from viper.core.config import cfg
 
 
 def load_commands():
@@ -82,9 +80,7 @@ def load_modules():
                 module = importlib.import_module(module_name)
             except ImportError as e:
                 print_warning(
-                    "Something wrong happened while importing the module {0}: {1}".format(
-                        module_name, e
-                    )
+                    f"Something wrong happened while importing the module {module_name}: {e}"
                 )
                 continue
 
@@ -112,4 +108,4 @@ def load_modules():
         return plugins
 
 
-__modules__ = load_modules()
+modules = load_modules()

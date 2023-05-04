@@ -5,9 +5,9 @@ import argparse
 import os
 import sys
 
-from viper.common.version import __version__
-from viper.core.project import __project__
-from viper.core.session import __sessions__
+from viper.common.version import VIPER_VERSION
+from viper.core.projects import project
+from viper.core.sessions import sessions
 from viper.core.ui import console
 
 
@@ -23,23 +23,23 @@ def main():
     parser.add_argument(
         "-f",
         "--file",
-        help="Specify a file to be opened directly",
+        help="Specify a file to be open directly",
         action="store",
         required=False,
     )
-    parser.add_argument("--version", action="version", version=__version__)
+    parser.add_argument("--version", action="version", version=VIPER_VERSION)
 
     args = parser.parse_args()
 
     if args.project:
-        __project__.open(args.project)
+        project.open(args.project)
 
     if args.file:
         if not os.path.exists(args.file):
             print("ERROR: The specified path does not exist")
             sys.exit(-1)
 
-        __sessions__.new(args.file)
+        sessions.new(args.file)
 
     c = console.Console()
     c.start()

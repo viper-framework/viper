@@ -13,11 +13,10 @@ log = logging.getLogger("viper")
 
 
 class Config:
-    def __init__(self, cfg=None):
-        # use cfg as a first priority
-        if cfg:
-            if os.path.exists(cfg):
-                self.config_file = cfg
+    def __init__(self, cfg_path=None):
+        if cfg_path:
+            if os.path.exists(cfg_path):
+                self.config_file = cfg_path
         else:
             # Possible paths for the configuration file.
             # This should go in order from local to global.
@@ -48,7 +47,7 @@ class Config:
                     handle.write(config_sample)
 
         # Parse the config file.
-        config = self._config = ConfigParser()
+        config = ConfigParser()
         config.read(self.config_file)
 
         # Parse the config file and attribute for the current instantiated
@@ -212,7 +211,7 @@ class Config:
         return None
 
 
-__config__ = Config()
+cfg = Config()
 
 console_output = {}
 console_output["filename"] = False
