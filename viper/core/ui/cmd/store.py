@@ -1,22 +1,17 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
 import fnmatch
-try:
-    from scandir import walk
-except ImportError:
-    from os import walk
+import os
 
-from viper.core.ui.cmd.open import Open
 from viper.common.abstracts import Command
+from viper.common.autorun import autorun_module
 from viper.common.objects import File
+from viper.core.config import __config__
 from viper.core.database import Database
 from viper.core.session import __sessions__
-from viper.core.config import __config__
-from viper.core.storage import store_sample, get_sample_path
-from viper.common.autorun import autorun_module
+from viper.core.storage import get_sample_path, store_sample
+from viper.core.ui.cmd.open import Open
 
 
 class Store(Command):
@@ -24,6 +19,7 @@ class Store(Command):
     This command stores the opened file in the local repository and tries
     to store details in the database.
     """
+
     cmd = "store"
     description = "Store the opened file to the local repository"
     fs_path_completion = True
@@ -31,12 +27,28 @@ class Store(Command):
     def __init__(self):
         super(Store, self).__init__()
 
-        self.parser.add_argument('-d', '--delete', action='store_true', help="Delete the original file")
-        self.parser.add_argument('-f', '--folder', type=str, nargs='+', help="Specify a folder to import")
-        self.parser.add_argument('-s', '--file-size', type=int, help="Specify a maximum file size")
-        self.parser.add_argument('-y', '--file-type', type=str, help="Specify a file type pattern")
-        self.parser.add_argument('-n', '--file-name', type=str, help="Specify a file name pattern")
-        self.parser.add_argument('-t', '--tags', type=str, nargs='+', help="Specify a list of comma-separated tags")
+        self.parser.add_argument(
+            "-d", "--delete", action="store_true", help="Delete the original file"
+        )
+        self.parser.add_argument(
+            "-f", "--folder", type=str, nargs="+", help="Specify a folder to import"
+        )
+        self.parser.add_argument(
+            "-s", "--file-size", type=int, help="Specify a maximum file size"
+        )
+        self.parser.add_argument(
+            "-y", "--file-type", type=str, help="Specify a file type pattern"
+        )
+        self.parser.add_argument(
+            "-n", "--file-name", type=str, help="Specify a file name pattern"
+        )
+        self.parser.add_argument(
+            "-t",
+            "--tags",
+            type=str,
+            nargs="+",
+            help="Specify a list of comma-separated tags",
+        )
 
     def run(self, *args):
         try:
@@ -54,14 +66,17 @@ class Store(Command):
 
         def add_file(obj, tags=None):
             if get_sample_path(obj.sha256):
-                self.log('warning', "Skip, file \"{0}\" appears to be already stored".format(obj.name))
+                self.log(
+                    "warning",
+                    f'Skip, file "{obj.name}" appears to be already stored',
+                )
                 return False
 
             if __sessions__.is_attached_misp(quiet=True):
                 if tags is not None:
-                    tags += ',misp:{}'.format(__sessions__.current.misp_event.event.id)
+                    tags += f",misp:{__sessions__.current.misp_event.event.id}"
                 else:
-                    tags = 'misp:{}'.format(__sessions__.current.misp_event.event.id)
+                    tags = f"misp:{__sessions__.current.misp_event.event.id}"
 
             # Try to store file object into database.
             status = Database().add(obj=obj, tags=tags)
@@ -71,7 +86,10 @@ class Store(Command):
                 # we don't want to have the binary lying in the repository with no
                 # associated database record.
                 new_path = store_sample(obj)
-                self.log("success", "Stored file \"{0}\" to {1}".format(obj.name, new_path))
+                self.log(
+                    "success",
+                    f'Stored file "{obj.name}" to {new_path}',
+                )
 
             else:
                 return False
@@ -81,7 +99,7 @@ class Store(Command):
                 try:
                     os.unlink(obj.path)
                 except Exception as e:
-                    self.log('warning', "Failed deleting file: {0}".format(e))
+                    self.log("warning", f"Failed deleting file: {e}")
 
             return True
 
@@ -120,25 +138,31 @@ class Store(Command):
                         if args.file_size:
                             # Obtain file size.
                             if os.path.getsize(file_path) > args.file_size:
-                                self.log('warning', "Skip, file \"{0}\" is too big".format(file_path))
+                                self.log(
+                                    "warning",
+                                    f"Skip, file {file_path} is too big",
+                                )
                                 continue
 
                         file_obj = File(file_path)
 
                         # Add file.
                         add_file(file_obj, args.tags)
-                        if add_file and __config__.get('autorun').enabled:
+                        if add_file and __config__.get("autorun").enabled:
                             autorun_module(file_obj.sha256)
                             # Close the open session to keep the session table clean
                             __sessions__.close()
 
             else:
-                self.log('error', "You specified an invalid folder: {0}".format(args.folder))
+                self.log("error", f"You specified an invalid folder: {args.folder}")
         # Otherwise we try to store the currently opened file, if there is any.
         else:
             if __sessions__.is_set():
                 if __sessions__.current.file.size == 0:
-                    self.log('warning', "Skip, file \"{0}\" appears to be empty".format(__sessions__.current.file.name))
+                    self.log(
+                        "warning",
+                        f'Skip, file "{__sessions__.current.file.name}" appears to be empty',
+                    )
                     return False
 
                 # Add file.
@@ -146,7 +170,9 @@ class Store(Command):
                     # TODO: review this. Is there a better way?
                     # Open session to the new file.
                     Open().run(*[__sessions__.current.file.sha256])
-                    if __config__.get('autorun').enabled:
+                    if __config__.get("autorun").enabled:
                         autorun_module(__sessions__.current.file.sha256)
             else:
-                self.log('error', "No open session. This command expects a file to be open.")
+                self.log(
+                    "error", "No open session. This command expects a file to be open."
+                )

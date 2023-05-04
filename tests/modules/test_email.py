@@ -6,16 +6,13 @@ import os
 import re
 
 import pytest
+
 from tests.conftest import FIXTURE_DIR
-
-from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
-
-from viper.core.session import __sessions__
+from viper.common.abstracts import ArgumentErrorCallback, Module
 from viper.core.plugins import __modules__
+from viper.core.session import __sessions__
 
-
-emailparse = __modules__['email']["obj"]
+emailparse = __modules__["email"]["obj"]
 
 
 class TestEmailParse:
@@ -54,15 +51,19 @@ class TestEmailParse:
         out, err = capsys.readouterr()
         assert re.search(r".*unrecognized arguments:.*", out)
 
-    @pytest.mark.parametrize("filename,expected", [("junk.eml", [r'.*Google Award 2017.pdf.*']),
-                                                   ("junk2.eml", [r'.*Photocopy04062017.*']),
-                                                   ("junk3.eml", [r'.*http://www.earthworksjax.com.*']),
-                                                   ("unicode.msg", [r'.*raisedva.tif.*']),
-                                                   ])
+    @pytest.mark.parametrize(
+        "filename,expected",
+        [
+            ("junk.eml", [r".*Google Award 2017.pdf.*"]),
+            ("junk2.eml", [r".*Photocopy04062017.*"]),
+            ("junk3.eml", [r".*http://www.earthworksjax.com.*"]),
+            ("unicode.msg", [r".*raisedva.tif.*"]),
+        ],
+    )
     def test_all(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = emailparse()
-        instance.command_line = ['-a']
+        instance.command_line = ["-a"]
 
         instance.run()
         out, err = capsys.readouterr()

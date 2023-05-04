@@ -6,15 +6,13 @@ import os
 import re
 
 import pytest
+
 from tests.conftest import FIXTURE_DIR
-
-from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
-
-from viper.core.session import __sessions__
+from viper.common.abstracts import ArgumentErrorCallback, Module
 from viper.core.plugins import __modules__
+from viper.core.session import __sessions__
 
-clamav = __modules__['clamav']["obj"]
+clamav = __modules__["clamav"]["obj"]
 
 
 class TestClamAV:
@@ -66,7 +64,7 @@ class TestClamAV:
 
     def test_run_all(self, capsys):
         instance = clamav()
-        instance.set_commandline(['-a', '-t'])
+        instance.set_commandline(["-a", "-t"])
 
         instance.run()
         out, err = capsys.readouterr()

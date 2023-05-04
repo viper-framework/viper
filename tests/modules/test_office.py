@@ -6,15 +6,13 @@ import os
 import re
 
 import pytest
+
 from tests.conftest import FIXTURE_DIR
-
-from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
-
-from viper.core.session import __sessions__
+from viper.common.abstracts import ArgumentErrorCallback, Module
 from viper.core.plugins import __modules__
+from viper.core.session import __sessions__
 
-office = __modules__['office']["obj"]
+office = __modules__["office"]["obj"]
 
 
 class TestOffice:
@@ -86,11 +84,21 @@ class TestOffice:
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*Macros/kfjtir .* 2017-04-09 19:03:45.905000 | 2017-04-09 19:03:45.920000.*", out)
+        assert re.search(
+            r".*Macros/kfjtir .* 2017-04-09 19:03:45.905000 | 2017-04-09 19:03:45.920000.*",
+            out,
+        )
 
-    @pytest.mark.parametrize("filename,expected",
-                             [("Douglas-Resume.doc", [r".*zxsfg.bas.*", r".*.paya.exe.*"]),
-                              ("9afa90370cfd217ae1ec36e752a393537878a2f3b5f9159f61690e7790904b0d", [r".*Workbook_Open.*", r".*SbieDll.dll.*"])])
+    @pytest.mark.parametrize(
+        "filename,expected",
+        [
+            ("Douglas-Resume.doc", [r".*zxsfg.bas.*", r".*.paya.exe.*"]),
+            (
+                "9afa90370cfd217ae1ec36e752a393537878a2f3b5f9159f61690e7790904b0d",
+                [r".*Workbook_Open.*", r".*SbieDll.dll.*"],
+            ),
+        ],
+    )
     def test_vba(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = office()
@@ -103,11 +111,13 @@ class TestOffice:
             assert re.search(e, out)
 
     @pytest.mark.usefixtures("cleandir")
-    @pytest.mark.parametrize("filename", ["c026ebfa3a191d4f27ee72f34fa0d97656113be368369f605e7845a30bc19f6a"])
+    @pytest.mark.parametrize(
+        "filename", ["c026ebfa3a191d4f27ee72f34fa0d97656113be368369f605e7845a30bc19f6a"]
+    )
     def test_export(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = office()
-        instance.command_line = ["-e", 'out_all']
+        instance.command_line = ["-e", "out_all"]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -119,7 +129,7 @@ class TestOffice:
     def test_code(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = office()
-        instance.command_line = ["-c", 'out_macro']
+        instance.command_line = ["-c", "out_macro"]
 
         instance.run()
         out, err = capsys.readouterr()

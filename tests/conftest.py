@@ -2,18 +2,25 @@
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import pytest
-import tempfile
 import os
 import shutil
 import sys
+import tempfile
 
-FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'viper-test-files/test_files',)
+import pytest
+
+FIXTURE_DIR = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "viper-test-files/test_files",
+)
 
 collect_ignore = []
-if sys.version_info < (3, 6,):
-    collect_ignore.append('modules/test_misp.py')
-    collect_ignore.append('modules/test_lief.py')
+if sys.version_info < (
+    3,
+    6,
+):
+    collect_ignore.append("modules/test_misp.py")
+    collect_ignore.append("modules/test_lief.py")
 
 
 @pytest.fixture()

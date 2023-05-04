@@ -1,16 +1,14 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import argparse
 import os
 import sys
-import argparse
 
-from viper.core.ui import console
 from viper.common.version import __version__
 from viper.core.project import __project__
 from viper.core.session import __sessions__
+from viper.core.ui import console
 
 
 def main():
@@ -20,17 +18,16 @@ def main():
         "--project",
         help="Specify a new or existing project name",
         action="store",
-        required=False)
+        required=False,
+    )
     parser.add_argument(
         "-f",
         "--file",
         help="Specify a file to be opened directly",
         action="store",
-        required=False)
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=__version__)
+        required=False,
+    )
+    parser.add_argument("--version", action="version", version=__version__)
 
     args = parser.parse_args()
 

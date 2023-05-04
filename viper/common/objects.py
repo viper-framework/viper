@@ -1,17 +1,11 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
-import hashlib
 import binascii
-import sys
-from viper.common.exceptions import Python2UnsupportedUnicode
-import six
+import hashlib
+import os
 
-if sys.version_info < (3, 0):
-    # Make sure the read method returns a byte stream
-    from io import open
+import six
 
 try:
     import pydeep
@@ -52,7 +46,7 @@ class MispEvent(object):
                 self.event.load(event)
         self.off = offline
         if self.event.id:
-            self.current_dump_file = '{}.json'.format(self.event.id)
+            self.current_dump_file = f"{self.event_id}.json"
         else:
             self.current_dump_file = None
 
@@ -63,27 +57,31 @@ class MispEvent(object):
         self.off = True
 
     def get_all_ips(self):
-        return [a.value for a in self.event.attributes if a.type in ['ip-dst', 'ip-src']]
+        return [
+            a.value for a in self.event.attributes if a.type in ["ip-dst", "ip-src"]
+        ]
 
     def get_all_domains(self):
-        return [a.value for a in self.event.attributes if a.type in ['domain', 'hostname']]
+        return [
+            a.value for a in self.event.attributes if a.type in ["domain", "hostname"]
+        ]
 
     def get_all_urls(self):
-        return [a.value for a in self.event.attributes if a.type == 'url']
+        return [a.value for a in self.event.attributes if a.type == "url"]
 
     def get_all_hashes(self):
         event_hashes = []
         sample_hashes = []
         for a in self.event.attributes:
             h = None
-            if a.type in ('md5', 'sha1', 'sha256'):
+            if a.type in ("md5", "sha1", "sha256"):
                 h = a.value
                 event_hashes.append(h)
-            elif a.type in ('filename|md5', 'filename|sha1', 'filename|sha256'):
-                h = a.value.split('|')[1]
+            elif a.type in ("filename|md5", "filename|sha1", "filename|sha256"):
+                h = a.value.split("|")[1]
                 event_hashes.append(h)
-            elif a.type == 'malware-sample':
-                h = a.value.split('|')[1]
+            elif a.type == "malware-sample":
+                h = a.value.split("|")[1]
                 sample_hashes.append(h)
         return event_hashes, sample_hashes
 
@@ -108,19 +106,19 @@ class File(object):
     def __init__(self, path):
         self.id = None
         self.path = path
-        self.name = ''
+        self.name = ""
         self.size = 0
-        self.type = ''
-        self.mime = ''
-        self.md5 = ''
-        self.sha1 = ''
-        self.sha256 = ''
-        self.sha512 = ''
-        self.crc32 = ''
-        self.ssdeep = ''
-        self.tags = ''
-        self.parent = ''
-        self.children = ''
+        self.type = ""
+        self.mime = ""
+        self.md5 = ""
+        self.sha1 = ""
+        self.sha256 = ""
+        self.sha512 = ""
+        self.crc32 = ""
+        self.ssdeep = ""
+        self.tags = ""
+        self.parent = ""
+        self.children = ""
 
         if self.is_valid():
             self.name = os.path.basename(self.path)
@@ -132,7 +130,7 @@ class File(object):
 
     @property
     def data(self):
-        with open(self.path, 'rb') as f:
+        with open(self.path, "rb") as f:
             return f.read()
 
     def is_valid(self):
@@ -141,26 +139,11 @@ class File(object):
         if not os.path.isfile(self.path):
             return False
 
-        if sys.version_info < (3, 0):
-            # on Python2 make sure to only handle ASCII filenames
-            try:
-                self.path.decode('ascii')
-            except UnicodeEncodeError as err:
-                raise Python2UnsupportedUnicode("Non ASCII character(s) in file name not supported on Python2.\n"
-                                                "EncodeError: {}\n"
-                                                "File: {}\n"
-                                                "Please use Python >= 3.4".format(self.path.encode("utf-8"), err), "error")
-            except UnicodeDecodeError as err:
-                raise Python2UnsupportedUnicode("Non ASCII character(s) in file name not supported on Python2.\n"
-                                                "DecodeError: {}\n"
-                                                "File: {}\n"
-                                                "Please use Python >= 3.4".format(self.path, err), "error")
-
         return True
 
     def get_chunks(self):
         try:
-            with open(self.path, 'rb') as fd:
+            with open(self.path, "rb") as fd:
                 while True:
                     chunk = fd.read(16 * 1024)
                     if not chunk:
@@ -183,7 +166,7 @@ class File(object):
             sha256.update(chunk)
             sha512.update(chunk)
 
-        self.crc32 = ''.join('%02X' % ((crc >> i) & 0xff) for i in [24, 16, 8, 0])
+        self.crc32 = "".join("%02X" % ((crc >> i) & 0xFF) for i in [24, 16, 8, 0])
         self.md5 = md5.hexdigest()
         self.sha1 = sha1.hexdigest()
         self.sha256 = sha256.hexdigest()
@@ -191,12 +174,12 @@ class File(object):
 
     def get_ssdeep(self):
         if not HAVE_SSDEEP:
-            return ''
+            return ""
 
         try:
             return pydeep.hash_file(self.path).decode()
         except Exception:
-            return ''
+            return ""
 
     def get_type(self):
         try:
@@ -209,10 +192,13 @@ class File(object):
             except Exception:
                 try:
                     import subprocess
-                    file_process = subprocess.Popen(['file', '-b', self.path], stdout=subprocess.PIPE)
+
+                    file_process = subprocess.Popen(
+                        ["file", "-b", self.path], stdout=subprocess.PIPE
+                    )
                     file_type = file_process.stdout.read().strip().decode("utf-8")
                 except Exception:
-                    return ''
+                    return ""
         finally:
             try:
                 ms.close()
@@ -231,7 +217,7 @@ class File(object):
                 mime = magic.Magic(mime=True)
                 mime_type = mime.from_file(self.path)
             except Exception:
-                return ''
+                return ""
 
         return mime_type
 

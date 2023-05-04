@@ -7,23 +7,22 @@ import re
 import sys
 
 import pytest
-from tests.conftest import FIXTURE_DIR
 
-from viper.core.session import __sessions__
+from tests.conftest import FIXTURE_DIR
+from viper.common.abstracts import ArgumentErrorCallback, Module
 from viper.core.config import __config__
 from viper.core.plugins import __modules__
-
-from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
+from viper.core.session import __sessions__
 
 try:
-    from .keys import url, apikey, vt_key
+    from .keys import apikey, url, vt_key
+
     live_tests = True
 except ImportError:
     live_tests = False
 
 
-misp = __modules__['misp']["obj"]
+misp = __modules__["misp"]["obj"]
 
 
 class TestMISP:
@@ -64,26 +63,30 @@ class TestMISP:
 
     def test_tag_list(self, capsys):
         instance = misp()
-        instance.command_line = ['--off', 'tag', '--list']
+        instance.command_line = ["--off", "tag", "--list"]
 
         instance.run()
         out, err = capsys.readouterr()
 
         assert re.search(r".*CIRCL Taxonomy.*", out)
 
-    @pytest.mark.skipif(sys.version_info < (3, 0), reason="Encoding foobar, don't care.")
+    @pytest.mark.skipif(
+        sys.version_info < (3, 0), reason="Encoding foobar, don't care."
+    )
     def test_tag_search(self, capsys):
         instance = misp()
-        instance.command_line = ['--off', 'tag', '-s', 'ciRcl']
+        instance.command_line = ["--off", "tag", "-s", "ciRcl"]
 
         instance.run()
         out, err = capsys.readouterr()
 
-        assert re.search(r".*circl:incident-classification=\"system-compromise\".*", out)
+        assert re.search(
+            r".*circl:incident-classification=\"system-compromise\".*", out
+        )
 
     def test_tag_details(self, capsys):
         instance = misp()
-        instance.command_line = ['--off', 'tag', '-d', 'circl']
+        instance.command_line = ["--off", "tag", "-d", "circl"]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -92,7 +95,7 @@ class TestMISP:
 
     def test_galaxies_list(self, capsys):
         instance = misp()
-        instance.command_line = ['--off', 'galaxies', '--list']
+        instance.command_line = ["--off", "galaxies", "--list"]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -101,7 +104,7 @@ class TestMISP:
 
     def test_galaxies_search(self, capsys):
         instance = misp()
-        instance.command_line = ['--off', 'galaxies', '--search', 'foo']
+        instance.command_line = ["--off", "galaxies", "--search", "foo"]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -110,7 +113,7 @@ class TestMISP:
 
     def test_galaxies_list_cluster(self, capsys):
         instance = misp()
-        instance.command_line = ['--off', 'galaxies', '-d', 'rat']
+        instance.command_line = ["--off", "galaxies", "-d", "rat"]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -119,7 +122,7 @@ class TestMISP:
 
     def test_galaxies_list_cluster_value(self, capsys):
         instance = misp()
-        instance.command_line = ['--off', 'galaxies', '-d', 'rat', '-v', 'BlackNix']
+        instance.command_line = ["--off", "galaxies", "-d", "rat", "-v", "BlackNix"]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -130,7 +133,16 @@ class TestMISP:
     @pytest.mark.skipif(not live_tests, reason="No API key provided")
     def test_create_event(self, capsys):
         instance = misp()
-        instance.command_line = ['--url', url, '-k', apikey, '-v', 'create_event', '-i', 'Viper test event']
+        instance.command_line = [
+            "--url",
+            url,
+            "-k",
+            apikey,
+            "-v",
+            "create_event",
+            "-i",
+            "Viper test event",
+        ]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -138,32 +150,53 @@ class TestMISP:
         assert re.search(r".*Session opened on MISP event.*", out)
         event_id = re.findall(r".*Session opened on MISP event (.*)\..*", out)[0]
 
-        instance.command_line = ['--url', url, '-k', apikey, '-v', 'add', 'ip-dst', '8.8.8.8']
+        instance.command_line = [
+            "--url",
+            url,
+            "-k",
+            apikey,
+            "-v",
+            "add",
+            "ip-dst",
+            "8.8.8.8",
+        ]
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(rf".*Session on MISP event {event_id} refreshed.*", out)
 
-        instance.command_line = ['--url', url, '-k', apikey, '-v', 'show']
+        instance.command_line = ["--url", url, "-k", apikey, "-v", "show"]
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(r".*ip-dst | 8.8.8.8.*", out)
 
-        __sessions__.new(os.path.join(FIXTURE_DIR, 'chromeinstall-8u31.exe'))
+        __sessions__.new(os.path.join(FIXTURE_DIR, "chromeinstall-8u31.exe"))
 
-        instance.command_line = ['add_hashes']
+        instance.command_line = ["add_hashes"]
         instance.run()
         out, err = capsys.readouterr()
         assert re.search(rf".*Session on MISP event {event_id} refreshed.*", out)
-        instance.command_line = ['--url', url, '-k', apikey, '-v', 'show']
+        instance.command_line = ["--url", url, "-k", apikey, "-v", "show"]
         instance.run()
         out, err = capsys.readouterr()
-        assert re.search(rf".*sha256[ ]*| 583a2d05ff0d4864f525a6cdd3bfbd549616d9e1d84e96fe145794ba0519d752.*", out)
+        assert re.search(
+            rf".*sha256[ ]*| 583a2d05ff0d4864f525a6cdd3bfbd549616d9e1d84e96fe145794ba0519d752.*",
+            out,
+        )
 
     # Live tests - require a MISP instance.
     @pytest.mark.skipif(not live_tests, reason="No API key provided")
     def test_check_hashes(self, capsys):
         instance = misp()
-        instance.command_line = ['--url', url, '-k', apikey, '-v', 'create_event', '-i', 'Viper test event - check hashes']
+        instance.command_line = [
+            "--url",
+            url,
+            "-k",
+            apikey,
+            "-v",
+            "create_event",
+            "-i",
+            "Viper test event - check hashes",
+        ]
 
         instance.run()
         out, err = capsys.readouterr()
@@ -171,7 +204,16 @@ class TestMISP:
         assert re.search(r".*Session opened on MISP event.*", out)
         event_id = re.findall(r".*Session opened on MISP event (.*)\..*", out)[0]
 
-        instance.command_line = ['--url', url, '-k', apikey, '-v', 'add', 'sha1', 'afeee8b4acff87bc469a6f0364a81ae5d60a2add']
+        instance.command_line = [
+            "--url",
+            url,
+            "-k",
+            apikey,
+            "-v",
+            "add",
+            "sha1",
+            "afeee8b4acff87bc469a6f0364a81ae5d60a2add",
+        ]
         instance.run()
         out, err = capsys.readouterr()
 
@@ -179,7 +221,7 @@ class TestMISP:
 
         __config__.virustotal.virustotal_key = vt_key
 
-        instance.command_line = ['--url', url, '-k', apikey, 'check_hashes', '-p']
+        instance.command_line = ["--url", url, "-k", apikey, "check_hashes", "-p"]
         instance.run()
         out, err = capsys.readouterr()
         # print(out, err)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -12,6 +11,7 @@ class Close(Command):
     After that, all handles to the opened file should be closed and the
     shell should be restored to the default prompt.
     """
+
     cmd = "close"
     description = "Close the current session"
 

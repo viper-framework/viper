@@ -6,18 +6,16 @@ import os
 import re
 
 import pytest
+
 from tests.conftest import FIXTURE_DIR
-
 from viper.common.abstracts import Module
-
-from viper.core.session import __sessions__
 from viper.core.plugins import __modules__
+from viper.core.session import __sessions__
 
-macho = __modules__['macho']["obj"]
+macho = __modules__["macho"]["obj"]
 
 
 class Testmacho:
-
     def teardown_method(self):
         __sessions__.close()
 
@@ -59,10 +57,13 @@ class Testmacho:
         lines = out.split("\n")
         assert re.search(r".*Session opened on.*", lines[0])
 
-    @pytest.mark.parametrize("filename,magic,cputype", [
-        ("MachO-OSX-x86-ls", "0xfeedface - 32 bits", "0x7 - i386"),
-        ("MachO-OSX-x64-ls", "0xfeedfacf - 64 bits", "0x1000007 - x86_64")
-    ])
+    @pytest.mark.parametrize(
+        "filename,magic,cputype",
+        [
+            ("MachO-OSX-x86-ls", "0xfeedface - 32 bits", "0x7 - i386"),
+            ("MachO-OSX-x64-ls", "0xfeedfacf - 64 bits", "0x1000007 - x86_64"),
+        ],
+    )
     def test_headers(self, capsys, filename, magic, cputype):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = macho()
@@ -76,9 +77,7 @@ class Testmacho:
         assert re.search(r".*{}.*".format(magic), out)
         assert re.search(r".*{}.*".format(cputype), out)
 
-    @pytest.mark.parametrize("filename,amount_segments", [
-        ("MachO-OSX-x86-ls", 4)
-    ])
+    @pytest.mark.parametrize("filename,amount_segments", [("MachO-OSX-x86-ls", 4)])
     def test_segments(self, capsys, filename, amount_segments):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = macho()
@@ -90,9 +89,12 @@ class Testmacho:
         lines = out.split("\n")
         assert re.search(r".*Segments \({}\)".format(amount_segments), lines[1])
 
-    @pytest.mark.parametrize("filename,amount_commands", [
-        ("MachO-OSX-x86-ls", 12),
-    ])
+    @pytest.mark.parametrize(
+        "filename,amount_commands",
+        [
+            ("MachO-OSX-x86-ls", 12),
+        ],
+    )
     def test_load_commands(self, capsys, filename, amount_commands):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = macho()

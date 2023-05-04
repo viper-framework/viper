@@ -6,15 +6,13 @@ import os
 import re
 
 import pytest
+
 from tests.conftest import FIXTURE_DIR
-
-from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
-
-from viper.core.session import __sessions__
+from viper.common.abstracts import ArgumentErrorCallback, Module
 from viper.core.plugins import __modules__
+from viper.core.session import __sessions__
 
-swf = __modules__['swf']["obj"]
+swf = __modules__["swf"]["obj"]
 
 
 class TestSWF:
@@ -53,7 +51,9 @@ class TestSWF:
         out, err = capsys.readouterr()
         assert re.search(r".*unrecognized arguments:.*", out)
 
-    @pytest.mark.parametrize("filename", ["ObjectPool-_1398590705-Contents-FLASH-Decompressed1"])
+    @pytest.mark.parametrize(
+        "filename", ["ObjectPool-_1398590705-Contents-FLASH-Decompressed1"]
+    )
     def test_meta(self, capsys, filename):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
         instance = swf()

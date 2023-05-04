@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -11,6 +10,7 @@ class Find(Command):
     """
     This command is used to search for files in the database.
     """
+
     cmd = "find"
     description = "Find a file"
 
@@ -18,9 +18,29 @@ class Find(Command):
         super(Find, self).__init__()
 
         group = self.parser.add_mutually_exclusive_group()
-        group.add_argument('-t', '--tags', action='store_true', help="List available tags and quit")
-        group.add_argument('type', nargs='?', choices=["all", "latest", "name", "type", "mime", "md5", "sha1", "sha256", "tag", "note", "any", "ssdeep"], help="Where to search.")
-        self.parser.add_argument("value", nargs='?', help="String to search.")
+        group.add_argument(
+            "-t", "--tags", action="store_true", help="List available tags and quit"
+        )
+        group.add_argument(
+            "type",
+            nargs="?",
+            choices=[
+                "all",
+                "latest",
+                "name",
+                "type",
+                "mime",
+                "md5",
+                "sha1",
+                "sha256",
+                "tag",
+                "note",
+                "any",
+                "ssdeep",
+            ],
+            help="Where to search.",
+        )
+        self.parser.add_argument("value", nargs="?", help="String to search.")
 
     def run(self, *args):
         try:
@@ -41,15 +61,15 @@ class Find(Command):
                 rows = []
                 # For each tag, retrieve the count of files associated with it.
                 for tag in tags:
-                    count = len(db.find('tag', tag.tag))
+                    count = len(db.find("tag", tag.tag))
                     rows.append([tag.tag, count])
 
                 # Generate the table with the results.
-                header = ['Tag', '# Entries']
+                header = ["Tag", "# Entries"]
                 rows.sort(key=lambda x: x[1], reverse=True)
-                self.log('table', dict(header=header, rows=rows))
+                self.log("table", dict(header=header, rows=rows))
             else:
-                self.log('warning', "No tags available")
+                self.log("warning", "No tags available")
 
             return
 
@@ -59,12 +79,12 @@ class Find(Command):
             return
 
         key = args.type
-        if key != 'all' and key != 'latest':
+        if key != "all" and key != "latest":
             try:
                 # The second argument is the search value.
                 value = args.value
             except IndexError:
-                self.log('error', "You need to include a search term.")
+                self.log("error", "You need to include a search term")
                 return
         else:
             value = None
@@ -78,11 +98,11 @@ class Find(Command):
         rows = []
         count = 1
         for item in items:
-            tag = ', '.join([t.tag for t in item.tag if t.tag])
-            row = [count, item.name, item.mime, item.md5, tag]
-            if key == 'ssdeep':
+            tag = ", ".join([t.tag for t in item.tag if t.tag])
+            row = [str(count), item.name, item.mime, item.md5, tag]
+            if key == "ssdeep":
                 row.append(item.ssdeep)
-            if key == 'latest':
+            if key == "latest":
                 row.append(item.created_at)
 
             rows.append(row)
@@ -92,10 +112,10 @@ class Find(Command):
         __sessions__.find = items
 
         # Generate a table with the results.
-        header = ['#', 'Name', 'Mime', 'MD5', 'Tags']
-        if key == 'latest':
-            header.append('Created At')
-        if key == 'ssdeep':
-            header.append("Ssdeep")
+        columns = ["#", "Name", "Mime", "MD5", "Tags"]
+        if key == "latest":
+            columns.append("Created At")
+        if key == "ssdeep":
+            columns.append("Ssdeep")
 
-        self.log("table", dict(header=header, rows=rows))
+        self.log("table", {"columns": columns, "rows": rows})

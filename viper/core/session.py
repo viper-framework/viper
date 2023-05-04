@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import time
 import datetime
+import time
 
-from viper.common.out import print_info, print_error
 from viper.common.objects import File
+from viper.common.out import print_error, print_info
 from viper.core.database import Database
 
 
@@ -17,7 +16,9 @@ class Session(object):
         # being analyzed.
         self.file = None
         # Timestamp of the creation of the session.
-        self.created_at = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        self.created_at = datetime.datetime.fromtimestamp(time.time()).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         # MISP event associated to the object
         self.misp_event = None
 
@@ -63,7 +64,11 @@ class Sessions(object):
 
     def switch(self, session):
         self.current = session
-        print_info("Switched to session #{0} on {1}".format(self.current.id, self.current.file.path))
+        print_info(
+            "Switched to session #{0} on {1}".format(
+                self.current.id, self.current.file.path
+            )
+        )
 
     def new(self, path=None, misp_event=None):
         if not path and not misp_event:
@@ -83,14 +88,18 @@ class Sessions(object):
             session.file = File(path)
             # Try to lookup the file in the database. If it is already present
             # we get its database ID, file name, and tags.
-            row = Database().find(key='sha256', value=session.file.sha256)
+            row = Database().find(key="sha256", value=session.file.sha256)
             if row:
                 session.file.id = row[0].id
                 session.file.name = row[0].name
-                session.file.tags = ', '.join(tag.to_dict()['tag'] for tag in row[0].tag)
+                session.file.tags = ", ".join(
+                    tag.to_dict()["tag"] for tag in row[0].tag
+                )
 
                 if row[0].parent:
-                    session.file.parent = '{0} - {1}'.format(row[0].parent.name, row[0].parent.sha256)
+                    session.file.parent = "{0} - {1}".format(
+                        row[0].parent.name, row[0].parent.sha256
+                    )
                 session.file.children = Database().get_children(row[0].id)
 
             print_info("Session opened on {0}".format(path))
@@ -99,17 +108,24 @@ class Sessions(object):
             if self.is_set() and path is None and self.current.file:
                 session.file = self.current.file
             refresh = False
-            if (self.current is not None and self.current.misp_event is not None and
-                    self.current.misp_event.event.id is not None and
-                    self.current.misp_event.event.id == misp_event.event.id):
+            if (
+                self.current is not None
+                and self.current.misp_event is not None
+                and self.current.misp_event.event.id is not None
+                and self.current.misp_event.event.id == misp_event.event.id
+            ):
                 refresh = True
             session.misp_event = misp_event
             if refresh:
-                print_info("Session on MISP event {0} refreshed.".format(misp_event.event.id))
+                print_info(
+                    "Session on MISP event {0} refreshed.".format(misp_event.event.id)
+                )
             elif not misp_event.event.id:
                 print_info("Session opened on a new local MISP event.")
             else:
-                print_info("Session opened on MISP event {0}.".format(misp_event.event.id))
+                print_info(
+                    "Session opened on MISP event {0}.".format(misp_event.event.id)
+                )
 
         if session.file:
             # Loop through all existing sessions and check whether there's another

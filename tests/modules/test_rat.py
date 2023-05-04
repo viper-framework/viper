@@ -4,20 +4,18 @@
 
 import os
 import re
+
 import pytest
+
 from tests.conftest import FIXTURE_DIR
-
-from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
-
-from viper.core.session import __sessions__
+from viper.common.abstracts import ArgumentErrorCallback, Module
 from viper.core.plugins import __modules__
+from viper.core.session import __sessions__
 
-rat = __modules__['rat']["obj"]
+rat = __modules__["rat"]["obj"]
 
 
 class TestRAT:
-
     def teardown_method(self):
         __sessions__.close()
 
@@ -61,7 +59,7 @@ class TestRAT:
 
         instance.run()
         out, err = capsys.readouterr()
-        assert re.search(r'.*No open session.*', out)
+        assert re.search(r".*No open session.*", out)
 
     def test_run_family_no_session(self, capsys):
         instance = rat()
@@ -69,11 +67,14 @@ class TestRAT:
 
         instance.run()
         out, err = capsys.readouterr()
-        assert re.search(r'.*No open session.*', out)
+        assert re.search(r".*No open session.*", out)
 
-    @pytest.mark.parametrize("filename, expected", [
-        ("chromeinstall-8u31.exe", False),
-    ])
+    @pytest.mark.parametrize(
+        "filename, expected",
+        [
+            ("chromeinstall-8u31.exe", False),
+        ],
+    )
     def test_run_family_no_module(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
 
@@ -84,12 +85,15 @@ class TestRAT:
 
         instance.run()
         out, err = capsys.readouterr()
-        assert re.search(r'.*There is no module for family.*', out)
+        assert re.search(r".*There is no module for family.*", out)
 
-    @pytest.mark.parametrize("filename, expected", [
-        ("chromeinstall-8u31.exe", False),
-        # ("chromeinstall-8u31.exe", True),
-    ])
+    @pytest.mark.parametrize(
+        "filename, expected",
+        [
+            ("chromeinstall-8u31.exe", False),
+            # ("chromeinstall-8u31.exe", True),
+        ],
+    )
     def test_run_auto(self, capsys, filename, expected):
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
 
@@ -99,14 +103,17 @@ class TestRAT:
         instance.run()
         out, err = capsys.readouterr()
         if expected:
-            assert re.search(r'.*Automatically detected supported.*', out)
+            assert re.search(r".*Automatically detected supported.*", out)
         else:
-            assert re.search(r'.*No known RAT detected.*', out)
+            assert re.search(r".*No known RAT detected.*", out)
 
-    @pytest.mark.parametrize("filename, expected", [
-        ("chromeinstall-8u31.exe", False),
-        # ("chromeinstall-8u31.exe", True),
-    ])
+    @pytest.mark.parametrize(
+        "filename, expected",
+        [
+            ("chromeinstall-8u31.exe", False),
+            # ("chromeinstall-8u31.exe", True),
+        ],
+    )
     def test_run_family_adwind(self, capsys, filename, expected):
         # FIXME: this test isn't really useful.
         __sessions__.new(os.path.join(FIXTURE_DIR, filename))
@@ -117,6 +124,6 @@ class TestRAT:
         instance.run()
         out, err = capsys.readouterr()
         if expected:
-            assert re.search(r'.*Automatically detected supported.*', out)
+            assert re.search(r".*Automatically detected supported.*", out)
         else:
-            assert re.search(r'.*There is no module for family.*', out)
+            assert re.search(r".*There is no module for family.*", out)

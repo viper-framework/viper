@@ -1,26 +1,26 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
-from os.path import expanduser
-import sys
-import glob
 import atexit
+import glob
 import logging
+import os
 import readline
+import sys
 import traceback
+from os.path import expanduser
 
-from viper.common.out import print_error
+from rich.console import Console as RichConsole
+
 # from viper.common.out import print_output  # currently not used
-from viper.common.colors import cyan, magenta, white, bold, blue, red
+from viper.common.out import print_error
 from viper.common.version import __version__
-from viper.core.session import __sessions__
+from viper.core.config import __config__, console_output
+from viper.core.database import Database
 from viper.core.plugins import __modules__
 from viper.core.project import __project__, get_project_list
+from viper.core.session import __sessions__
 from viper.core.ui.commands import Commands
-from viper.core.database import Database
-from viper.core.config import __config__, console_output
 
 log = logging.getLogger("viper")
 
@@ -29,14 +29,15 @@ cfg.parse_http_client()
 
 
 def logo():
-    print("""         _
-        (_)
-   _   _ _ ____  _____  ____
-  | | | | |  _ \\| ___ |/ ___)
-   \\ V /| | |_| | ____| |
-    \\_/ |_|  __/|_____)_| v{}
-          |_|
-    """.format(__version__))
+    print(
+        f"""
+  ██    ██ ██ ██████  ███████ ██████  
+  ██    ██ ██ ██   ██ ██      ██   ██ 
+  ██    ██ ██ ██████  █████   ██████  
+   ██  ██  ██ ██      ██      ██   ██ 
+    ████   ██ ██      ███████ ██   ██  v{__version__}
+"""
+    )
 
     db = Database()
     count = db.get_sample_count()
@@ -51,23 +52,26 @@ def logo():
     else:
         name = "default"
 
-    print(magenta("You have " + bold(count)) +
-          magenta(" files in your " + bold(name)) +
-          magenta(" repository."))
+    console = RichConsole()
+    console.print(
+        f"[magenta]You have [bold]{count}[/bold] files in your [bold]{name}[/bold] repository"
+    )
 
     modules_count = len(__modules__)
     if modules_count == 0:
         print("")
-        print(red(bold("You do not have any modules installed!")))
-        print(red("If you wish to download community modules from GitHub run:"))
-        print(red(bold("    update-modules")))
+        console.print("[bold red]You do not have any modules installed![/bold red]")
+        console.print(
+            "[red]If you wish to download community modules from GitHub run:[/red]"
+        )
+        console.print("[bold red]    update-modules[/bold red]")
     else:
-        print(magenta("You have " + bold(modules_count)) +
-              magenta(" modules installed."))
+        console.print(
+            f"[magenta]You have [bold]{modules_count}[/bold] modules installed"
+        )
 
 
 class Console(object):
-
     def __init__(self):
         # This will keep the main loop active as long as it's set to True.
         self.active = True
@@ -120,13 +124,19 @@ class Console(object):
 
             # clean up user input so far (no leading/trailing/duplicate spaces)
             line = " ".join(readline.get_line_buffer().split())
-            words = line.split(" ")  # split words; e.g. store -f /tmp -> ["store", "-f", "/tmp"]
+            words = line.split(
+                " "
+            )  # split words; e.g. store -f /tmp -> ["store", "-f", "/tmp"]
 
             if words[0] in [i for i in self.cmd.commands]:
                 # handle completion for commands
 
                 # enable filesystem path completion for certain commands (e.g. export, store)
-                if words[0] in [x for x in self.cmd.commands if self.cmd.commands[x]["fs_path_completion"]]:
+                if words[0] in [
+                    x
+                    for x in self.cmd.commands
+                    if self.cmd.commands[x]["fs_path_completion"]
+                ]:
                     fs_path_completion = True
 
                 options = [key for key in self.cmd.commands[words[0]]["parser_args"]]
@@ -140,7 +150,9 @@ class Console(object):
                 if words[0] == "copy":
                     options += get_project_list()
 
-                completions = [i for i in options if i.startswith(text) and i not in words]
+                completions = [
+                    i for i in options if i.startswith(text) and i not in words
+                ]
 
             elif words[0] in [i for i in __modules__]:
                 # handle completion for modules
@@ -157,20 +169,30 @@ class Console(object):
 
                     elif words[1] in list(__modules__[words[0]]["subparser_args"]):
                         # subparser is specified - get all subparser args
-                        options = [key for key in __modules__[words[0]]["subparser_args"][words[1]]]
+                        options = [
+                            key
+                            for key in __modules__[words[0]]["subparser_args"][words[1]]
+                        ]
 
                     else:
                         options = [key for key in __modules__[words[0]]["parser_args"]]
-                        options += [key for key in __modules__[words[0]]["subparser_args"]]
+                        options += [
+                            key for key in __modules__[words[0]]["subparser_args"]
+                        ]
 
                 else:  # more that 2 words
                     if words[1] in list(__modules__[words[0]]["subparser_args"]):
                         # subparser is specified - get all subparser args
-                        options = [key for key in __modules__[words[0]]["subparser_args"][words[1]]]
+                        options = [
+                            key
+                            for key in __modules__[words[0]]["subparser_args"][words[1]]
+                        ]
                     else:
                         options = [key for key in __modules__[words[0]]["parser_args"]]
 
-                completions = [i for i in options if i.startswith(text) and i not in words]
+                completions = [
+                    i for i in options if i.startswith(text) and i not in words
+                ]
 
             else:
                 # initial completion for both commands and modules
@@ -219,15 +241,17 @@ class Console(object):
             # status changes.
             prefix = ""
             if __project__.name:
-                prefix = bold(cyan(__project__.name)) + " "
+                prefix = f"[bold cyan]{__project__.name}[/bold cyan] "
 
             if __sessions__.is_set():
                 stored = ""
                 filename = ""
                 if __sessions__.current.file:
                     filename = __sessions__.current.file.name
-                    if not Database().find(key="sha256", value=__sessions__.current.file.sha256):
-                        stored = magenta(" [not stored]", True)
+                    if not Database().find(
+                        key="sha256", value=__sessions__.current.file.sha256
+                    ):
+                        stored = " [magenta][not stored][/magenta]"
 
                 misp = ""
                 if __sessions__.current.misp_event:
@@ -240,21 +264,15 @@ class Console(object):
                         misp += " (Offline)"
                     misp += "]"
 
-                prompt = (prefix + cyan("viper ", True) +
-                          white(filename, True) + blue(misp, True) + stored + cyan(" > ", True))
+                prompt = f"{prefix}[cyan]viper [/cyan][white]{filename}[/white][blue]{misp}[/blue]{stored}[cyan]> [/cyan]"
             # Otherwise display the basic prompt.
             else:
-                prompt = prefix + cyan("viper > ", True)
-
-            # force str (Py3) / unicode (Py2) for prompt
-            if sys.version_info <= (3, 0):
-                prompt = prompt.encode("utf-8")
-            else:
-                prompt = str(prompt)
+                prompt = f"{prefix}[cyan]viper > [/cyan]"
 
             # Wait for input from the user.
             try:
-                data = input(prompt).strip()
+                console = RichConsole()
+                data = console.input(prompt).strip()
             except KeyboardInterrupt:
                 print("")
             # Terminate on EOF.
@@ -269,6 +287,7 @@ class Console(object):
                 data = self.keywords(data)
                 # Skip if the input is empty.
                 if not data:
+                    print("")
                     continue
 
                 # Check for output redirection
@@ -276,9 +295,15 @@ class Console(object):
                 if ">" in data:
                     data, console_output["filename"] = data.split(">", 1)
                     if ";" in console_output["filename"]:
-                        console_output["filename"], more_commands = console_output["filename"].split(";", 1)
+                        console_output["filename"], more_commands = console_output[
+                            "filename"
+                        ].split(";", 1)
                         data = "{};{}".format(data, more_commands)
-                    print("Writing output to {0}".format(console_output["filename"].strip()))
+                    print(
+                        "Writing output to {0}".format(
+                            console_output["filename"].strip()
+                        )
+                    )
 
                 # If the input starts with an exclamation mark, we treat the
                 # input as a bash command and execute it.
@@ -313,7 +338,7 @@ class Console(object):
                         # execute it.
                         if root in self.cmd.commands:
                             self.cmd.commands[root]["obj"](*args)
-                            del(self.cmd.output[:])
+                            del self.cmd.output[:]
                         # If the root command is part of loaded modules, we initialize
                         # the module and execute it.
                         elif root in __modules__:
@@ -323,16 +348,20 @@ class Console(object):
 
                             if cfg.modules.store_output and __sessions__.is_set():
                                 try:
-                                    Database().add_analysis(__sessions__.current.file.sha256, split_command, module.output)
+                                    Database().add_analysis(
+                                        __sessions__.current.file.sha256,
+                                        split_command,
+                                        module.output,
+                                    )
                                 except Exception:
                                     pass
-                            del(module.output[:])
+                            del module.output[:]
                         else:
                             print("Command not recognized.")
                     except KeyboardInterrupt:
                         pass
                     except Exception:
-                        print_error("The command {0} raised an exception:".format(bold(root)))
+                        print_error(f'The command "{root}" raised an exception')
                         traceback.print_exc()
 
-                console_output["filename"] = None   # reset output to stdout
+                console_output["filename"] = None  # reset output to stdout

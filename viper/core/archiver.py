@@ -1,27 +1,25 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import bz2
+import gzip
+import inspect
+import logging
 import os
 import re
+import shutil
+import subprocess
 import sys
-import inspect
-from distutils.spawn import find_executable
-import pkg_resources
-import logging
 
 # Compression
 import tarfile
-import zipfile
-import gzip
-import bz2
-
 import tempfile
-import shutil
+import zipfile
+from distutils.spawn import find_executable
 
-import subprocess
+import pkg_resources
 
-log = logging.getLogger('viper')
+log = logging.getLogger("viper")
 
 
 class Archiver(object):
@@ -40,17 +38,21 @@ class Archiver(object):
 
     @property
     def summary(self):
-        return {"cls_name": self.cls_name,
-                "title": self.title,
-                "extensions": self.supports_extensions,
-                "password": self.supports_password}
+        return {
+            "cls_name": self.cls_name,
+            "title": self.title,
+            "extensions": self.supports_extensions,
+            "password": self.supports_password,
+        }
 
     def _is_subclass(self, obj):
         return inspect.isclass(obj) and issubclass(obj, self.__class__)
 
     def get_subclasses(self):
         """Yields all subclasses of this class"""
-        for name, obj in inspect.getmembers(sys.modules[__name__], predicate=self._is_subclass):
+        for name, obj in inspect.getmembers(
+            sys.modules[__name__], predicate=self._is_subclass
+        ):
             if hasattr(obj, "__bases__") and self.__class__ in obj.__bases__:
                 yield obj
 
@@ -81,14 +83,26 @@ class Archiver(object):
             try:
                 pkg_resources.require(item)
             except pkg_resources.DistributionNotFound as err:
-                log.debug("{}: Missing Python dependency: {}".format(self.__class__.__name__, err))
+                log.debug(
+                    "{}: Missing Python dependency: {}".format(
+                        self.__class__.__name__, err
+                    )
+                )
                 missing.append(item)
             except pkg_resources.VersionConflict as err:
-                log.debug("{}: Python dependency wrong version: {}".format(self.__class__.__name__, err))
+                log.debug(
+                    "{}: Python dependency wrong version: {}".format(
+                        self.__class__.__name__, err
+                    )
+                )
                 missing.append(item)
 
         if missing:
-            log.warning("{}: Missing/Failed Python dependencies: {}".format(self.__class__.__name__, missing))
+            log.warning(
+                "{}: Missing/Failed Python dependencies: {}".format(
+                    self.__class__.__name__, missing
+                )
+            )
             return False
 
         return True
@@ -97,19 +111,25 @@ class Archiver(object):
         if not self.dependency_list_system:
             return True
 
-        missing = [item for item in self.dependency_list_system if not find_executable(item)]
+        missing = [
+            item for item in self.dependency_list_system if not find_executable(item)
+        ]
 
         if missing:
-            log.warning("{}: Missing System dependencies: {}".format(self.__class__.__name__, missing))
+            log.warning(
+                "{}: Missing System dependencies: {}".format(
+                    self.__class__.__name__, missing
+                )
+            )
             return False
         else:
             return True
 
     @staticmethod
     def _splitext(file_name):
-        for ext in ['.tar.gz', '.tar.bz2']:
+        for ext in [".tar.gz", ".tar.bz2"]:
             if file_name.endswith(ext):
-                return file_name[:-len(ext)], file_name[-len(ext):]
+                return file_name[: -len(ext)], file_name[-len(ext) :]
         return os.path.splitext(file_name)
 
     def auto_discover_ext(self, file_path):
@@ -169,7 +189,9 @@ class Extractor(Archiver):
     def output_path(self, value):
         self._output_path = value
 
-    def extract(self, archive_path, output_dir=None, cls_name=None, password=None, **kwargs):
+    def extract(
+        self, archive_path, output_dir=None, cls_name=None, password=None, **kwargs
+    ):
         """Method for extracting an archive file (e.g. zip, tar, tar.gz, 7z)
 
         :param archive_path: absolute path to file to extract
@@ -186,7 +208,9 @@ class Extractor(Archiver):
         """
 
         if not os.path.isfile(archive_path):
-            self.err = "invalid archive_path (file does not exist): {}".format(archive_path)
+            self.err = "invalid archive_path (file does not exist): {}".format(
+                archive_path
+            )
             log.error(self.err)
             return False
 
@@ -203,7 +227,11 @@ class Extractor(Archiver):
             try:
                 sub = self.extractors[cls_name]
             except KeyError:
-                self.err = "invalid Extractor: {}. Check for missing dependencies.".format(cls_name)
+                self.err = (
+                    "invalid Extractor: {}. Check for missing dependencies.".format(
+                        cls_name
+                    )
+                )
                 log.error(self.err)
                 return False
 
@@ -222,10 +250,14 @@ class Extractor(Archiver):
                             sub = item
                             break
                         else:
-                            sub = self.extractors_by_extension[ext][0]  # try first anyway
+                            sub = self.extractors_by_extension[ext][
+                                0
+                            ]  # try first anyway
 
             except KeyError:
-                self.err = "no available Extractor supports extension: {}. Check for missing dependencies.".format(cls_name)
+                self.err = "no available Extractor supports extension: {}. Check for missing dependencies.".format(
+                    cls_name
+                )
                 log.error(self.err)
                 return False
 
@@ -260,9 +292,13 @@ class ZipExtractor(Extractor):
 
         if password:
             try:
-                password = password.encode('ascii')  # py3 requires bytes (not str)
+                password = password.encode("ascii")  # py3 requires bytes (not str)
             except UnicodeEncodeError as err:
-                log.error("Extract ({}) failed. Password only supports ascii characters: {}".format(self.title, err))
+                log.error(
+                    "Extract ({}) failed. Password only supports ascii characters: {}".format(
+                        self.title, err
+                    )
+                )
                 self.err = err
                 return False
 
@@ -300,7 +336,7 @@ class GZipExtractor(Extractor):
         log.info("Extract: {}".format(self.title))
 
         try:
-            with gzip.GzipFile(self.input_path, 'rb') as zf:
+            with gzip.GzipFile(self.input_path, "rb") as zf:
                 decompressed = zf.read()
 
             with open(self.output_path, "wb") as df:
@@ -334,7 +370,7 @@ class BZ2Extractor(Extractor):
         log.info("Extract: {}".format(self.title))
 
         try:
-            with bz2.BZ2File(self.input_path, 'rb') as zf:
+            with bz2.BZ2File(self.input_path, "rb") as zf:
                 decompressed = zf.read()
 
             with open(self.output_path, "wb") as df:
@@ -363,26 +399,24 @@ class TarExtractor(Extractor):
             return False
 
         try:
-            with tarfile.open(self.input_path, 'r:*') as tarf:
+            with tarfile.open(self.input_path, "r:*") as tarf:
+
                 def is_within_directory(directory, target):
-                    
                     abs_directory = os.path.abspath(directory)
                     abs_target = os.path.abspath(target)
-                
+
                     prefix = os.path.commonprefix([abs_directory, abs_target])
-                    
+
                     return prefix == abs_directory
-                
+
                 def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
-                
                     for member in tar.getmembers():
                         member_path = os.path.join(path, member.name)
                         if not is_within_directory(path, member_path):
                             raise Exception("Attempted Path Traversal in Tar File")
-                
-                    tar.extractall(path, members, numeric_owner=numeric_owner) 
-                    
-                
+
+                    tar.extractall(path, members, numeric_owner=numeric_owner)
+
                 safe_extract(tarf, self.output_path)
 
         except Exception as err:
@@ -435,15 +469,25 @@ class SevenZipSystemExtractor(Extractor):
             out = "-o{}".format(tmp_dir)
             if password:
                 pwd = "-p{}".format(password)
-                subprocess.check_output(["7z", "x", out, "-r", "-y", pwd, self.input_path], stderr=subprocess.STDOUT)
+                subprocess.check_output(
+                    ["7z", "x", out, "-r", "-y", pwd, self.input_path],
+                    stderr=subprocess.STDOUT,
+                )
             else:
-                subprocess.check_output(["7z", "x", out, "-r", "-y", self.input_path], stderr=subprocess.STDOUT)
+                subprocess.check_output(
+                    ["7z", "x", out, "-r", "-y", self.input_path],
+                    stderr=subprocess.STDOUT,
+                )
 
             for item in os.listdir(tmp_dir):
                 shutil.move(os.path.join(tmp_dir, item), self.output_path)
 
         except subprocess.CalledProcessError as err:
-            log.error("Running shell command \"{}\" caused error: {} (RC: {}".format(err.cmd, err.output, err.returncode))
+            log.error(
+                'Running shell command "{}" caused error: {} (RC: {}'.format(
+                    err.cmd, err.output, err.returncode
+                )
+            )
             self.err = err
 
             lines = err.output.decode("utf-8")
@@ -553,7 +597,15 @@ class Compressor(Archiver):
     def output_archive_ext(self, value):
         self._output_archive_ext = value
 
-    def compress(self, file_path, file_name=None, archive_path=None, cls_name=None, password=None, **kwargs):
+    def compress(
+        self,
+        file_path,
+        file_name=None,
+        archive_path=None,
+        cls_name=None,
+        password=None,
+        **kwargs
+    ):
         """compress one file into an archive (e.g. zip, tar, tar.gz, 7z)
 
         :param file_path: path to file to compress
@@ -580,7 +632,9 @@ class Compressor(Archiver):
             _, file_name = os.path.split(file_path)
 
         archive_basename = None
-        archive_ext = self.default_ext  # if no other extension can be determined then default to zip
+        archive_ext = (
+            self.default_ext
+        )  # if no other extension can be determined then default to zip
 
         if not archive_path:
             archive_dir = tempfile.mkdtemp(prefix="viper_tmp_")
@@ -599,7 +653,11 @@ class Compressor(Archiver):
             try:
                 sub = self.compressors[cls_name]
             except KeyError:
-                self.err = "invalid Compressor: {} (check for missing dependencies)".format(cls_name)
+                self.err = (
+                    "invalid Compressor: {} (check for missing dependencies)".format(
+                        cls_name
+                    )
+                )
                 log.error(self.err)
                 return False
 
@@ -625,10 +683,14 @@ class Compressor(Archiver):
                             sub = item
                             break
                         else:
-                            sub = self.compressors_by_extension[archive_ext][0]  # try first anyway
+                            sub = self.compressors_by_extension[archive_ext][
+                                0
+                            ]  # try first anyway
 
             except KeyError:
-                self.err = "no available Extractor supports extension: {} (check for missing dependencies)".format(cls_name)
+                self.err = "no available Extractor supports extension: {} (check for missing dependencies)".format(
+                    cls_name
+                )
                 log.error(self.err)
                 return False
 
@@ -636,10 +698,14 @@ class Compressor(Archiver):
             archive_basename = self.default_basename
 
         if archive_ext:
-            if archive_ext in sub.supports_extensions:  # e.g. for ZipCompressor file.zip stays file.zip
+            if (
+                archive_ext in sub.supports_extensions
+            ):  # e.g. for ZipCompressor file.zip stays file.zip
                 archive_name = "{}.{}".format(archive_basename, archive_ext)
-            else:   # e.g. file.exe will become file.exe.zip
-                archive_name = "{}.{}.{}".format(archive_basename, archive_ext, sub.supports_extensions[0])
+            else:  # e.g. file.exe will become file.exe.zip
+                archive_name = "{}.{}.{}".format(
+                    archive_basename, archive_ext, sub.supports_extensions[0]
+                )
         else:  # e.g. file will become file.zip
             archive_name = "{}.{}".format(archive_basename, sub.supports_extensions[0])
 
@@ -654,10 +720,16 @@ class Compressor(Archiver):
 
         sub.output_archive_path = output_path
         sub.output_archive_name = archive_name
-        sub.output_archive_basename, sub.output_archive_ext = self.auto_discover_ext(archive_name)
+        sub.output_archive_basename, sub.output_archive_ext = self.auto_discover_ext(
+            archive_name
+        )
 
         if password and not sub.supports_password:
-            self.err = "password provided but modules does not support encryption: {}".format(sub.cls_name)
+            self.err = (
+                "password provided but modules does not support encryption: {}".format(
+                    sub.cls_name
+                )
+            )
             log.error(self.err)
             return False
 
@@ -674,6 +746,7 @@ class Compressor(Archiver):
             self.err = sub.err
             log.error(self.err)
             return False
+
 
 # All Compressor implementations MUST take a list of tuples as input.
 # The list represents multiple files that MUST be compressed into one archive.
@@ -706,9 +779,12 @@ class ZipCompressor(Compressor):
         log.info("Compress: {}".format(self.title))
 
         try:
-            with zipfile.ZipFile(self.output_archive_path, 'w') as zf:
+            with zipfile.ZipFile(self.output_archive_path, "w") as zf:
                 for item_path, item_name in self.input_tuple_list:
-                    zf.write(item_path, arcname=os.path.join(self.output_archive_basename, item_name))
+                    zf.write(
+                        item_path,
+                        arcname=os.path.join(self.output_archive_basename, item_name),
+                    )
 
         except Exception as err:
             log.error("Compress ({}) failed. Error: {}".format(self.title, err))
@@ -739,13 +815,31 @@ class SevenZipSystemCompressor(Compressor):
         try:
             if password:
                 pwd = "-p{}".format(password)
-                res = subprocess.check_output(["7z", "a", pwd, "-y", self.output_archive_path, "-w", archive_sub_dir], stderr=subprocess.STDOUT)
+                res = subprocess.check_output(
+                    [
+                        "7z",
+                        "a",
+                        pwd,
+                        "-y",
+                        self.output_archive_path,
+                        "-w",
+                        archive_sub_dir,
+                    ],
+                    stderr=subprocess.STDOUT,
+                )
             else:
-                res = subprocess.check_output(["7z", "a", "-y", self.output_archive_path, "-w", archive_sub_dir], stderr=subprocess.STDOUT)
+                res = subprocess.check_output(
+                    ["7z", "a", "-y", self.output_archive_path, "-w", archive_sub_dir],
+                    stderr=subprocess.STDOUT,
+                )
             log.debug("Result: {}".format(res))
 
         except subprocess.CalledProcessError as err:
-            log.debug("Running shell command \"{}\" caused error: {} (RC: {}".format(err.cmd, err.output, err.returncode))
+            log.debug(
+                'Running shell command "{}" caused error: {} (RC: {}'.format(
+                    err.cmd, err.output, err.returncode
+                )
+            )
             self.err = err
             os.remove(self.output_archive_path)
             return False

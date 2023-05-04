@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -6,7 +5,6 @@ import os
 import tempfile
 
 from viper.common.abstracts import Command
-from viper.common.colors import bold
 from viper.core.session import __sessions__
 
 
@@ -15,6 +13,7 @@ class New(Command):
     This command is used to create a new session on a new file,
     useful for copy & paste of content like Email headers.
     """
+
     cmd = "new"
     description = "Create new file"
 
@@ -35,4 +34,7 @@ class New(Command):
         __sessions__.new(tmp.name)
         __sessions__.current.file.name = title
 
-        self.log('info', "New file with title \"{0}\" added to the current session".format(bold(title)))
+        self.log(
+            "info",
+            f'New file with title "{title}" added to the current session',
+        )

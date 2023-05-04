@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import os
-import time
 import shutil
+import time
 from os.path import expanduser
 
 from viper.common.abstracts import Command
-from viper.common.colors import bold
-from viper.core.database import Database
-from viper.core.session import __sessions__
-from viper.core.project import __project__
 from viper.core.config import __config__
+from viper.core.database import Database
+from viper.core.project import __project__
+from viper.core.session import __sessions__
 
 
 class Projects(Command):
@@ -20,6 +18,7 @@ class Projects(Command):
     This command retrieves a list of all projects.
     You can also switch to a different project.
     """
+
     cmd = "projects"
     description = "List or switch existing projects"
 
@@ -27,10 +26,27 @@ class Projects(Command):
         super(Projects, self).__init__()
 
         group = self.parser.add_mutually_exclusive_group()
-        group.add_argument("-l", "--list", action="store_true", help="List all existing projects")
-        group.add_argument("-s", "--switch", metavar="PROJECT NAME", help="Switch to the specified project")
-        group.add_argument("-c", "--close", action="store_true", help="Close the currently opened project")
-        group.add_argument("-d", "--delete", metavar="PROJECT NAME", help="Delete the specified project")
+        group.add_argument(
+            "-l", "--list", action="store_true", help="List all existing projects"
+        )
+        group.add_argument(
+            "-s",
+            "--switch",
+            metavar="PROJECT NAME",
+            help="Switch to the specified project",
+        )
+        group.add_argument(
+            "-c",
+            "--close",
+            action="store_true",
+            help="Close the currently opened project",
+        )
+        group.add_argument(
+            "-d",
+            "--delete",
+            metavar="PROJECT NAME",
+            help="Delete the specified project",
+        )
 
     def run(self, *args):
         try:
@@ -59,13 +75,20 @@ class Projects(Command):
                     current = ""
                     if __project__.name and project == __project__.name:
                         current = "Yes"
-                    rows.append([project, time.ctime(os.path.getctime(project_path)), current])
+                    rows.append(
+                        [project, time.ctime(os.path.getctime(project_path)), current]
+                    )
 
-            self.log("table", dict(header=["Project Name", "Creation Time", "Current"], rows=rows))
+            self.log(
+                "table",
+                dict(header=["Project Name", "Creation Time", "Current"], rows=rows),
+            )
         elif args.switch:
             db = Database()
             if not db.supports_projects:
-                self.log('info', "The database type you are using does not support projects")
+                self.log(
+                    "info", "The database type you are using does not support projects"
+                )
                 return
 
             if __sessions__.is_set():
@@ -73,7 +96,7 @@ class Projects(Command):
                 self.log("info", "Closed opened session")
 
             __project__.open(args.switch)
-            self.log("info", "Switched to project {0}".format(bold(args.switch)))
+            self.log("info", f"Switched to project [bold]{args.switch}[/bold]")
 
             # Need to re-initialize the Database to open the new SQLite file.
             Database().__init__()
@@ -86,10 +109,10 @@ class Projects(Command):
         elif args.delete:
             project_to_delete = args.delete
             if project_to_delete == "default":
-                self.log("error", "You can't delete the \"default\" project")
+                self.log("error", 'You can\'t delete the "default" project')
                 return
 
-            # If it"s the currently opened project, we close it.
+            # If it's the currently opened project, we close it.
             if project_to_delete == __project__.name:
                 # We close any opened session.
                 if __sessions__.is_set():
@@ -99,21 +122,35 @@ class Projects(Command):
 
             project_path = os.path.join(projects_path, project_to_delete)
             if not os.path.exists(project_path):
-                self.log("error", "The folder for project \"{}\" does not seem to exist".format(project_to_delete))
+                self.log(
+                    "error",
+                    f'The folder for project "{project_to_delete}" does not seem to exist',
+                )
                 return
 
-            self.log("info", "You asked to delete project with name \"{}\" located at \"{}\"".format(project_to_delete, project_path))
+            self.log(
+                "info",
+                f'You asked to delete project with name "{project_to_delete}" located at {project_path}',
+            )
 
-            confirm = input("Are you sure you want to delete the project? You will permanently delete all associated files! [y/N] ")
+            confirm = input(
+                "Are you sure you want to delete the project? You will permanently delete all associated files! [y/N] "
+            )
             if confirm.lower() != "y":
                 return
 
             try:
                 shutil.rmtree(project_path)
             except Exception as e:
-                self.log("error", "Something failed while trying to delete folder: {}".format(e))
+                self.log(
+                    "error",
+                    f"Something failed while trying to delete folder: {e}",
+                )
                 return
 
-            self.log("info", "Project \"{}\" was delete successfully".format(project_to_delete))
+            self.log(
+                "success",
+                f'Project "{project_to_delete}" was delete successfully',
+            )
         else:
             self.log("info", self.parser.print_usage())

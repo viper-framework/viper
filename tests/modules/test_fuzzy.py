@@ -6,15 +6,13 @@ import os
 import re
 
 import pytest
+
 from tests.conftest import FIXTURE_DIR
-
-from viper.common.abstracts import Module
-from viper.common.abstracts import ArgumentErrorCallback
-
-from viper.core.session import __sessions__
+from viper.common.abstracts import ArgumentErrorCallback, Module
 from viper.core.plugins import __modules__
+from viper.core.session import __sessions__
 
-fuzzy = __modules__['fuzzy']["obj"]
+fuzzy = __modules__["fuzzy"]["obj"]
 
 
 class TestFuzzy:
@@ -55,7 +53,7 @@ class TestFuzzy:
 
     def test_run_cluster(self, capsys):
         instance = fuzzy()
-        instance.set_commandline(['-c'])
+        instance.set_commandline(["-c"])
 
         instance.run()
         out, err = capsys.readouterr()

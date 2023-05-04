@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
+import logging
 import os
 from os.path import expanduser
-import logging
 
-from viper.core.logger import init_logger
 from viper.core.config import __config__
+from viper.core.logger import init_logger
 
-log = logging.getLogger('viper')
+log = logging.getLogger("viper")
 
 cfg = __config__
 
@@ -23,8 +22,8 @@ class Project(object):
             self.path = cfg.paths.storage_path
             self.base_path = cfg.paths.storage_path
         else:
-            self.path = os.path.join(expanduser("~"), '.viper')
-            self.base_path = os.path.join(expanduser("~"), '.viper')
+            self.path = os.path.join(expanduser("~"), ".viper")
+            self.base_path = os.path.join(expanduser("~"), ".viper")
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -33,11 +32,11 @@ class Project(object):
         log_file = os.path.join(self.base_path, "viper.log")
         debug_log = False
 
-        if hasattr(cfg, 'logging'):
-            if hasattr(cfg.logging, 'log_file') and cfg.logging.log_file:
+        if hasattr(cfg, "logging"):
+            if hasattr(cfg.logging, "log_file") and cfg.logging.log_file:
                 log_file = cfg.logging.log_file
 
-            if hasattr(cfg.logging, 'debug'):
+            if hasattr(cfg.logging, "debug"):
                 debug_log = cfg.logging.debug
 
         init_logger(log_file_path=log_file, debug=debug_log)
@@ -45,12 +44,16 @@ class Project(object):
 
     def open(self, name):
         if not os.path.exists(self.base_path):
-            raise Exception("The local storage folder does not exist at path {}".format(self.base_path))
+            raise Exception(
+                "The local storage folder does not exist at path {}".format(
+                    self.base_path
+                )
+            )
 
-        if name == 'default':
+        if name == "default":
             path = self.base_path
         else:
-            path = os.path.join(self.base_path, 'projects', name)
+            path = os.path.join(self.base_path, "projects", name)
             if not os.path.exists(path):
                 os.makedirs(path)
 
@@ -59,7 +62,7 @@ class Project(object):
 
     def close(self):
         # We "close" it and switch to default, if it isn't default already.
-        if self.name != 'default':
+        if self.name != "default":
             self.path = self.base_path
             self.name = None
 
@@ -70,7 +73,7 @@ class Project(object):
             return self.path
 
     def get_projects_path(self):
-        return os.path.join(self.base_path, 'projects')
+        return os.path.join(self.base_path, "projects")
 
 
 __project__ = Project()

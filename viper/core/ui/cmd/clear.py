@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
@@ -11,6 +10,7 @@ class Clear(Command):
     """
     This command simply clears the shell.
     """
+
     cmd = "clear"
     description = "Clear the console"
 
@@ -20,4 +20,4 @@ class Clear(Command):
         except SystemExit:
             return
 
-        os.system('clear')
+        os.system("clear")

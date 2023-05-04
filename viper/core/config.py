@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
-import os
 import logging
+import os
 import pkgutil
-from os.path import expanduser
 from configparser import ConfigParser
+from os.path import expanduser
 
 from viper.common.objects import Dictionary
 
@@ -14,7 +13,6 @@ log = logging.getLogger("viper")
 
 
 class Config:
-
     def __init__(self, cfg=None):
         # use cfg as a first priority
         if cfg:
@@ -26,7 +24,7 @@ class Config:
             config_paths = [
                 os.path.join(os.getcwd(), "viper.conf"),
                 os.path.join(expanduser("~"), ".viper", "viper.conf"),
-                "/etc/viper/viper.conf"
+                "/etc/viper/viper.conf",
             ]
 
             # Try to identify the best location for the config file.
@@ -72,10 +70,10 @@ class Config:
                 setattr(getattr(self, section), name, value)
 
         # Set a default value for the module_path if one was not set
-        if 'module_path' not in self.paths or len(self.paths['module_path']) < 1:
-            self.paths['module_path'] = os.path.join(expanduser('~'), ".viper")
-            if not os.path.exists(self.paths['module_path']):
-                os.makedirs(self.paths['module_path'])
+        if "module_path" not in self.paths or len(self.paths["module_path"]) < 1:
+            self.paths["module_path"] = os.path.join(expanduser("~"), ".viper")
+            if not os.path.exists(self.paths["module_path"]):
+                os.makedirs(self.paths["module_path"])
 
     def parse_http_client(self, section=None):
         _proxies = None
@@ -92,11 +90,16 @@ class Config:
             log.debug("Global: Proxy not configured (using ENV or none)")
         else:
             if self.http_client.https_proxy:
-                log.debug("Global: Proxy enabled: {} (no: {})".format(self.http_client.https_proxy,
-                                                                      self.http_client.no_proxy))
-                _proxies = {"http": self.http_client.https_proxy,
-                            "https": self.http_client.https_proxy,
-                            "no": self.http_client.no_proxy}
+                log.debug(
+                    "Global: Proxy enabled: {} (no: {})".format(
+                        self.http_client.https_proxy, self.http_client.no_proxy
+                    )
+                )
+                _proxies = {
+                    "http": self.http_client.https_proxy,
+                    "https": self.http_client.https_proxy,
+                    "no": self.http_client.no_proxy,
+                }
             else:
                 log.debug("Global: Proxy disabled (overridden)")
                 _proxies = {"http": "", "https": "", "no": None}
@@ -112,11 +115,19 @@ class Config:
 
         if _verify and self.http_client.tls_ca_bundle is not None:
             if self.http_client.tls_ca_bundle:
-                log.debug("Global: Verify (CA_BUNDLE) set to: {}".format(self.http_client.tls_ca_bundle))
+                log.debug(
+                    "Global: Verify (CA_BUNDLE) set to: {}".format(
+                        self.http_client.tls_ca_bundle
+                    )
+                )
                 _verify = self.http_client.tls_ca_bundle
 
         if self.http_client.tls_client_cert:
-            log.debug("Global: Client certificate enabled: {}".format(self.http_client.tls_client_cert))
+            log.debug(
+                "Global: Client certificate enabled: {}".format(
+                    self.http_client.tls_client_cert
+                )
+            )
             _cert = self.http_client.tls_client_cert
         else:
             log.debug("Global: Client certificate not configured")
@@ -131,13 +142,23 @@ class Config:
                 if _proxies is None:
                     log.debug("Section: Proxy not configured (using ENV or none)")
                 else:
-                    log.debug("Section: Proxy not configured (using Global: {})".format(_proxies))
+                    log.debug(
+                        "Section: Proxy not configured (using Global: {})".format(
+                            _proxies
+                        )
+                    )
             else:
                 if section.https_proxy:
-                    log.debug("Section: Proxy enabled: {} (no: {})".format(section.https_proxy, section.no_proxy))
-                    _proxies = {"http": section.https_proxy,
-                                "https": section.https_proxy,
-                                "no": section.no_proxy}
+                    log.debug(
+                        "Section: Proxy enabled: {} (no: {})".format(
+                            section.https_proxy, section.no_proxy
+                        )
+                    )
+                    _proxies = {
+                        "http": section.https_proxy,
+                        "https": section.https_proxy,
+                        "no": section.no_proxy,
+                    }
                 else:
                     log.debug("Section: Proxy disabled (overridden)")
                     _proxies = {"http": "", "https": "", "no": None}
@@ -154,11 +175,19 @@ class Config:
 
             if _verify and section.tls_ca_bundle is not None:
                 if section.tls_ca_bundle:
-                    log.debug("Section: Verify (CA_BUNDLE) set to: {}".format(section.tls_ca_bundle))
+                    log.debug(
+                        "Section: Verify (CA_BUNDLE) set to: {}".format(
+                            section.tls_ca_bundle
+                        )
+                    )
                     _verify = section.tls_ca_bundle
 
             if section.tls_client_cert:
-                log.debug("Section: Client certificate enabled: {}".format(section.tls_client_cert))
+                log.debug(
+                    "Section: Client certificate enabled: {}".format(
+                        section.tls_client_cert
+                    )
+                )
                 _cert = section.tls_client_cert
             else:
                 log.debug("Section: Client certificate not configured")

@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
 # This file is part of Viper - https://github.com/viper-framework/viper
 # See the file 'LICENSE' for copying permission.
 
 import argparse
+
 import viper.common.out as out
-from viper.core.config import console_output
 from viper.common.exceptions import ArgumentErrorCallback
+from viper.core.config import console_output
 
 
 class ArgumentParser(argparse.ArgumentParser):
@@ -16,7 +16,7 @@ class ArgumentParser(argparse.ArgumentParser):
         raise ArgumentErrorCallback(self.format_help())
 
     def error(self, message):
-        raise ArgumentErrorCallback(message, 'error')
+        raise ArgumentErrorCallback(message, "error")
 
     def exit(self, status=0, message=None):
         if message is not None:
@@ -33,19 +33,20 @@ class Command(object):
     fs_path_completion = False
 
     def __init__(self):
-        self.parser = argparse.ArgumentParser(prog=self.cmd, description=self.description)
+        self.parser = argparse.ArgumentParser(
+            prog=self.cmd, description=self.description
+        )
 
     def log(self, event_type, event_data):
-        self.output.append(dict(
-            type=event_type,
-            data=event_data
-        ))
-        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
+        self.output.append(dict(type=event_type, data=event_data))
+        out.print_output(
+            [{"type": event_type, "data": event_data}], console_output["filename"]
+        )
 
 
 class Module(object):
-    cmd = ''
-    description = ''
+    cmd = ""
+    description = ""
     command_line = []
     args = None
     authors = []
@@ -58,17 +59,16 @@ class Module(object):
         self.command_line = command
 
     def log(self, event_type, event_data):
-        self.output.append(dict(
-            type=event_type,
-            data=event_data
-        ))
-        out.print_output([{'type': event_type, 'data': event_data}], console_output['filename'])
+        self.output.append(dict(type=event_type, data=event_data))
+        out.print_output(
+            [{"type": event_type, "data": event_data}], console_output["filename"]
+        )
 
     def usage(self):
-        self.log('', self.parser.format_usage())
+        self.log("", self.parser.format_usage())
 
     def help(self):
-        self.log('', self.parser.format_help())
+        self.log("", self.parser.format_help())
 
     def run(self):
         try:
@@ -104,7 +104,13 @@ def get_argparse_subparser_actions(parser):
         for subparser_action in parser._subparsers._actions:
             if isinstance(subparser_action, argparse._SubParsersAction):
                 for item in list(subparser_action.choices):
-                    ret.update({item: get_argparse_parser_actions(subparser_action.choices[item])})
+                    ret.update(
+                        {
+                            item: get_argparse_parser_actions(
+                                subparser_action.choices[item]
+                            )
+                        }
+                    )
 
     except AttributeError:
         pass

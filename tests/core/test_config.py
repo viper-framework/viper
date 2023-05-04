@@ -59,11 +59,15 @@ class TestConfig:
 
         instance.http_client.https_proxy = False
         instance.parse_http_client()
-        assert instance.http_client.proxies == {'http': '', 'https': '', 'no': None}
+        assert instance.http_client.proxies == {"http": "", "https": "", "no": None}
 
         instance.http_client.https_proxy = "http://prx1.example.com:3128"
         instance.parse_http_client()
-        assert instance.http_client.proxies == {'http': 'http://prx1.example.com:3128', 'https': 'http://prx1.example.com:3128', 'no': None}
+        assert instance.http_client.proxies == {
+            "http": "http://prx1.example.com:3128",
+            "https": "http://prx1.example.com:3128",
+            "no": None,
+        }
 
         # tls_verify
         instance.http_client.tls_verify = None
@@ -94,6 +98,7 @@ class TestConfig:
         assert instance.http_client.cert == "client.pem"
 
         # TODO (frennkie) Write some more parser logic validations here
+
     def test_custom_parse_global_section(self):
         instance = Config()
 
@@ -106,17 +111,25 @@ class TestConfig:
         instance.http_client.https_proxy = "http://prx1.example.com:3128"
         instance.koodous.https_proxy = None
         instance.parse_http_client(section=instance.koodous)
-        assert instance.koodous.proxies == {'http': 'http://prx1.example.com:3128', 'https': 'http://prx1.example.com:3128', 'no': None}
+        assert instance.koodous.proxies == {
+            "http": "http://prx1.example.com:3128",
+            "https": "http://prx1.example.com:3128",
+            "no": None,
+        }
 
         instance.http_client.https_proxy = "http://prx1.example.com:3128"
         instance.koodous.https_proxy = False
         instance.parse_http_client(section=instance.koodous)
-        assert instance.koodous.proxies == {'http': '', 'https': '', 'no': None}
+        assert instance.koodous.proxies == {"http": "", "https": "", "no": None}
 
         instance.http_client.https_proxy = "http://prx1.example.com:3128"
         instance.koodous.https_proxy = "http://prx2.example.com:8080"
         instance.parse_http_client(section=instance.koodous)
-        assert instance.koodous.proxies == {'http': 'http://prx2.example.com:8080', 'https': 'http://prx2.example.com:8080', 'no': None}
+        assert instance.koodous.proxies == {
+            "http": "http://prx2.example.com:8080",
+            "https": "http://prx2.example.com:8080",
+            "no": None,
+        }
 
         # tls_verify
         instance.parse_http_client(section=instance.koodous)
