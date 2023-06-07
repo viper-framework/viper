@@ -1,3 +1,7 @@
+**This repository is archived and development of Viper 1.x is discontinued. A full refactor of the project started with [Viper 2](https://github.com/viper-framework/viper2).**
+
+---
+
 ![Viper](https://viper-framework.readthedocs.io/en/latest/_images/viper.png)
 
 Viper is a binary analysis and management framework. Its fundamental objective is to provide a solution to easily organize your collection of malware and exploit samples as well as your collection of scripts you created or found over the time to facilitate your daily research.
